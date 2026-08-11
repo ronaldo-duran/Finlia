@@ -2,79 +2,316 @@
 |----------------------------------------------------------------------
 | Finlia — Hoja de estilos principal
 |----------------------------------------------------------------------
-| Bootstrap 5 (CSS precompilado vía npm) + Bootstrap Icons + una
-| capa mínima de tema. Sin Tailwind (ADR-0004). El theming avanzado
-| (variables SASS de marca) se aplaza a la Épica 10 (UX).
+| Bootstrap 5 (CSS precompilado vía npm) + Bootstrap Icons + una capa
+| de tema con modos claro/oscuro (color modes nativos de BS 5.3) y
+| glassmorphism ligero ("liquid glass"). Sin Tailwind (ADR-0004).
+|
+| El theming avanzado se ADELANTA desde la Épica 1 por decisión del
+| producto (originalmente aplazado a la Épica 10). Es puramente visual:
+| no añade lógica de negocio ni procesos persistentes (compatible con
+| hosting compartido).
 */
 
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
-/* ---- Base ---- */
+/* =============================================================
+   Tokens de tema
+   ============================================================= */
 :root {
     /* Marca Finlia: verde "dinero" como acento principal. */
     --finlia-primary: #0f766e;
     --finlia-primary-rgb: 15, 118, 110;
-    --finlia-bg: #f5f7f9;
-    --finlia-sidebar-width: 260px;
+    --finlia-primary-hover: #0c615a;
+
+    --finlia-bg: #eef3f8;
+    --finlia-bg-2: #e6ecf2;
+    --finlia-surface: rgba(255, 255, 255, 0.65);
+    --finlia-surface-solid: #ffffff;
+    --finlia-nav-bg: rgba(255, 255, 255, 0.62);
+    --finlia-border: rgba(15, 23, 42, 0.08);
+    --finlia-glass-border: rgba(255, 255, 255, 0.6);
+    --finlia-text: #1a2330;
+    --finlia-text-muted: #5b6776;
+    --finlia-shadow: 0 10px 30px -14px rgba(15, 23, 42, 0.22);
+    --finlia-shadow-sm: 0 4px 14px -8px rgba(15, 23, 42, 0.25);
+    --finlia-blur: 14px;
+    --finlia-sidebar-width: 264px;
+    --finlia-radius: 16px;
+    --finlia-radius-sm: 12px;
+
+    /* Puente hacia las variables de Bootstrap (color mode primary, etc.). */
+    --bs-primary: var(--finlia-primary);
+    --bs-primary-rgb: var(--finlia-primary-rgb);
+    --bs-link-color: var(--finlia-primary);
+    --bs-link-hover-color: var(--finlia-primary-hover);
+    --bs-link-color-rgb: var(--finlia-primary-rgb);
+    --bs-link-hover-color-rgb: var(--finlia-primary-rgb);
+    --bs-body-bg: var(--finlia-bg);
+    --bs-body-color: var(--finlia-text);
+    --bs-secondary-color: var(--finlia-text-muted);
+    --bs-secondary-bg: var(--finlia-bg-2);
+    --bs-tertiary-bg: var(--finlia-bg-2);
+    --bs-border-color: var(--finlia-border);
+    --bs-emphasis-color: var(--finlia-text);
+    --bs-heading-color: var(--finlia-text);
 }
 
+[data-bs-theme="dark"] {
+    --finlia-primary: #2dd4bf;
+    --finlia-primary-rgb: 45, 212, 191;
+    --finlia-primary-hover: #5eead4;
+
+    --finlia-bg: #0e1419;
+    --finlia-bg-2: #121a22;
+    --finlia-surface: rgba(255, 255, 255, 0.06);
+    --finlia-surface-solid: #161e26;
+    --finlia-nav-bg: rgba(18, 26, 34, 0.55);
+    --finlia-border: rgba(255, 255, 255, 0.08);
+    --finlia-glass-border: rgba(255, 255, 255, 0.12);
+    --finlia-text: #e6edf3;
+    --finlia-text-muted: #9aa7b5;
+    --finlia-shadow: 0 10px 30px -14px rgba(0, 0, 0, 0.6);
+    --finlia-shadow-sm: 0 4px 14px -8px rgba(0, 0, 0, 0.55);
+}
+
+/* =============================================================
+   Base
+   ============================================================= */
 body {
-    background-color: var(--finlia-bg);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--finlia-text);
+    /* Aura sutil de marca sobre el fondo sólido. */
+    background-color: var(--finlia-bg);
+    background-image:
+        radial-gradient(1200px 600px at 100% -10%, rgba(var(--finlia-primary-rgb), 0.10), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, rgba(var(--finlia-primary-rgb), 0.08), transparent 55%);
+    background-attachment: fixed;
 }
 
-/* Botón primario de marca (sustituye al azul por defecto de Bootstrap). */
-.btn-finlia {
-    --bs-btn-bg: var(--finlia-primary);
-    --bs-btn-border-color: var(--finlia-primary);
-    --bs-btn-hover-bg: #0c615a;
-    --bs-btn-hover-border-color: #0c615a;
-    --bs-btn-active-bg: #0a544e;
-    --bs-btn-active-border-color: #0a544e;
-    --bs-btn-disabled-bg: var(--finlia-primary);
-    --bs-btn-disabled-border-color: var(--finlia-primary);
-    color: #fff;
-}
+a { color: var(--finlia-primary); }
 
-.text-finlia {
-    color: var(--finlia-primary) !important;
-}
+/* =============================================================
+   Marca: utilidades de color
+   ============================================================= */
+.text-finlia { color: var(--finlia-primary) !important; }
 
-.bg-finlia {
-    background-color: var(--finlia-primary) !important;
-}
+.bg-finlia { background-color: var(--finlia-primary) !important; }
 
-/* Tinte suave del color de marca (fondos claros de tarjetas/icons). */
+/* Tinte suave del color de marca (fondos de iconos/badges). */
 .bg-finlia-subtle {
     background-color: rgba(var(--finlia-primary-rgb), 0.12) !important;
 }
 
 .border-finlia {
-    border-color: rgba(var(--finlia-primary-rgb), 0.25) !important;
+    border-color: rgba(var(--finlia-primary-rgb), 0.28) !important;
 }
 
-/* ---- Layout autenticado ---- */
+/* =============================================================
+   Botones
+   ============================================================= */
+/* Botón primario de marca con acabado "liquid" (brillo superior + glow). */
+.btn-finlia {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--finlia-primary);
+    --bs-btn-border-color: transparent;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--finlia-primary-hover);
+    --bs-btn-hover-border-color: transparent;
+    --bs-btn-focus-shadow-rgb: var(--finlia-primary-rgb);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--finlia-primary-hover);
+    --bs-btn-active-border-color: transparent;
+    --bs-btn-active-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: var(--finlia-primary);
+    --bs-btn-disabled-border-color: transparent;
+    border: 0;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%);
+    box-shadow: 0 8px 20px -10px rgba(var(--finlia-primary-rgb), 0.65);
+}
+
+/* Botón-icono circular (hamburguesa, toggle de tema). Estilo "chip" moderno. */
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 999px;
+    background-color: rgba(var(--finlia-primary-rgb), 0.08);
+    color: var(--finlia-text);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease, transform .1s ease;
+}
+.btn-icon:hover {
+    background-color: rgba(var(--finlia-primary-rgb), 0.16);
+    color: var(--finlia-primary);
+}
+.btn-icon:focus-visible {
+    outline: 2px solid var(--finlia-primary);
+    outline-offset: 2px;
+}
+.btn-icon:active {
+    transform: scale(0.94);
+}
+
+/* Giro sutil del icono del toggle de tema al pasar el cursor. */
+[data-theme-toggle] .bi { transition: transform .25s ease; }
+[data-theme-toggle]:hover .bi { transform: rotate(-15deg) scale(1.06); }
+
+/* Avatar de iniciales para el menú de usuario (gradiente de marca). */
+.avatar-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 999px;
+    background-color: var(--finlia-primary);
+    background-image: linear-gradient(135deg, var(--finlia-primary), rgba(var(--finlia-primary-rgb), 0.65));
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 0 6px 16px -6px rgba(var(--finlia-primary-rgb), 0.7);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+.avatar-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -6px rgba(var(--finlia-primary-rgb), 0.85);
+}
+.avatar-btn:focus-visible {
+    outline: 2px solid var(--finlia-primary);
+    outline-offset: 2px;
+}
+.avatar-btn:active {
+    transform: scale(0.96);
+}
+
+/* =============================================================
+   Glassmorphism ("liquid glass")
+   ============================================================= */
+.glass,
+.glass-card,
+.glass-nav {
+    background-color: var(--finlia-surface);
+    -webkit-backdrop-filter: blur(var(--finlia-blur)) saturate(160%);
+    backdrop-filter: blur(var(--finlia-blur)) saturate(160%);
+    border: 1px solid var(--finlia-glass-border);
+    box-shadow: var(--finlia-shadow);
+}
+
+.glass-card {
+    border-radius: var(--finlia-radius);
+}
+
+/* Brillo superior tipo "edge" del vidrio. */
+.glass-card::before,
+.glass-nav::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 40%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+/* Las tarjetas son vidrio por defecto (app-like). */
+.card {
+    position: relative;
+    background-color: var(--finlia-surface);
+    -webkit-backdrop-filter: blur(var(--finlia-blur)) saturate(160%);
+    backdrop-filter: blur(var(--finlia-blur)) saturate(160%);
+    border: 1px solid var(--finlia-glass-border);
+    border-radius: var(--finlia-radius);
+    box-shadow: var(--finlia-shadow);
+    color: var(--finlia-text);
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid var(--finlia-border);
+    color: var(--finlia-text);
+}
+
+/* Fallback si el navegador no soporta backdrop-filter: fondo sólido legible. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass,
+    .glass-card,
+    .glass-nav,
+    .card,
+    .finlia-sidebar {
+        background-color: var(--finlia-surface-solid) !important;
+    }
+}
+
+/* =============================================================
+   Layout autenticado: navbar, sidebar, footer
+   ============================================================= */
+.glass-nav {
+    background-color: var(--finlia-nav-bg);
+    border-bottom: 1px solid var(--finlia-glass-border);
+}
+
+.glass-nav .navbar-brand,
+.glass-nav .navbar-nav .nav-link {
+    color: var(--finlia-text);
+}
+
+.glass-nav .navbar-brand {
+    font-weight: 600;
+}
+
+/* Sidebar: vidrio adaptable al tema (en offcanvas para móvil, columna en escritorio). */
 .finlia-sidebar {
+    --bs-offcanvas-bg: transparent;
+    --bs-offcanvas-color: var(--finlia-text);
     width: var(--finlia-sidebar-width);
     min-height: calc(100vh - 56px);
+    background-color: var(--finlia-surface);
+    -webkit-backdrop-filter: blur(var(--finlia-blur)) saturate(160%);
+    backdrop-filter: blur(var(--finlia-blur)) saturate(160%);
+    border-right: 1px solid var(--finlia-glass-border);
+    color: var(--finlia-text);
+}
+
+.finlia-sidebar.offcanvas {
+    background-color: var(--finlia-nav-bg);
 }
 
 .finlia-sidebar .nav-link {
-    color: rgba(255, 255, 255, 0.8);
-    border-radius: 0.5rem;
-    padding: 0.5rem 0.75rem;
+    color: var(--finlia-text-muted);
+    border-radius: var(--finlia-radius-sm);
+    padding: 0.6rem 0.8rem;
     margin-bottom: 0.15rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .finlia-sidebar .nav-link:hover {
-    color: #fff;
-    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--finlia-text);
+    background-color: rgba(var(--finlia-primary-rgb), 0.10);
 }
 
 .finlia-sidebar .nav-link.active {
-    color: #fff;
-    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--finlia-primary);
+    background-color: rgba(var(--finlia-primary-rgb), 0.14);
+    font-weight: 600;
+}
+
+.finlia-sidebar .nav-link.disabled {
+    opacity: 0.5;
 }
 
 .finlia-sidebar .nav-link i {
@@ -82,8 +319,56 @@ body {
     text-align: center;
 }
 
+.finlia-sidebar .btn-close {
+    filter: var(--finlia-btn-close-filter, none);
+}
+[data-bs-theme="dark"] { --finlia-btn-close-filter: invert(1) grayscale(100%) brightness(200%); }
+
 @media (max-width: 991.98px) {
     .finlia-sidebar {
         min-height: auto;
     }
+}
+
+/* Footer translúcido. */
+.app-footer {
+    background-color: transparent;
+    border-top: 1px solid var(--finlia-border);
+    color: var(--finlia-text-muted);
+}
+
+/* =============================================================
+   Toggle de tema (claro/oscuro)
+   El icono se muestra por CSS según data-bs-theme -> sin parpadeo.
+   ============================================================= */
+[data-bs-theme="light"] .show-in-dark { display: none !important; }
+[data-bs-theme="dark"]  .show-in-light { display: none !important; }
+
+/* Toggle flotante para pantallas sin navbar (auth). */
+.theme-toggle-floating {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1030;
+}
+
+/* =============================================================
+   Ajustes finos
+   ============================================================= */
+.display-6, .h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
+    color: var(--finlia-text);
+}
+
+.text-muted {
+    color: var(--finlia-text-muted) !important;
+}
+
+.dropdown-menu {
+    border-radius: var(--finlia-radius-sm);
+    border: 1px solid var(--finlia-border);
+    box-shadow: var(--finlia-shadow);
+}
+
+.form-control, .form-select {
+    border-radius: var(--finlia-radius-sm);
 }

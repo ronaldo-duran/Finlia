@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,36 +7,51 @@
 
     <title>{{ $title ?? 'Panel' }} · Finlia</title>
 
+    {{-- Anti-FOUC: fija el tema antes del primer paint --}}
+    @include('layouts.partials.theme-head')
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-    {{-- ===================== Navbar ===================== --}}
-    <nav class="navbar navbar-dark bg-finlia shadow-sm sticky-top">
+    {{-- ===================== Navbar (glass) ===================== --}}
+    <nav class="navbar navbar-expand glass-nav sticky-top py-2">
         <div class="container-fluid">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-1">
                 {{-- Botón hamburguesa: abre el sidebar en móvil --}}
-                <button class="btn btn-sm btn-outline-light d-lg-none" type="button"
+                <button class="btn-icon d-lg-none" type="button"
                         data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Abrir menú">
-                    <i class="bi bi-list fs-5"></i>
+                    <i class="bi bi-list"></i>
                 </button>
                 <a class="navbar-brand mb-0 d-flex align-items-center gap-2" href="{{ route('dashboard') }}">
-                    <i class="bi bi-wallet2"></i>
-                    <span class="fw-semibold">Finlia</span>
+                    <i class="bi bi-wallet2 text-finlia"></i>
+                    <span>Finlia</span>
                 </a>
             </div>
 
-            {{-- Menú de usuario --}}
-            <ul class="navbar-nav flex-row align-items-center gap-2">
+            {{-- Acciones a la derecha --}}
+            <ul class="navbar-nav flex-row align-items-center gap-1">
                 @auth
-                    <li class="nav-item dropdown">
-                        <button class="btn btn-sm btn-outline-light dropdown-toggle d-flex align-items-center gap-2"
-                                type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle"></i>
-                            <span class="d-none d-sm-inline">{{ Auth::user()->name }}</span>
+                    {{-- Toggle de tema (claro/oscuro) --}}
+                    <li class="nav-item">
+                        <button type="button" class="btn-icon" data-theme-toggle aria-label="Cambiar tema">
+                            <i class="bi bi-sun-fill show-in-dark"></i>
+                            <i class="bi bi-moon-stars-fill show-in-light"></i>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow">
-                            <li><h6 class="dropdown-header">{{ Auth::user()->email }}</h6></li>
+                    </li>
+
+                    {{-- Menú de usuario --}}
+                    <li class="nav-item dropdown">
+                        @php
+                            $initials = collect(explode(' ', trim(Auth::user()->name)))
+                                ->take(2)->map(fn($w) => strtoupper(substr($w, 0, 1)))->implode('');
+                        @endphp
+                        <button class="avatar-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menú de usuario">
+                            {{ $initials }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><h6 class="dropdown-header">{{ Auth::user()->name }}</h6></li>
+                            <li><span class="dropdown-item-text small text-muted">{{ Auth::user()->email }}</span></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
@@ -56,13 +71,13 @@
     {{-- ===================== Cuerpo: sidebar + contenido ===================== --}}
     <div class="d-flex flex-grow-1">
         {{-- Sidebar: offcanvas en móvil, columna fija en escritorio --}}
-        <aside class="offcanvas-lg offcanvas-start bg-finlia text-white finlia-sidebar border-0"
+        <aside class="offcanvas-lg offcanvas-start finlia-sidebar border-0"
                tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
             <div class="offcanvas-header d-lg-none">
                 <h5 class="offcanvas-title" id="sidebarLabel">
-                    <i class="bi bi-wallet2 me-1"></i> Finlia
+                    <i class="bi bi-wallet2 me-1 text-finlia"></i> Finlia
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Cerrar"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Cerrar"></button>
             </div>
             <div class="offcanvas-body py-3">
                 <ul class="nav flex-column">
@@ -101,8 +116,8 @@
     </div>
 
     {{-- ===================== Footer ===================== --}}
-    <footer class="footer mt-auto py-3 bg-white border-top">
-        <div class="container-fluid text-center text-muted small">
+    <footer class="app-footer mt-auto py-3">
+        <div class="container-fluid text-center small">
             Finlia · Finanzas familiares &middot;
             <span class="text-finlia fw-semibold">COP</span> &middot;
             &copy; {{ date('Y') }}
