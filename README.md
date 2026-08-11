@@ -1,58 +1,115 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<div align="center">
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# 💰 Finami
 
-## About Laravel
+**Gestión de finanzas personales y familiares**
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+*¿Cuánto dinero puedo gastar realmente sin comprometer mis obligaciones?*
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+</div>
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+Finami es una aplicación web que ayuda a personas y familias a registrar ingresos y gastos, controlar deudas y tarjetas, crear presupuestos y metas de ahorro, y —sobre todo— **calcular cuánto dinero tienen realmente disponible** para gastar. Pensada para usarse a diario desde el celular.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+> 🇨🇴 Dirigida inicialmente al mercado colombiano (COP, español). Diseñada para permitir futura expansión a otras monedas y países.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## ✨ Funcionalidades (roadmap)
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- Registro rápido de ingresos y gastos (mobile-first)
+- Cuentas, medios de pago y tarjetas de crédito
+- Categorización de movimientos
+- Presupuestos por categoría y cálculo de **dinero disponible**
+- Gastos recurrentes y obligaciones futuras (SOAT, seguros, matrículas…)
+- Deudas y tarjetas de crédito
+- Metas de ahorro (con fondo de emergencia)
+- Dashboard y reportes con gráficos
+- Recordatorios de pagos próximos
+- Hogares compartidos con roles e invitaciones
 
-## Agentic Development
+El estado detallado de cada funcionalidad está en [docs/ROADMAP.md](docs/ROADMAP.md).
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## 🧱 Stack
+
+- **Laravel 13.8** · **PHP 8.3**
+- **MySQL/MariaDB** (SQLite para tests)
+- **Blade** · **Bootstrap 5** · **JavaScript vanilla** · **Chart.js**
+- **Eloquent** · Migrations · Seeders · Factories
+- **PHPUnit**
+- Despliegue: **Hostinger** (hosting compartido)
+
+## 🚀 Instalación local
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/<usuario>/finami.git
+cd finami
+composer install
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Configura la base de datos MySQL en `.env` (ver [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) para los valores exactos y la configuración de Colombia):
 
-## Contributing
+```env
+APP_NAME=Finami
+APP_TIMEZONE=America/Bogota
+APP_LOCALE=es
+APP_FAKER_LOCALE=es_CO
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=finami
+DB_USERNAME=tu_usuario
+DB_PASSWORD=tu_password
+```
 
-## Code of Conduct
+Luego:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+php artisan migrate --seed
+npm install
+npm run build
+php artisan serve
+```
 
-## Security Vulnerabilities
+Abre `http://localhost:8000`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 🧪 Tests
 
-## License
+```bash
+composer test          # PHPUnit con SQLite en memoria
+php artisan test --filter=HouseholdTest
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 📦 Despliegue
+
+El despliegue se hace en **Hostinger** (hosting compartido). Instrucciones paso a paso, cron y optimizaciones en [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+## 🔒 Seguridad
+
+Este proyecto maneja **información financiera sensible** y es un repositorio **público**. La política de seguridad completa está en [docs/SECURITY.md](docs/SECURITY.md). Lo esencial:
+
+- Aislamiento estricto por hogar (multi-tenant).
+- `DECIMAL` para dinero (nunca `FLOAT`).
+- Policies + Form Requests en cada operación.
+- Nunca se commitean `.env`, credenciales ni datos reales.
+
+Para reportar una vulnerabilidad, abre un issue privado o contacta al maintainer. **No abras un issue público** con detalles explotables.
+
+## 📚 Documentación
+
+- [CLAUDE.md](CLAUDE.md) — Manual operativo para IA
+- [AGENTS.md](AGENTS.md) — Reglas de agentes
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — Arquitectura
+- [docs/DATA_MODEL.md](docs/DATA_MODEL.md) — Modelo de datos
+- [docs/SECURITY.md](docs/SECURITY.md) — Seguridad
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Despliegue
+- [docs/ROADMAP.md](docs/ROADMAP.md) — Roadmap de épicas
+- [docs/CONVENTIONS.md](docs/CONVENTIONS.md) — Convenciones
+- [docs/DECISIONS.md](docs/DECISIONS.md) — Decisiones (ADR)
+- `scrum/epics/` — Épicas detalladas
+
+## 📄 Licencia
+
+MIT. Consulta el archivo [LICENSE](LICENSE).
