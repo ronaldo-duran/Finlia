@@ -1,9 +1,89 @@
-@import 'tailwindcss';
+/*
+|----------------------------------------------------------------------
+| Finami — Hoja de estilos principal
+|----------------------------------------------------------------------
+| Bootstrap 5 (CSS precompilado vía npm) + Bootstrap Icons + una
+| capa mínima de tema. Sin Tailwind (ADR-0004). El theming avanzado
+| (variables SASS de marca) se aplaza a la Épica 10 (UX).
+*/
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/* ---- Base ---- */
+:root {
+    /* Marca Finami: verde "dinero" como acento principal. */
+    --finami-primary: #0f766e;
+    --finami-primary-rgb: 15, 118, 110;
+    --finami-bg: #f5f7f9;
+    --finami-sidebar-width: 260px;
+}
+
+body {
+    background-color: var(--finami-bg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Botón primario de marca (sustituye al azul por defecto de Bootstrap). */
+.btn-finami {
+    --bs-btn-bg: var(--finami-primary);
+    --bs-btn-border-color: var(--finami-primary);
+    --bs-btn-hover-bg: #0c615a;
+    --bs-btn-hover-border-color: #0c615a;
+    --bs-btn-active-bg: #0a544e;
+    --bs-btn-active-border-color: #0a544e;
+    --bs-btn-disabled-bg: var(--finami-primary);
+    --bs-btn-disabled-border-color: var(--finami-primary);
+    color: #fff;
+}
+
+.text-finami {
+    color: var(--finami-primary) !important;
+}
+
+.bg-finami {
+    background-color: var(--finami-primary) !important;
+}
+
+/* Tinte suave del color de marca (fondos claros de tarjetas/icons). */
+.bg-finami-subtle {
+    background-color: rgba(var(--finami-primary-rgb), 0.12) !important;
+}
+
+.border-finami {
+    border-color: rgba(var(--finami-primary-rgb), 0.25) !important;
+}
+
+/* ---- Layout autenticado ---- */
+.finami-sidebar {
+    width: var(--finami-sidebar-width);
+    min-height: calc(100vh - 56px);
+}
+
+.finami-sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.15rem;
+}
+
+.finami-sidebar .nav-link:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.finami-sidebar .nav-link.active {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.finami-sidebar .nav-link i {
+    width: 1.25rem;
+    text-align: center;
+}
+
+@media (max-width: 991.98px) {
+    .finami-sidebar {
+        min-height: auto;
+    }
 }

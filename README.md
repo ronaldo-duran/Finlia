@@ -75,6 +75,9 @@ php artisan serve
 
 Abre `http://localhost:8000`.
 
+> 🔑 **Usuario de demostración** (creado por el seeder con datos falsos):
+> correo `demo@finami.test` · contraseña `finami123`.
+
 ## 🧪 Tests
 
 ```bash

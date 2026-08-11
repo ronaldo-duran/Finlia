@@ -6,7 +6,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 
 | # | Épica | Estado | Depende de |
 |---|---|---|---|
-| 1 | Fundación y configuración del proyecto | 🔴 | — |
+| 1 | Fundación y configuración del proyecto | 🟢 | — |
 | 2 | Hogares, familias y miembros | 🔴 | 1 |
 | 3 | Cuentas, ingresos y gastos | 🔴 | 2 |
 | 4 | Presupuestos y dinero disponible | 🔴 | 3 |

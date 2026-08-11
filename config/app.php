@@ -65,7 +65,8 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // Colombia: toda la app opera en hora de Bogotá.
+    'timezone' => 'America/Bogota',
 
     /*
     |--------------------------------------------------------------------------
@@ -78,11 +79,12 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    // UI, mensajes y faker en español (Colombia).
+    'locale' => env('APP_LOCALE', 'es'),
 
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'es'),
 
-    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+    'faker_locale' => env('APP_FAKER_LOCALE', 'es_CO'),
 
     /*
     |--------------------------------------------------------------------------

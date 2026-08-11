@@ -11,15 +11,17 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Seed de la aplicación con datos FALSOS de demostración.
+     * NUNCA usar datos financieros reales aquí.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // Usuario de demostración para desarrollo local.
+        // El cast 'hashed' del modelo cifra la contraseña al asignarla.
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Usuario Demo Finami',
+            'email' => 'demo@finami.test',
+            'password' => 'finami123',
         ]);
     }
 }
