@@ -19,9 +19,9 @@ class DatabaseSeeder extends Seeder
         // Usuario de demostración para desarrollo local.
         // El cast 'hashed' del modelo cifra la contraseña al asignarla.
         User::factory()->create([
-            'name' => 'Usuario Demo Finami',
-            'email' => 'demo@finami.test',
-            'password' => 'finami123',
+            'name' => 'Usuario Demo Finlia',
+            'email' => 'demo@finlia.test',
+            'password' => 'finlia123',
         ]);
     }
 }

@@ -1,8 +1,8 @@
 # AGENTS.md — Reglas de operación para agentes de IA
 
-> Este archivo rige el comportamiento de **todo agente de IA** (Claude Code, Cursor, Copilot, subagentes propios) que trabaje en Finami. Complementa a [CLAUDE.md](CLAUDE.md) y a [docs/SECURITY.md](docs/SECURITY.md).
+> Este archivo rige el comportamiento de **todo agente de IA** (Claude Code, Cursor, Copilot, subagentes propios) que trabaje en Finlia. Complementa a [CLAUDE.md](CLAUDE.md) y a [docs/SECURITY.md](docs/SECURITY.md).
 
-Finami maneja **dinero real de familias** y será un **repositorio público** que luego se monetiza. Un error de seguridad o un secreto filtrado puede tener consecuencias graves. Por eso, las reglas de abajo son **obligatorias y no negociables**.
+Finlia maneja **dinero real de familias** y será un **repositorio público** que luego se monetiza. Un error de seguridad o un secreto filtrado puede tener consecuencias graves. Por eso, las reglas de abajo son **obligatorias y no negociables**.
 
 ---
 

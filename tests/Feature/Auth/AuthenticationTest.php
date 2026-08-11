@@ -21,12 +21,12 @@ class AuthenticationTest extends TestCase
     public function test_usuario_puede_iniciar_sesion_con_credenciales_validas(): void
     {
         $user = User::factory()->create([
-            'password' => 'finami123',
+            'password' => 'finlia123',
         ]);
 
         $response = $this->post(route('login'), [
             'email' => $user->email,
-            'password' => 'finami123',
+            'password' => 'finlia123',
         ]);
 
         $this->assertAuthenticatedAs($user);
@@ -36,7 +36,7 @@ class AuthenticationTest extends TestCase
     public function test_no_se_puede_iniciar_sesion_con_contrasena_incorrecta(): void
     {
         $user = User::factory()->create([
-            'password' => 'finami123',
+            'password' => 'finlia123',
         ]);
 
         $response = $this->post(route('login'), [
@@ -71,7 +71,7 @@ class AuthenticationTest extends TestCase
     {
         $response = $this->post(route('login'), [
             'email' => '',
-            'password' => 'finami123',
+            'password' => 'finlia123',
         ]);
 
         $response->assertSessionHasErrors('email');

@@ -1,4 +1,4 @@
-# Arquitectura — Finami
+# Arquitectura — Finlia
 
 > Cómo está organizada la aplicación y por qué. Lee esto antes de añadir nada nuevo.
 
@@ -97,7 +97,7 @@ routes/
 
 ## 4. Multi-tenancy por hogar (patrón central)
 
-Finami **no** es un SaaS multi-tenant por base de datos ni por dominio. Es **multi-tenant por fila**: todas las tablas financieras tienen `household_id` y el aislamiento se hace en la aplicación.
+Finlia **no** es un SaaS multi-tenant por base de datos ni por dominio. Es **multi-tenant por fila**: todas las tablas financieras tienen `household_id` y el aislamiento se hace en la aplicación.
 
 ### Mecanismo de aislamiento (3 capas, defensa en profundidad)
 

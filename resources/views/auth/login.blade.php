@@ -31,7 +31,7 @@
         </div>
 
         <div class="d-grid">
-            <button type="submit" class="btn btn-finami py-2">
+            <button type="submit" class="btn btn-finlia py-2">
                 <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
             </button>
         </div>
@@ -43,7 +43,7 @@
         <a href="{{ route('password.request') }}" class="text-decoration-none">¿Olvidaste tu contraseña?</a>
         <div class="mt-2">
             ¿No tienes cuenta?
-            <a href="{{ route('register') }}" class="text-decoration-none fw-semibold text-finami">Regístrate</a>
+            <a href="{{ route('register') }}" class="text-decoration-none fw-semibold text-finlia">Regístrate</a>
         </div>
     </div>
 @endsection

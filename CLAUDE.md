@@ -1,13 +1,13 @@
-# CLAUDE.md — Finami
+# CLAUDE.md — Finlia
 
 > Manual operativo para Claude Code (y cualquier agente de IA) que trabaje en este repositorio.
 > Lee este archivo **completo** antes de escribir una sola línea de código.
 
-Finami es una aplicación web de **gestión de finanzas personales y familiares** dirigida al mercado colombiano. Se desarrolla por **épicas** (ver `scrum/epics/`). Este documento define cómo se trabaja; los detalles profundos viven en `docs/`.
+Finlia es una aplicación web de **gestión de finanzas personales y familiares** dirigida al mercado colombiano. Se desarrolla por **épicas** (ver `scrum/epics/`). Este documento define cómo se trabaja; los detalles profundos viven en `docs/`.
 
 ---
 
-## 1. Qué es Finami
+## 1. Qué es Finlia
 
 Una app que ayuda a una persona o familia a responder:
 

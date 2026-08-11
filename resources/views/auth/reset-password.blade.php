@@ -37,7 +37,7 @@
         />
 
         <div class="d-grid">
-            <button type="submit" class="btn btn-finami py-2">
+            <button type="submit" class="btn btn-finlia py-2">
                 <i class="bi bi-shield-lock me-1"></i> Restablecer contraseña
             </button>
         </div>

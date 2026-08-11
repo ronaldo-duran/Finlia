@@ -1,4 +1,4 @@
-# Decisiones de Arquitectura (ADR) — Finami
+# Decisiones de Arquitectura (ADR) — Finlia
 
 > Registro de decisiones significativas. Cada ADR: contexto → decisión → consecuencias → estado. Las marcadas **PENDIENTE** requieren confirmación antes de implementar la épica correspondiente.
 

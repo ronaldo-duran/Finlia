@@ -1,6 +1,6 @@
-# Despliegue — Finami en Hostinger
+# Despliegue — Finlia en Hostinger
 
-> Guía para desplegar Finami en **hosting compartido de Hostinger**. El objetivo: cero procesos persistentes obligatorios; todo vía PHP-FPM + cron.
+> Guía para desplegar Finlia en **hosting compartido de Hostinger**. El objetivo: cero procesos persistentes obligatorios; todo vía PHP-FPM + cron.
 
 ## 1. Requisitos del entorno
 
@@ -15,8 +15,8 @@
 Hostinger sirve desde `public_html`. Laravel sirve desde `public/`. Dos opciones:
 
 **Opción A (recomendada): dominio apunta a `public/`**
-- Sube el proyecto a `domains/tudominio/finami/` (fuera de `public_html`).
-- En el panel, apunta el **document root** del dominio a `.../finami/public`.
+- Sube el proyecto a `domains/tudominio/finlia/` (fuera de `public_html`).
+- En el panel, apunta el **document root** del dominio a `.../finlia/public`.
 - Así `storage/`, `.env`, `app/` quedan **fuera** de la raíz pública. ✅
 
 **Opción B (si no se puede cambiar el document root)**
@@ -30,8 +30,8 @@ Hostinger sirve desde `public_html`. Laravel sirve desde `public/`. Dos opciones
 ```bash
 # En el servidor
 cd domains/tudominio/        # o donde alojes el proyecto
-git clone https://github.com/<usuario>/finami.git
-cd finami
+git clone https://github.com/<usuario>/finlia.git
+cd finlia
 
 composer install --no-dev --optimize-autoloader
 
@@ -49,7 +49,7 @@ npm run build                        # genera public/build
 ## 4. `.env` de producción (valores clave)
 
 ```env
-APP_NAME=Finami
+APP_NAME=Finlia
 APP_ENV=production
 APP_KEY=            # generada con php artisan key:generate
 APP_DEBUG=false
@@ -66,8 +66,8 @@ LOG_STACK=single        # o 'stderr'/'syslog' según Hostinger; archivo en stora
 DB_CONNECTION=mysql
 DB_HOST=localhost       # Hostinger suele usar localhost
 DB_PORT=3306
-DB_DATABASE=u123456_finami
-DB_USERNAME=u123456_finami
+DB_DATABASE=u123456_finlia
+DB_USERNAME=u123456_finlia
 DB_PASSWORD=contraseña_fuerte_y_secreta
 
 SESSION_DRIVER=database
@@ -95,13 +95,13 @@ php artisan event:cache
 Hostinger → **Advanced → Cron Jobs**. Ejecutar cada minuto:
 
 ```bash
-* * * * * cd /home/u123456/domains/tudominio/finami && /usr/local/bin/php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /home/u123456/domains/tudominio/finlia && /usr/local/bin/php artisan schedule:run >> /dev/null 2>&1
 ```
 
 Para **colas** (si se usan) sin worker persistente, procesar dentro del scheduler o con un cron dedicado:
 
 ```bash
-* * * * * cd .../finami && /usr/local/bin/php artisan queue:work --stop-when-empty --tries=1 >> /dev/null 2>&1
+* * * * * cd .../finlia && /usr/local/bin/php artisan queue:work --stop-when-empty --tries=1 >> /dev/null 2>&1
 ```
 
 > **Principio**: nada que requiera un proceso **24/7**. Si una función lo necesita, rediseñarla para cron/cola programada. Ver Épica 9.
@@ -130,7 +130,7 @@ chown -R <usuario>:<grupo> storage bootstrap/cache
 
 Para updates manuales:
 ```bash
-cd .../finami
+cd .../finlia
 git pull origin main
 composer install --no-dev --optimize-autoloader
 php artisan migrate --force

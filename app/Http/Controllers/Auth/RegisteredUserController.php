@@ -42,6 +42,6 @@ class RegisteredUserController extends Controller
 
         return redirect()
             ->route('dashboard')
-            ->with('status', __('¡Bienvenido a Finami, :name!', ['name' => $user->name]));
+            ->with('status', __('¡Bienvenido a Finlia, :name!', ['name' => $user->name]));
     }
 }

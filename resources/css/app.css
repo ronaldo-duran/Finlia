@@ -1,6 +1,6 @@
 /*
 |----------------------------------------------------------------------
-| Finami — Hoja de estilos principal
+| Finlia — Hoja de estilos principal
 |----------------------------------------------------------------------
 | Bootstrap 5 (CSS precompilado vía npm) + Bootstrap Icons + una
 | capa mínima de tema. Sin Tailwind (ADR-0004). El theming avanzado
@@ -12,78 +12,78 @@
 
 /* ---- Base ---- */
 :root {
-    /* Marca Finami: verde "dinero" como acento principal. */
-    --finami-primary: #0f766e;
-    --finami-primary-rgb: 15, 118, 110;
-    --finami-bg: #f5f7f9;
-    --finami-sidebar-width: 260px;
+    /* Marca Finlia: verde "dinero" como acento principal. */
+    --finlia-primary: #0f766e;
+    --finlia-primary-rgb: 15, 118, 110;
+    --finlia-bg: #f5f7f9;
+    --finlia-sidebar-width: 260px;
 }
 
 body {
-    background-color: var(--finami-bg);
+    background-color: var(--finlia-bg);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* Botón primario de marca (sustituye al azul por defecto de Bootstrap). */
-.btn-finami {
-    --bs-btn-bg: var(--finami-primary);
-    --bs-btn-border-color: var(--finami-primary);
+.btn-finlia {
+    --bs-btn-bg: var(--finlia-primary);
+    --bs-btn-border-color: var(--finlia-primary);
     --bs-btn-hover-bg: #0c615a;
     --bs-btn-hover-border-color: #0c615a;
     --bs-btn-active-bg: #0a544e;
     --bs-btn-active-border-color: #0a544e;
-    --bs-btn-disabled-bg: var(--finami-primary);
-    --bs-btn-disabled-border-color: var(--finami-primary);
+    --bs-btn-disabled-bg: var(--finlia-primary);
+    --bs-btn-disabled-border-color: var(--finlia-primary);
     color: #fff;
 }
 
-.text-finami {
-    color: var(--finami-primary) !important;
+.text-finlia {
+    color: var(--finlia-primary) !important;
 }
 
-.bg-finami {
-    background-color: var(--finami-primary) !important;
+.bg-finlia {
+    background-color: var(--finlia-primary) !important;
 }
 
 /* Tinte suave del color de marca (fondos claros de tarjetas/icons). */
-.bg-finami-subtle {
-    background-color: rgba(var(--finami-primary-rgb), 0.12) !important;
+.bg-finlia-subtle {
+    background-color: rgba(var(--finlia-primary-rgb), 0.12) !important;
 }
 
-.border-finami {
-    border-color: rgba(var(--finami-primary-rgb), 0.25) !important;
+.border-finlia {
+    border-color: rgba(var(--finlia-primary-rgb), 0.25) !important;
 }
 
 /* ---- Layout autenticado ---- */
-.finami-sidebar {
-    width: var(--finami-sidebar-width);
+.finlia-sidebar {
+    width: var(--finlia-sidebar-width);
     min-height: calc(100vh - 56px);
 }
 
-.finami-sidebar .nav-link {
+.finlia-sidebar .nav-link {
     color: rgba(255, 255, 255, 0.8);
     border-radius: 0.5rem;
     padding: 0.5rem 0.75rem;
     margin-bottom: 0.15rem;
 }
 
-.finami-sidebar .nav-link:hover {
+.finlia-sidebar .nav-link:hover {
     color: #fff;
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-.finami-sidebar .nav-link.active {
+.finlia-sidebar .nav-link.active {
     color: #fff;
     background-color: rgba(255, 255, 255, 0.15);
 }
 
-.finami-sidebar .nav-link i {
+.finlia-sidebar .nav-link i {
     width: 1.25rem;
     text-align: center;
 }
 
 @media (max-width: 991.98px) {
-    .finami-sidebar {
+    .finlia-sidebar {
         min-height: auto;
     }
 }

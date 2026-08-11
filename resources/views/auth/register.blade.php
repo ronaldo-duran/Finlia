@@ -44,7 +44,7 @@
         />
 
         <div class="d-grid">
-            <button type="submit" class="btn btn-finami py-2">
+            <button type="submit" class="btn btn-finlia py-2">
                 <i class="bi bi-person-plus me-1"></i> Crear cuenta
             </button>
         </div>
@@ -54,6 +54,6 @@
 @section('actions')
     <div class="text-center mt-3 small">
         ¿Ya tienes cuenta?
-        <a href="{{ route('login') }}" class="text-decoration-none fw-semibold text-finami">Inicia sesión</a>
+        <a href="{{ route('login') }}" class="text-decoration-none fw-semibold text-finlia">Inicia sesión</a>
     </div>
 @endsection

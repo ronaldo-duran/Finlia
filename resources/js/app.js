@@ -1,6 +1,6 @@
 /*
 |----------------------------------------------------------------------
-| Finami — Punto de entrada JS
+| Finlia — Punto de entrada JS
 |----------------------------------------------------------------------
 | Bootstrap 5 (bundle con Popper incluido) activa los componentes
 | interactivos: dropdowns, offcanvas (menú móvil), collapse, etc.

@@ -1,11 +1,11 @@
 ---
 name: implement-epic
-description: Procedimiento para implementar una épica de Finami de principio a fin, siguiendo el protocolo de CLAUDE.md (regla de los 9 pasos) y la Definition of Done de AGENTS.md. Invócala cuando el usuario pida iniciar, implementar o continuar una épica concreta (p. ej. "implementa la épica 3", "continúa con hogares"). Recibe el número de épica como argumento.
+description: Procedimiento para implementar una épica de Finlia de principio a fin, siguiendo el protocolo de CLAUDE.md (regla de los 9 pasos) y la Definition of Done de AGENTS.md. Invócala cuando el usuario pida iniciar, implementar o continuar una épica concreta (p. ej. "implementa la épica 3", "continúa con hogares"). Recibe el número de épica como argumento.
 ---
 
 # Skill: implement-epic
 
-Implementa una épica de Finami de forma disciplinada. **Argumento esperado**: número de épica (1–13) o su nombre.
+Implementa una épica de Finlia de forma disciplinada. **Argumento esperado**: número de épica (1–13) o su nombre.
 
 ## 1. Leer y contextualizar
 

@@ -11,7 +11,7 @@
                 <i class="bi bi-calendar3 me-1"></i> {{ ucfirst($fechaActual) }}
             </p>
         </div>
-        <span class="badge bg-finami-subtle text-finami border border-finami rounded-pill px-3 py-2">
+        <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2">
             <i class="bi bi-currency-exchange me-1"></i> Pesos colombianos (COP)
         </span>
     </div>
@@ -39,7 +39,7 @@
             <div class="col-12 col-sm-6 col-xl-3">
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="card-body d-flex align-items-center gap-3">
-                        <div class="rounded-3 bg-finami-subtle text-finami d-flex align-items-center justify-content-center"
+                        <div class="rounded-3 bg-finlia-subtle text-finlia d-flex align-items-center justify-content-center"
                              style="width: 48px; height: 48px;">
                             <i class="bi {{ $kpi['icon'] }} fs-4"></i>
                         </div>

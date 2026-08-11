@@ -1,6 +1,6 @@
 ---
 name: security-checklist
-description: Verifica que los cambios recientes de Finami cumplen la política de seguridad (aislamiento multi-hogar, mass assignment, autorización, dinero, secretos). Úsala antes de considerar una épica terminada o de un merge a main. Lee docs/SECURITY.md y comprueba cada ítem contra el código real; reporta solo hallazgos verificados.
+description: Verifica que los cambios recientes de Finlia cumplen la política de seguridad (aislamiento multi-hogar, mass assignment, autorización, dinero, secretos). Úsala antes de considerar una épica terminada o de un merge a main. Lee docs/SECURITY.md y comprueba cada ítem contra el código real; reporta solo hallazgos verificados.
 ---
 
 # Skill: security-checklist

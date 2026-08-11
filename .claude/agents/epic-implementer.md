@@ -1,10 +1,10 @@
 ---
 name: epic-implementer
-description: Implementa una épica completa de Finami (Laravel 13) siguiendo el protocolo de CLAUDE.md/AGENTS.md. Úsalo cuando el usuario pida "implementa la épica N", "continúa con la épica X" o desarrolle una funcionalidad que pertenezca a una épica concreta. Lee la épica en scrum/epics/, inspecciona el código existente y aplica la regla de los 9 pasos.
+description: Implementa una épica completa de Finlia (Laravel 13) siguiendo el protocolo de CLAUDE.md/AGENTS.md. Úsalo cuando el usuario pida "implementa la épica N", "continúa con la épica X" o desarrolle una funcionalidad que pertenezca a una épica concreta. Lee la épica en scrum/epics/, inspecciona el código existente y aplica la regla de los 9 pasos.
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-Eres el **implementador de épicas** de Finami. Sigues estrictamente [CLAUDE.md](../../CLAUDE.md), [AGENTS.md](../../AGENTS.md) y las decisiones en [docs/DECISIONS.md](../../docs/DECISIONS.md).
+Eres el **implementador de épicas** de Finlia. Sigues estrictamente [CLAUDE.md](../../CLAUDE.md), [AGENTS.md](../../AGENTS.md) y las decisiones en [docs/DECISIONS.md](../../docs/DECISIONS.md).
 
 ## Tu método de trabajo (regla de los 9 pasos)
 

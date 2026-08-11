@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Panel' }} · Finami</title>
+    <title>{{ $title ?? 'Panel' }} · Finlia</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="d-flex flex-column min-vh-100">
 
     {{-- ===================== Navbar ===================== --}}
-    <nav class="navbar navbar-dark bg-finami shadow-sm sticky-top">
+    <nav class="navbar navbar-dark bg-finlia shadow-sm sticky-top">
         <div class="container-fluid">
             <div class="d-flex align-items-center gap-2">
                 {{-- Botón hamburguesa: abre el sidebar en móvil --}}
@@ -22,7 +22,7 @@
                 </button>
                 <a class="navbar-brand mb-0 d-flex align-items-center gap-2" href="{{ route('dashboard') }}">
                     <i class="bi bi-wallet2"></i>
-                    <span class="fw-semibold">Finami</span>
+                    <span class="fw-semibold">Finlia</span>
                 </a>
             </div>
 
@@ -56,11 +56,11 @@
     {{-- ===================== Cuerpo: sidebar + contenido ===================== --}}
     <div class="d-flex flex-grow-1">
         {{-- Sidebar: offcanvas en móvil, columna fija en escritorio --}}
-        <aside class="offcanvas-lg offcanvas-start bg-finami text-white finami-sidebar border-0"
+        <aside class="offcanvas-lg offcanvas-start bg-finlia text-white finlia-sidebar border-0"
                tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
             <div class="offcanvas-header d-lg-none">
                 <h5 class="offcanvas-title" id="sidebarLabel">
-                    <i class="bi bi-wallet2 me-1"></i> Finami
+                    <i class="bi bi-wallet2 me-1"></i> Finlia
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Cerrar"></button>
             </div>
@@ -103,8 +103,8 @@
     {{-- ===================== Footer ===================== --}}
     <footer class="footer mt-auto py-3 bg-white border-top">
         <div class="container-fluid text-center text-muted small">
-            Finami · Finanzas familiares &middot;
-            <span class="text-finami fw-semibold">COP</span> &middot;
+            Finlia · Finanzas familiares &middot;
+            <span class="text-finlia fw-semibold">COP</span> &middot;
             &copy; {{ date('Y') }}
         </div>
     </footer>

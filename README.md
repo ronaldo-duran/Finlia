@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💰 Finami
+# 💰 Finlia
 
 **Gestión de finanzas personales y familiares**
 
@@ -10,7 +10,7 @@
 
 ---
 
-Finami es una aplicación web que ayuda a personas y familias a registrar ingresos y gastos, controlar deudas y tarjetas, crear presupuestos y metas de ahorro, y —sobre todo— **calcular cuánto dinero tienen realmente disponible** para gastar. Pensada para usarse a diario desde el celular.
+Finlia es una aplicación web que ayuda a personas y familias a registrar ingresos y gastos, controlar deudas y tarjetas, crear presupuestos y metas de ahorro, y —sobre todo— **calcular cuánto dinero tienen realmente disponible** para gastar. Pensada para usarse a diario desde el celular.
 
 > 🇨🇴 Dirigida inicialmente al mercado colombiano (COP, español). Diseñada para permitir futura expansión a otras monedas y países.
 
@@ -41,8 +41,8 @@ El estado detallado de cada funcionalidad está en [docs/ROADMAP.md](docs/ROADMA
 ## 🚀 Instalación local
 
 ```bash
-git clone https://github.com/<usuario>/finami.git
-cd finami
+git clone https://github.com/<usuario>/finlia.git
+cd finlia
 composer install
 cp .env.example .env
 php artisan key:generate
@@ -51,7 +51,7 @@ php artisan key:generate
 Configura la base de datos MySQL en `.env` (ver [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) para los valores exactos y la configuración de Colombia):
 
 ```env
-APP_NAME=Finami
+APP_NAME=Finlia
 APP_TIMEZONE=America/Bogota
 APP_LOCALE=es
 APP_FAKER_LOCALE=es_CO
@@ -59,7 +59,7 @@ APP_FAKER_LOCALE=es_CO
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=finami
+DB_DATABASE=finlia
 DB_USERNAME=tu_usuario
 DB_PASSWORD=tu_password
 ```
@@ -76,7 +76,7 @@ php artisan serve
 Abre `http://localhost:8000`.
 
 > 🔑 **Usuario de demostración** (creado por el seeder con datos falsos):
-> correo `demo@finami.test` · contraseña `finami123`.
+> correo `demo@finlia.test` · contraseña `finlia123`.
 
 ## 🧪 Tests
 

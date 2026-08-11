@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /*
 |----------------------------------------------------------------------
-| Configuración de Finami
+| Configuración de Finlia
 |----------------------------------------------------------------------
 |
 | Constantes base de la aplicación. Mercado inicial: Colombia (COP).
@@ -17,13 +17,13 @@ declare(strict_types=1);
 return [
 
     // Mercado / idioma por defecto.
-    'market' => env('FINAMI_MARKET', 'CO'),
+    'market' => env('FINLIA_MARKET', 'CO'),
     'locale' => env('APP_FAKER_LOCALE', 'es_CO'),
 
     // Moneda por defecto (ISO 4217).
     'currency' => [
-        'code' => env('FINAMI_CURRENCY_CODE', 'COP'),
-        'symbol' => env('FINAMI_CURRENCY_SYMBOL', '$'),
+        'code' => env('FINLIA_CURRENCY_CODE', 'COP'),
+        'symbol' => env('FINLIA_CURRENCY_SYMBOL', '$'),
         // Formato colombiano: 1.000.000,00 (punto miles, coma decimales).
         'thousands_separator' => '.',
         'decimal_separator' => ',',

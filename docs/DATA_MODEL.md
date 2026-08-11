@@ -1,4 +1,4 @@
-# Modelo de Datos — Finami
+# Modelo de Datos — Finlia
 
 > Mapa de entidades por épica. **Guía de diseño**, no esquema congelado: cada épica detalla su migración. Las decisiones abiertas están marcadas ⚖️ (ver [DECISIONS.md](DECISIONS.md)).
 

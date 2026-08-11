@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Rutas web — Finami
+| Rutas web — Finlia
 |--------------------------------------------------------------------------
 | Auth nativa por sesiones. UI/URLs en español. Las rutas privadas se
 | agrupan bajo middleware 'auth'.

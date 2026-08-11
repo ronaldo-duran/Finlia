@@ -1,4 +1,4 @@
-# Convenciones — Finami
+# Convenciones — Finlia
 
 > Reglas de estilo para que el código sea consistente y predecible. Aplica a todo el código nuevo.
 

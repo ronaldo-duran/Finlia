@@ -1,4 +1,4 @@
-# Roadmap de Épicas — Finami
+# Roadmap de Épicas — Finlia
 
 > Las épicas se desarrollan **en orden**. Cada una depende de las anteriores. El detalle de cada una está en `scrum/epics/`.
 

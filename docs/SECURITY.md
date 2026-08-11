@@ -1,6 +1,6 @@
-# Política de Seguridad — Finami
+# Política de Seguridad — Finlia
 
-> Finami maneja **dinero real de familias**, será un **repositorio público** y se **monetizará**. Esta política es obligatoria. Cualquier cambio que la relaje debe revisarse explícitamente.
+> Finlia maneja **dinero real de familias**, será un **repositorio público** y se **monetizará**. Esta política es obligatoria. Cualquier cambio que la relaje debe revisarse explícitamente.
 
 ## Modelo de amenazas (resumen)
 
