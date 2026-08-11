@@ -19,6 +19,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 11 | Hardening, tests y producción | 🔴 | Todas |
 | 12 | Monetización y modelo SaaS | 🔴 | 2, 11 |
 | 13 | Portafolio profesional | 🔴 | 11 |
+| 14 | API REST para app móvil (futura) | 🔴 | 3, 11 |
 
 ## Resumen por épica
 
@@ -60,6 +61,11 @@ Auditoría de seguridad completa, privacy, DB (índices, FK, DECIMAL), tests de 
 
 ### Épica 13 — Portafolio profesional
 README profesional, `/docs` completa, diagramas Mermaid, limpieza de Git, demo con datos ficticios (nunca reales), sección "Why this project?".
+
+---
+
+### Épica 14 — API REST para app móvil (futura)
+> Sin fichero de épica todavía. Se desarrolla cuando la web esté en producción. Añade `routes/api.php` + **Sanctum** (tokens para móvil) + API Resources/Controllers que **reutilizan los mismos `app/Services/`, Form Requests y Policies** del web (ver [ADR-0010](DECISIONS.md#adr-0010)). Solo es barata si la lógica quedó bien aislada desde las épicas 2-9.
 
 ---
 

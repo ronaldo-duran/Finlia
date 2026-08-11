@@ -71,6 +71,8 @@ Las épicas están en `scrum/epics/ÉPICA N — ….md`. Orden obligatorio (cada
 12. Monetización y modelo SaaS
 13. Portafolio profesional
 
+> 📱 **Épica 14 (API REST para app móvil — futura):** no se implementa todavía; queda registrada para cuando la web esté en producción. Para que sea barata, hay que respetar el **seam de Services desde la Épica 2** (ver [ADR-0010](docs/DECISIONS.md#adr-0010) y la sección 5).
+
 **Por cada épica**: revisa el código existente → crea/actualiza migraciones → modelos y relaciones → Form Requests (validación) → Policies/Gates (autorización) → controladores → vistas responsive → seeders/factories → pruebas → actualiza docs → explica archivos modificados y decisiones. **No implementes funcionalidades de épicas futuras** aunque parezcan fáciles.
 
 Para arrancar una épica, usa la skill `/implement-epic`. Al terminar, ejecuta `/security-checklist`.
@@ -82,7 +84,11 @@ Para arrancar una épica, usa la skill `/implement-epic`. Al terminar, ejecuta `
 Detalle completo en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Principios en orden de prioridad: **Simplicidad · Mantenibilidad · Seguridad · Rendimiento · Escalabilidad razonable · UX · Compatibilidad con hosting compartido · Código limpio.** No sobre-ingeniar.
 
 - **Capas**: Rutas → Controladores (finos) → Servicios de dominio (lógica financiera, p.ej. `BudgetCalculatorService`) → Modelos Eloquent → DB.
-- **Toda la lógica financiera compleja vive en clases `Service`**, nunca en controladores.
+- **Toda la lógica financiera compleja vive en clases `Service`**, nunca en controladores ni vistas. **Reglas del seam (ver [ADR-0010](docs/DECISIONS.md#adr-0010)):**
+  - Los Services **no dependen de la capa HTTP**: nada de `request()`, `session()`, `Auth::id()` ni cabeceras dentro de un Service. Reciben **datos explícitos** (IDs, DTOs, arrays) y devuelven resultados.
+  - Los controladores son **delgados**: validar (Form Request) → autorizar (Policy) → llamar al Service → devolver vista/JSON.
+  - El formato de dinero/fechas se centraliza en helpers/Blade `@money` que sirvan **igual para Blade que para JSON**.
+  - **Por qué**: garantiza que una futura **API REST/JSON** (app móvil Android/iOS, [Épica 14](docs/ROADMAP.md)) reutilice los mismos Services sin reescribir lógica.
 - **Multi-tenant por `household`**: cada dato financiero pertenece a un `household_id`. El aislamiento entre hogares es la **amenaza #1** del proyecto (ver seguridad).
 
 ---
