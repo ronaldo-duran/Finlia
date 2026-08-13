@@ -1,10 +1,15 @@
 <?php
 
+use App\Http\Controllers\ActiveHouseholdController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HouseholdController;
+use App\Http\Controllers\HouseholdInvitationController;
+use App\Http\Controllers\HouseholdMemberController;
+use App\Http\Controllers\InvitationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -55,4 +60,32 @@ Route::middleware('auth')->group(function () {
 
     Route::get('dashboard', DashboardController::class)
         ->name('dashboard');
+
+    // ---- Hogares (Épica 2) ----
+    Route::get('hogares', [HouseholdController::class, 'index'])->name('households.index');
+    Route::get('hogares/crear', [HouseholdController::class, 'create'])->name('households.create');
+    Route::post('hogares', [HouseholdController::class, 'store'])->name('households.store');
+    Route::get('hogares/{household}', [HouseholdController::class, 'show'])->name('households.show');
+    Route::get('hogares/{household}/editar', [HouseholdController::class, 'edit'])->name('households.edit');
+    Route::put('hogares/{household}', [HouseholdController::class, 'update'])->name('households.update');
+    Route::delete('hogares/{household}', [HouseholdController::class, 'destroy'])->name('households.destroy');
+    Route::post('hogares/{household}/activar', ActiveHouseholdController::class)->name('households.activate');
+
+    // Miembros (acciones dentro de un hogar)
+    Route::delete('hogares/{household}/miembros/{user}', [HouseholdMemberController::class, 'destroy'])
+        ->name('households.members.destroy');
+
+    // Invitaciones: enviar / revocar
+    Route::post('hogares/{household}/invitaciones', [HouseholdInvitationController::class, 'store'])
+        ->name('households.invitations.store');
+    Route::delete('hogares/{household}/invitaciones/{invitation}', [HouseholdInvitationController::class, 'destroy'])
+        ->name('households.invitations.destroy');
+
+    // Aceptar invitación por enlace (token hasheado en BD)
+    Route::get('invitaciones/{token}', [InvitationController::class, 'show'])
+        ->name('invitations.show')
+        ->middleware('throttle:10,1');
+    Route::post('invitaciones/{token}', [InvitationController::class, 'accept'])
+        ->name('invitations.accept')
+        ->middleware('throttle:10,1');
 });

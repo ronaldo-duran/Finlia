@@ -43,3 +43,19 @@ import 'bootstrap';
         }
     });
 })();
+
+/*
+|----------------------------------------------------------------------
+| Confirmación de envío para formularios marcados con data-confirm.
+|----------------------------------------------------------------------
+| Evita interpolar input del usuario dentro de JS inline (onsubmit="..."),
+| lo que sería un vector de XSS en contexto de string JS. El texto del
+| confirm se lee del atributo (ya escapado por Blade para el contexto
+| HTML) y se pasa a window.confirm() como dato, nunca como código.
+*/
+document.addEventListener('submit', function (e) {
+    var form = e.target.closest && e.target.closest('[data-confirm]');
+    if (form && !window.confirm(form.getAttribute('data-confirm'))) {
+        e.preventDefault();
+    }
+});

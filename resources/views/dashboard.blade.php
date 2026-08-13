@@ -11,9 +11,11 @@
                 <i class="bi bi-calendar3 me-1"></i> {{ ucfirst($fechaActual) }}
             </p>
         </div>
-        <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2">
-            <i class="bi bi-currency-exchange me-1"></i> Pesos colombianos (COP)
-        </span>
+        <a href="{{ active_household() ? route('households.show', active_household()) : route('households.create') }}"
+           class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2 text-decoration-none">
+            <i class="bi bi-people-fill me-1"></i>
+            {{ active_household()?->name ?? 'Crear hogar' }}
+        </a>
     </div>
 
     {{-- Estado inicial: las tarjetas se llenarán en próximas épicas --}}
