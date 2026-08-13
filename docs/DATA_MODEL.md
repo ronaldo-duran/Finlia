@@ -34,6 +34,8 @@
 
 ## Épica 2 — Hogares, familias y miembros
 
+> 🟢 **Implementado** (Épica 2). Hogar activo en sesión (`session('household_id')`) resuelto por helper `active_household()` (ver [ADR-0011](DECISIONS.md#adr-0011)). Tokens de invitación hasheados sha256 (ver [ADR-0003](DECISIONS.md#adr-0003)).
+
 ### `households`
 | Campo | Tipo | Notas |
 |---|---|---|

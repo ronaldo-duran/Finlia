@@ -29,6 +29,13 @@
                 </a>
             </div>
 
+            @auth
+                {{-- Selector de hogar activo --}}
+                <div class="d-none d-md-block">
+                    @include('layouts.partials.household-selector')
+                </div>
+            @endauth
+
             {{-- Acciones a la derecha --}}
             <ul class="navbar-nav flex-row align-items-center gap-1">
                 @auth
@@ -87,10 +94,17 @@
                         </a>
                     </li>
 
+                    @auth
+                        <li>
+                            <a class="nav-link @if(request()->routeIs('households.*'))active @endif" href="{{ route('households.index') }}">
+                                <i class="bi bi-house-door"></i> Hogares
+                            </a>
+                        </li>
+                    @endauth
+
                     @php
                         // Marcadores de navegación de épicas futuras (deshabilitadas).
                         $proximos = [
-                            ['icon' => 'bi-house-door', 'label' => 'Hogares', 'epic' => 'Épica 2'],
                             ['icon' => 'bi-wallet', 'label' => 'Cuentas y movimientos', 'epic' => 'Épica 3'],
                             ['icon' => 'bi-cash-stack', 'label' => 'Presupuestos', 'epic' => 'Épica 4'],
                             ['icon' => 'bi-arrow-repeat', 'label' => 'Gastos recurrentes', 'epic' => 'Épica 5'],
