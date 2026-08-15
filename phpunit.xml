@@ -19,6 +19,9 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!-- Key exclusiva de tests (no es un secreto de producción): permite
+             ejecutar la suite sin .env, como ocurre en el runner de CI. -->
+        <env name="APP_KEY" value="base64:jMSqqw8tIIbJovE7naPPagl7Gr3hxtYHzosTkGsJL/s="/>
         <env name="APP_LOCALE" value="es"/>
         <env name="APP_FALLBACK_LOCALE" value="es"/>
         <env name="APP_FAKER_LOCALE" value="es_CO"/>

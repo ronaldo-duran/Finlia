@@ -16,7 +16,7 @@ if (! function_exists('money')) {
             $amount = 0;
         }
 
-        return '$ ' . number_format((float) $amount, 2, ',', '.');
+        return '$ '.number_format((float) $amount, 2, ',', '.');
     }
 }
 

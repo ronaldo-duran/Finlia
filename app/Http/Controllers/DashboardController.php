@@ -6,8 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Services\MovementSummaryService;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
