@@ -6,8 +6,10 @@ use App\Enums\CategoryType;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Expense;
+use App\Models\Household;
 use App\Models\User;
 use App\Services\HouseholdService;
+use App\Services\MovementService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -81,8 +83,8 @@ class ExpenseTest extends TestCase
     {
         [$owner, , $account, $category] = $this->setupWithAccount();
 
-        $expense = app(\App\Services\MovementService::class)->createExpense(
-            household: app(\App\Models\Household::class)->find($account->household_id),
+        $expense = app(MovementService::class)->createExpense(
+            household: app(Household::class)->find($account->household_id),
             user: $owner,
             data: [
                 'amount' => 30000,
@@ -108,8 +110,8 @@ class ExpenseTest extends TestCase
     {
         [$owner, , $account, $category] = $this->setupWithAccount();
 
-        $service = app(\App\Services\MovementService::class);
-        $household = \App\Models\Household::find($account->household_id);
+        $service = app(MovementService::class);
+        $household = Household::find($account->household_id);
         $expense = $service->createExpense(
             household: $household, user: $owner,
             data: ['amount' => 25000, 'account_id' => $account->id, 'category_id' => $category->id, 'date' => now()->format('Y-m-d')],
@@ -130,8 +132,8 @@ class ExpenseTest extends TestCase
     public function test_usuario_ajeno_no_puede_editar_gasto_de_otro_hogar(): void
     {
         [$owner, , $account, $category] = $this->setupWithAccount();
-        $expense = app(\App\Services\MovementService::class)->createExpense(
-            household: \App\Models\Household::find($account->household_id), user: $owner,
+        $expense = app(MovementService::class)->createExpense(
+            household: Household::find($account->household_id), user: $owner,
             data: ['amount' => 1000, 'account_id' => $account->id, 'category_id' => $category->id, 'date' => now()->format('Y-m-d')],
         );
 

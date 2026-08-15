@@ -3,6 +3,17 @@
 .env
 .env.backup
 .env.production
+
+# E2E Playwright: BD sqlite temporal y artefactos de reporte
+/database/*.sqlite
+/database/*.sqlite-journal
+/database/*.sqlite-wal
+/database/*.sqlite-shm
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.auth/
+/playwright/.cache/
 .phpactor.json
 .phpunit.result.cache
 /.codex

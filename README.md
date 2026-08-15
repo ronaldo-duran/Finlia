@@ -85,6 +85,25 @@ composer test          # PHPUnit con SQLite en memoria
 php artisan test --filter=HouseholdTest
 ```
 
+### Calidad y E2E
+
+```bash
+vendor/bin/pint                  # linter/formatter PHP (en CI: pint --test)
+npm run test:e2e                 # Playwright (Chromium) contra Laravel + SQLite + seed
+npm run test:e2e:ui              # ídem, con inspector visual
+```
+
+Los E2E levantan su propio servidor (`php artisan serve` en el puerto 8890) con una
+BD SQLite aislada (`database/playwright.sqlite`) y el seeder de datos falsos; no
+tocan tu `.env` ni tu base local. Se necesita `npx playwright install chromium` la
+primera vez.
+
+### CI (GitHub Actions)
+
+En cada push/PR corre [.github/workflows/ci.yml](.github/workflows/ci.yml) con tres
+jobs: **PHP** (Pint + PHPUnit), **Assets** (build de Vite) y **E2E** (Playwright con
+Chromium, sube el reporte como artefacto si falla).
+
 ## 📦 Despliegue
 
 El despliegue se hace en **Hostinger** (hosting compartido). Instrucciones paso a paso, cron y optimizaciones en [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).

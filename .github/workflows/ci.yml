@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---- Backend: linter (Pint) + suite PHPUnit sobre SQLite en memoria ----
+  php:
+    name: PHP — Pint + PHPUnit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v3
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, dom, curl, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Cache de vendor
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: vendor-${{ runner.os }}-php8.3-${{ hashFiles('composer.lock') }}
+
+      - name: Validar composer.json
+        run: composer validate --strict
+
+      - name: Instalar dependencias (Composer)
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Linter — Laravel Pint
+        run: vendor/bin/pint --test
+
+      - name: Auditoría de dependencias (informativa)
+        run: composer audit
+        continue-on-error: true
+
+      - name: Las rutas cargan sin errores
+        run: php artisan route:list
+
+      - name: Tests — PHPUnit (SQLite en memoria)
+        run: php artisan test
+
+  # ---- Frontend: los assets de Vite compilan en producción ----
+  assets:
+    name: Assets — build Vite
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias (npm)
+        run: npm ci
+
+      - name: Compilar assets de producción
+        run: npm run build
+
+  # ---- E2E: Playwright (Chromium) contra Laravel con SQLite + seed ----
+  e2e:
+    name: E2E — Playwright (Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v3
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, dom, curl, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias (Composer)
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Instalar dependencias (npm)
+        run: npm ci
+
+      - name: Compilar assets de producción
+        run: npm run build
+
+      - name: Instalar navegador Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Ejecutar tests E2E
+        run: npx playwright test
+
+      - name: Subir reporte de Playwright
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
