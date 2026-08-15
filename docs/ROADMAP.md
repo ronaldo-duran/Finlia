@@ -72,5 +72,5 @@ README profesional, `/docs` completa, diagramas Mermaid, limpieza de Git, demo c
 ## Cómo avanzar
 
 1. Para iniciar una épica: usa `/implement-epic` indicando el número.
-2. Al terminar: ejecuta `/security-checklist` y actualiza el estado en esta tabla y el `[x]` de DoD en [AGENTS.md](../AGENTS.md).
+2. Al terminar: ejecuta `/security-checklist`, actualiza el estado en esta tabla y el `[x]` de DoD en [AGENTS.md](../AGENTS.md), y registra los cambios en [CHANGELOG.md](../CHANGELOG.md) con `/update-changelog`.
 3. Commits por épica en su rama (`epica-N-...`); merge a `main` solo verde.

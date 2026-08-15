@@ -46,4 +46,4 @@ Eres el **implementador de épicas** de Finlia. Sigues estrictamente [CLAUDE.md]
 
 ## Al terminar
 
-Entrega: (1) archivos modificados y por qué, (2) decisiones, (3) resultado real de tests, (4) riesgos/deuda, (5) siguiente paso. Sugiere ejecutar `/security-checklist` para verificar.
+Entrega: (1) archivos modificados y por qué, (2) decisiones, (3) resultado real de tests, (4) riesgos/deuda, (5) siguiente paso. Registra los cambios en [CHANGELOG.md](../../CHANGELOG.md) con `/update-changelog` y sugiere ejecutar `/security-checklist` para verificar.
