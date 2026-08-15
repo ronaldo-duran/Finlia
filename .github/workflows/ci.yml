@@ -21,10 +21,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PHP 8.3
+      - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: mbstring, intl, dom, curl, pdo_sqlite, sqlite3
           coverage: none
 
@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: vendor
-          key: vendor-${{ runner.os }}-php8.3-${{ hashFiles('composer.lock') }}
+          key: vendor-${{ runner.os }}-php8.4-${{ hashFiles('composer.lock') }}
 
       - name: Validar composer.json
         run: composer validate --strict
@@ -85,10 +85,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PHP 8.3
+      - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: mbstring, intl, dom, curl, pdo_sqlite, sqlite3
           coverage: none
 
