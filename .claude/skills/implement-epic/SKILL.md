@@ -61,6 +61,7 @@ Por recurso del hogar:
 - [docs/ROADMAP.md](../../../docs/ROADMAP.md): marca la épica como 🟡/🟢.
 - [docs/DATA_MODEL.md](../../../docs/DATA_MODEL.md): si añadiste/cambiaste entidades.
 - [docs/DECISIONS.md](../../../docs/DECISIONS.md): si tomaste decisiones (ADR).
+- [CHANGELOG.md](../../../CHANGELOG.md): registra los cambios de la épica con `/update-changelog` (o siguiendo su formato).
 
 ## 8. Cierre
 

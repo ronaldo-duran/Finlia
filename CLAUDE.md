@@ -180,7 +180,8 @@ composer audit             # revisa vulnerabilidades de dependencias
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Estado de las 13 épicas |
 | [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | Nombres, dinero, fechas, commits |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Registro de decisiones (ADR) |
-| `scrum/epics/` | Definición detallada de cada épica |
+| [CHANGELOG.md](CHANGELOG.md) | Registro de cambios por versión (mantener con `/update-changelog`; versión vigente en `config/finlia.php` + `package.json`) |
+| `scrum/epics/` | Definición detallada de cada épica (se elimina al generar el primer tag/MVP) |
 
 ---
 
