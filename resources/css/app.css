@@ -422,3 +422,20 @@ a { color: var(--finlia-primary); }
     font-weight: 700;
     font-size: 0.8rem;
 }
+
+/* =============================================================
+   Épica 3 — Cuentas, ingresos y gastos
+   ============================================================= */
+
+/* Permite el truncamiento (text-truncate) dentro de un flex. */
+.min-w-0 { min-width: 0 !important; }
+
+/* Punto de color para categorías. */
+.color-dot {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    display: inline-block;
+    border: 1px solid var(--finlia-glass-border);
+}
