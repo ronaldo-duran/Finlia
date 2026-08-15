@@ -4,6 +4,22 @@ use App\Models\Household;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
+if (! function_exists('money')) {
+    /**
+     * Formatea un monto como moneda COP: "$ 1.000.000,00"
+     * (punto miles, coma decimales). Centralizado para que sirva igual
+     * en Blade (@money) que en JSON/Services (ADR-0010, ADR-0006).
+     */
+    function money(int|float|string|null $amount, string $currency = 'COP'): string
+    {
+        if ($amount === null || $amount === '') {
+            $amount = 0;
+        }
+
+        return '$ ' . number_format((float) $amount, 2, ',', '.');
+    }
+}
+
 if (! function_exists('active_household')) {
     /**
      * Resuelve el hogar activo del usuario autenticado.

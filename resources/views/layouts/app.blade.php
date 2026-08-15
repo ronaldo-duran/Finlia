@@ -100,12 +100,26 @@
                                 <i class="bi bi-house-door"></i> Hogares
                             </a>
                         </li>
+                        <li>
+                            <a class="nav-link @if(request()->routeIs('accounts.*'))active @endif" href="{{ route('accounts.index') }}">
+                                <i class="bi bi-wallet"></i> Cuentas
+                            </a>
+                        </li>
+                        <li>
+                            <a class="nav-link @if(request()->routeIs('movements.*'))active @endif" href="{{ route('movements.index') }}">
+                                <i class="bi bi-arrow-left-right"></i> Movimientos
+                            </a>
+                        </li>
+                        <li>
+                            <a class="nav-link @if(request()->routeIs('categories.*'))active @endif" href="{{ route('categories.index') }}">
+                                <i class="bi bi-tags"></i> Categorías
+                            </a>
+                        </li>
                     @endauth
 
                     @php
                         // Marcadores de navegación de épicas futuras (deshabilitadas).
                         $proximos = [
-                            ['icon' => 'bi-wallet', 'label' => 'Cuentas y movimientos', 'epic' => 'Épica 3'],
                             ['icon' => 'bi-cash-stack', 'label' => 'Presupuestos', 'epic' => 'Épica 4'],
                             ['icon' => 'bi-arrow-repeat', 'label' => 'Gastos recurrentes', 'epic' => 'Épica 5'],
                             ['icon' => 'bi-credit-card', 'label' => 'Deudas', 'epic' => 'Épica 6'],

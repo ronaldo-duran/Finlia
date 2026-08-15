@@ -47,14 +47,18 @@ class ActiveHouseholdTest extends TestCase
         $response->assertSessionHas('household_id', $household->id);
     }
 
-    public function test_usuario_sin_hogares_ve_llamado_a_crear(): void
+    /**
+     * Épica 3: el dashboard requiere hogar activo (calcula finanzas), así que
+     * redirige al usuario sin hogares a la pantalla de creación (302). Antes
+     * (Épica 2) renderizaba un CTA en el propio dashboard.
+     */
+    public function test_usuario_sin_hogares_es_llevado_a_crear(): void
     {
         $user = User::factory()->create();
 
         $this->actingAs($user)
             ->get(route('dashboard'))
-            ->assertOk()
-            ->assertSee('Crear hogar');
+            ->assertRedirect(route('households.create'));
     }
 
     public function test_usuario_ajeno_no_puede_activar_hogar(): void

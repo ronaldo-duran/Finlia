@@ -77,6 +77,8 @@
 
 ## Épica 3 — Cuentas, ingresos y gastos
 
+> 🟢 **Implementado** (Épica 3). `current_balance` se persiste y **recomputa** desde `initial_balance + Σincomes − Σexpenses` en cada escritura de movimiento (ver [ADR-0012](DECISIONS.md#adr-0012)).
+
 ### `accounts`
 | Campo | Tipo | Notas |
 |---|---|---|
@@ -84,7 +86,7 @@
 | name | string | "Davivienda ahorros" |
 | type | string | enum `AccountType`: cash, bank, savings, digital_wallet, credit_card, other |
 | initial_balance | decimal(15,2) | saldo inicial |
-| current_balance | decimal(15,2) | recalculable; ⚖️ decidir si se persiste o se calcula |
+| current_balance | decimal(15,2) | persistido + recomputado por `AccountBalanceService` (ADR-0012) |
 | currency | string | default COP |
 | is_active | boolean | |
 | notes | text, null | |

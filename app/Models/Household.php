@@ -45,6 +45,28 @@ class Household extends Model
         return $this->hasMany(HouseholdInvitation::class);
     }
 
+    // ---- Épica 3: finanzas del hogar ----
+
+    public function accounts(): HasMany
+    {
+        return $this->hasMany(Account::class);
+    }
+
+    public function categories(): HasMany
+    {
+        return $this->hasMany(Category::class);
+    }
+
+    public function incomes(): HasMany
+    {
+        return $this->hasMany(Income::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
     /**
      * Indica si un usuario es miembro del hogar.
      */

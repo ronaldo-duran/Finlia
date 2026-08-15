@@ -8,7 +8,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 |---|---|---|---|
 | 1 | Fundación y configuración del proyecto | 🟢 | — |
 | 2 | Hogares, familias y miembros | 🟢 | 1 |
-| 3 | Cuentas, ingresos y gastos | 🔴 | 2 |
+| 3 | Cuentas, ingresos y gastos | 🟢 | 2 |
 | 4 | Presupuestos y dinero disponible | 🔴 | 3 |
 | 5 | Gastos recurrentes y obligaciones futuras | 🔴 | 3, 4 |
 | 6 | Deudas y tarjetas de crédito | 🔴 | 2, 3 |

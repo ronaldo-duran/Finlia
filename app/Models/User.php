@@ -51,4 +51,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(Household::class, 'owner_id');
     }
+
+    // ---- Épica 3: movimientos registrados por el usuario ----
+
+    public function incomes(): HasMany
+    {
+        return $this->hasMany(Income::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
 }
