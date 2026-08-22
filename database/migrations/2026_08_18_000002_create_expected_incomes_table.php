@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
             // Categoría de tipo income (opcional, para reportes futuros).
             $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
-            $table->string('name'); // "Salario Ronaldo", "Arriendo apartamento"
+            $table->string('name'); // "Salario", "Arriendo apartamento"
             // DECIMAL(15,2) (ADR-0006). Importe mensual esperado.
             $table->decimal('amount', 15, 2);
             // Día previsto de cobro (1-31). Informativo en Épica 4.
