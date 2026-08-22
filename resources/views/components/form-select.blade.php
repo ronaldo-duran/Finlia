@@ -1,6 +1,7 @@
 @props([
     'label',
     'name',
+    'id' => null,
     'options' => [],
     'valueKey' => 'id',
     'labelKey' => 'name',
@@ -13,20 +14,22 @@
 @php
     // $options puede ser una colección de modelos o un array [valor => etiqueta].
     $isAssoc = is_array($options) && (! empty($options) && array_keys($options) !== range(0, count($options) - 1));
+    // El id puede diferir del name (alta + modal de edición en la misma página).
+    $selectId = $id ?? $name;
 @endphp
 
 <div class="mb-3">
-    <label for="{{ $name }}" class="form-label fw-semibold">
+    <label for="{{ $selectId }}" class="form-label fw-semibold">
         {{ $label }}
         @if ($required)<span class="text-danger" aria-hidden="true">*</span>@endif
     </label>
 
     <select
-        id="{{ $name }}"
+        id="{{ $selectId }}"
         name="{{ $name }}"
         class="form-select @error($name) is-invalid @enderror"
         @if ($required) required @endif
-        aria-describedby="@error($name){{ $name }}-error @endif"
+        aria-describedby="@error($name){{ $selectId }}-error @endif"
     >
         @if ($placeholder)
             <option value="" @selected(! old($name, $selected))>{{ $placeholder }}</option>
@@ -49,7 +52,7 @@
     </select>
 
     @error($name)
-        <div id="{{ $name }}-error" class="invalid-feedback d-block">{{ $message }}</div>
+        <div id="{{ $selectId }}-error" class="invalid-feedback d-block">{{ $message }}</div>
     @enderror
 
     @if ($help)

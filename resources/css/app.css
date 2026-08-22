@@ -439,3 +439,53 @@ a { color: var(--finlia-primary); }
     display: inline-block;
     border: 1px solid var(--finlia-glass-border);
 }
+
+/* =============================================================
+   Épica 4 — Presupuestos y dinero disponible
+   ============================================================= */
+
+/*
+   Importes de dinero: mobile-first. Un valor en COP ("$ 3.970.596,00") no cabe
+   en media columna a 375 px con un tamaño fijo, y truncarlo ocultaría dígitos
+   —inaceptable en una app de finanzas—. La tipografía fluida escala con el
+   ancho disponible y deja de crecer en escritorio.
+*/
+.money-figure {
+    font-size: clamp(0.95rem, 4.2vw, 1.25rem);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    /* Último recurso: garantiza que nunca haya scroll horizontal. Las columnas
+       están dimensionadas para que no llegue a activarse. */
+    overflow-wrap: anywhere;
+}
+
+/* A partir de lg el ancho ya no depende del viewport: tamaño fijo legible. */
+@media (min-width: 992px) {
+    .money-figure { font-size: 1.25rem; }
+}
+
+/* Cifra protagonista de la tarjeta "puedes gastar". */
+.money-hero {
+    font-size: clamp(1.75rem, 9vw, 2.5rem);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.money-hero.money-hero-compact {
+    font-size: clamp(1.5rem, 7.5vw, 2rem);
+}
+
+/* Par "gastado / presupuestado" de cada categoría. */
+.budget-figures {
+    font-variant-numeric: tabular-nums;
+}
+
+/*
+   Bootstrap 5 no trae utilidades de ancho responsive. Patrón mobile-first:
+   el elemento ocupa todo el ancho en móvil (w-100) y vuelve a su tamaño
+   natural a partir de sm.
+*/
+@media (min-width: 576px) {
+    .w-sm-auto { width: auto !important; }
+}

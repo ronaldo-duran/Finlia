@@ -20,6 +20,21 @@ if (! function_exists('money')) {
     }
 }
 
+if (! function_exists('percent')) {
+    /**
+     * Formatea un porcentaje con la convención colombiana: "332,4 %".
+     * Los enteros se muestran sin decimales ("80 %"), como @money, para que
+     * Blade y un futuro JSON usen el mismo formateo (ADR-0010).
+     */
+    function percent(int|float|null $value, int $decimals = 1): string
+    {
+        $value = (float) ($value ?? 0);
+        $decimals = fmod($value, 1.0) === 0.0 ? 0 : $decimals;
+
+        return number_format($value, $decimals, ',', '.').' %';
+    }
+}
+
 if (! function_exists('active_household')) {
     /**
      * Resuelve el hogar activo del usuario autenticado.

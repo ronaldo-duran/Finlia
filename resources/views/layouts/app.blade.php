@@ -115,12 +115,21 @@
                                 <i class="bi bi-tags"></i> Categorías
                             </a>
                         </li>
+                        <li>
+                            <a class="nav-link @if(request()->routeIs('budgets.*'))active @endif" href="{{ route('budgets.index') }}">
+                                <i class="bi bi-cash-stack"></i> Presupuestos
+                            </a>
+                        </li>
+                        <li>
+                            <a class="nav-link @if(request()->routeIs('expected-incomes.*'))active @endif" href="{{ route('expected-incomes.index') }}">
+                                <i class="bi bi-graph-up-arrow"></i> Ingresos esperados
+                            </a>
+                        </li>
                     @endauth
 
                     @php
                         // Marcadores de navegación de épicas futuras (deshabilitadas).
                         $proximos = [
-                            ['icon' => 'bi-cash-stack', 'label' => 'Presupuestos', 'epic' => 'Épica 4'],
                             ['icon' => 'bi-arrow-repeat', 'label' => 'Gastos recurrentes', 'epic' => 'Épica 5'],
                             ['icon' => 'bi-credit-card', 'label' => 'Deudas', 'epic' => 'Épica 6'],
                             ['icon' => 'bi-piggy-bank', 'label' => 'Metas de ahorro', 'epic' => 'Épica 7'],
@@ -137,8 +146,11 @@
             </div>
         </aside>
 
-        {{-- Contenido principal --}}
-        <main class="flex-grow-1 p-3 p-md-4">
+        {{-- Contenido principal.
+             min-w-0: sin él, main (flex item) hereda min-width:auto y no puede
+             encogerse por debajo del ancho intrínseco de su contenido, lo que
+             provoca scroll horizontal en móvil. --}}
+        <main class="flex-grow-1 min-w-0 p-3 p-md-4">
             @yield('content')
         </main>
     </div>

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\BudgetScope;
+use App\Services\BudgetCalculatorService;
 use App\Services\MovementSummaryService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -12,7 +14,10 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __construct(private readonly MovementSummaryService $summary) {}
+    public function __construct(
+        private readonly MovementSummaryService $summary,
+        private readonly BudgetCalculatorService $budgets,
+    ) {}
 
     /**
      * Dashboard del mes con KPIs reales y datos para Chart.js.
@@ -58,6 +63,8 @@ class DashboardController extends Controller
             'user' => $request->user(),
             'household' => $household,
             'fechaActual' => $hoy->isoFormat('dddd, D [de] MMMM [de] YYYY'),
+            // Épica 4: "¿cuánto puedo gastar?" del mes en curso.
+            'budgetSummary' => $this->budgets->summary($householdId, BudgetScope::Month),
             'totals' => $totals,
             'totalBalance' => $totalBalance,
             'byCategory' => $byCategory,
