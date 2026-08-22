@@ -3,17 +3,21 @@
 namespace Database\Seeders;
 
 use App\Enums\AccountType;
+use App\Enums\BudgetPeriod;
 use App\Enums\HouseholdRole;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Expense;
+use App\Models\Household;
 use App\Models\HouseholdInvitation;
 use App\Models\Income;
 use App\Models\User;
 use App\Services\AccountBalanceService;
 use App\Services\HouseholdService;
+use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 
 class DatabaseSeeder extends Seeder
 {
@@ -109,5 +113,43 @@ class DatabaseSeeder extends Seeder
         // Saldos coherentes con los movimientos generados.
         $balanceService = app(AccountBalanceService::class);
         $accounts->each(fn (Account $account) => $balanceService->recompute($account));
+
+        $this->seedBudgets($household, $expenseCategories, $incomeCategories);
+    }
+
+    /**
+     * Presupuestos e ingresos esperados FALSOS del mes en curso (Épica 4),
+     * para que el dashboard muestre datos reales de cálculo desde el arranque.
+     */
+    private function seedBudgets(Household $household, Collection $expenseCategories, Collection $incomeCategories): void
+    {
+        $now = Carbon::now(config('app.timezone'));
+
+        // household_id no es fillable en estos modelos: se asigna por relación.
+        // Ingresos mensuales esperados: base del "puedes gastar".
+        collect([
+            ['name' => 'Salario', 'amount' => 3800000, 'day_of_month' => 30],
+            ['name' => 'Arriendo local', 'amount' => 900000, 'day_of_month' => 5],
+        ])->each(fn (array $data) => $household->expectedIncomes()->create([
+            'category_id' => $incomeCategories->first(),
+            ...$data,
+        ]));
+
+        // Presupuesto total del mes + tres categorías.
+        $household->budgets()->create([
+            'category_id' => null,
+            'amount' => 3000000,
+            'period' => BudgetPeriod::Monthly->value,
+            'year' => $now->year,
+            'month' => $now->month,
+        ]);
+
+        $expenseCategories->take(3)->each(fn (int $categoryId, int $i) => $household->budgets()->create([
+            'category_id' => $categoryId,
+            'amount' => [800000, 400000, 250000][$i],
+            'period' => BudgetPeriod::Monthly->value,
+            'year' => $now->year,
+            'month' => $now->month,
+        ]));
     }
 }

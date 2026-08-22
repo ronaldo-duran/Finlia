@@ -12,6 +12,56 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.4.0] - 2026-08-18 — Presupuestos y dinero disponible
+
+### Añadido
+- **`BudgetCalculatorService`**: responde "¿cuánto puedo gastar?" separando cuatro
+  conceptos que no se mezclan — *balance actual*, *comprometido*, *disponible* y
+  *libre* (ADR-0014). Sin dependencias HTTP, reutilizable por la futura API
+  (ADR-0010).
+- **Presupuestos** (`budgets`): total del mes y/o por categoría, con CRUD, unicidad por
+  hogar/categoría/mes y `DECIMAL(15,2)` (ADR-0006). El comprometido toma el **mayor**
+  entre el total y la suma de categorías para no contar dos veces.
+- **Ingresos esperados** (`expected_incomes`): el usuario configura sus ingresos
+  mensuales fijos (salario, arriendos, inversiones) con monto, día de cobro y estado
+  activo. Son la entrada del cálculo; si no hay ninguno configurado se degrada a los
+  ingresos ya registrados.
+- Tarjeta **"💰 Puedes gastar aproximadamente"** en el panel de presupuestos y en el
+  dashboard, con reparto diario y días restantes del período.
+- Consulta por **esta semana / este mes / próximo mes**: los presupuestos se guardan
+  mensuales y la vista semanal los **prorratea** (`BudgetScope` vs `BudgetPeriod`).
+- **Alertas visuales al 80 % y al 100 %** por categoría (`BudgetAlertLevel`), con
+  banners en presupuestos y dashboard, barras de progreso e indicador de **tendencia**
+  (gasto proyectado a fin de período).
+- Desglose opcional "¿Cómo se calcula?" que muestra la fórmula sin imponerla, marcando
+  los términos que llegarán en las épicas 5-7.
+- Enums `BudgetPeriod`, `BudgetScope` y `BudgetAlertLevel`; componente Blade
+  `available-money-card`; helper y directiva `@percent` (formato colombiano `332,4 %`).
+- Presupuestos e ingresos esperados de demo en `DatabaseSeeder` (datos siempre falsos).
+- Tests: 26 unitarios de `BudgetCalculatorService` (prorrateo semanal, doble conteo,
+  umbrales 80/100, próximo mes, aislamiento) y 36 de feature con CRUD, validación,
+  mass assignment y aislamiento entre hogares (403).
+
+### Corregido
+- Los componentes `form-input` y `form-select` ignoraban el prop `id` (lo fijaban a
+  `name`), de modo que el **modal de edición de categorías** de la Épica 3 no podía
+  rellenarse y la página generaba `id` duplicados. Ahora aceptan `id` (y `step`).
+- **Scroll horizontal en móvil en todas las pantallas**: `<main>` es un flex item sin
+  `min-width: 0`, así que no podía encogerse por debajo del ancho intrínseco de su
+  contenido (hasta 101 px de desbordamiento en el panel a 375 px). Verificado a 360,
+  375, 414, 768, 1280 y 1440 px.
+- Los **importes truncados** en las tarjetas KPI del panel ocultaban dígitos. Ahora usan
+  tipografía fluida (`.money-figure`) en vez de `text-truncate`: en una app de finanzas
+  un número a medias es peor que uno pequeño.
+- La línea de categoría/cuenta/fecha de "Últimos movimientos" perdía la fecha en móvil
+  por truncamiento; ahora envuelve.
+
+### Notas
+- El cálculo aún **no** descuenta gastos recurrentes, deuda ni ahorro programado: esos
+  términos existen en el resultado con valor `0.0` y los rellenarán las épicas 5, 6 y 7
+  sin cambiar la fórmula ni la UI (ADR-0014). El "puedes gastar" de hoy es, por tanto,
+  optimista respecto al definitivo.
+
 ## [0.3.0] - 2026-08-14 — Cuentas, ingresos y gastos
 
 ### Añadido

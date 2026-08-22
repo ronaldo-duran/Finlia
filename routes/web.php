@@ -6,8 +6,10 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExpectedIncomeController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\HouseholdController;
 use App\Http\Controllers\HouseholdInvitationController;
@@ -130,4 +132,28 @@ Route::middleware('auth')->group(function () {
 
     // Vista unificada con filtros (ingresos + gastos).
     Route::get('movimientos', [MovementsController::class, 'index'])->name('movements.index');
+
+    // ---- Épica 4: presupuestos y dinero disponible ----
+    // URI en español ('presupuestos'), nombres de ruta 'budgets.*'.
+    Route::resource('presupuestos', BudgetController::class)
+        ->parameters(['presupuestos' => 'budget'])
+        ->except(['show'])
+        ->names([
+            'index' => 'budgets.index',
+            'create' => 'budgets.create',
+            'store' => 'budgets.store',
+            'edit' => 'budgets.edit',
+            'update' => 'budgets.update',
+            'destroy' => 'budgets.destroy',
+        ]);
+
+    // Ingresos mensuales esperados (entrada del cálculo de dinero disponible).
+    Route::get('ingresos-esperados', [ExpectedIncomeController::class, 'index'])
+        ->name('expected-incomes.index');
+    Route::post('ingresos-esperados', [ExpectedIncomeController::class, 'store'])
+        ->name('expected-incomes.store');
+    Route::put('ingresos-esperados/{expectedIncome}', [ExpectedIncomeController::class, 'update'])
+        ->name('expected-incomes.update');
+    Route::delete('ingresos-esperados/{expectedIncome}', [ExpectedIncomeController::class, 'destroy'])
+        ->name('expected-incomes.destroy');
 });

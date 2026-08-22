@@ -24,5 +24,10 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('money', function (string $expression): string {
             return "<?php echo money($expression); ?>";
         });
+
+        // Directiva @percent($valor): "80 %", "332,4 %" (coma decimal, Épica 4).
+        Blade::directive('percent', function (string $expression): string {
+            return "<?php echo percent($expression); ?>";
+        });
     }
 }

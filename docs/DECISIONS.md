@@ -16,6 +16,8 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0010 — Web-first con seam de Services (API móvil diferida)](#adr-0010) — **ACEPTADA**
 - [ADR-0011 — Hogar personal auto-creado al registrar + hogar activo en sesión](#adr-0011) — **ACEPTADA**
 - [ADR-0012 — Saldo de cuenta persistido + recomputado en cada escritura](#adr-0012) — **ACEPTADA**
+- [ADR-0013 — CI en GitHub Actions con Pint + PHPUnit + build de Vite + E2E con Playwright](#adr-0013) — **ACEPTADA**
+- [ADR-0014 — Ingresos esperados configurables y dinero disponible con seams por épica](#adr-0014) — **ACEPTADA**
 
 ---
 
@@ -230,6 +232,48 @@ Los E2E usan `playwright.config.ts`: el `webServer` levanta `php artisan serve` 
 - La `APP_KEY` de `phpunit.xml` y la de los E2E son de prueba (no secretos de producción) y se pueden rotar libremente.
 
 **Estado.** ACEPTADA — 2026-08-14. Implementado en `.github/workflows/ci.yml`, `playwright.config.ts` y `tests/e2e/`.
+
+---
+
+## ADR-0014
+### Ingresos esperados configurables y dinero disponible con seams por épica — **ACEPTADA**
+
+**Contexto.** La Épica 4 define el cálculo central del producto:
+
+```
+ingresos esperados − gastos fijos − recurrentes próximos − obligaciones de deuda
+                  − ahorro programado − presupuesto comprometido = dinero disponible
+```
+
+Al implementarla surgieron tres huecos:
+
+1. **No existe la noción de "ingreso esperado".** La Épica 3 solo registra ingresos *ya ocurridos* (`incomes`). Sin una fuente de expectativa, la vista "próximo mes" arrancaría siempre en cero y el número principal del producto sería inútil.
+2. **Cuatro términos de la fórmula pertenecen a épicas futuras**: gastos fijos y recurrentes (Épica 5), deuda (Épica 6) y ahorro programado (Épica 7). No se pueden implementar ahora sin violar la regla de alcance.
+3. **Doble conteo del presupuesto**: si un hogar define presupuesto total *y* por categoría, sumar ambos infla el comprometido.
+
+**Decisión.**
+
+1. **Nueva tabla `expected_incomes`** (no prevista en DATA_MODEL): el usuario configura sus ingresos mensuales fijos (salario, arriendos, inversiones) con monto, día previsto de cobro y un flag `is_active`. Es la entrada del término "ingresos esperados".
+2. **Ingreso esperado del período = `max(Σ expected_incomes × factor, ingresos registrados del período)`.** Se toma el mayor, no la suma, para no contar dos veces el mismo salario cuando ya se registró como `income`, y para no quedarse corto si entró más de lo previsto. Si el hogar no ha configurado nada, se degrada a los ingresos registrados (el número sigue siendo útil desde el primer día).
+3. **Los términos de épicas 5-7 se declaran explícitamente en cero** dentro de `committed` (`fixed_expenses`, `recurring`, `debt`, `savings`), no se omiten. Cada épica futura solo tiene que rellenar su clave: ni la fórmula, ni la firma del Service, ni la UI cambian. La pantalla los muestra atenuados con la épica que los traerá, así el usuario entiende que el número aún no lo contempla.
+4. **Presupuesto comprometido = `max(total pendiente, Σ pendientes por categoría)`** — el mayor de los dos, evitando el doble conteo cuando existen ambos y sin quedarse corto si las categorías superan al total.
+5. **Cuatro conceptos que no se mezclan** (lo exige la épica): `current_balance` (saldo real hoy), `committed` (reservado del período), `available` (ingresos esperados − gastado − comprometido = "puedes gastar") y `free` (saldo real − comprometido).
+6. **Los presupuestos se guardan siempre como mensuales** (`BudgetPeriod::Monthly`). La consulta "esta semana" **prorratea** el mensual por `días del rango / días del mes`; no existen presupuestos semanales. `BudgetScope` (semana/mes/próximo mes) es la ventana consultada, distinta de `BudgetPeriod`.
+
+**Alternativas (descartadas).**
+- **Estimar los ingresos esperados como promedio de los últimos 3 meses** — cero configuración, pero es una caja negra: el usuario no puede corregirla y un mes atípico distorsiona la previsión. Descartada a favor del control explícito.
+- **Sumar ingresos esperados + registrados** — duplica el salario en cuanto se registra el movimiento.
+- **Omitir de la fórmula los términos de épicas 5-7** — obligaría a reescribir el Service, sus tests y la UI en cada épica siguiente.
+- **Sumar presupuesto total y de categorías** — infla el comprometido y hunde artificialmente el "puedes gastar".
+- **Presupuestos semanales propios** (`BudgetPeriod::Weekly`) — triplica el mantenimiento (el usuario tendría que definir dos presupuestos coherentes entre sí) sin ganancia real.
+
+**Consecuencias y mitigaciones.**
+- El número principal es **conservador por diseño**: si entra un ingreso extra no previsto y ya hay un esperado mayor, no se refleja hasta superarlo. En una app de finanzas, subestimar lo disponible es el sesgo seguro.
+- `expected_incomes` **no** es la tabla de recurrentes de la Épica 5 (`recurring_expenses`): aquella modela *gastos* con frecuencias variadas; esta modela *ingresos* mensuales. No se fusionan.
+- La periodicidad de `expected_incomes` es **mensual fija**. Si la Épica 5 generaliza `Frequency`, se puede añadir aquí sin romper el cálculo (el Service solo consume el importe mensual).
+- Al no haber aún gastos recurrentes ni deuda, el "puedes gastar" de hoy es **optimista** respecto al que dará la Épica 6. La UI lo hace explícito en "¿Cómo se calcula?".
+
+**Estado.** ACEPTADA — confirmado por el equipo al iniciar Épica 4 (2026-08-18). Implementado en `BudgetCalculatorService`, `expected_incomes`, `budgets`, `BudgetScope`, `BudgetPeriod` y `BudgetAlertLevel`.
 
 ---
 
