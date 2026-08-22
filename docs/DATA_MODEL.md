@@ -140,28 +140,60 @@
 
 ## Épica 4 — Presupuestos y dinero disponible
 
+> 🟢 **Implementado** (Épica 4). Ver [ADR-0014](DECISIONS.md#adr-0014): los ingresos esperados son una entidad **configurable por el usuario** (`expected_incomes`, no prevista originalmente aquí) y los términos de las épicas 5-7 se declaran en cero como *seams*.
+
 ### `budgets`
 | Campo | Tipo | Notas |
 |---|---|---|
 | id, household_id | | |
-| category_id | FK, null | null = presupuesto total |
+| category_id | FK, null | null = presupuesto **total** del mes. `cascade` al borrar la categoría |
 | amount | decimal(15,2) | |
-| period | string | enum: `monthly` (inicial) → `weekly`, `yearly` futuro |
-| year | smallint | |
-| month | tinyint (1-12) | |
+| period | string | enum `BudgetPeriod`: solo `monthly` en Épica 4 |
+| year | smallint unsigned | |
+| month | tinyint unsigned (1-12) | |
 | timestamps | | |
 
-### Servicio: `App\Services\AvailableMoneyService` / `BudgetCalculatorService`
-No es tabla. Calcula:
+- Unique `(household_id, category_id, period, year, month)`. Como MySQL trata los NULL como distintos, la unicidad del presupuesto **total** se refuerza en `StoreBudgetRequest`.
+- Índice `(household_id, year, month)`.
+- En edición **solo el monto es mutable**; cambiar categoría o mes = otro presupuesto.
+
+### `expected_incomes`
+Ingresos mensuales esperados del hogar (salario, arriendos, inversiones). Entrada del término "ingresos esperados".
+
+| Campo | Tipo | Notas |
+|---|---|---|
+| id, household_id | | |
+| category_id | FK, null | categoría de tipo `income` (`nullOnDelete`) |
+| name | string | "Salario", "Arriendo local" |
+| amount | decimal(15,2) | importe **mensual** esperado |
+| day_of_month | tinyint unsigned, null | día previsto de cobro (informativo) |
+| is_active | boolean | solo los activos entran en el cálculo |
+| notes | text, null | |
+| timestamps | | |
+
+- Índice `(household_id, is_active)`.
+- **No** es `recurring_expenses` (Épica 5): esa modela *gastos* con frecuencias variadas; esta, *ingresos* mensuales.
+
+### Servicio: `App\Services\BudgetCalculatorService`
+No es tabla. `summary(householdId, BudgetScope, ?referencia)` devuelve un array serializable (Blade y futuro JSON) con:
+
 ```
-dineroDisponible = ingresosEsperados
-                 − gastosFijos
-                 − gastosRecurrentesPróximos
-                 − obligacionesDeuda
-                 − ahorroProgramado
-                 − presupuestoComprometido
+ingresosEsperados = max(Σ expected_incomes activos × factor, ingresos registrados del período)
+comprometido      = presupuestoPendiente          (= max(total pendiente, Σ categorías pendientes))
+                  + gastosFijos + recurrentes     (0.0 — Épica 5)
+                  + obligacionesDeuda             (0.0 — Épica 6)
+                  + ahorroProgramado              (0.0 — Épica 7)
+
+disponible = ingresosEsperados − gastado − comprometido     ← "puedes gastar"
+libre      = balanceActual − comprometido
 ```
-Separar conceptos: **balance actual · disponible · comprometido · libre**.
+
+Cuatro conceptos que **no se mezclan**: **balance actual · disponible · comprometido · libre**.
+
+### Enums de la épica
+- `BudgetPeriod` — periodicidad guardada (`monthly`).
+- `BudgetScope` — ventana consultada (`semana`, `mes`, `proximo-mes`). La semana **prorratea** el presupuesto mensual por `días del rango / días del mes`.
+- `BudgetAlertLevel` — `ok` / `warning` (≥ 80 %) / `exceeded` (≥ 100 %), con color e icono de Bootstrap.
 
 ---
 
@@ -325,6 +357,7 @@ erDiagram
     households ||--o{ incomes : "tiene"
     households ||--o{ expenses : "tiene"
     households ||--o{ budgets : "tiene"
+    households ||--o{ expected_incomes : "tiene"
     households ||--o{ recurring_expenses : "tiene"
     households ||--o{ debts : "tiene"
     households ||--o{ savings_goals : "tiene"
@@ -332,6 +365,7 @@ erDiagram
     accounts ||--o{ expenses : "afecta"
     categories ||--o{ incomes : "clasifica"
     categories ||--o{ expenses : "clasifica"
+    categories ||--o{ budgets : "limita"
     debts ||--o{ debt_payments : "registra"
     savings_goals ||--o{ savings_goal_contributions : "registra"
 ```
@@ -342,4 +376,6 @@ erDiagram
 - `incomes(household_id, date)` y `expenses(household_id, date)` — compuestos, alimentan el dashboard.
 - `incomes(household_id, category_id)` y `expenses(household_id, category_id)`.
 - `household_invitations(token)` unique index.
+- `budgets(household_id, year, month)` + unique `(household_id, category_id, period, year, month)`.
+- `expected_incomes(household_id, is_active)`.
 - `reminders(household_id, status, due_date)`.

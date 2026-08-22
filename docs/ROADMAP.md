@@ -9,7 +9,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 1 | Fundación y configuración del proyecto | 🟢 | — |
 | 2 | Hogares, familias y miembros | 🟢 | 1 |
 | 3 | Cuentas, ingresos y gastos | 🟢 | 2 |
-| 4 | Presupuestos y dinero disponible | 🔴 | 3 |
+| 4 | Presupuestos y dinero disponible | 🟢 | 3 |
 | 5 | Gastos recurrentes y obligaciones futuras | 🔴 | 3, 4 |
 | 6 | Deudas y tarjetas de crédito | 🔴 | 2, 3 |
 | 7 | Metas de ahorro | 🔴 | 3 |
@@ -33,10 +33,10 @@ Configurar Laravel (PHP, MySQL, `.env`, timezone Colombia, locale español, COP)
 `accounts`, `categories` (seed global + custom por hogar), `incomes` y `expenses` en tablas separadas (ADR-0001). Botón "Registrar gasto" rápido. Dashboard del mes con Chart.js. Filtros. Seeders/factories de demo.
 
 ### Épica 4 — Presupuestos y dinero disponible
-`budgets` (total + por categoría). Servicio `BudgetCalculatorService`/`AvailableMoneyService`: ingresos − fijos − recurrentes − deuda − ahorro − comprometido = disponible. Tarjeta "💰 Puedes gastar", indicadores, alertas 80%/100%.
+`budgets` (total + por categoría) y `expected_incomes` (ingresos mensuales fijos configurables, [ADR-0014](DECISIONS.md#adr-0014)). Servicio `BudgetCalculatorService`: ingresos esperados − gastado − comprometido = disponible; los términos de recurrentes, deuda y ahorro quedan **en cero como seams** para las épicas 5-7. Tarjeta "💰 Puedes gastar" (panel y dashboard), consulta semana/mes/próximo mes, indicadores de consumo y tendencia, alertas 80 %/100 %.
 
 ### Épica 5 — Gastos recurrentes y obligaciones futuras
-`recurring_expenses` (frecuencias semanal→anual, próxima fecha). Sección "Próximas obligaciones", alertas, cálculo de ahorro mensual necesario. Integra al cálculo de dinero disponible.
+`recurring_expenses` (frecuencias semanal→anual, próxima fecha). Sección "Próximas obligaciones", alertas, cálculo de ahorro mensual necesario. Integra al cálculo de dinero disponible **rellenando las claves `fixed_expenses` y `recurring`** de `BudgetCalculatorService` (hoy en `0.0`, ver [ADR-0014](DECISIONS.md#adr-0014)); no hay que tocar la fórmula ni la UI.
 
 ### Épica 6 — Deudas y tarjetas de crédito
 `debts`, `debt_payments`, soporte de tarjetas (crédito, límite, fecha de pago). Dashboard de deuda, historial de pagos, refinanciación, proyecciones. Preparar (no implementar obligatoriamente) avalancha/bola de nieve.
