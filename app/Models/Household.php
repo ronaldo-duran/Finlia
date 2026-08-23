@@ -67,6 +67,18 @@ class Household extends Model
         return $this->hasMany(Expense::class);
     }
 
+    // ---- Épica 4: presupuestos y dinero disponible ----
+
+    public function budgets(): HasMany
+    {
+        return $this->hasMany(Budget::class);
+    }
+
+    public function expectedIncomes(): HasMany
+    {
+        return $this->hasMany(ExpectedIncome::class);
+    }
+
     /**
      * Indica si un usuario es miembro del hogar.
      */

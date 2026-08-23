@@ -42,6 +42,11 @@ class Category extends Model
         return $this->hasMany(Expense::class);
     }
 
+    public function budgets(): HasMany
+    {
+        return $this->hasMany(Budget::class);
+    }
+
     /**
      * ¿Categoría global (compartida por seed)? household_id NULL.
      */
