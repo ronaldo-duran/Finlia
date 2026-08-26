@@ -75,7 +75,24 @@ CACHE_STORE=database            # o 'file' (compatible hosting compartido)
 QUEUE_CONNECTION=database       # se procesa vía cron, no worker persistente
 
 FILESYSTEM_DISK=local           # o 'public' para assets accesibles
+
+# Correo transaccional (ADR-0015): SOLO invitaciones y recuperación de contraseña.
+# Hostinger → Emails → Cuentas de correo; usa una cuenta del propio dominio
+# (mejora la entregabilidad frente a un Gmail personal).
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.hostinger.com
+MAIL_PORT=465
+MAIL_USERNAME=no-responder@tudominio.com
+MAIL_PASSWORD=contraseña_del_buzón
+MAIL_SCHEME=smtps               # 465 = smtps (TLS implícito); para 587 usa 'smtp'
+MAIL_FROM_ADDRESS=no-responder@tudominio.com
+MAIL_FROM_NAME="${APP_NAME}"
+FINLIA_MAIL_ENABLED=true        # ponlo en false para apagar el correo transaccional
 ```
+
+> **Sin SMTP la app funciona igual.** Con `MAIL_MAILER=log` los correos van a `storage/logs` y la invitación se comparte con el enlace manual que la pantalla del hogar muestra al administrador. Nunca se le promete al usuario un correo que no va a salir.
+>
+> **Entregabilidad**: configura **SPF** y **DKIM** del dominio en el panel de Hostinger. Sin ellos las invitaciones acaban en spam. Comprueba el envío con `php artisan tinker` → `Mail::raw('prueba', fn ($m) => $m->to('tucorreo@ejemplo.com')->subject('Prueba Finlia'));`
 
 > Configuración de Colombia (timezone, locale, COP) se establece en **Épica 1**. Los valores exactos para `config/app.php` y `.env` se documentan aquí como referencia.
 
@@ -105,6 +122,8 @@ Para **colas** (si se usan) sin worker persistente, procesar dentro del schedule
 ```
 
 > **Principio**: nada que requiera un proceso **24/7**. Si una función lo necesita, rediseñarla para cron/cola programada. Ver Épica 9.
+>
+> El correo transaccional (invitaciones, recuperación de contraseña) se envía **de forma síncrona** y **no depende del cron** (ADR-0015). Son dos correos puntuales disparados por una acción del usuario; encolarlos sin este cron activo los perdería en silencio.
 
 ## 7. Permisos
 

@@ -129,7 +129,26 @@ Ver [docs/CONVENTIONS.md](CONVENTIONS.md#dinero).
 
 - Recordatorios generados por un **comando programado** (`schedule:run`) vía cron de Hostinger (1 vez por minuto).
 - **Sin** workers de cola persistentes obligatorios. Si se usan colas, driver `database` y un cron que ejecute `queue:work --stop-when-empty` o `schedule:run`.
-- Canal inicial: notificaciones **in-app** (tabla `notifications` de Laravel o tabla propia `reminders`). Email/WhatsApp/Push preparados como canales futuros.
+- Canal de recordatorios: **in-app** (tabla `notifications` de Laravel o tabla propia `reminders`). WhatsApp/Push quedan como canales futuros.
+
+### Política de correo — **estrictamente lo imprescindible** (ADR-0015)
+
+Finlia **sí** envía correo, pero solo cuando **no existe otra vía**: es decir, cuando el destinatario no puede ver el mensaje dentro de la app (porque aún no tiene cuenta o no puede entrar).
+
+| Caso | ¿Correo? | Por qué |
+|---|---|---|
+| **Invitar a alguien al hogar** | ✅ Sí | El invitado puede no tener cuenta todavía: no hay bandeja in-app donde avisarle. |
+| **Recuperar contraseña** | ✅ Sí | El usuario está fuera de la sesión por definición. |
+| Recordatorios de pagos, deudas y metas (Épica 9) | ❌ No | El usuario entra a la app; se resuelven **in-app**. |
+| Resúmenes periódicos, informes, novedades, marketing | ❌ Nunca | No son imprescindibles y convierten la app en una fuente de ruido. |
+
+Reglas que acompañan a la política:
+
+- **Ningún correo lleva datos financieros** (saldos, montos, movimientos, nombres de cuentas). Como máximo, el nombre del hogar y quién invita.
+- **El correo es opcional**: si no hay SMTP configurado la app funciona igual. La invitación siempre deja un **enlace manual** que el administrador puede compartir; el correo es una comodidad, no el mecanismo.
+- Interruptor global en `config/finlia.php` → `finlia.mail.enabled`. Con los transports `log`/`array` (desarrollo y tests) la UI no le promete al usuario un correo que nadie recibirá.
+- Añadir un correo nuevo **exige un ADR**: hay que justificar por qué no puede ser in-app.
+- Envío **síncrono** por ahora (son dos correos puntuales, disparados por una acción del usuario). Si el volumen crece, se encolan con driver `database` y el cron ya documentado; no hace falta cambiar nada más.
 
 ## 8. Frontend
 

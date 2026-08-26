@@ -19,17 +19,19 @@ class HouseholdInvitationController extends Controller
     public function __construct(private readonly HouseholdService $service) {}
 
     /**
-     * Genera una invitación y devuelve al owner el enlace para compartir.
+     * Genera una invitación, se la envía por correo al invitado y devuelve al
+     * owner el enlace por si el correo no salió (ADR-0015).
      */
     public function store(StoreHouseholdInvitationRequest $request, Household $household): RedirectResponse
     {
         $this->authorize('invite', $household);
 
         try {
-            [$invitation, $plainToken] = $this->service->inviteMember(
+            [$invitation, $plainToken, $emailSent] = $this->service->inviteMember(
                 $household,
                 $request->invitedEmail(),
                 $request->invitedRole(),
+                $request->user()?->name,
             );
         } catch (ValidationException $e) {
             return redirect()
@@ -41,7 +43,8 @@ class HouseholdInvitationController extends Controller
         return redirect()
             ->route('households.show', $household)
             ->with('invitation_link', route('invitations.show', $plainToken))
-            ->with('invitation_email', $invitation->email);
+            ->with('invitation_email', $invitation->email)
+            ->with('invitation_email_sent', $emailSent);
     }
 
     /**

@@ -6,13 +6,17 @@ namespace App\Services;
 
 use App\Enums\HouseholdRole;
 use App\Enums\InvitationStatus;
+use App\Mail\HouseholdInvitationMail;
 use App\Models\Household;
 use App\Models\HouseholdInvitation;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Stringable;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * Lógica de dominio sobre hogares, miembros e invitaciones.
@@ -70,16 +74,26 @@ class HouseholdService
     }
 
     /**
-     * Genera una invitación para un correo.
-     * Devuelve [invitación, token_plano]: el token plano viaja SOLO en el
-     * enlace que ve el owner; en BD se guarda el hash (ADR-0003).
+     * Genera una invitación para un correo y se la envía al invitado.
      *
-     * @return array{0: HouseholdInvitation, 1: string}
+     * Devuelve [invitación, token_plano, correo_enviado]: el token plano viaja
+     * SOLO en el correo y en el enlace que ve el owner; en BD se guarda el
+     * hash (ADR-0003). El tercer elemento indica si el correo salió de verdad;
+     * si es `false` el owner debe compartir el enlace a mano.
+     *
+     * `$invitedByName` llega como dato explícito desde el controlador para no
+     * acoplar el Service a la capa HTTP (ADR-0010).
+     *
+     * @return array{0: HouseholdInvitation, 1: string, 2: bool}
      *
      * @throws ValidationException
      */
-    public function inviteMember(Household $household, string $email, HouseholdRole $role): array
-    {
+    public function inviteMember(
+        Household $household,
+        string $email,
+        HouseholdRole $role,
+        ?string $invitedByName = null,
+    ): array {
         $email = str($email)->lower()->trim()->toString();
 
         $existingUser = User::firstWhere('email', $email);
@@ -106,7 +120,64 @@ class HouseholdService
             'expires_at' => now()->addDays(self::INVITATION_TTL_DAYS),
         ]);
 
-        return [$invitation, $plainToken];
+        // Evita una consulta extra al construir el correo.
+        $invitation->setRelation('household', $household);
+
+        $emailSent = $this->sendInvitationEmail($invitation, $plainToken, $invitedByName);
+
+        return [$invitation, $plainToken, $emailSent];
+    }
+
+    /**
+     * Envía el correo de invitación (ADR-0015).
+     *
+     * El correo es un extra, no el mecanismo: si falla el SMTP o no está
+     * configurado, la invitación ya quedó creada y el enlace manual sigue
+     * siendo válido. Por eso nunca propaga la excepción.
+     */
+    private function sendInvitationEmail(
+        HouseholdInvitation $invitation,
+        string $plainToken,
+        ?string $invitedByName,
+    ): bool {
+        if (! $this->mailIsDeliverable()) {
+            return false;
+        }
+
+        try {
+            Mail::to($invitation->email)->send(
+                new HouseholdInvitationMail($invitation, $plainToken, $invitedByName)
+            );
+        } catch (Throwable $e) {
+            // Nunca se loguea el token ni el enlace (docs/SECURITY.md §4).
+            Log::warning('No se pudo enviar la invitación por correo.', [
+                'household_id' => $invitation->household_id,
+                'invitation_id' => $invitation->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * ¿El mailer configurado entrega a una bandeja real?
+     * Con `log`/`array` (desarrollo y tests) se responde `false` para que la
+     * UI no le prometa al owner un correo que nadie va a recibir.
+     */
+    private function mailIsDeliverable(): bool
+    {
+        if (! config('finlia.mail.enabled', true)) {
+            return false;
+        }
+
+        return ! in_array(
+            config('mail.default'),
+            (array) config('finlia.mail.fake_transports', []),
+            true,
+        );
     }
 
     /**

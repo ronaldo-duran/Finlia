@@ -103,7 +103,8 @@ Cubrir `index`, `show`, `store` (con `household_id` forzado), `update`, `destroy
 | Dato | Política |
 |---|---|
 | Contraseñas | bcrypt/argon2 (Laravel default). Nunca en texto plano, nunca logueadas. |
-| Tokens de invitación | 64 chars aleatorios; almacenar **hash**, enviar/plano solo por enlace; con expiración y un solo uso. |
+| Tokens de invitación | 64 chars aleatorios; almacenar **hash**, enviar en plano solo por enlace o correo de invitación; con expiración y un solo uso. **Nunca loguearlos.** |
+| Contenido de los correos | **Ningún dato financiero** (saldos, montos, movimientos, nombres de cuentas). La invitación lleva solo nombre del hogar, quién invita y el enlace. Ver [ADR-0015](DECISIONS.md#adr-0015). |
 | Número de tarjeta | **No almacenar completo**. Solo últimos 4 dígitos si se desea. |
 | CVV / PIN / fecha vencimiento completa | **No almacenar nunca.** |
 | Montos | Permitidos; evitar loguear junto a PII innecesaria. |
@@ -127,6 +128,9 @@ Cubrir `index`, `show`, `store` (con `household_id` forzado), `update`, `destroy
 - Sesiones: driver `database` (compatible Hostinger); `SESSION_LIFETIME` razonalbe; `SESSION_ENCRYPT` según necesidad.
 - Logout invalida la sesión; `regenerate()` tras login para prevenir fixation.
 - Verificación de email (Épica 1, si se habilita).
+- **Correo transaccional mínimo (ADR-0015)**: Finlia solo envía correo cuando el destinatario **no puede ver el mensaje dentro de la app** — invitación a un hogar y recuperación de contraseña. Recordatorios, resúmenes y comunicaciones de producto van **in-app**. Menos correos = menos superficie de exposición de datos familiares. Añadir un correo nuevo exige un ADR.
+- El envío de correo **nunca bloquea la operación**: si el SMTP falla se registra un `Log::warning` (sin token ni enlace) y el flujo continúa con el enlace manual.
+- Recuperación de contraseña y creación de invitación devuelven **el mismo mensaje exista o no la dirección**, para no permitir enumeración de usuarios.
 - Cookies: `secure` (HTTPS en prod), `httponly`, `samesite=lax|strict`.
 
 ---

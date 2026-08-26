@@ -18,6 +18,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0012 — Saldo de cuenta persistido + recomputado en cada escritura](#adr-0012) — **ACEPTADA**
 - [ADR-0013 — CI en GitHub Actions con Pint + PHPUnit + build de Vite + E2E con Playwright](#adr-0013) — **ACEPTADA**
 - [ADR-0014 — Ingresos esperados configurables y dinero disponible con seams por épica](#adr-0014) — **ACEPTADA**
+- [ADR-0015 — Correo transaccional mínimo: solo invitaciones y recuperación de contraseña](#adr-0015) — **ACEPTADA**
 
 ---
 
@@ -274,6 +275,49 @@ Al implementarla surgieron tres huecos:
 - Al no haber aún gastos recurrentes ni deuda, el "puedes gastar" de hoy es **optimista** respecto al que dará la Épica 6. La UI lo hace explícito en "¿Cómo se calcula?".
 
 **Estado.** ACEPTADA — confirmado por el equipo al iniciar Épica 4 (2026-08-18). Implementado en `BudgetCalculatorService`, `expected_incomes`, `budgets`, `BudgetScope`, `BudgetPeriod` y `BudgetAlertLevel`.
+
+---
+
+## ADR-0015
+### Correo transaccional mínimo: solo invitaciones y recuperación de contraseña — **ACEPTADA**
+
+**Contexto.** Hasta ahora el único correo que salía de Finlia era el de recuperación de contraseña (broker nativo de Laravel, ADR-0009). Las invitaciones a un hogar (Épica 2, ADR-0003) generaban un enlace con token que el administrador tenía que **copiar y enviar a mano** por WhatsApp o donde fuera. Eso rompe el flujo justo en el momento más importante del producto —meter a la pareja o la familia en el hogar— y es el punto donde más gente abandona.
+
+Al mismo tiempo, `docs/ARCHITECTURE.md` decía que el canal inicial de notificaciones era in-app y que "Email/WhatsApp/Push" quedaban "preparados como canales futuros". Redactado así, cualquiera podía leerlo como una invitación a mandar por correo los recordatorios de la Épica 9, los resúmenes mensuales o novedades del producto.
+
+Hay tres razones para no dejar esa puerta abierta:
+
+1. **Privacidad.** Finlia maneja datos financieros de una familia. Un correo es texto plano en un buzón ajeno, reenviable e indexable. Cuantos menos correos salgan, menos superficie de exposición.
+2. **Confianza.** Una app de finanzas que empieza a mandar resúmenes y novedades se percibe como spam y acaba en la carpeta de correo no deseado — arrastrando consigo los dos correos que **sí** son imprescindibles.
+3. **Coste operativo.** El despliegue es hosting compartido (ADR-0002): sin workers persistentes, con cuotas de envío del proveedor y una reputación de dominio frágil. El volumen de correo debe ser mínimo por diseño, no por configuración.
+
+**Decisión.**
+
+1. **Finlia envía correo solo cuando el destinatario no puede ver el mensaje dentro de la app.** Ese es el criterio único, y hoy da exactamente dos casos:
+   - **Invitación a un hogar** — el invitado puede no tener cuenta todavía; no hay bandeja in-app donde avisarle. *(Nuevo en esta entrega.)*
+   - **Recuperación de contraseña** — el usuario está fuera de la sesión por definición.
+2. **Todo lo demás es in-app.** Los recordatorios de la Épica 9 (pagos recurrentes, cuotas de deuda, metas), los resúmenes, los informes y cualquier comunicación de producto o marketing **no** salen por correo. Se rectifica la redacción de `docs/ARCHITECTURE.md` §7 y de la Épica 9 en `docs/ROADMAP.md`, que sugerían lo contrario.
+3. **Ningún correo transporta datos financieros.** Ni saldos, ni montos, ni movimientos, ni nombres de cuentas. La invitación lleva únicamente el nombre del hogar, el nombre de quien invita y el enlace.
+4. **El correo es una comodidad, nunca el mecanismo.** La invitación se crea y es válida aunque el envío falle: `HouseholdService::inviteMember()` captura cualquier `Throwable`, lo registra sin token ni enlace, y devuelve `false` en el tercer elemento de su tupla. La UI siempre muestra el enlace manual como respaldo, con un texto distinto según haya salido el correo o no.
+5. **Interruptor y detección de transport falso.** `finlia.mail.enabled` apaga el correo transaccional. Además, con los transports `log` y `array` (desarrollo y tests) se considera que **no hay entrega real**: la app no le promete al administrador un correo que nadie va a recibir.
+6. **Envío síncrono.** Son dos correos puntuales disparados por una acción explícita del usuario. Encolarlos ahora obligaría a montar el cron de `queue:work` (ver `docs/DEPLOYMENT.md` §6) y, si ese cron no existe, las invitaciones se perderían en silencio — peor que esperar un segundo.
+7. **Añadir un correo nuevo exige un ADR** que justifique por qué ese aviso no puede ser in-app.
+
+**Alternativas (descartadas).**
+- **Dejar solo el enlace manual** (statu quo) — cero infraestructura, pero traslada el trabajo al usuario justo en el paso decisivo y hace que el token circule por canales que no controlamos.
+- **Notificación de Laravel (`Notification::route('mail', ...)`) en vez de un Mailable** — equivalente en resultado, pero el sistema de notificaciones está pensado para entidades con varios canales; el invitado aún no es un `User`. Un Mailable expresa mejor lo que es: un correo suelto a una dirección.
+- **Encolar el envío desde ya** (`ShouldQueue` + driver `database`) — correcto en cuanto haya volumen, pero hoy depende de un cron que aún no está configurado y fallaría en silencio. Se pospone a la Épica 11 (hardening/producción), donde el cron entra en el checklist de despliegue.
+- **Plantillas markdown de Laravel (`mail::message`)** — más rápidas de escribir, pero sus componentes (botón, subcopia "If you're having trouble clicking...") vienen en inglés y obligarían a publicar y traducir las vistas de `vendor`. Se usa Blade HTML autocontenido con estilos en línea, íntegramente en español.
+- **Mandar los recordatorios de la Épica 9 por correo** — es la vía fácil para "engagement", y es exactamente lo que esta decisión prohíbe: convierte una app de finanzas en una fuente de ruido y quema la reputación del dominio.
+
+**Consecuencias y mitigaciones.**
+- El correo de recuperación de contraseña sigue usando la plantilla nativa de Laravel, que se renderiza **en inglés** (no hay `lang/es.json`). Queda pendiente traducirlo para que los dos únicos correos de Finlia hablen el mismo idioma.
+- `HouseholdService::inviteMember()` pasa a devolver **tres** elementos. El desestructurado de dos que usan los tests existentes sigue siendo válido en PHP, así que no hubo cambios en cascada.
+- El Service llama a `Mail::` y el Mailable construye la URL con `route()`. No rompe ADR-0010: no se toca `request()`, `session()` ni `Auth::id()` — el nombre de quien invita entra como **dato explícito** desde el controlador, y `route()` es determinista a partir de `APP_URL`. Una futura API (Épica 14) reutiliza el envío sin escribir nada.
+- Sin SMTP configurado (`MAIL_MAILER=log`), la app funciona exactamente como antes de esta entrega. La configuración de producción está en `docs/DEPLOYMENT.md` §4.
+- Un buzón inexistente o un SMTP caído generan un `Log::warning`, nunca un error visible: el administrador ve el enlace manual y sigue adelante.
+
+**Estado.** ACEPTADA — 2026-08-26. Implementada en `HouseholdInvitationMail`, `HouseholdService::inviteMember()`, `config/finlia.php` (`finlia.mail`) y las vistas `emails/households/invitation*`.
 
 ---
 
