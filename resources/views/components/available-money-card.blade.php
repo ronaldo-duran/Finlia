@@ -13,11 +13,12 @@
     $scope = $summary['scope'];
 @endphp
 
-<div class="card border-0 h-100 {{ $isNegative ? 'bg-danger-subtle' : 'bg-finlia-subtle' }}"
+{{-- Cobre = lo disponible (docs/BRAND.md). --}}
+<div class="card border-0 h-100 {{ $isNegative ? 'bg-danger-subtle' : 'bg-finlia-accent-subtle' }}"
      data-testid="available-money">
     <div class="card-body">
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-1 gap-sm-2 mb-1">
-            <span class="text-uppercase small fw-semibold {{ $isNegative ? 'text-danger-emphasis' : 'text-finlia' }}">
+            <span class="text-uppercase small fw-semibold {{ $isNegative ? 'text-danger-emphasis' : 'text-finlia-accent' }}">
                 💰 @if ($isNegative) Te has pasado del plan @else Puedes gastar aproximadamente @endif
             </span>
             @unless ($compact)

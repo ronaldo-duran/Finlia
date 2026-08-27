@@ -7,6 +7,9 @@
 
     <title>{{ $title ?? 'Acceso' }} · Finlia</title>
 
+    {{-- Identidad de marca (docs/BRAND.md): símbolo de puntos, sin cambios entre temas. --}}
+    @include('layouts.partials.favicon')
+
     {{-- Anti-FOUC: fija el tema antes del primer paint --}}
     @include('layouts.partials.theme-head')
 
@@ -26,7 +29,7 @@
             {{-- Marca --}}
             <div class="text-center mb-4">
                 <a href="{{ route('home') }}" class="text-decoration-none d-inline-flex align-items-center gap-2">
-                    <i class="bi bi-wallet2 fs-1 text-finlia"></i>
+                    <x-brandmark :size="40" />
                     <span class="fs-3 fw-bold text-finlia">Finlia</span>
                 </a>
                 <p class="text-muted small mb-0">{{ $subtitle ?? '' }}</p>

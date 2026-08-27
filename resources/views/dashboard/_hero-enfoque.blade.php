@@ -9,8 +9,10 @@
     $percent = $budgetSummary['consumed_percent'];
 @endphp
 
-<div class="hero-card {{ $isNegative ? 'bg-danger-subtle' : 'bg-finlia-subtle' }} mb-3" data-testid="available-money">
-    <div class="text-uppercase small fw-semibold {{ $isNegative ? 'text-danger' : 'text-finlia' }} mb-2">
+{{-- Cobre = lo disponible (docs/BRAND.md): esta cifra es la razón de ser
+     de la regla, así que usa el acento de marca en vez del primario. --}}
+<div class="hero-card {{ $isNegative ? 'bg-danger-subtle' : 'bg-finlia-accent-subtle' }} mb-3" data-testid="available-money">
+    <div class="text-uppercase small fw-semibold {{ $isNegative ? 'text-danger' : 'text-finlia-accent' }} mb-2">
         <i class="bi bi-wallet2 me-1"></i>
         {{ $isNegative ? 'Te has pasado del plan' : ($showDaily ? 'Puedes gastar hoy' : 'Puedes gastar este mes') }}
     </div>

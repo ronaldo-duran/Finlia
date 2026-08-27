@@ -7,15 +7,17 @@
 
 Fuente: `resources/css/app.css` (sección "Épica 10 (adelantado) — Rediseño mobile-first").
 Vistas de referencia: `resources/views/dashboard.blade.php`, `dashboard/_hero-enfoque.blade.php`,
-`movements/index.blade.php`, `movements/_item.blade.php`, `expenses/_form.blade.php`.
+`movements/index.blade.php`, `movements/_item.blade.php`, `expenses/_form.blade.php`,
+`components/brandmark.blade.php`. Identidad de marca (logo/color): [docs/BRAND.md](BRAND.md).
 
 ## 1. Principios
 
 1. **Mobile-first, sin dejar de usarse desde PC.** Se diseña primero a 390px; el sidebar de
    escritorio y las grillas son la ampliación, no el punto de partida.
-2. **Un color de marca, poco ruido.** Verde `--finlia-primary` como único acento; nada de
-   iconos de colores distintos por KPI "porque sí" (eso fue justo el feedback que motivó el
-   rediseño: "los botones del dashboard no mantienen armonía").
+2. **Un color de marca, poco ruido.** `--finlia-primary` (petróleo/teal, [BRAND.md](BRAND.md))
+   como único acento — más `--finlia-accent` (cobre) reservado exclusivamente para "dinero
+   disponible", nunca decorativo. Nada de iconos de colores distintos por KPI "porque sí" (eso fue
+   justo el feedback que motivó el rediseño: "los botones del dashboard no mantienen armonía").
 3. **Glass sutil, no decorativo.** `backdrop-filter: blur` ya es el fondo por defecto de `.card`
    desde la Épica 1 — no hace falta añadirlo a mano, y no lo satures (blur fuerte + mucho color
    vuelve la app "neón").
@@ -31,16 +33,19 @@ Vistas de referencia: `resources/views/dashboard.blade.php`, `dashboard/_hero-en
 
 | Variable | Uso |
 |---|---|
-| `--finlia-primary` / `-hover` / `-rgb` | Marca. Claro `#0f6f66`, oscuro `#57b6a8` (desaturados a propósito, ver §7). |
-| `--finlia-success` / `--finlia-danger` / `--finlia-warning` (+ `-rgb`) | Estados. También desaturados; pisan `.text-success`, `.bg-danger-subtle`, `.text-bg-warning`, etc. — **no** uses los verdes/rojos "de fábrica" de Bootstrap a mano, usa las clases utilitarias de siempre y el token las resuelve. |
+| `--finlia-primary` / `-hover` / `-rgb` | Marca (petróleo/teal oscuro — ver [docs/BRAND.md](BRAND.md)). |
+| `--finlia-accent` / `-hover` / `-rgb` | Cobre. **Siempre** "dinero disponible" ([docs/BRAND.md](BRAND.md)) — nunca un acento decorativo suelto. |
+| `--finlia-success` / `--finlia-danger` / `--finlia-warning` (+ `-rgb`) | Estados. Desaturados; pisan `.text-success`, `.bg-danger-subtle`, `.text-bg-warning`, etc. — **no** uses los verdes/rojos "de fábrica" de Bootstrap a mano, usa las clases utilitarias de siempre y el token las resuelve. |
 | `--finlia-surface`, `--finlia-nav-bg`, `--finlia-border`, `--finlia-glass-border` | Vidrio. Ya aplicados por `.card`, `.glass-nav`, `.finlia-sidebar`. |
 | `--finlia-radius` (16px) / `--finlia-radius-sm` (12px) | Radios. Los componentes nuevos (`.chip`, `.hero-card`, `.bottom-nav-fab`…) usan `999px`/`24px` a propósito — son elementos "de gesto", no tarjetas de contenido. |
 | `--finlia-safe-bottom` | `env(safe-area-inset-bottom)`, para la barra inferior en móviles con notch. |
 
 Nunca hardcodees el hex de marca en una vista nueva. Si necesitas un color inline (p. ej. un
-`style=""` puntual porque el elemento no puede usar una clase), usa `var(--finlia-primary)` —
-**excepto en emails** (`resources/views/emails/`), donde los clientes de correo no soportan CSS
-custom properties y el hex sí va literal (`#0f6f66`, mantenlo sincronizado a mano si cambia la marca).
+`style=""` puntual porque el elemento no puede usar una clase), usa `var(--finlia-primary)` /
+`var(--finlia-accent)` — **excepto en emails** (`resources/views/emails/`) y `<x-brandmark>`
+(`resources/views/components/brandmark.blade.php`), donde los clientes de correo y el icono de
+marca (colores invariantes por diseño, ver BRAND.md) no usan custom properties y el hex va
+literal; mantenlo sincronizado a mano si cambia la marca.
 
 ## 3. Piezas base (desde la Épica 1 — ya el default, no hace falta pedirlas)
 
@@ -84,8 +89,10 @@ o un `<span class="active">` (la opción actual, no clicable).
 
 ### `.hero-card` / `.hero-figure`
 La cifra protagonista de la pantalla (§1.4). `.hero-card` no trae fondo propio — combínalo con
-`bg-finlia-subtle` (positivo/neutro) o `bg-danger-subtle` (alerta), como en
-`dashboard/_hero-enfoque.blade.php`.
+`bg-finlia-accent-subtle` (dinero **disponible** — el caso normal, ver [BRAND.md](BRAND.md)) o
+`bg-danger-subtle` (alerta, p. ej. te pasaste del plan), como en `dashboard/_hero-enfoque.blade.php`.
+Si la cifra protagonista NO es "disponible" (p. ej. un total gastado), usa `bg-finlia-subtle`
+normal — el cobre es específicamente para disponibilidad, no un tinte genérico de "cifra grande".
 
 ### `.bottom-nav` / `.bottom-nav-item` / `.bottom-nav-fab`
 Ya está en el layout (`layouts/partials/mobile-bottom-nav.blade.php`), **no la repitas** en
@@ -148,17 +155,19 @@ círculo tintado con el **color de la categoría** si existe, o el tinte de marc
 — **reutilízalo** (`@include('movements._item', ['m' => $m, 'showActions' => true])`) en vez de
 copiar el markup: ya lo usan el Panel y Movimientos.
 
-## 6. Colores de marca y estado — por qué están desaturados
+## 6. Colores de marca y estado
 
-Los tokens de marca (`#0f6f66`/`#57b6a8`) y de estado (`--finlia-success/-danger/-warning`) se
-ajustaron a partir del feedback explícito de la sesión de diseño: *"se ve demasiado neón en
-algunas partes"*. Si necesitas un nuevo tono para un estado que no existe todavía (p. ej. un
-badge "vencido"), sigue el mismo criterio: tono apagado, no saturado, coherente en claro y
-oscuro — no reintroduzcas los verdes/rojos vivos por defecto de Bootstrap.
+Los colores de marca (petróleo/cobre) son los de la identidad aprobada — ver
+[docs/BRAND.md](BRAND.md) para el símbolo, la paleta completa y las reglas de uso del logo. Los
+de estado (`--finlia-success/-danger/-warning`) son independientes de la marca (semántica de
+éxito/peligro/aviso, no identidad) pero siguen el mismo criterio que motivó el rediseño mobile-
+first: *"se ve demasiado neón en algunas partes"* — tono apagado, no saturado, coherente en claro
+y oscuro. Si necesitas un nuevo tono de estado (p. ej. un badge "vencido"), sigue ese mismo
+criterio; no reintroduzcas los verdes/rojos vivos por defecto de Bootstrap.
 
 ## 7. Checklist para una vista nueva
 
-1. ¿Extiende `layouts.app` (autenticado) o `layouts.guest` (público)? No dupliques navbar/footer/tema.
+1. ¿Extiende `layouts.app` (autenticado) o `layouts.guest` (público)? No dupliques navbar/footer/tema/favicon —ya están ahí, y el favicon nuevo trae su propio `x-brandmark`/`layouts.partials.favicon`, no un `bi-wallet2` suelto (ver [BRAND.md](BRAND.md)).
 2. ¿El contenedor principal es `.card` (ya viene con vidrio)? No añadas `backdrop-filter` a mano.
 3. ¿Hay una cifra de dinero protagonista? → `.hero-card` + `.hero-figure`, no un `<h1>` gigante suelto.
 4. ¿Hay un filtro o alternancia de pocas opciones? → `.chip-row` o `.segmented`, con el control

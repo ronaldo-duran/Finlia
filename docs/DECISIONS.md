@@ -20,6 +20,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0014 — Ingresos esperados configurables y dinero disponible con seams por épica](#adr-0014) — **ACEPTADA**
 - [ADR-0015 — Correo transaccional mínimo: solo invitaciones y recuperación de contraseña](#adr-0015) — **ACEPTADA**
 - [ADR-0016 — Rediseño mobile-first adelantado (Épica 10 parcial) + sistema de diseño propio](#adr-0016) — **ACEPTADA**
+- [ADR-0017 — Identidad de marca Finlia (símbolo de puntos, petróleo/cobre)](#adr-0017) — **ACEPTADA**
 
 ---
 
@@ -403,6 +404,81 @@ explícitamente (ver comentario en `resources/css/app.css` sobre la Épica 1).
 `layouts/partials/mobile-bottom-nav.blade.php`, `dashboard.blade.php` + `dashboard/_hero-enfoque.blade.php`,
 `movements/{index,_item}.blade.php`, `expenses/incomes/_form.blade.php`, `resources/js/app.js`
 (`window.FinliaMoney`), y documentada en [docs/UI_DESIGN.md](UI_DESIGN.md).
+
+---
+
+## ADR-0017
+### Identidad de marca Finlia (símbolo de puntos, petróleo/cobre) — **ACEPTADA**
+
+**Contexto.** El rediseño mobile-first (ADR-0016) fijó los tokens `--finlia-primary`
+(`#0f6f66`/`#57b6a8`) como un verde-teal **provisional**, elegido solo para bajar el "neón" del
+verde de fábrica de la Épica 1 — nunca hubo un ejercicio real de identidad de marca. El producto
+encargó ese ejercicio a Claude Design ("Finlia — Marca") y entregó un símbolo aprobado: **treinta
+puntos en rejilla 6×5, los días del mes** — veinticuatro en petróleo (días transcurridos), seis en
+cobre (días que el dinero disponible todavía cubre). Es la cifra "puedes gastar hoy" del Panel
+convertida en marca, con paleta (`#0B3F44` petróleo / `#C08A3E` cobre / equivalentes de tema
+oscuro) y reglas de uso (espacio mínimo, simplificación por tamaño, "el cobre siempre es lo
+disponible") documentadas en el propio entregable.
+
+**Decisión.**
+
+1. **El verde provisional se reemplaza por la marca aprobada.** `--finlia-primary` pasa a
+   petróleo `#0B3F44` (claro) / teal oscuro `#3F8F8A` (oscuro — petróleo puro no tiene contraste
+   suficiente sobre fondos casi negros, mismo criterio que ya se usó para el resto de la paleta).
+   Los colores de **estado** (`--finlia-success/-danger/-warning`) no cambian: son semántica de
+   éxito/peligro/aviso, independiente de la identidad de marca.
+2. **Nuevo token `--finlia-accent` (cobre), con un solo uso permitido: "dinero disponible".** La
+   regla del propio entregable de marca ("el cobre representa siempre lo disponible, en la marca
+   y en la interfaz") es una instrucción explícita, no solo para el logo — se aplica a la cifra
+   hero del Panel (`dashboard/_hero-enfoque.blade.php`) y a la tarjeta de disponible de
+   Presupuestos (`components/available-money-card.blade.php`), y a ningún otro sitio. No se
+   convierte en un "segundo color de marca" de uso libre.
+3. **El símbolo entra a la UI como `<x-brandmark>`** (`resources/views/components/brandmark.blade.php`),
+   SVG inline con los colores fijos del icono con contenedor —invariante entre temas, igual que
+   `public/finlia-icon.svg`—, reemplazando el `<i class="bi bi-wallet2">` que hacía de "logo"
+   provisional en navbar, sidebar móvil y la pantalla de login/registro. Favicon real
+   (`layouts/partials/favicon.blade.php`: SVG + PNG + apple-touch-icon) reemplaza el `.ico` por
+   defecto de Laravel (que se deja como *fallback* legado, no se borra, por si algún cliente viejo
+   lo pide directamente en vez de leer los `<link>`).
+4. **Los archivos de marca "planos" (`finlia-logo.svg`, `-claro.png`, `-oscuro.png`) no se usan
+   dentro de la app.** Llevan el texto "Finlia" en un color fijo (no seguirían el toggle de tema);
+   dentro de la app ese texto ya es HTML normal que hereda el color correcto solo con
+   `<x-brandmark>` al lado. Esas piezas quedan para contextos sin CSS vivo (email, redes,
+   portafolio).
+5. **`--finlia-bg` (el fondo general de la app) no se toca.** La marca trae sus propios "Claro"
+   (`#E8F1F0`) y "Fondo oscuro" (`#0B1C1F`) para piezas de marca, pero repintar toda la superficie
+   neutra de la app con esos tonos es un cambio de mucho más alcance que "usar el logo y el color
+   donde corresponda" — el símbolo/favicon/color de marca son piezas puntuales, no una repintada
+   general.
+
+**Alternativas (descartadas).**
+- **Mantener el verde-teal provisional e ignorar el entregable de marca** — es exactamente lo que
+  el usuario pidió corregir; el verde nunca fue una decisión de identidad, era un parche de "baja
+  el neón" sobre el color de fábrica.
+- **Usar cobre como acento secundario libre** (p. ej. para cualquier botón "secundario" o badge
+  destacado) — más flexible para el agente, pero contradice la regla explícita del entregable de
+  marca ("nunca se usa para todo el símbolo"/"siempre lo disponible") y diluye la señal: si el
+  cobre aparece en todas partes, deja de significar "esto es tu dinero disponible".
+- **Repintar `--finlia-bg`/`--finlia-bg-2` a los tonos "Claro"/"Fondo oscuro" de la marca** — más
+  coherente visualmente en el límite, pero es un cambio de alcance mucho mayor (toca cada
+  superficie neutra de la app) que lo pedido, y no estaba en el entregable de marca como regla
+  ("el fondo general" no es una de las piezas que define `docs/BRAND.md`).
+
+**Consecuencias.**
+- Todo hex de marca hardcodeado que quedó del rediseño anterior (`#0f766e` en algún fallback,
+  `INCOME_COLOR` de `resources/js/charts.js`) se sincroniza al nuevo petróleo `#0B3F44`.
+- `docs/UI_DESIGN.md` §2 y §6 y `docs/BRAND.md` (nuevo) quedan como referencia obligatoria para
+  cualquier uso futuro del logo o del color de marca — ver también el checklist de UI_DESIGN.md.
+- El favicon por defecto de Laravel (`public/favicon.ico`) queda huérfano (nada lo referencia ya
+  explícitamente) pero no se borra: **no hay herramienta de conversión de imágenes en este
+  entorno** para regenerarlo a partir del símbolo nuevo, así que se mantiene como fallback legado
+  hasta que alguien lo regenere con las herramientas adecuadas.
+
+**Estado.** ACEPTADA — 2026-08-27. Implementada en `resources/css/app.css`,
+`resources/views/components/brandmark.blade.php`, `layouts/partials/favicon.blade.php`,
+`layouts/{app,guest}.blade.php`, `dashboard/_hero-enfoque.blade.php`,
+`components/available-money-card.blade.php`, `resources/js/charts.js`, `public/*` (assets de
+marca), y documentada en [docs/BRAND.md](BRAND.md).
 
 ---
 

@@ -17,7 +17,7 @@
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px -8px rgba(15,23,42,0.25);">
 
                     <tr>
-                        <td style="background-color:#0f6f66; padding:20px 28px;">
+                        <td style="background-color:#0b3f44; padding:20px 28px;">
                             <span style="color:#ffffff; font-size:20px; font-weight:700; letter-spacing:-0.3px;">{{ $appName }}</span>
                         </td>
                     </tr>
@@ -40,7 +40,7 @@
 
                             <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
                                 <tr>
-                                    <td style="background-color:#0f6f66; border-radius:12px;">
+                                    <td style="background-color:#0b3f44; border-radius:12px;">
                                         <a href="{{ $acceptUrl }}"
                                            style="display:inline-block; padding:13px 26px; font-size:15px; font-weight:600; color:#ffffff; text-decoration:none;">
                                             Aceptar invitación
@@ -59,7 +59,7 @@
                                 ¿El botón no funciona? Copia y pega esta dirección en tu navegador:
                             </p>
                             <p style="margin:0; font-size:12px; line-height:1.5; word-break:break-all;">
-                                <a href="{{ $acceptUrl }}" style="color:#0f6f66;">{{ $acceptUrl }}</a>
+                                <a href="{{ $acceptUrl }}" style="color:#0b3f44;">{{ $acceptUrl }}</a>
                             </p>
                         </td>
                     </tr>

@@ -50,7 +50,7 @@ class DashboardController extends Controller
             'expensesByCategory' => [
                 'labels' => $byCategory->pluck('name')->all(),
                 'amounts' => $byCategory->pluck('total')->all(),
-                'colors' => $byCategory->map(fn ($c) => $c['color'] ?? '#0f6f66')->all(),
+                'colors' => $byCategory->map(fn ($c) => $c['color'] ?? '#0b3f44')->all(),
             ],
             'trend' => [
                 'labels' => array_column($trend, 'label'),
