@@ -131,6 +131,7 @@ Para reportar una vulnerabilidad, abre un issue privado o contacta al maintainer
 - [docs/ROADMAP.md](docs/ROADMAP.md) — Roadmap de épicas
 - [docs/CONVENTIONS.md](docs/CONVENTIONS.md) — Convenciones
 - [docs/UI_DESIGN.md](docs/UI_DESIGN.md) — Sistema de diseño (UI mobile-first)
+- [docs/BRAND.md](docs/BRAND.md) — Identidad de marca (símbolo, logo, paleta)
 - [docs/DECISIONS.md](docs/DECISIONS.md) — Decisiones (ADR)
 - `scrum/epics/` — Épicas detalladas
 

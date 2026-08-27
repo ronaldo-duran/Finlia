@@ -19,12 +19,18 @@
    Tokens de tema
    ============================================================= */
 :root {
-    /* Marca Finlia: verde "dinero" como acento principal.
-       Ajustado en el rediseño mobile-first (feedback: "se ve demasiado
-       neón") a un verde más apagado, cercano al de la maqueta. */
-    --finlia-primary: #0f6f66;
-    --finlia-primary-rgb: 15, 111, 102;
-    --finlia-primary-hover: #0c584f;
+    /* Marca Finlia (identidad aprobada — docs/BRAND.md): petróleo como
+       color principal y cobre como acento de "dinero disponible". Sustituye
+       el verde provisional del rediseño mobile-first (ADR-0017). */
+    --finlia-primary: #0b3f44;
+    --finlia-primary-rgb: 11, 63, 68;
+    --finlia-primary-hover: #082c30;
+
+    /* Cobre: en la marca y en la interfaz representa SIEMPRE lo disponible
+       (docs/BRAND.md §Reglas) — nunca un acento decorativo genérico. */
+    --finlia-accent: #c08a3e;
+    --finlia-accent-rgb: 192, 138, 62;
+    --finlia-accent-hover: #a47531;
 
     /* Estados (éxito/peligro/aviso) también desaturados: los tonos por
        defecto de Bootstrap competían visualmente con la marca. */
@@ -70,9 +76,13 @@
 }
 
 [data-bs-theme="dark"] {
-    --finlia-primary: #57b6a8;
-    --finlia-primary-rgb: 87, 182, 168;
-    --finlia-primary-hover: #75c7ba;
+    --finlia-primary: #3f8f8a;
+    --finlia-primary-rgb: 63, 143, 138;
+    --finlia-primary-hover: #5aa9a4;
+
+    --finlia-accent: #d9a45e;
+    --finlia-accent-rgb: 217, 164, 94;
+    --finlia-accent-hover: #e6b87a;
 
     --finlia-success: #6fbf95;
     --finlia-success-rgb: 111, 191, 149;
@@ -124,6 +134,18 @@ a { color: var(--finlia-primary); }
 
 .border-finlia {
     border-color: rgba(var(--finlia-primary-rgb), 0.28) !important;
+}
+
+/* Cobre: "lo disponible" (docs/BRAND.md). Úsalo solo para eso —la cifra
+   y el rótulo de dinero disponible—, nunca como acento decorativo genérico. */
+.text-finlia-accent { color: var(--finlia-accent) !important; }
+
+.bg-finlia-accent-subtle {
+    background-color: rgba(var(--finlia-accent-rgb), 0.14) !important;
+}
+
+.border-finlia-accent {
+    border-color: rgba(var(--finlia-accent-rgb), 0.3) !important;
 }
 
 /* Estados desaturados: pisan las utilidades de Bootstrap (que son

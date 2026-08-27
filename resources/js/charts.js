@@ -17,7 +17,7 @@ const source = document.getElementById('finlia-chart-data');
 const data = source ? JSON.parse(source.textContent) : null;
 
 // Paleta consistente con la marca (CSS --finlia-primary) y derivados.
-const INCOME_COLOR = '#0f766e';
+const INCOME_COLOR = '#0b3f44';
 const EXPENSE_COLOR = '#e35d6a';
 
 const currency = (value) =>

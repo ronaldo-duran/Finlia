@@ -12,6 +12,26 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.6.0] - 2026-08-27 — Identidad de marca
+
+### Añadido
+- **Identidad de marca Finlia adoptada** ([ADR-0017](docs/DECISIONS.md#adr-0017)): símbolo de
+  treinta puntos (los días del mes, en rejilla 6×5) en petróleo `#0B3F44` (claro) / teal oscuro
+  `#3F8F8A` (oscuro), con cobre `#C08A3E`/`#D9A45E` reservado siempre para "dinero disponible".
+  Reemplaza el verde-teal provisional del rediseño mobile-first.
+- Componente `<x-brandmark>` (isotipo real, ya no `bi-wallet2`) en navbar, sidebar móvil y
+  login/registro; favicon real (SVG + PNG + apple-touch-icon) vía
+  `layouts/partials/favicon.blade.php`.
+- `docs/BRAND.md`: paleta, reglas de uso del logo y qué archivo de `public/` usar para cada caso.
+
+### Cambiado
+- La cifra de "dinero disponible" (Panel y Presupuestos) usa el acento cobre de marca en vez del
+  color primario, siguiendo la regla explícita del entregable de identidad.
+- Todo hex de marca hardcodeado que quedaba del rediseño anterior (color de categorías, gráfico de
+  ingresos, plantilla de email de invitación) se sincroniza al nuevo petróleo.
+
+---
+
 ## [0.5.0] - 2026-08-27 — Rediseño mobile-first
 
 ### Añadido

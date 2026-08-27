@@ -215,7 +215,7 @@
                              se comprime ni se corta. --}}
                         <div class="d-md-flex justify-content-between align-items-center gap-2 mb-2">
                             <div class="d-flex align-items-center flex-wrap gap-2 min-w-0">
-                                <span class="color-dot" style="background-color: {{ $row['color'] ?: '#0f6f66' }}"></span>
+                                <span class="color-dot" style="background-color: {{ $row['color'] ?: '#0b3f44' }}"></span>
                                 <span class="fw-semibold text-truncate">{{ $row['name'] }}</span>
                                 @if ($row['level'] !== \App\Enums\BudgetAlertLevel::Ok)
                                     <span class="badge rounded-pill text-bg-{{ $row['level']->color() }}">

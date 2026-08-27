@@ -7,6 +7,9 @@
 
     <title>{{ $title ?? 'Panel' }} · Finlia</title>
 
+    {{-- Identidad de marca (docs/BRAND.md): símbolo de puntos, sin cambios entre temas. --}}
+    @include('layouts.partials.favicon')
+
     {{-- Anti-FOUC: fija el tema antes del primer paint --}}
     @include('layouts.partials.theme-head')
 
@@ -19,7 +22,7 @@
         <div class="container-fluid">
             <div class="d-flex align-items-center gap-1">
                 <a class="navbar-brand mb-0 d-flex align-items-center gap-2" href="{{ route('dashboard') }}">
-                    <i class="bi bi-wallet2 text-finlia"></i>
+                    <x-brandmark :size="26" />
                     <span>Finlia</span>
                 </a>
             </div>
@@ -77,8 +80,8 @@
         <aside class="offcanvas-lg offcanvas-end finlia-sidebar border-0"
                tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
             <div class="offcanvas-header d-lg-none">
-                <h5 class="offcanvas-title" id="sidebarLabel">
-                    <i class="bi bi-wallet2 me-1 text-finlia"></i> Finlia
+                <h5 class="offcanvas-title d-flex align-items-center gap-2" id="sidebarLabel">
+                    <x-brandmark :size="22" /> Finlia
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Cerrar"></button>
             </div>
