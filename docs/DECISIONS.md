@@ -330,7 +330,7 @@ través de Claude Design (mobile-first, "liquid glass" sutil, dark/light) porque
 el estado actual era concreto: la marca se veía "demasiado neón" y los botones del panel "no
 mantienen una armonía" — mucha información con distinto peso visual, sin jerarquía. El diseño
 salió en **dos direcciones** igual de válidas ("Enfoque": una sola cifra y un gesto; "Control": el
-mes de un vistazo) sin que el producto se decantara por una.
+mes de un vistazo) sin que el histórico de chat del encargo se decantara por una.
 
 La Épica 10 (UX mobile y PWA) es la que formalmente cubre "navbar/botones/forms optimizados
 móvil" y "botón flotante +", pero está después de las épicas 5-9 en el orden declarado. El
@@ -345,34 +345,44 @@ explícitamente (ver comentario en `resources/css/app.css` sobre la Épica 1).
    (manifest/instalación PWA, selects inteligentes, FAB con transferencia/aporte/pago de deuda —
    dependen de las épicas 6-7) queda **sin implementar**, tal como manda la regla de "no
    implementes lo que la épica todavía no pide".
-2. **No elegir entre "Enfoque" y "Control": ambas quedan, conmutables.** En vez de forzar una
-   decisión de producto que no se tomó, se implementó `design_variant()` — una preferencia de
-   **sesión** (igual que `active_household()`), sin modelo ni migración, con un segmentado
-   "Enfoque / Control" en el sidebar y el menú móvil. Es reversible sin coste: cambiar de opinión
-   sobre cuál es la variante "correcta" no requiere tocar código, solo el helper.
+2. **Una sola variante: "Enfoque".** Se probó primero con ambas direcciones conmutables en sesión
+   (`design_variant()`), pero al verlas en uso el producto se decantó explícitamente: el
+   dashboard-resumen de "Control" (anillo de presupuesto + `doughnut` de Chart.js debajo) "no
+   aporta mucho" y hacía ver "rara" la barra lateral de escritorio (el segmentado
+   Enfoque/Control no encajaba ahí). Se retiró "Control" por completo —helper, controlador, ruta,
+   partial y CSS del anillo/grilla de accesos— y el Panel quedó con una sola forma de mostrarse:
+   la cifra "puedes gastar hoy" + un gesto (Gasto/Ingreso).
 3. **El resultado del rediseño se documenta como sistema de diseño reutilizable**
    ([docs/UI_DESIGN.md](UI_DESIGN.md)), no como un one-off del Panel. Todo componente nuevo
-   (`.chip`, `.segmented`, `.hero-card`, `.budget-ring`, el patrón de icono-tintado-por-categoría)
-   se documenta con **cuándo usarlo y cuándo no**, para que las épicas siguientes (5-9, que añaden
-   pantallas nuevas) lo usen por defecto en vez de reinventar Bootstrap suelto pantalla a pantalla
-   — que es exactamente el problema que originó el encargo del rediseño.
+   (`.chip`, `.segmented`, `.hero-card`, el patrón de icono-tintado-por-categoría, el input de
+   dinero con formato de miles) se documenta con **cuándo usarlo y cuándo no**, para que las
+   épicas siguientes (5-9, que añaden pantallas nuevas) lo usen por defecto en vez de reinventar
+   Bootstrap suelto pantalla a pantalla — que es exactamente el problema que originó el encargo.
 4. **Los controles reales nunca se sustituyen por el atajo visual.** El importe grande de
-   "Registrar gasto" sigue siendo `<input type="number" name="amount" required>`; los chips de
-   categoría son un atajo que fija el `<select>` real por JS, no un reemplazo. Se prioriza no
-   romper la validación HTML5 ni la cobertura Playwright existente por encima del parecido
-   pixel-perfect con la maqueta.
+   "Registrar gasto" sigue siendo un `<input name="amount" required>` real (con formato de miles
+   en vivo vía `data-money-input`, ver §UI_DESIGN.md); los chips de categoría son un atajo que fija
+   el `<select>` real por JS, sincronizado en los dos sentidos (elegir un chip resalta solo ese
+   chip; cambiar el `<select>` a mano resincroniza cuál chip, si alguno, queda iluminado). Se
+   prioriza no romper la validación HTML5 ni la cobertura Playwright existente por encima del
+   parecido pixel-perfect con la maqueta.
+5. **El offcanvas del sidebar móvil abre desde el lado de su botón.** Lo activa "Más", que vive en
+   el extremo derecho de la barra inferior — por eso es `offcanvas-end` (desde la derecha), no
+   `offcanvas-start`: abrirlo desde el lado contrario al botón que lo dispara se sentía
+   desconectado del gesto que lo originó.
 
 **Alternativas (descartadas).**
 - **Esperar a la Épica 10 en su orden natural** — coherente con el protocolo, pero deja el
   feedback de diseño (ya encargado y pagado en tiempo de diseño) sin usar durante 5+ épicas, y
   arriesga que el criterio de diseño se pierda o haya que rehacerlo.
-- **Forzar una sola variante** (elegir "Enfoque" o "Control" a criterio del agente) — más simple,
-  pero es una decisión de producto que no le correspondía al agente tomar; el histórico de chat
-  del rediseño terminaba sin que el usuario se decantara.
+- **Mantener "Enfoque" y "Control" conmutables indefinidamente** — es lo que se implementó
+  primero, precisamente para no forzar una decisión de producto sin que el usuario la hubiera
+  tomado. Una vez el usuario las vio en uso y pudo comparar, la decisión sí se tomó (punto 2) y
+  mantener las dos ya no aportaba —solo una rama de código y una UI de más que mantener.
 - **Sustituir el input de importe por un teclado numérico a medida** (como en la maqueta) —
   visualmente más fiel, pero exige reimplementar la validación (`required`, tipo, `:invalid`) en
-  JS y rompe la prueba e2e `no permite guardar un gasto sin cuenta ni valor`. Se prefirió adaptar
-  la tecnología a la tecnología del proyecto, como pide el propio encargo del rediseño.
+  JS y rompe la prueba e2e `no permite guardar un gasto sin cuenta ni valor`. Se prefirió un
+  `<input type="text" inputmode="decimal" data-money-input>` real con formato en vivo: mismo
+  resultado visual (miles separados) sin tocar la validación nativa.
 
 **Consecuencias.**
 - La Épica 10 pasa a 🟡 en `docs/ROADMAP.md` con una nota explícita de qué falta.
@@ -384,15 +394,15 @@ explícitamente (ver comentario en `resources/css/app.css` sobre la Épica 1).
   [docs/UI_DESIGN.md](UI_DESIGN.md); `docs/CONVENTIONS.md`, `docs/ARCHITECTURE.md`, `CLAUDE.md`,
   `AGENTS.md` y los skills/agentes de Claude Code (`implement-epic`, `epic-implementer`,
   `laravel-reviewer`) quedan actualizados para exigirlo por defecto.
-- `design_variant()` es deuda de producto, no técnica: en algún momento alguien tiene que decidir
-  si "Enfoque" y "Control" conviven para siempre (como preferencia de usuario) o si el conmutador
-  desaparece a favor de una sola.
+- El sidebar de escritorio y el offcanvas móvil ("Más") comparten el mismo `<aside>`: los enlaces
+  que ya tienen hueco en la barra inferior (Panel, Movimientos, Presupuesto) se ocultan en móvil
+  con `d-none d-lg-block` para no duplicar destino — cualquier ítem nuevo del sidebar que se añada
+  a la barra inferior debe recibir la misma clase.
 
 **Estado.** ACEPTADA — 2026-08-27. Implementada en `resources/css/app.css`, `layouts/app.blade.php`,
-`layouts/partials/{mobile-bottom-nav,design-variant-switch}.blade.php`, `dashboard.blade.php` +
-`dashboard/_hero-*.blade.php`, `movements/{index,_item}.blade.php`, `expenses/incomes/_form.blade.php`,
-`App\Support\helpers.php::design_variant()`, `DesignVariantController`, y documentada en
-[docs/UI_DESIGN.md](UI_DESIGN.md).
+`layouts/partials/mobile-bottom-nav.blade.php`, `dashboard.blade.php` + `dashboard/_hero-enfoque.blade.php`,
+`movements/{index,_item}.blade.php`, `expenses/incomes/_form.blade.php`, `resources/js/app.js`
+(`window.FinliaMoney`), y documentada en [docs/UI_DESIGN.md](UI_DESIGN.md).
 
 ---
 

@@ -82,18 +82,3 @@ if (! function_exists('active_household_id')) {
         return active_household()?->id;
     }
 }
-
-if (! function_exists('design_variant')) {
-    /**
-     * Variante de diseño del rediseño mobile-first (Épica 10, adelantado):
-     * "a" (Enfoque: un número, un gesto) o "b" (Control: el mes de un
-     * vistazo). Puramente visual —no es una feature flag de negocio—, por
-     * eso vive en sesión igual que el hogar activo, no en el modelo User.
-     */
-    function design_variant(): string
-    {
-        $variant = Session::get('design_variant', 'a');
-
-        return in_array($variant, ['a', 'b'], true) ? $variant : 'a';
-    }
-}

@@ -9,7 +9,6 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DesignVariantController;
 use App\Http\Controllers\ExpectedIncomeController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\HouseholdController;
@@ -68,10 +67,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('dashboard', DashboardController::class)
         ->name('dashboard');
-
-    // Preferencia visual del rediseño mobile-first (Épica 10, adelantado).
-    Route::post('preferencias/diseno', DesignVariantController::class)
-        ->name('preferences.design-variant');
 
     // ---- Hogares (Épica 2) ----
     Route::get('hogares', [HouseholdController::class, 'index'])->name('households.index');

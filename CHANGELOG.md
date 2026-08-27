@@ -16,22 +16,25 @@ reciente de este archivo.
 
 ### Añadido
 - **Rediseño del Panel, Movimientos y Registrar gasto/ingreso**: navegación inferior con botón
-  central "+" en móvil, sidebar de escritorio reordenado, tarjeta hero de dinero disponible,
-  listado de movimientos agrupado por día con chips de filtro, y formularios con importe grande,
-  atajos de categoría y campos secundarios bajo "Más detalles" ([ADR-0016](docs/DECISIONS.md#adr-0016)).
-- **Dos formas de ver el Panel, conmutables por el usuario**: "Enfoque" (una cifra, un gesto) y
-  "Control" (el mes de un vistazo, con anillo de presupuesto y accesos rápidos), vía
-  `design_variant()` (preferencia de sesión, sin migración).
+  central "+" en móvil (el "Más" abre el sidebar completo desde la derecha, del mismo lado que el
+  botón), sidebar de escritorio reordenado, tarjeta hero de dinero disponible, listado de
+  movimientos agrupado por día con chips de filtro, y formularios con importe grande (con
+  separador de miles en vivo), atajos de categoría sincronizados con el `<select>` real, y campos
+  secundarios bajo "Más detalles" ([ADR-0016](docs/DECISIONS.md#adr-0016)).
 - **Sistema de diseño documentado** en [docs/UI_DESIGN.md](docs/UI_DESIGN.md): componentes
-  reutilizables (`.chip`, `.segmented`, `.hero-card`, `.budget-ring`) con guía de cuándo usar cada
-  uno. Referenciado desde `CLAUDE.md`, `AGENTS.md`, `docs/CONVENTIONS.md`, `docs/ARCHITECTURE.md`
-  y los skills/agentes de Claude Code para que las próximas épicas lo usen por defecto.
+  reutilizables (`.chip`, `.segmented`, `.hero-card`, input de dinero con formato de miles) con
+  guía de cuándo usar cada uno. Referenciado desde `CLAUDE.md`, `AGENTS.md`,
+  `docs/CONVENTIONS.md`, `docs/ARCHITECTURE.md` y los skills/agentes de Claude Code para que las
+  próximas épicas lo usen por defecto.
 
 ### Cambiado
 - Paleta de marca y de estados (éxito/peligro/aviso) desaturada en claro y oscuro — feedback
   directo de la sesión de diseño: "se ve demasiado neón".
 - Selector de período de Presupuestos pasa de `btn-group` a chips, mismo idioma visual que
   Movimientos.
+- El Panel se probó con dos variantes conmutables ("Enfoque"/"Control") y, tras verlas en uso, se
+  quedó con una sola: "Control" no aportaba y hacía ver rara la barra lateral de escritorio
+  ([ADR-0016](docs/DECISIONS.md#adr-0016)).
 
 ---
 

@@ -6,7 +6,7 @@
 > no reinventar Bootstrap suelto.
 
 Fuente: `resources/css/app.css` (sección "Épica 10 (adelantado) — Rediseño mobile-first").
-Vistas de referencia: `resources/views/dashboard.blade.php`, `dashboard/_hero-*.blade.php`,
+Vistas de referencia: `resources/views/dashboard.blade.php`, `dashboard/_hero-enfoque.blade.php`,
 `movements/index.blade.php`, `movements/_item.blade.php`, `expenses/_form.blade.php`.
 
 ## 1. Principios
@@ -72,9 +72,8 @@ categorías frecuentes en un formulario. **No** lo uses para navegación estruct
 sidebar / bottom nav) ni para más de ~6 opciones (ahí va un `<select>` normal).
 
 ### `.segmented` / `.segmented-item`
-Alternancia binaria de igual peso (Gasto/Ingreso, Enfoque/Control). `.segmented-item` puede ser
-un `<a>` (navega), un `<button type="submit">` (envía un form, como el toggle de variante) o un
-`<span class="active">` (la opción actual, no clicable).
+Alternancia binaria de igual peso (Gasto/Ingreso). `.segmented-item` puede ser un `<a>` (navega)
+o un `<span class="active">` (la opción actual, no clicable).
 
 ```blade
 <div class="segmented">
@@ -85,25 +84,20 @@ un `<a>` (navega), un `<button type="submit">` (envía un form, como el toggle d
 
 ### `.hero-card` / `.hero-figure`
 La cifra protagonista de la pantalla (§1.4). `.hero-card` no trae fondo propio — combínalo con
-`bg-finlia-subtle` (positivo/neutro), `bg-danger-subtle` (alerta) o un `style="background-image:
-linear-gradient(160deg, var(--finlia-primary), var(--finlia-primary-hover))"` + `text-white`
-(cabecera "hero" con foto de marca, como en `dashboard/_hero-control.blade.php`).
-
-### `.budget-ring` / `.budget-ring-inner`
-Anillo de progreso (`conic-gradient` con `currentColor`, variable CSS `--pct` de 0 a 100). Solo
-para "% de algo consumido/completado" en la variante "Control" de una pantalla de dinero — no lo
-uses como gráfico genérico (para gráficos reales sigue siendo Chart.js, ver `resources/js/charts.js`).
-
-### `.quick-action` / `.quick-action-icon`
-Grilla de 3–4 accesos directos con icono circular + etiqueta debajo (ver el header "Control" del
-Panel). Para navegación entre 3 y 6 acciones relacionadas con la pantalla actual, no para el menú
-principal (eso es el sidebar/bottom nav).
+`bg-finlia-subtle` (positivo/neutro) o `bg-danger-subtle` (alerta), como en
+`dashboard/_hero-enfoque.blade.php`.
 
 ### `.bottom-nav` / `.bottom-nav-item` / `.bottom-nav-fab`
 Ya está en el layout (`layouts/partials/mobile-bottom-nav.blade.php`), **no la repitas** en
-vistas nuevas. Si una vista nueva necesita aparecer en la barra inferior, edita ese partial (5
-huecos fijos; hoy: Panel, Movimientos, FAB central, Presupuesto/Reportes, Más/Perfil) en vez de
-crear una barra propia.
+vistas nuevas. Son **4 destinos fijos** (Panel, Movimientos, Presupuesto, Más) + el FAB central de
+registro — si una vista nueva necesita un quinto hueco, hay que sacar algo, no añadir un sexto. El
+sidebar de escritorio (`layouts/app.blade.php`) tiene, además de esos 4, los enlaces que no caben
+en la barra (Cuentas, Categorías, Ingresos esperados, Hogares) — esos mismos son los que aparecen
+en el "Más" móvil (abre el sidebar completo como offcanvas, **desde la derecha**: coherente con
+que el botón "Más" está a la derecha de la barra — si algún día se mueve de posición, cambia
+`offcanvas-end` a `offcanvas-start` junto con él). Panel/Movimientos/Presupuesto se ocultan
+(`d-none d-lg-block`) en esa vista móvil del sidebar porque ya tienen su propio hueco en la barra;
+mostrarlos ahí también sería el mismo destino dos veces.
 
 ### `.day-group-label`
 Encabezado de grupo en listas cronológicas (`movements/index`, agrupa por
@@ -115,6 +109,27 @@ Patrón (no clase CSS, HTML nativo) para bajar el ruido de campos secundarios/op
 formularios largos (ver `expenses/_form.blade.php`: medio de pago y notas quedan ocultos hasta
 que el usuario los pide, salvo que ya tengan valor — entonces `open` por defecto). Úsalo cuando
 un formulario tenga más de ~5 campos y algunos sean claramente opcionales.
+
+### `data-money-input` (`window.FinliaMoney`, en `resources/js/app.js`)
+Cualquier `<input type="text" inputmode="decimal" data-money-input>` de dinero se formatea en
+vivo con la convención colombiana (punto de miles, coma decimal: "1.234.567,50") y se reescribe a
+numérico plano ("1234567.50") justo antes de enviar el formulario, para que el Form Request
+(`numeric`) y el cast `decimal:2` lo reciban sin cambios. **No** uses `type="number"` para dinero
+— no admite el punto de miles y forzaría a elegir entre formato bonito o validación nativa; con
+`data-money-input` no hay que elegir: sigue siendo un input real, `required` sigue funcionando,
+solo cambia el `type`. Si necesitas leer el valor numérico desde otro script en la misma página
+(como el aviso "te quedarían $X" de `expenses/_form.blade.php`), usa
+`window.FinliaMoney.parse(input.value)`, nunca `parseFloat` directo — el valor en pantalla lleva
+puntos de miles que `parseFloat` interpretaría como decimales.
+
+### Chips que fijan un `<select>` — sincronización en los dos sentidos
+Cuando un `.chip-row` es un atajo sobre un `<select>` real (categoría en
+`expenses/incomes/_form.blade.php`), el chip elegido debe iluminarse **y** el `<select>` debe
+reflejar cualquier cambio hecho por fuera de los chips (el usuario abre el desplegable y elige
+otra categoría). La regla: un único `syncChips(value)` que limpia todos los `.active` y enciende
+el que coincida (ninguno si el valor no está entre los chips rápidos), llamado tanto desde el
+`click` de cada chip como desde el `change` del `<select>`. Ver el script de
+`expenses/_form.blade.php` — cópialo si añades chips-sobre-select en un formulario nuevo.
 
 ## 5. Iconografía de categoría (listas de movimientos)
 
@@ -133,19 +148,7 @@ círculo tintado con el **color de la categoría** si existe, o el tinte de marc
 — **reutilízalo** (`@include('movements._item', ['m' => $m, 'showActions' => true])`) en vez de
 copiar el markup: ya lo usan el Panel y Movimientos.
 
-## 6. Variante de diseño conmutable (`design_variant()`)
-
-El Panel tiene **dos formas** de mostrar el mismo mes: "Enfoque" (`a`, una cifra + un gesto) y
-"Control" (`b`, resumen con anillo + accesos rápidos). Es una preferencia de **sesión**, no de
-negocio (`App\Support\helpers.php::design_variant()`, `DesignVariantController`, sin modelo ni
-migración) — igual que `active_household()`.
-
-**No generalices esto a toda vista nueva.** Solo tiene sentido cuando una pantalla de uso diario
-admite honestamente dos jerarquías de información igual de válidas (como el Panel). Una pantalla
-de administración (Cuentas, Categorías, Hogares…) no necesita una "variante" — tiene una sola
-forma correcta de mostrarse.
-
-## 7. Colores de marca y estado — por qué están desaturados
+## 6. Colores de marca y estado — por qué están desaturados
 
 Los tokens de marca (`#0f6f66`/`#57b6a8`) y de estado (`--finlia-success/-danger/-warning`) se
 ajustaron a partir del feedback explícito de la sesión de diseño: *"se ve demasiado neón en
@@ -153,7 +156,7 @@ algunas partes"*. Si necesitas un nuevo tono para un estado que no existe todav�
 badge "vencido"), sigue el mismo criterio: tono apagado, no saturado, coherente en claro y
 oscuro — no reintroduzcas los verdes/rojos vivos por defecto de Bootstrap.
 
-## 8. Checklist para una vista nueva
+## 7. Checklist para una vista nueva
 
 1. ¿Extiende `layouts.app` (autenticado) o `layouts.guest` (público)? No dupliques navbar/footer/tema.
 2. ¿El contenedor principal es `.card` (ya viene con vidrio)? No añadas `backdrop-filter` a mano.
@@ -164,6 +167,8 @@ oscuro — no reintroduzcas los verdes/rojos vivos por defecto de Bootstrap.
    del mismo peso visual en una fila (la razón original del rediseño).
 6. ¿Lista de movimientos? Reutiliza `movements/_item.blade.php`, no la reescribas.
 7. ¿Formulario largo? Campos esenciales arriba, secundarios bajo `<details>`.
-8. ¿Necesita aparecer en la navegación inferior móvil? Edita el partial existente, no crees otra barra.
-9. Corre `npx playwright test` si tocaste Panel/Movimientos/Registrar — son las pantallas con
-   cobertura E2E más estricta sobre el layout.
+8. ¿Un input de dinero? `data-money-input`, nunca `type="number"` (§4).
+9. ¿Necesita aparecer en la navegación inferior móvil? Edita el partial existente (4 huecos fijos
+   + FAB), no crees otra barra — y si algo no cabe, va al sidebar/"Más", no a un quinto hueco.
+10. Corre `npx playwright test` si tocaste Panel/Movimientos/Registrar — son las pantallas con
+    cobertura E2E más estricta sobre el layout.

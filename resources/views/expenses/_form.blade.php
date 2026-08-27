@@ -4,16 +4,18 @@
     $methods = collect(\App\Enums\PaymentMethod::cases())->mapWithKeys(fn ($m) => [$m->value => $m->label()]);
 @endphp
 
-{{-- 1. Valor: input real (validación nativa intacta) con tipografía grande. --}}
+{{-- 1. Valor: input real (validación nativa intacta) con tipografía grande.
+     type="text" + data-money-input: type="number" no admite el punto de
+     miles ("1.234.567"); resources/js/app.js formatea en vivo y reescribe
+     a un numérico plano justo antes de enviar (ver FinliaMoney). --}}
 <div class="mb-3 text-center">
     <label for="amount" class="form-label fw-semibold text-uppercase small text-muted">Valor</label>
     <input
         id="amount"
-        type="number"
+        type="text"
         name="amount"
         inputmode="decimal"
-        step="0.01"
-        min="0"
+        data-money-input
         class="form-control border-0 bg-transparent text-center fw-bold mx-auto @error('amount') is-invalid @enderror"
         style="font-size: clamp(1.75rem, 8vw, 2.5rem); max-width: 320px; box-shadow: none;"
         value="{{ old('amount', $expense?->amount) }}"
@@ -88,16 +90,26 @@
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 // Chips de categoría: atajo visual que fija el <select> real.
+                // Sincronizado en ambos sentidos: elegir un chip fija el select
+                // (y solo ese chip queda iluminado); cambiar el select a mano
+                // reilumina el chip que coincida, o ninguno si no es de los rápidos.
                 document.querySelectorAll('[data-category-chips]').forEach(function (row) {
                     var select = row.closest('form')?.querySelector('#category_id');
                     if (!select) return;
+
+                    function syncChips(value) {
+                        row.querySelectorAll('.chip').forEach(function (c) {
+                            c.classList.toggle('active', c.getAttribute('data-category-value') === value);
+                        });
+                    }
+
                     row.querySelectorAll('[data-category-value]').forEach(function (chip) {
                         chip.addEventListener('click', function () {
                             select.value = chip.getAttribute('data-category-value');
-                            row.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('active'); });
-                            chip.classList.add('active');
+                            syncChips(select.value);
                         });
                     });
+                    select.addEventListener('change', function () { syncChips(select.value); });
                 });
 
                 // "Te quedarían $X este mes" tras restar el valor ingresado.
@@ -108,7 +120,7 @@
                     var strong = hint.querySelector('strong');
                     var formatter = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     amount.addEventListener('input', function () {
-                        var value = parseFloat(amount.value) || 0;
+                        var value = parseFloat(window.FinliaMoney.parse(amount.value)) || 0;
                         strong.textContent = '$ ' + formatter.format(available - value);
                     });
                 });

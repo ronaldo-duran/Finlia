@@ -1,7 +1,6 @@
 @extends('layouts.app', ['title' => 'Panel'])
 
 @php
-    $variant = design_variant();
     $isNegative = $budgetSummary['available'] < 0;
 @endphp
 
@@ -45,11 +44,7 @@
         </div>
     @endif
 
-    @if ($variant === 'b')
-        @include('dashboard._hero-control', ['budgetSummary' => $budgetSummary, 'isNegative' => $isNegative])
-    @else
-        @include('dashboard._hero-enfoque', ['budgetSummary' => $budgetSummary, 'isNegative' => $isNegative])
-    @endif
+    @include('dashboard._hero-enfoque', ['budgetSummary' => $budgetSummary, 'isNegative' => $isNegative])
 
     {{-- KPIs del mes --}}
     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -90,32 +85,6 @@
             </div>
         @endforeach
     </div>
-
-    @if ($variant === 'b' && $budgetSummary['categories']->isNotEmpty())
-        {{-- Presupuesto por categoría: la variante "Control" mantiene el detalle a la vista. --}}
-        <div class="card border-0 mb-4">
-            <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center fw-semibold">
-                <span><i class="bi bi-cash-stack me-1"></i> Presupuesto por categoría</span>
-                <a href="{{ route('budgets.index') }}" class="btn btn-sm btn-outline-secondary">Ajustar</a>
-            </div>
-            <div class="card-body d-flex flex-column gap-3">
-                @foreach ($budgetSummary['categories'] as $row)
-                    <div>
-                        <div class="d-flex justify-content-between small fw-semibold mb-1">
-                            <span>{{ $row['name'] }}</span>
-                            <span class="text-{{ $row['level']->color() === 'success' ? 'muted' : $row['level']->color() }} budget-figures">
-                                @money($row['spent']) / @money($row['budget'])
-                            </span>
-                        </div>
-                        <div class="progress" role="progressbar" aria-label="Consumo de {{ $row['name'] }}"
-                             aria-valuenow="{{ min(100, $row['percent']) }}" aria-valuemin="0" aria-valuemax="100" style="height: 6px;">
-                            <div class="progress-bar bg-{{ $row['level']->color() }}" style="width: {{ min(100, $row['percent']) }}%"></div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
 
     {{-- Gráficos --}}
     <div class="row g-3 mb-4">

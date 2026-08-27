@@ -696,57 +696,6 @@ a { color: var(--finlia-primary); }
     overflow-wrap: anywhere;
 }
 
-/* Anillo de presupuesto consumido (variante "Control"). */
-.budget-ring {
-    --pct: 0;
-    width: 92px;
-    height: 92px;
-    flex: 0 0 auto;
-    border-radius: 999px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: conic-gradient(currentColor calc(var(--pct) * 1%), rgba(255, 255, 255, 0.22) calc(var(--pct) * 1%));
-}
-
-.budget-ring-inner {
-    width: 76%;
-    height: 76%;
-    border-radius: 999px;
-    background-color: rgba(0, 0, 0, 0.18);
-    color: inherit;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-}
-
-/* Fila de acciones rápidas (grid de iconos, variante "Control"). */
-.quick-action {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    color: var(--finlia-text-muted);
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-.quick-action-icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.15rem;
-    background-color: var(--finlia-surface-solid);
-    border: 1px solid var(--finlia-border);
-    color: var(--finlia-primary);
-}
-
 /* Encabezado de grupo por día (Movimientos). */
 .day-group-label {
     font-size: 0.75rem;
@@ -754,9 +703,4 @@ a { color: var(--finlia-primary); }
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--finlia-text-muted);
-}
-
-/* Selector de variante de diseño (Enfoque / Control). */
-.variant-switch button {
-    font-size: 0.75rem;
 }

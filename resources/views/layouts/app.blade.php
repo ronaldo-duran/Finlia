@@ -72,8 +72,9 @@
 
     {{-- ===================== Cuerpo: sidebar + contenido ===================== --}}
     <div class="d-flex flex-grow-1">
-        {{-- Sidebar: offcanvas en móvil, columna fija en escritorio --}}
-        <aside class="offcanvas-lg offcanvas-start finlia-sidebar border-0"
+        {{-- Sidebar: offcanvas en móvil (se abre desde la derecha, como el botón
+             "Más" de la barra inferior que la activa), columna fija en escritorio --}}
+        <aside class="offcanvas-lg offcanvas-end finlia-sidebar border-0"
                tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
             <div class="offcanvas-header d-lg-none">
                 <h5 class="offcanvas-title" id="sidebarLabel">
@@ -82,27 +83,23 @@
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Cerrar"></button>
             </div>
             <div class="offcanvas-body py-3">
-                @auth
-                    {{-- Solo en móvil: en escritorio ya está en el pie del sidebar. --}}
-                    <div class="d-lg-none mb-3">
-                        @include('layouts.partials.design-variant-switch')
-                    </div>
-                @endauth
-
                 <ul class="nav flex-column">
-                    <li>
+                    {{-- Panel, Movimientos y Presupuestos ya están en la barra inferior
+                         móvil: mostrarlos también aquí sería duplicar destino. Solo
+                         aparecen en el sidebar fijo de escritorio. --}}
+                    <li class="d-none d-lg-block">
                         <a class="nav-link @if(request()->routeIs('dashboard'))active @endif" href="{{ route('dashboard') }}">
                             <i class="bi bi-speedometer2"></i> Panel
                         </a>
                     </li>
 
                     @auth
-                        <li>
+                        <li class="d-none d-lg-block">
                             <a class="nav-link @if(request()->routeIs('movements.*'))active @endif" href="{{ route('movements.index') }}">
                                 <i class="bi bi-arrow-left-right"></i> Movimientos
                             </a>
                         </li>
-                        <li>
+                        <li class="d-none d-lg-block">
                             <a class="nav-link @if(request()->routeIs('budgets.*'))active @endif" href="{{ route('budgets.index') }}">
                                 <i class="bi bi-cash-stack"></i> Presupuestos
                             </a>
@@ -138,20 +135,13 @@
                         ];
                     @endphp
                     @foreach ($proximos as $item)
-                        <li>
+                        <li class="d-none d-lg-block">
                             <span class="nav-link disabled" title="Disponible en la {{ $item['epic'] }}">
                                 <i class="bi {{ $item['icon'] }}"></i> {{ $item['label'] }}
                             </span>
                         </li>
                     @endforeach
                 </ul>
-
-                @auth
-                    {{-- Solo en escritorio: en móvil el interruptor vive arriba, junto al hogar activo. --}}
-                    <div class="d-none d-lg-block mt-4 pt-3 border-top" style="border-color: var(--finlia-border) !important;">
-                        @include('layouts.partials.design-variant-switch')
-                    </div>
-                @endauth
             </div>
         </aside>
 

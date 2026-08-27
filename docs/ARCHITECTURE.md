@@ -155,9 +155,8 @@ Reglas que acompañan a la política:
 - **Bootstrap 5** vía Vite (Épica 1) como base de grid/utilities.
 - **Sistema de diseño propio** encima de Bootstrap: ver [docs/UI_DESIGN.md](UI_DESIGN.md) — vidrio
   ("liquid glass" sutil), chips, segmentados, tarjetas hero, barra de navegación inferior + FAB en
-  móvil (`layouts/partials/mobile-bottom-nav.blade.php`) y una variante de diseño conmutable en
-  sesión (`design_variant()`) para el Panel. Es el lenguaje visual por defecto — toda vista nueva
-  lo usa, no reinventa Bootstrap suelto.
+  móvil (`layouts/partials/mobile-bottom-nav.blade.php`). Es el lenguaje visual por defecto — toda
+  vista nueva lo usa, no reinventa Bootstrap suelto.
 - **Chart.js** para gráficos del dashboard (Épica 8).
 - JavaScript **vanilla**: suficiente para interacciones. Sin frameworks.
 - Blade para todo el render server-side.
