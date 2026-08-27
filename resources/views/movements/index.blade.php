@@ -1,9 +1,20 @@
 @extends('layouts.app', ['title' => 'Movimientos'])
 
+@php
+    $typeChips = [
+        'Todos' => null,
+        'Gastos' => 'expense',
+        'Ingresos' => 'income',
+    ];
+    $groups = $movements->groupBy(fn ($m) => $m['date']->format('Y-m-d'));
+    $filterBalance = $movements->sum(fn ($m) => $m['type'] === 'income' ? $m['amount'] : -$m['amount']);
+    $hasAdvancedFilters = $filters['category_id'] || $filters['account_id'] || $filters['user_id'] || $filters['from'] || $filters['to'];
+@endphp
+
 @section('content')
     <x-flash-messages />
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="h3 mb-0"><i class="bi bi-arrow-left-right me-2"></i>Movimientos</h1>
         <div class="dropdown">
             <button class="btn btn-finlia dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -16,109 +27,109 @@
         </div>
     </div>
 
-    {{-- Filtros --}}
-    <div class="card border-0 mb-3">
-        <div class="card-body">
-            <form method="GET" action="{{ route('movements.index') }}" class="row g-2 align-items-end">
-                <div class="col-6 col-md">
-                    <label class="form-label small fw-semibold" for="type">Tipo</label>
-                    <select name="type" id="type" class="form-select form-select-sm">
-                        <option value="" @selected(blank($filters['type']))>Todos</option>
-                        <option value="income" @selected($filters['type'] === 'income')>Ingresos</option>
-                        <option value="expense" @selected($filters['type'] === 'expense')>Gastos</option>
-                    </select>
-                </div>
-                <div class="col-6 col-md">
-                    <label class="form-label small fw-semibold" for="category_id">Categoría</label>
-                    <select name="category_id" id="category_id" class="form-select form-select-sm">
-                        <option value="">Todas</option>
-                        @foreach ($categories as $category)
-                            <option value="{{ $category->id }}" @selected((string) $filters['category_id'] === (string) $category->id)>{{ $category->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-6 col-md">
-                    <label class="form-label small fw-semibold" for="account_id">Cuenta</label>
-                    <select name="account_id" id="account_id" class="form-select form-select-sm">
-                        <option value="">Todas</option>
-                        @foreach ($accounts as $account)
-                            <option value="{{ $account->id }}" @selected((string) $filters['account_id'] === (string) $account->id)>{{ $account->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-6 col-md">
-                    <label class="form-label small fw-semibold" for="user_id">Usuario</label>
-                    <select name="user_id" id="user_id" class="form-select form-select-sm">
-                        <option value="">Todos</option>
-                        @foreach ($members as $member)
-                            <option value="{{ $member->id }}" @selected((string) $filters['user_id'] === (string) $member->id)>{{ $member->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-6 col-md-2">
-                    <label class="form-label small fw-semibold" for="from">Desde</label>
-                    <input type="date" name="from" id="from" class="form-control form-control-sm" value="{{ $filters['from'] ?? '' }}">
-                </div>
-                <div class="col-6 col-md-2">
-                    <label class="form-label small fw-semibold" for="to">Hasta</label>
-                    <input type="date" name="to" id="to" class="form-control form-control-sm" value="{{ $filters['to'] ?? '' }}">
-                </div>
-                <div class="col-12 d-flex gap-2">
-                    <button type="submit" class="btn btn-sm btn-outline-finlia"><i class="bi bi-funnel me-1"></i>Filtrar</button>
-                    <a href="{{ route('movements.index') }}" class="btn btn-sm btn-outline-secondary">Limpiar</a>
-                </div>
-            </form>
+    {{-- Chips de tipo + acceso a filtros avanzados --}}
+    <div class="chip-row mb-3">
+        @foreach ($typeChips as $label => $value)
+            <a href="{{ request()->fullUrlWithQuery(['type' => $value]) }}"
+               class="chip {{ $filters['type'] === $value ? 'active' : '' }}">{{ $label }}</a>
+        @endforeach
+        <button type="button" class="chip {{ $hasAdvancedFilters ? 'active' : '' }}"
+                data-bs-toggle="collapse" data-bs-target="#filtrosAvanzados"
+                aria-expanded="{{ $hasAdvancedFilters ? 'true' : 'false' }}" aria-controls="filtrosAvanzados">
+            <i class="bi bi-sliders2"></i> Filtros
+        </button>
+    </div>
+
+    {{-- Filtros avanzados (categoría, cuenta, usuario, rango de fechas) --}}
+    <div class="collapse {{ $hasAdvancedFilters ? 'show' : '' }}" id="filtrosAvanzados">
+        <div class="card border-0 mb-3">
+            <div class="card-body">
+                <form method="GET" action="{{ route('movements.index') }}" class="row g-2 align-items-end">
+                    <input type="hidden" name="type" value="{{ $filters['type'] }}">
+                    <div class="col-6 col-md">
+                        <label class="form-label small fw-semibold" for="category_id">Categoría</label>
+                        <select name="category_id" id="category_id" class="form-select form-select-sm">
+                            <option value="">Todas</option>
+                            @foreach ($categories as $category)
+                                <option value="{{ $category->id }}" @selected((string) $filters['category_id'] === (string) $category->id)>{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-6 col-md">
+                        <label class="form-label small fw-semibold" for="account_id">Cuenta</label>
+                        <select name="account_id" id="account_id" class="form-select form-select-sm">
+                            <option value="">Todas</option>
+                            @foreach ($accounts as $account)
+                                <option value="{{ $account->id }}" @selected((string) $filters['account_id'] === (string) $account->id)>{{ $account->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-6 col-md">
+                        <label class="form-label small fw-semibold" for="user_id">Usuario</label>
+                        <select name="user_id" id="user_id" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            @foreach ($members as $member)
+                                <option value="{{ $member->id }}" @selected((string) $filters['user_id'] === (string) $member->id)>{{ $member->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold" for="from">Desde</label>
+                        <input type="date" name="from" id="from" class="form-control form-control-sm" value="{{ $filters['from'] ?? '' }}">
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold" for="to">Hasta</label>
+                        <input type="date" name="to" id="to" class="form-control form-control-sm" value="{{ $filters['to'] ?? '' }}">
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-sm btn-outline-finlia"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+                        <a href="{{ route('movements.index') }}" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
-    {{-- Lista --}}
-    <div class="card border-0">
-        @if ($movements->isEmpty())
+    @if ($movements->isNotEmpty())
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 mb-3 rounded-4"
+             style="background-color: var(--finlia-surface); border: 1px solid var(--finlia-glass-border);">
+            <span class="small fw-semibold text-muted">Balance del filtro</span>
+            <span class="fw-bold {{ $filterBalance >= 0 ? 'text-success' : 'text-danger' }} money-figure">
+                {{ $filterBalance >= 0 ? '+' : '−' }} @money(abs($filterBalance))
+            </span>
+        </div>
+    @endif
+
+    {{-- Lista agrupada por día --}}
+    @if ($movements->isEmpty())
+        <div class="card border-0">
             <div class="card-body text-center text-muted py-5">
                 <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
                 No hay movimientos que coincidan con los filtros.
             </div>
-        @else
-            <div class="list-group list-group-flush">
-                @foreach ($movements as $m)
-                    @php
-                        $isIncome = $m['type'] === 'income';
-                        $editRoute = $isIncome ? route('incomes.edit', ['income' => $m['id']]) : route('expenses.edit', ['expense' => $m['id']]);
-                        $destroyRoute = $isIncome ? route('incomes.destroy', ['income' => $m['id']]) : route('expenses.destroy', ['expense' => $m['id']]);
-                    @endphp
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center gap-2 min-w-0">
-                            <i class="bi {{ $isIncome ? 'bi-arrow-down-left-circle text-success' : 'bi-arrow-up-right-circle text-danger' }} fs-5"></i>
-                            <div class="min-w-0">
-                                <div class="fw-semibold text-truncate">
-                                    {{ $m['description'] ?: ($isIncome ? 'Ingreso' : 'Gasto') }}
-                                </div>
-                                <div class="small text-muted text-truncate">
-                                    {{ $m['category_name'] }}
-                                    @if ($m['account_name']) · {{ $m['account_name'] }} @endif
-                                    @if ($m['user_name']) · {{ $m['user_name'] }} @endif
-                                    · {{ $m['date']->format('d/m/Y') }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="fw-bold {{ $isIncome ? 'text-success' : 'text-danger' }} text-nowrap">
-                                {{ $isIncome ? '+' : '−' }}@money($m['amount'])
-                            </span>
-                            <a href="{{ $editRoute }}" class="btn btn-sm btn-icon" aria-label="Editar">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <form method="POST" action="{{ $destroyRoute }}" data-confirm="¿Eliminar este movimiento?">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-icon text-danger" aria-label="Eliminar">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
+        </div>
+    @else
+        <div class="d-flex flex-column gap-3">
+            @foreach ($groups as $day => $items)
+                @php
+                    $dayTotal = $items->sum(fn ($m) => $m['type'] === 'income' ? $m['amount'] : -$m['amount']);
+                @endphp
+                <div>
+                    <div class="d-flex justify-content-between align-items-baseline mb-2">
+                        <span class="day-group-label">{{ ucfirst($items->first()['date']->locale('es')->isoFormat('dddd D [de] MMMM')) }}</span>
+                        <span class="small fw-semibold {{ $dayTotal >= 0 ? 'text-success' : 'text-danger' }} budget-figures">
+                            {{ $dayTotal >= 0 ? '+' : '−' }}@money(abs($dayTotal))
+                        </span>
+                    </div>
+                    <div class="card border-0">
+                        <div class="list-group list-group-flush">
+                            @foreach ($items as $m)
+                                @include('movements._item', ['m' => $m, 'showActions' => true])
+                            @endforeach
                         </div>
                     </div>
-                @endforeach
-            </div>
-        @endif
-    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
 @endsection

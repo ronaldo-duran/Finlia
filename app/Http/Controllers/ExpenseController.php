@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\BudgetScope;
 use App\Enums\CategoryType;
 use App\Http\Requests\Expense\StoreExpenseRequest;
 use App\Http\Requests\Expense\UpdateExpenseRequest;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Expense;
+use App\Services\BudgetCalculatorService;
 use App\Services\MovementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,11 +19,18 @@ use Illuminate\View\View;
 
 class ExpenseController extends Controller
 {
-    public function __construct(private readonly MovementService $movements) {}
+    public function __construct(
+        private readonly MovementService $movements,
+        private readonly BudgetCalculatorService $budgets,
+    ) {}
 
     public function create(Request $request): View
     {
-        return view('expenses.create', $this->formOptions());
+        // "Te quedarían $X" (hint en vivo del formulario): dinero disponible
+        // del mes ANTES de este gasto, no lógica nueva —reutiliza la Épica 4.
+        $available = $this->budgets->summary(active_household_id(), BudgetScope::Month)['available'];
+
+        return view('expenses.create', array_merge($this->formOptions(), ['available' => $available]));
     }
 
     public function store(StoreExpenseRequest $request): RedirectResponse

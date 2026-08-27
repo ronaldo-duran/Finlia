@@ -12,17 +12,12 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100 @auth has-bottom-nav @endauth">
 
     {{-- ===================== Navbar (glass) ===================== --}}
     <nav class="navbar navbar-expand glass-nav sticky-top py-2">
         <div class="container-fluid">
             <div class="d-flex align-items-center gap-1">
-                {{-- Botón hamburguesa: abre el sidebar en móvil --}}
-                <button class="btn-icon d-lg-none" type="button"
-                        data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Abrir menú">
-                    <i class="bi bi-list"></i>
-                </button>
                 <a class="navbar-brand mb-0 d-flex align-items-center gap-2" href="{{ route('dashboard') }}">
                     <i class="bi bi-wallet2 text-finlia"></i>
                     <span>Finlia</span>
@@ -87,6 +82,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Cerrar"></button>
             </div>
             <div class="offcanvas-body py-3">
+                @auth
+                    {{-- Solo en móvil: en escritorio ya está en el pie del sidebar. --}}
+                    <div class="d-lg-none mb-3">
+                        @include('layouts.partials.design-variant-switch')
+                    </div>
+                @endauth
+
                 <ul class="nav flex-column">
                     <li>
                         <a class="nav-link @if(request()->routeIs('dashboard'))active @endif" href="{{ route('dashboard') }}">
@@ -96,23 +98,8 @@
 
                     @auth
                         <li>
-                            <a class="nav-link @if(request()->routeIs('households.*'))active @endif" href="{{ route('households.index') }}">
-                                <i class="bi bi-house-door"></i> Hogares
-                            </a>
-                        </li>
-                        <li>
-                            <a class="nav-link @if(request()->routeIs('accounts.*'))active @endif" href="{{ route('accounts.index') }}">
-                                <i class="bi bi-wallet"></i> Cuentas
-                            </a>
-                        </li>
-                        <li>
                             <a class="nav-link @if(request()->routeIs('movements.*'))active @endif" href="{{ route('movements.index') }}">
                                 <i class="bi bi-arrow-left-right"></i> Movimientos
-                            </a>
-                        </li>
-                        <li>
-                            <a class="nav-link @if(request()->routeIs('categories.*'))active @endif" href="{{ route('categories.index') }}">
-                                <i class="bi bi-tags"></i> Categorías
                             </a>
                         </li>
                         <li>
@@ -121,8 +108,23 @@
                             </a>
                         </li>
                         <li>
+                            <a class="nav-link @if(request()->routeIs('accounts.*'))active @endif" href="{{ route('accounts.index') }}">
+                                <i class="bi bi-wallet"></i> Cuentas
+                            </a>
+                        </li>
+                        <li>
+                            <a class="nav-link @if(request()->routeIs('categories.*'))active @endif" href="{{ route('categories.index') }}">
+                                <i class="bi bi-tags"></i> Categorías
+                            </a>
+                        </li>
+                        <li>
                             <a class="nav-link @if(request()->routeIs('expected-incomes.*'))active @endif" href="{{ route('expected-incomes.index') }}">
                                 <i class="bi bi-graph-up-arrow"></i> Ingresos esperados
+                            </a>
+                        </li>
+                        <li>
+                            <a class="nav-link @if(request()->routeIs('households.*'))active @endif" href="{{ route('households.index') }}">
+                                <i class="bi bi-house-heart"></i> Hogares
                             </a>
                         </li>
                     @endauth
@@ -143,6 +145,13 @@
                         </li>
                     @endforeach
                 </ul>
+
+                @auth
+                    {{-- Solo en escritorio: en móvil el interruptor vive arriba, junto al hogar activo. --}}
+                    <div class="d-none d-lg-block mt-4 pt-3 border-top" style="border-color: var(--finlia-border) !important;">
+                        @include('layouts.partials.design-variant-switch')
+                    </div>
+                @endauth
             </div>
         </aside>
 
@@ -164,6 +173,10 @@
             &copy; {{ date('Y') }}
         </div>
     </footer>
+
+    @auth
+        @include('layouts.partials.mobile-bottom-nav')
+    @endauth
 
     @stack('scripts')
 </body>
