@@ -19,10 +19,21 @@
    Tokens de tema
    ============================================================= */
 :root {
-    /* Marca Finlia: verde "dinero" como acento principal. */
-    --finlia-primary: #0f766e;
-    --finlia-primary-rgb: 15, 118, 110;
-    --finlia-primary-hover: #0c615a;
+    /* Marca Finlia: verde "dinero" como acento principal.
+       Ajustado en el rediseño mobile-first (feedback: "se ve demasiado
+       neón") a un verde más apagado, cercano al de la maqueta. */
+    --finlia-primary: #0f6f66;
+    --finlia-primary-rgb: 15, 111, 102;
+    --finlia-primary-hover: #0c584f;
+
+    /* Estados (éxito/peligro/aviso) también desaturados: los tonos por
+       defecto de Bootstrap competían visualmente con la marca. */
+    --finlia-success: #2f7d5f;
+    --finlia-success-rgb: 47, 125, 95;
+    --finlia-danger: #b4544e;
+    --finlia-danger-rgb: 180, 84, 78;
+    --finlia-warning: #b8863a;
+    --finlia-warning-rgb: 184, 134, 58;
 
     --finlia-bg: #eef3f8;
     --finlia-bg-2: #e6ecf2;
@@ -39,6 +50,7 @@
     --finlia-sidebar-width: 264px;
     --finlia-radius: 16px;
     --finlia-radius-sm: 12px;
+    --finlia-safe-bottom: env(safe-area-inset-bottom, 0px);
 
     /* Puente hacia las variables de Bootstrap (color mode primary, etc.). */
     --bs-primary: var(--finlia-primary);
@@ -58,9 +70,16 @@
 }
 
 [data-bs-theme="dark"] {
-    --finlia-primary: #2dd4bf;
-    --finlia-primary-rgb: 45, 212, 191;
-    --finlia-primary-hover: #5eead4;
+    --finlia-primary: #57b6a8;
+    --finlia-primary-rgb: 87, 182, 168;
+    --finlia-primary-hover: #75c7ba;
+
+    --finlia-success: #6fbf95;
+    --finlia-success-rgb: 111, 191, 149;
+    --finlia-danger: #d98b86;
+    --finlia-danger-rgb: 217, 139, 134;
+    --finlia-warning: #e0b064;
+    --finlia-warning-rgb: 224, 176, 100;
 
     --finlia-bg: #0e1419;
     --finlia-bg-2: #121a22;
@@ -105,6 +124,32 @@ a { color: var(--finlia-primary); }
 
 .border-finlia {
     border-color: rgba(var(--finlia-primary-rgb), 0.28) !important;
+}
+
+/* Estados desaturados: pisan las utilidades de Bootstrap (que son
+   !important) porque los colores de éxito/peligro/aviso del tema base
+   están compilados como valores fijos, no como var(--bs-success). */
+.text-success, .text-success-emphasis { color: var(--finlia-success) !important; }
+.text-danger, .text-danger-emphasis { color: var(--finlia-danger) !important; }
+.text-warning-emphasis { color: var(--finlia-warning) !important; }
+.bg-success, .text-bg-success { background-color: var(--finlia-success) !important; color: #fff !important; }
+.bg-danger, .text-bg-danger { background-color: var(--finlia-danger) !important; color: #fff !important; }
+.bg-warning, .text-bg-warning { background-color: var(--finlia-warning) !important; color: #241a05 !important; }
+.bg-success-subtle { background-color: rgba(var(--finlia-success-rgb), 0.14) !important; }
+.bg-danger-subtle { background-color: rgba(var(--finlia-danger-rgb), 0.12) !important; }
+.bg-warning-subtle { background-color: rgba(var(--finlia-warning-rgb), 0.16) !important; }
+.progress-bar.bg-success { background-color: var(--finlia-success) !important; }
+.progress-bar.bg-danger { background-color: var(--finlia-danger) !important; }
+.progress-bar.bg-warning { background-color: var(--finlia-warning) !important; }
+.alert-danger {
+    --bs-alert-color: var(--finlia-danger);
+    --bs-alert-bg: rgba(var(--finlia-danger-rgb), 0.10);
+    --bs-alert-border-color: rgba(var(--finlia-danger-rgb), 0.25);
+}
+.alert-warning {
+    --bs-alert-color: var(--finlia-warning);
+    --bs-alert-bg: rgba(var(--finlia-warning-rgb), 0.12);
+    --bs-alert-border-color: rgba(var(--finlia-warning-rgb), 0.28);
 }
 
 /* =============================================================
@@ -488,4 +533,174 @@ a { color: var(--finlia-primary); }
 */
 @media (min-width: 576px) {
     .w-sm-auto { width: auto !important; }
+}
+
+/* =============================================================
+   Épica 10 (adelantado) — Rediseño mobile-first
+   Barra inferior + FAB, chips, segmentado, tarjeta hero y anillo de
+   presupuesto. Puramente visual/UX, sin lógica de negocio nueva.
+   ============================================================= */
+
+/* Deja sitio para la barra inferior flotante en móvil. */
+@media (max-width: 991.98px) {
+    body.has-bottom-nav main {
+        padding-bottom: calc(92px + var(--finlia-safe-bottom));
+    }
+}
+
+/* Barra de navegación inferior (solo móvil). */
+.bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1040;
+    height: calc(76px + var(--finlia-safe-bottom));
+    padding-bottom: var(--finlia-safe-bottom);
+    background-color: var(--finlia-nav-bg);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(20px) saturate(150%);
+    border-top: 1px solid var(--finlia-glass-border);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    padding-top: 12px;
+    border: 0;
+    background: transparent;
+    color: var(--finlia-text-muted);
+    font-size: 0.625rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.bottom-nav-item i { font-size: 1.2rem; }
+
+.bottom-nav-item.active {
+    color: var(--finlia-primary);
+    font-weight: 600;
+}
+
+.bottom-nav-fab {
+    position: fixed;
+    left: 50%;
+    bottom: calc(38px + var(--finlia-safe-bottom));
+    transform: translateX(-50%);
+    z-index: 1041;
+    width: 58px;
+    height: 58px;
+    border-radius: 999px;
+    border: 4px solid var(--finlia-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #fff;
+    background-color: var(--finlia-primary);
+    background-image: linear-gradient(160deg, var(--finlia-primary), var(--finlia-primary-hover));
+    box-shadow: 0 14px 26px -12px rgba(var(--finlia-primary-rgb), 0.85);
+    transition: transform 0.12s ease;
+}
+
+.bottom-nav-fab:hover,
+.bottom-nav-fab:focus-visible {
+    color: #fff;
+}
+
+.bottom-nav-fab:active { transform: translateX(-50%) scale(0.94); }
+
+/* Chips (selección rápida de categoría, filtros de movimientos). */
+.chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--finlia-border);
+    background-color: var(--finlia-surface-solid);
+    color: var(--finlia-text);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.chip:hover { border-color: rgba(var(--finlia-primary-rgb), 0.35); }
+
+.chip.active {
+    background-color: var(--finlia-primary);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Segmentado (Gasto / Ingreso, Enfoque / Control). */
+.segmented {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 999px;
+    background-color: rgba(var(--finlia-primary-rgb), 0.08);
+    gap: 2px;
+}
+
+.segmented-item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--finlia-text-muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.segmented-item.active {
+    background-color: var(--finlia-surface-solid);
+    color: var(--finlia-text);
+    box-shadow: 0 2px 6px -3px rgba(15, 23, 42, 0.35);
+}
+
+/* Tarjeta hero: cifra protagonista de "puedes gastar hoy" y del monto
+   a registrar (gasto/ingreso). */
+.hero-card {
+    position: relative;
+    border-radius: 24px;
+    padding: 22px 20px;
+}
+
+.hero-figure {
+    font-weight: 700;
+    font-size: clamp(2rem, 9vw, 2.75rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+/* Encabezado de grupo por día (Movimientos). */
+.day-group-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--finlia-text-muted);
 }

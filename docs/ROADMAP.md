@@ -15,7 +15,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 7 | Metas de ahorro | 🔴 | 3 |
 | 8 | Dashboard y reportes financieros | 🔴 | 3, 4, 5, 6, 7 |
 | 9 | Recordatorios y notificaciones | 🔴 | 5, 6, 7 |
-| 10 | UX mobile y PWA | 🔴 | 3 (y resto) |
+| 10 | UX mobile y PWA | 🟡 | 3 (y resto) |
 | 11 | Hardening, tests y producción | 🔴 | Todas |
 | 12 | Monetización y modelo SaaS | 🔴 | 2, 11 |
 | 13 | Portafolio profesional | 🔴 | 11 |
@@ -54,6 +54,8 @@ Resumen (ingresos, gastos, balance, disponible, deuda, ahorro, metas), 5 gráfic
 
 ### Épica 10 — UX mobile y PWA
 Navbar/botones/forms/tablas/gráficos optimizados móvil. Botón flotante "+" (gasto, ingreso, transferencia, aporte, pago deuda). PWA (manifest, iconos, instalación). Selects inteligentes (última categoría/cuenta usada).
+
+> 🟡 **Parcialmente adelantada** (igual que el theming se adelantó a la Épica 1): rediseño mobile-first del Panel, Movimientos y Registrar gasto/ingreso, con barra de navegación inferior + botón flotante "+" y sistema de diseño documentado en [docs/UI_DESIGN.md](UI_DESIGN.md). Puramente visual/UX — **falta** el manifest/instalación PWA, "gasto/ingreso" desde el FAB como hoja unificada (hoy navega a `/gastos/crear` o `/ingresos/crear`), transferencia/aporte/pago de deuda en el FAB (dependen de las épicas 6-7) y selects inteligentes.
 
 ### Épica 11 — Hardening, tests y producción
 Auditoría de seguridad completa, privacy, DB (índices, FK, DECIMAL), tests de funciones críticas, performance (N+1, paginación), producción (.env, cache, cron). README completo de instalación.

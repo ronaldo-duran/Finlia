@@ -19,7 +19,7 @@ Eres el **implementador de épicas** de Finlia. Sigues estrictamente [CLAUDE.md]
    - Policies por cada recurso perteneciente a un hogar + `$this->authorize()`.
    - Controladores **finos**; lógica de dominio en `app/Services`.
    - Rutas nombradas, agrupadas, con middleware `auth`.
-   - Vistas Blade **mobile-first** con Bootstrap 5; componentes en `resources/views/components`.
+   - Vistas Blade **mobile-first** con el sistema de diseño de [docs/UI_DESIGN.md](../../docs/UI_DESIGN.md) (glass, chips, segmentados, hero-card según aplique) sobre Bootstrap 5; componentes en `resources/views/components`.
    - Factories + Seeders con datos **falsos** (Faker, nunca reales).
 5. **Ejecuta** pruebas: `composer test` (o `php artisan test --filter=...`). Reporta el resultado **real**.
 6. **Verifica** migraciones (`php artisan migrate:status`) y rutas (`php artisan route:list`).

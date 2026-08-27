@@ -38,6 +38,7 @@ Referencias: [docs/CONVENTIONS.md](../../docs/CONVENTIONS.md), [docs/ARCHITECTUR
 - Rutas nombradas, agrupadas, con middleware adecuado.
 - Vistas Blade mobile-first; componentes reutilizables; `{{ }}` (no `{!! !!}` con input).
 - Sin clases de Tailwind (proyecto usa Bootstrap 5).
+- Usa el sistema de diseño de [docs/UI_DESIGN.md](../../docs/UI_DESIGN.md) (`.chip`, `.segmented`, `.hero-card`, `.btn-finlia`…) en vez de Bootstrap genérico o estilos inline nuevos; marca cuando una vista reinventa un patrón que ya existe ahí (p. ej. otro `btn-group` de filtro en vez de `.chip-row`).
 
 ### 7. Testing
 - Cobertura mínima del CRUD + tests de aislamiento entre hogares.

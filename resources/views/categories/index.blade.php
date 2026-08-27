@@ -27,7 +27,7 @@
                             </div>
                             <div class="col-6">
                                 <label for="color" class="form-label fw-semibold">Color</label>
-                                <input type="color" name="color" id="color" class="form-control form-control-color" value="{{ old('color', '#0f766e') }}">
+                                <input type="color" name="color" id="color" class="form-control form-control-color" value="{{ old('color', '#0f6f66') }}">
                             </div>
                         </div>
 
@@ -58,7 +58,7 @@
                                 @endphp
                                 <div class="list-group-item d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="color-dot" style="background-color: {{ $category->color ?: '#0f766e' }}"></span>
+                                        <span class="color-dot" style="background-color: {{ $category->color ?: '#0f6f66' }}"></span>
                                         <div>
                                             <div class="fw-semibold">{{ $category->name }}</div>
                                             <span class="badge @if($isOwn) text-bg-light text-muted @else bg-finlia-subtle text-finlia @endif rounded-pill">
@@ -72,7 +72,7 @@
                                                 data-bs-toggle="modal" data-bs-target="#editCategoryModal"
                                                 data-id="{{ $category->id }}"
                                                 data-name="{{ $category->name }}"
-                                                data-color="{{ $category->color ?: '#0f766e' }}">
+                                                data-color="{{ $category->color ?: '#0f6f66' }}">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                             <form method="POST" action="{{ route('categories.destroy', $category) }}" data-confirm="¿Eliminar la categoría “{{ $category->name }}”?">
@@ -108,7 +108,7 @@
                         <input type="hidden" name="category_id" id="edit-id">
                         <x-form-input label="Nombre" name="name" id="edit-name" required />
                         <label for="edit-color" class="form-label fw-semibold">Color</label>
-                        <input type="color" name="color" id="edit-color" class="form-control form-control-color" value="#0f766e">
+                        <input type="color" name="color" id="edit-color" class="form-control form-control-color" value="#0f6f66">
                     </div>
                     <div class="modal-footer border-0">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>

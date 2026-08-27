@@ -88,7 +88,7 @@ Una épica **no está terminada** hasta que se cumple **todo** lo siguiente:
 - [ ] Form Requests con validación completa.
 - [ ] Policies/Gates y autorización en cada acción.
 - [ ] Controladores finos; lógica de dominio en servicios.
-- [ ] Vistas responsive **mobile-first** con Bootstrap 5.
+- [ ] Vistas responsive **mobile-first** con el sistema de diseño de [docs/UI_DESIGN.md](docs/UI_DESIGN.md) sobre Bootstrap 5.
 - [ ] Rutas nombradas y protegidas (middleware `auth`).
 - [ ] Factories + Seeders con datos falsos.
 - [ ] **Pruebas**: feature tests del recurso **+ test de aislamiento entre hogares (403)**.

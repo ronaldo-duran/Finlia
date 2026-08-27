@@ -46,6 +46,75 @@ import 'bootstrap';
 
 /*
 |----------------------------------------------------------------------
+| Formato de miles en vivo para inputs de dinero ([data-money-input]).
+|----------------------------------------------------------------------
+| Convención colombiana (docs/CONVENTIONS.md): punto de miles, coma
+| decimal ("$ 1.234.567,50"). El input sigue siendo de texto (no
+| type="number", que rechaza el punto de miles) pero conserva `required`
+| y su validez nativa; justo antes de enviar el formulario se reescribe
+| a un string numérico plano ("1234567.50") para que el Form Request
+| (`numeric`) y el cast `decimal:2` lo validen sin tocarlos.
+*/
+window.FinliaMoney = (function () {
+    function digitsAndDecimal(raw) {
+        var cleaned = String(raw ?? '').replace(/[^\d,]/g, '');
+        var commaIndex = cleaned.indexOf(',');
+        var intPart = (commaIndex === -1 ? cleaned : cleaned.slice(0, commaIndex)).replace(/^0+(?=\d)/, '');
+        var hasComma = commaIndex !== -1;
+        var decPart = hasComma ? cleaned.slice(commaIndex + 1).replace(/,/g, '').slice(0, 2) : '';
+
+        return { intPart: intPart, decPart: decPart, hasComma: hasComma };
+    }
+
+    // "12300" | "12.300,5" -> "12.300,5" (formato de pantalla).
+    function format(raw) {
+        var d = digitsAndDecimal(raw);
+        var grouped = d.intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+        return d.hasComma ? (grouped || '0') + ',' + d.decPart : grouped;
+    }
+
+    // "12.300,5" -> "12300.5" (string numérico plano para el backend).
+    function parse(raw) {
+        var d = digitsAndDecimal(raw);
+
+        return d.hasComma ? (d.intPart || '0') + '.' + (d.decPart || '0') : (d.intPart || '');
+    }
+
+    // "12300.50" (de la BD o de old()) -> "12.300,50" (formato de pantalla).
+    // Solo se omite la coma cuando los decimales son enteramente cero
+    // ("12300.00" -> "12.300"); "12300.50"/"12300.05" conservan sus dos dígitos.
+    function fromNumeric(value) {
+        if (value === null || value === undefined || value === '') return '';
+        var parts = String(value).split('.');
+        var grouped = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        var decimals = parts[1] || '';
+        var isZero = decimals === '' || /^0+$/.test(decimals);
+
+        return isZero ? grouped : grouped + ',' + decimals;
+    }
+
+    document.querySelectorAll('[data-money-input]').forEach(function (input) {
+        input.value = fromNumeric(input.value);
+
+        input.addEventListener('input', function () {
+            input.value = format(input.value);
+            input.dispatchEvent(new CustomEvent('money-input:change', { bubbles: true }));
+        });
+
+        var form = input.closest('form');
+        if (form) {
+            form.addEventListener('submit', function () {
+                input.value = parse(input.value);
+            });
+        }
+    });
+
+    return { format: format, parse: parse, fromNumeric: fromNumeric };
+})();
+
+/*
+|----------------------------------------------------------------------
 | Confirmación de envío para formularios marcados con data-confirm.
 |----------------------------------------------------------------------
 | Evita interpolar input del usuario dentro de JS inline (onsubmit="..."),

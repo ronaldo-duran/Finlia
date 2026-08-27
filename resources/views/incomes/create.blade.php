@@ -3,11 +3,15 @@
 @section('content')
     <x-flash-messages />
 
-    <div class="d-flex align-items-center gap-2 mb-4">
+    <div class="d-flex align-items-center justify-content-between gap-2 mb-4">
         <a href="{{ url()->previous() }}" class="btn btn-icon" aria-label="Volver">
             <i class="bi bi-arrow-left"></i>
         </a>
-        <h1 class="h3 mb-0"><i class="bi bi-plus-circle text-success me-2"></i>Registrar ingreso</h1>
+        <div class="segmented">
+            <a href="{{ route('expenses.create') }}" class="segmented-item">Gasto</a>
+            <span class="segmented-item active">Ingreso</span>
+        </div>
+        <span style="width: 40px;"></span>
     </div>
 
     <div class="row justify-content-center">
@@ -18,7 +22,7 @@
                         @csrf
                         @include('incomes._form')
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-finlia btn-lg">
+                            <button type="submit" class="btn btn-finlia btn-lg flex-fill">
                                 <i class="bi bi-check-lg me-1"></i> Guardar ingreso
                             </button>
                             <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary btn-lg">Cancelar</a>

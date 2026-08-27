@@ -12,17 +12,12 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100 @auth has-bottom-nav @endauth">
 
     {{-- ===================== Navbar (glass) ===================== --}}
     <nav class="navbar navbar-expand glass-nav sticky-top py-2">
         <div class="container-fluid">
             <div class="d-flex align-items-center gap-1">
-                {{-- Botón hamburguesa: abre el sidebar en móvil --}}
-                <button class="btn-icon d-lg-none" type="button"
-                        data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Abrir menú">
-                    <i class="bi bi-list"></i>
-                </button>
                 <a class="navbar-brand mb-0 d-flex align-items-center gap-2" href="{{ route('dashboard') }}">
                     <i class="bi bi-wallet2 text-finlia"></i>
                     <span>Finlia</span>
@@ -77,8 +72,9 @@
 
     {{-- ===================== Cuerpo: sidebar + contenido ===================== --}}
     <div class="d-flex flex-grow-1">
-        {{-- Sidebar: offcanvas en móvil, columna fija en escritorio --}}
-        <aside class="offcanvas-lg offcanvas-start finlia-sidebar border-0"
+        {{-- Sidebar: offcanvas en móvil (se abre desde la derecha, como el botón
+             "Más" de la barra inferior que la activa), columna fija en escritorio --}}
+        <aside class="offcanvas-lg offcanvas-end finlia-sidebar border-0"
                tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
             <div class="offcanvas-header d-lg-none">
                 <h5 class="offcanvas-title" id="sidebarLabel">
@@ -88,16 +84,24 @@
             </div>
             <div class="offcanvas-body py-3">
                 <ul class="nav flex-column">
-                    <li>
+                    {{-- Panel, Movimientos y Presupuestos ya están en la barra inferior
+                         móvil: mostrarlos también aquí sería duplicar destino. Solo
+                         aparecen en el sidebar fijo de escritorio. --}}
+                    <li class="d-none d-lg-block">
                         <a class="nav-link @if(request()->routeIs('dashboard'))active @endif" href="{{ route('dashboard') }}">
                             <i class="bi bi-speedometer2"></i> Panel
                         </a>
                     </li>
 
                     @auth
-                        <li>
-                            <a class="nav-link @if(request()->routeIs('households.*'))active @endif" href="{{ route('households.index') }}">
-                                <i class="bi bi-house-door"></i> Hogares
+                        <li class="d-none d-lg-block">
+                            <a class="nav-link @if(request()->routeIs('movements.*'))active @endif" href="{{ route('movements.index') }}">
+                                <i class="bi bi-arrow-left-right"></i> Movimientos
+                            </a>
+                        </li>
+                        <li class="d-none d-lg-block">
+                            <a class="nav-link @if(request()->routeIs('budgets.*'))active @endif" href="{{ route('budgets.index') }}">
+                                <i class="bi bi-cash-stack"></i> Presupuestos
                             </a>
                         </li>
                         <li>
@@ -106,23 +110,18 @@
                             </a>
                         </li>
                         <li>
-                            <a class="nav-link @if(request()->routeIs('movements.*'))active @endif" href="{{ route('movements.index') }}">
-                                <i class="bi bi-arrow-left-right"></i> Movimientos
-                            </a>
-                        </li>
-                        <li>
                             <a class="nav-link @if(request()->routeIs('categories.*'))active @endif" href="{{ route('categories.index') }}">
                                 <i class="bi bi-tags"></i> Categorías
                             </a>
                         </li>
                         <li>
-                            <a class="nav-link @if(request()->routeIs('budgets.*'))active @endif" href="{{ route('budgets.index') }}">
-                                <i class="bi bi-cash-stack"></i> Presupuestos
+                            <a class="nav-link @if(request()->routeIs('expected-incomes.*'))active @endif" href="{{ route('expected-incomes.index') }}">
+                                <i class="bi bi-graph-up-arrow"></i> Ingresos esperados
                             </a>
                         </li>
                         <li>
-                            <a class="nav-link @if(request()->routeIs('expected-incomes.*'))active @endif" href="{{ route('expected-incomes.index') }}">
-                                <i class="bi bi-graph-up-arrow"></i> Ingresos esperados
+                            <a class="nav-link @if(request()->routeIs('households.*'))active @endif" href="{{ route('households.index') }}">
+                                <i class="bi bi-house-heart"></i> Hogares
                             </a>
                         </li>
                     @endauth
@@ -136,7 +135,7 @@
                         ];
                     @endphp
                     @foreach ($proximos as $item)
-                        <li>
+                        <li class="d-none d-lg-block">
                             <span class="nav-link disabled" title="Disponible en la {{ $item['epic'] }}">
                                 <i class="bi {{ $item['icon'] }}"></i> {{ $item['label'] }}
                             </span>
@@ -164,6 +163,10 @@
             &copy; {{ date('Y') }}
         </div>
     </footer>
+
+    @auth
+        @include('layouts.partials.mobile-bottom-nav')
+    @endauth
 
     @stack('scripts')
 </body>

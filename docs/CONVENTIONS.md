@@ -63,11 +63,17 @@
 
 ## 7. Blade / Frontend
 
-- Layout principal: `resources/views/layouts/app.blade.php`.
-- Componentes reutilizables en `resources/views/components/` (p.ej. `<x-stat-card>`, `<x-money>`).
+- Layout principal: `resources/views/layouts/app.blade.php` (autenticado, con sidebar de
+  escritorio + barra inferior móvil) / `layouts/guest.blade.php` (público).
+- **Sistema de diseño**: [docs/UI_DESIGN.md](UI_DESIGN.md) — es el lenguaje visual **por
+  defecto** de Finlia (glass, `.chip`/`.chip-row`, `.segmented`, `.hero-card`, `.btn-finlia`,
+  bottom nav móvil). Toda vista nueva se construye con esas piezas; no Bootstrap genérico suelto
+  ni un estilo ad-hoc por pantalla. Componentes reutilizables adicionales en
+  `resources/views/components/` (p.ej. `<x-form-input>`, `<x-form-select>`).
 - **`{{ }}`** siempre; `{!! !!}` solo con contenido seguro del sistema.
 - `@csrf` en todos los forms. `@method('PUT')` donde corresponda.
-- Clases de **Bootstrap 5** (grid, utilities). Mobile-first: diseñar primero `col-12`, luego breakpoints.
+- Clases de **Bootstrap 5** (grid, utilities) como base; los componentes de marca de
+  `docs/UI_DESIGN.md` van encima. Mobile-first: diseñar primero `col-12`, luego breakpoints.
 - Tablas largas: **paginación** (`{{ $items->links() }}`), no listas infinitas.
 - JS **vanilla** en `resources/js/`; Chart.js para gráficos.
 

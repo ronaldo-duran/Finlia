@@ -12,6 +12,32 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.5.0] - 2026-08-27 — Rediseño mobile-first
+
+### Añadido
+- **Rediseño del Panel, Movimientos y Registrar gasto/ingreso**: navegación inferior con botón
+  central "+" en móvil (el "Más" abre el sidebar completo desde la derecha, del mismo lado que el
+  botón), sidebar de escritorio reordenado, tarjeta hero de dinero disponible, listado de
+  movimientos agrupado por día con chips de filtro, y formularios con importe grande (con
+  separador de miles en vivo), atajos de categoría sincronizados con el `<select>` real, y campos
+  secundarios bajo "Más detalles" ([ADR-0016](docs/DECISIONS.md#adr-0016)).
+- **Sistema de diseño documentado** en [docs/UI_DESIGN.md](docs/UI_DESIGN.md): componentes
+  reutilizables (`.chip`, `.segmented`, `.hero-card`, input de dinero con formato de miles) con
+  guía de cuándo usar cada uno. Referenciado desde `CLAUDE.md`, `AGENTS.md`,
+  `docs/CONVENTIONS.md`, `docs/ARCHITECTURE.md` y los skills/agentes de Claude Code para que las
+  próximas épicas lo usen por defecto.
+
+### Cambiado
+- Paleta de marca y de estados (éxito/peligro/aviso) desaturada en claro y oscuro — feedback
+  directo de la sesión de diseño: "se ve demasiado neón".
+- Selector de período de Presupuestos pasa de `btn-group` a chips, mismo idioma visual que
+  Movimientos.
+- El Panel se probó con dos variantes conmutables ("Enfoque"/"Control") y, tras verlas en uso, se
+  quedó con una sola: "Control" no aportaba y hacía ver rara la barra lateral de escritorio
+  ([ADR-0016](docs/DECISIONS.md#adr-0016)).
+
+---
+
 ## [0.4.1] - 2026-08-26 — Invitaciones por correo
 
 ### Añadido
