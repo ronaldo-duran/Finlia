@@ -6,37 +6,34 @@ namespace App\Policies;
 
 use App\Models\Income;
 use App\Models\User;
+use App\Policies\Concerns\ChecksHouseholdAccess;
 
 /**
  * Autorización sobre ingresos. Aislamiento multi-hogar (amenaza #1):
- * todo acceso requiere ser miembro del hogar dueño del ingreso.
+ * todo acceso requiere ser miembro del hogar dueño del ingreso Y que ese
+ * hogar sea el activo (ver ChecksHouseholdAccess).
  */
 class IncomePolicy
 {
+    use ChecksHouseholdAccess;
+
     public function view(User $user, Income $income): bool
     {
-        return $this->userInHousehold($user, $income->household_id);
+        return $this->canAccessHousehold($user, $income->household_id);
     }
 
     public function create(User $user): bool
     {
-        $household = active_household();
-
-        return $household !== null && $household->hasMember($user);
+        return $this->canAccessActiveHousehold($user);
     }
 
     public function update(User $user, Income $income): bool
     {
-        return $this->userInHousehold($user, $income->household_id);
+        return $this->canAccessHousehold($user, $income->household_id);
     }
 
     public function delete(User $user, Income $income): bool
     {
-        return $this->userInHousehold($user, $income->household_id);
-    }
-
-    private function userInHousehold(User $user, int $householdId): bool
-    {
-        return $user->households()->where('households.id', $householdId)->exists();
+        return $this->canAccessHousehold($user, $income->household_id);
     }
 }

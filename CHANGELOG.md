@@ -40,6 +40,25 @@ reciente de este archivo.
 - El seeder de demo incluye arriendo, internet, SOAT y mantenimiento para que el Panel y las
   obligaciones muestren datos desde el arranque.
 
+### Seguridad
+- **Corregida una fuga entre hogares presente desde la 0.3.0** (amenaza #1). Las Policies
+  autorizaban contra el hogar *del recurso* mientras los Form Requests acotaban
+  `account_id`/`category_id` al hogar *activo en sesión*. Para un usuario miembro de varios
+  hogares esos dos hogares no coinciden: con el hogar A activo se podía editar un recurso
+  del hogar B enlazándole una **cuenta de A**. Consecuencias reproducidas: el saldo de una
+  cuenta de A cambiaba por actividad de B, y un miembro de B **sin relación alguna con A**
+  veía el nombre de esa cuenta en sus movimientos.
+- Autorizar un recurso financiero exige ahora **dos** condiciones: ser miembro del hogar
+  dueño **y** que ese hogar sea el activo ([ADR-0019](docs/DECISIONS.md#adr-0019)). El
+  invariante vive en un trait único, `ChecksHouseholdAccess`, compartido por las siete
+  policies de recursos financieros. `HouseholdPolicy` queda fuera a propósito: gestionar o
+  activar un hogar debe poder hacerse desde fuera de él.
+- `UpdateRecurringExpenseRequest` autoriza **antes** de validar, como ya hacía
+  `UpdateExpenseRequest`: un usuario ajeno recibe 403 y no 422, sin importar los datos.
+- Nuevo `MultiHouseholdIsolationTest` (9 casos): cubre el escenario multi-hogar que los
+  tests de aislamiento clásicos no alcanzaban, porque usan un intruso que no es miembro de
+  nada y la membresía ya lo frenaba.
+
 ---
 
 ## [0.6.0] - 2026-08-27 — Identidad de marca
