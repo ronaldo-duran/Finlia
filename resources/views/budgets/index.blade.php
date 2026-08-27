@@ -116,9 +116,13 @@
                                 <span>− Presupuesto aún sin gastar</span>
                                 <span class="fw-semibold">@money($summary['committed']['budget'])</span>
                             </li>
-                            <li class="d-flex justify-content-between text-body-tertiary">
-                                <span>− Gastos fijos y recurrentes</span>
-                                <span>Épica 5</span>
+                            <li class="d-flex justify-content-between gap-2">
+                                <span>− Gastos fijos (arriendo, servicios)</span>
+                                <span class="fw-semibold">@money($summary['committed']['fixed_expenses'])</span>
+                            </li>
+                            <li class="d-flex justify-content-between gap-2">
+                                <span>− Obligaciones próximas (SOAT, seguro)</span>
+                                <span class="fw-semibold">@money($summary['committed']['recurring'])</span>
                             </li>
                             <li class="d-flex justify-content-between text-body-tertiary">
                                 <span>− Obligaciones de deuda</span>

@@ -17,6 +17,7 @@ use App\Http\Controllers\HouseholdMemberController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MovementsController;
+use App\Http\Controllers\RecurringExpenseController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -156,4 +157,16 @@ Route::middleware('auth')->group(function () {
         ->name('expected-incomes.update');
     Route::delete('ingresos-esperados/{expectedIncome}', [ExpectedIncomeController::class, 'destroy'])
         ->name('expected-incomes.destroy');
+
+    // ---- Épica 5: gastos recurrentes y obligaciones futuras ----
+    Route::get('recurrentes', [RecurringExpenseController::class, 'index'])
+        ->name('recurring-expenses.index');
+    Route::post('recurrentes', [RecurringExpenseController::class, 'store'])
+        ->name('recurring-expenses.store');
+    Route::put('recurrentes/{recurringExpense}', [RecurringExpenseController::class, 'update'])
+        ->name('recurring-expenses.update');
+    Route::delete('recurrentes/{recurringExpense}', [RecurringExpenseController::class, 'destroy'])
+        ->name('recurring-expenses.destroy');
+    Route::post('recurrentes/{recurringExpense}/pagar', [RecurringExpenseController::class, 'markPaid'])
+        ->name('recurring-expenses.mark-paid');
 });

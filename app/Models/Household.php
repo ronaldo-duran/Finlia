@@ -79,6 +79,13 @@ class Household extends Model
         return $this->hasMany(ExpectedIncome::class);
     }
 
+    // ---- Épica 5: gastos recurrentes y obligaciones futuras ----
+
+    public function recurringExpenses(): HasMany
+    {
+        return $this->hasMany(RecurringExpense::class);
+    }
+
     /**
      * Indica si un usuario es miembro del hogar.
      */

@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Enums\BudgetScope;
 use App\Services\BudgetCalculatorService;
 use App\Services\MovementSummaryService;
+use App\Services\RecurringExpenseService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class DashboardController extends Controller
     public function __construct(
         private readonly MovementSummaryService $summary,
         private readonly BudgetCalculatorService $budgets,
+        private readonly RecurringExpenseService $recurring,
     ) {}
 
     /**
@@ -65,6 +67,8 @@ class DashboardController extends Controller
             'fechaActual' => $hoy->isoFormat('dddd, D [de] MMMM [de] YYYY'),
             // Épica 4: "¿cuánto puedo gastar?" del mes en curso.
             'budgetSummary' => $this->budgets->summary($householdId, BudgetScope::Month),
+            // Épica 5: avisos de obligaciones vencidas o próximas a vencer.
+            'recurringAlerts' => $this->recurring->alerts($householdId),
             'totals' => $totals,
             'totalBalance' => $totalBalance,
             'byCategory' => $byCategory,

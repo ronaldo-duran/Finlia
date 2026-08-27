@@ -123,6 +123,11 @@
                             </a>
                         </li>
                         <li>
+                            <a class="nav-link @if(request()->routeIs('recurring-expenses.*'))active @endif" href="{{ route('recurring-expenses.index') }}">
+                                <i class="bi bi-arrow-repeat"></i> Gastos recurrentes
+                            </a>
+                        </li>
+                        <li>
                             <a class="nav-link @if(request()->routeIs('households.*'))active @endif" href="{{ route('households.index') }}">
                                 <i class="bi bi-house-heart"></i> Hogares
                             </a>
@@ -132,7 +137,6 @@
                     @php
                         // Marcadores de navegación de épicas futuras (deshabilitadas).
                         $proximos = [
-                            ['icon' => 'bi-arrow-repeat', 'label' => 'Gastos recurrentes', 'epic' => 'Épica 5'],
                             ['icon' => 'bi-credit-card', 'label' => 'Deudas', 'epic' => 'Épica 6'],
                             ['icon' => 'bi-piggy-bank', 'label' => 'Metas de ahorro', 'epic' => 'Épica 7'],
                         ];
