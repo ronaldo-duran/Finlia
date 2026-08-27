@@ -12,6 +12,36 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.4.1] - 2026-08-26 — Invitaciones por correo
+
+### Añadido
+- **Las invitaciones a un hogar se envían por correo al invitado** (`HouseholdInvitationMail`).
+  Hasta ahora el administrador tenía que copiar el enlace y mandarlo a mano, justo en el
+  paso más importante del producto. El correo es Blade HTML autocontenido, en español,
+  con versión en texto plano y sin imágenes remotas.
+- Interruptor `finlia.mail.enabled` en `config/finlia.php` y detección de transports que
+  **no entregan** (`log`, `array`): con ellos la pantalla no le promete al administrador un
+  correo que nadie va a recibir.
+- Configuración SMTP de producción documentada en `docs/DEPLOYMENT.md` §4 (Hostinger, SPF/DKIM).
+- Tests: 7 de feature con `Mail::fake()` — envío al invitado, enlace con el token plano en el
+  cuerpo, asunto, interruptor apagado, transport falso, caída del SMTP y aviso en la UI.
+
+### Cambiado
+- **Política de correo escrita y acotada ([ADR-0015](docs/DECISIONS.md#adr-0015))**: Finlia envía
+  correo **solo cuando el destinatario no puede ver el mensaje dentro de la app** — invitación a un
+  hogar y recuperación de contraseña. Recordatorios (Épica 9), resúmenes y comunicaciones de
+  producto van **in-app**. Ningún correo transporta datos financieros. Añadir un correo nuevo exige
+  un ADR. Se corrigen `docs/ARCHITECTURE.md` §7 y la Épica 9 de `docs/ROADMAP.md`, que dejaban la
+  puerta abierta a notificar por email.
+- `HouseholdService::inviteMember()` devuelve un tercer elemento (`bool $emailSent`) y acepta el
+  nombre de quien invita como dato explícito, sin romper el seam de ADR-0010.
+- La pantalla del hogar distingue "invitación **enviada**" de "invitación **creada**": el enlace
+  manual sigue siempre visible como respaldo.
+
+### Seguridad
+- El envío nunca bloquea la operación: un SMTP caído deja la invitación creada y registra un
+  `Log::warning` **sin token ni enlace** (`docs/SECURITY.md` §4).
+
 ## [0.4.0] - 2026-08-18 — Presupuestos y dinero disponible
 
 ### Añadido

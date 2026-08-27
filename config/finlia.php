@@ -18,11 +18,29 @@ return [
 
     // Versión actual del software (fuente de verdad; sincronizar con package.json
     // y CHANGELOG.md al publicar cada versión).
-    'version' => '0.4.0',
+    'version' => '0.4.1',
 
     // Mercado / idioma por defecto.
     'market' => env('FINLIA_MARKET', 'CO'),
     'locale' => env('APP_FAKER_LOCALE', 'es_CO'),
+
+    /*
+    | Correo transaccional (ADR-0015).
+    |
+    | Finlia envía correo SOLO para lo estrictamente necesario: invitar a
+    | alguien al hogar y recuperar la contraseña. Nada de resúmenes,
+    | recordatorios ni marketing (esos son in-app). El correo es OPCIONAL:
+    | si no hay SMTP configurado la app sigue funcionando y la invitación
+    | se comparte con el enlace manual.
+    */
+    'mail' => [
+        // Interruptor global del correo transaccional.
+        'enabled' => env('FINLIA_MAIL_ENABLED', true),
+
+        // Transports que NO entregan a una bandeja real (desarrollo y tests).
+        // Con ellos la UI sigue mostrando el enlace manual como vía principal.
+        'fake_transports' => ['log', 'array'],
+    ],
 
     // Moneda por defecto (ISO 4217).
     'currency' => [

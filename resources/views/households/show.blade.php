@@ -53,8 +53,19 @@
                 <div class="alert alert-success d-flex align-items-start gap-2 border-0 shadow-sm" role="alert">
                     <i class="bi bi-send-check-fill mt-1"></i>
                     <div class="flex-grow-1">
-                        <strong>¡Invitación creada para {{ $invitationEmail }}!</strong>
-                        <div class="small mt-1">Comparte este enlace (expira en 7 días). Cuando el correo no está configurado, debes enviarlo a mano:</div>
+                        @if (session('invitation_email_sent'))
+                            <strong>¡Invitación enviada a {{ $invitationEmail }}!</strong>
+                            <div class="small mt-1">
+                                Le llegará un correo con el enlace para unirse (expira en 7 días).
+                                Si no lo encuentra, revisa su carpeta de spam o compártele este enlace:
+                            </div>
+                        @else
+                            <strong>¡Invitación creada para {{ $invitationEmail }}!</strong>
+                            <div class="small mt-1">
+                                No se pudo enviar el correo (aún no hay servidor de correo configurado).
+                                Comparte este enlace a mano; expira en 7 días:
+                            </div>
+                        @endif
                         <div class="input-group input-group-sm mt-2">
                             <input type="text" class="form-control" value="{{ session('invitation_link') }}" readonly id="invitationLink" onclick="this.select()">
                             <button class="btn btn-outline-finlia" type="button" onclick="navigator.clipboard.writeText(document.getElementById('invitationLink').value)">

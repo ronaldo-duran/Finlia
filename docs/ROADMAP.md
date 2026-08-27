@@ -48,7 +48,9 @@ Configurar Laravel (PHP, MySQL, `.env`, timezone Colombia, locale español, COP)
 Resumen (ingresos, gastos, balance, disponible, deuda, ahorro, metas), 5 gráficos Chart.js, comparación de períodos, insights sencillos, export CSV (preparar PDF).
 
 ### Épica 9 — Recordatorios y notificaciones
-`reminders` para recurrentes, deudas, metas, obligaciones anuales. Estados, in-app inicial (preparar email/WhatsApp/push). Laravel Scheduler + cron Hostinger.
+`reminders` para recurrentes, deudas, metas, obligaciones anuales. Estados, **in-app** (WhatsApp/push como canales futuros). Laravel Scheduler + cron Hostinger.
+
+> 📧 **Los recordatorios NO van por correo.** El correo queda reservado a lo imprescindible —invitar a alguien al hogar y recuperar la contraseña— porque ahí el destinatario no puede ver el aviso dentro de la app. Ver [ADR-0015](DECISIONS.md#adr-0015).
 
 ### Épica 10 — UX mobile y PWA
 Navbar/botones/forms/tablas/gráficos optimizados móvil. Botón flotante "+" (gasto, ingreso, transferencia, aporte, pago deuda). PWA (manifest, iconos, instalación). Selects inteligentes (última categoría/cuenta usada).
