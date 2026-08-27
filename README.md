@@ -37,6 +37,7 @@ El estado detallado de cada funcionalidad está en [docs/ROADMAP.md](docs/ROADMA
 - **Eloquent** · Migrations · Seeders · Factories
 - **PHPUnit**
 - Despliegue: **Hostinger** (hosting compartido)
+- UI mobile-first propia sobre Bootstrap 5 (glass, chips, barra inferior + FAB) — ver [docs/UI_DESIGN.md](docs/UI_DESIGN.md)
 
 ## 🚀 Instalación local
 
@@ -129,6 +130,7 @@ Para reportar una vulnerabilidad, abre un issue privado o contacta al maintainer
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Despliegue
 - [docs/ROADMAP.md](docs/ROADMAP.md) — Roadmap de épicas
 - [docs/CONVENTIONS.md](docs/CONVENTIONS.md) — Convenciones
+- [docs/UI_DESIGN.md](docs/UI_DESIGN.md) — Sistema de diseño (UI mobile-first)
 - [docs/DECISIONS.md](docs/DECISIONS.md) — Decisiones (ADR)
 - `scrum/epics/` — Épicas detalladas
 

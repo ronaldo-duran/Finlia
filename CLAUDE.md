@@ -125,6 +125,7 @@ Detalle en [docs/CONVENTIONS.md](docs/CONVENTIONS.md).
 - **Timestamps**: `created_at`, `updated_at` (y `deleted_at` solo si el borrado es lógico).
 - **Money**: `DECIMAL(15,2)` en migraciones; cast a `decimal:2` en el modelo.
 - **PHP**: tipado estricto (`declare(strict_types=1)` en clases de dominio), readonly ctor donde aporte, sin acoplamientos ocultos.
+- **UI**: toda vista Blade nueva usa el sistema de diseño de [docs/UI_DESIGN.md](docs/UI_DESIGN.md) (glass, `.chip`/`.chip-row`, `.segmented`, `.hero-card`, bottom nav) como **el** lenguaje visual de Finlia — no Bootstrap genérico suelto ni un estilo propio por pantalla.
 
 ---
 
@@ -179,6 +180,7 @@ composer audit             # revisa vulnerabilidades de dependencias
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Despliegue en Hostinger, cron, optimización |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Estado de las 13 épicas |
 | [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | Nombres, dinero, fechas, commits |
+| [docs/UI_DESIGN.md](docs/UI_DESIGN.md) | Sistema de diseño: componentes, tokens, cuándo usar cada uno |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Registro de decisiones (ADR) |
 | [CHANGELOG.md](CHANGELOG.md) | Registro de cambios por versión (mantener con `/update-changelog`; versión vigente en `config/finlia.php` + `package.json`) |
 | `scrum/epics/` | Definición detallada de cada épica (se elimina al generar el primer tag/MVP) |

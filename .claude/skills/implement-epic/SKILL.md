@@ -10,7 +10,7 @@ Implementa una épica de Finlia de forma disciplinada. **Argumento esperado**: n
 ## 1. Leer y contextualizar
 
 - Lee la épica: `scrum/epics/ÉPICA <N> — ….md`.
-- Lee el estado actual: [docs/ROADMAP.md](../../../docs/ROADMAP.md) (¿está iniciada?), [docs/DATA_MODEL.md](../../../docs/DATA_MODEL.md) (entidades), [docs/DECISIONS.md](../../../docs/DECISIONS.md) (ADR pendientes de esa épica).
+- Lee el estado actual: [docs/ROADMAP.md](../../../docs/ROADMAP.md) (¿está iniciada?), [docs/DATA_MODEL.md](../../../docs/DATA_MODEL.md) (entidades), [docs/DECISIONS.md](../../../docs/DECISIONS.md) (ADR pendientes de esa épica), [docs/UI_DESIGN.md](../../../docs/UI_DESIGN.md) (si la épica añade vistas).
 - Comprueba que las épicas previas de las que depende están **completas**. Si no, avisa y detente.
 
 ## 2. Inspeccionar el código existente
@@ -36,7 +36,7 @@ Antes de escribir nada, revisa con Glob/Grep/Read:
 6. **Policy(ies)** por recurso del hogar; autorización por membresía + rol.
 7. **Controller(s)** finos → delegan a `app/Services` cuando hay lógica de dominio.
 8. **Rutas** nombradas, agrupadas con middleware `auth`.
-9. **Vistas** Blade mobile-first con Bootstrap 5; componentes en `resources/views/components`.
+9. **Vistas** Blade mobile-first con el sistema de diseño de [docs/UI_DESIGN.md](../../../docs/UI_DESIGN.md) (glass, chips, segmentados, hero-card según aplique) sobre Bootstrap 5; componentes en `resources/views/components`.
 10. **Seeder** si la épica lo pide (datos de demo); integrar en `DatabaseSeeder`.
 
 ## 5. Verificar (regla de los 9 pasos)

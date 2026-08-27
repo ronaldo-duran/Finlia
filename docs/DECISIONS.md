@@ -19,6 +19,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0013 — CI en GitHub Actions con Pint + PHPUnit + build de Vite + E2E con Playwright](#adr-0013) — **ACEPTADA**
 - [ADR-0014 — Ingresos esperados configurables y dinero disponible con seams por épica](#adr-0014) — **ACEPTADA**
 - [ADR-0015 — Correo transaccional mínimo: solo invitaciones y recuperación de contraseña](#adr-0015) — **ACEPTADA**
+- [ADR-0016 — Rediseño mobile-first adelantado (Épica 10 parcial) + sistema de diseño propio](#adr-0016) — **ACEPTADA**
 
 ---
 
@@ -318,6 +319,80 @@ Hay tres razones para no dejar esa puerta abierta:
 - Un buzón inexistente o un SMTP caído generan un `Log::warning`, nunca un error visible: el administrador ve el enlace manual y sigue adelante.
 
 **Estado.** ACEPTADA — 2026-08-26. Implementada en `HouseholdInvitationMail`, `HouseholdService::inviteMember()`, `config/finlia.php` (`finlia.mail`) y las vistas `emails/households/invitation*`.
+
+---
+
+## ADR-0016
+### Rediseño mobile-first adelantado (Épica 10 parcial) + sistema de diseño propio — **ACEPTADA**
+
+**Contexto.** El producto encargó un rediseño de Panel, Movimientos y Registrar gasto/ingreso a
+través de Claude Design (mobile-first, "liquid glass" sutil, dark/light) porque el feedback sobre
+el estado actual era concreto: la marca se veía "demasiado neón" y los botones del panel "no
+mantienen una armonía" — mucha información con distinto peso visual, sin jerarquía. El diseño
+salió en **dos direcciones** igual de válidas ("Enfoque": una sola cifra y un gesto; "Control": el
+mes de un vistazo) sin que el producto se decantara por una.
+
+La Épica 10 (UX mobile y PWA) es la que formalmente cubre "navbar/botones/forms optimizados
+móvil" y "botón flotante +", pero está después de las épicas 5-9 en el orden declarado. El
+theming ya sentó el precedente de adelantar trabajo puramente visual cuando el producto lo pide
+explícitamente (ver comentario en `resources/css/app.css` sobre la Épica 1).
+
+**Decisión.**
+
+1. **Adelantar la porción de Épica 10 que el rediseño cubre**, igual que se hizo con el theming en
+   la Épica 1: navegación inferior móvil + FAB, sidebar de escritorio pulido, y el rediseño visual
+   de Panel/Movimientos/Registrar gasto-ingreso. Lo que la Épica 10 pide y el rediseño **no** cubre
+   (manifest/instalación PWA, selects inteligentes, FAB con transferencia/aporte/pago de deuda —
+   dependen de las épicas 6-7) queda **sin implementar**, tal como manda la regla de "no
+   implementes lo que la épica todavía no pide".
+2. **No elegir entre "Enfoque" y "Control": ambas quedan, conmutables.** En vez de forzar una
+   decisión de producto que no se tomó, se implementó `design_variant()` — una preferencia de
+   **sesión** (igual que `active_household()`), sin modelo ni migración, con un segmentado
+   "Enfoque / Control" en el sidebar y el menú móvil. Es reversible sin coste: cambiar de opinión
+   sobre cuál es la variante "correcta" no requiere tocar código, solo el helper.
+3. **El resultado del rediseño se documenta como sistema de diseño reutilizable**
+   ([docs/UI_DESIGN.md](UI_DESIGN.md)), no como un one-off del Panel. Todo componente nuevo
+   (`.chip`, `.segmented`, `.hero-card`, `.budget-ring`, el patrón de icono-tintado-por-categoría)
+   se documenta con **cuándo usarlo y cuándo no**, para que las épicas siguientes (5-9, que añaden
+   pantallas nuevas) lo usen por defecto en vez de reinventar Bootstrap suelto pantalla a pantalla
+   — que es exactamente el problema que originó el encargo del rediseño.
+4. **Los controles reales nunca se sustituyen por el atajo visual.** El importe grande de
+   "Registrar gasto" sigue siendo `<input type="number" name="amount" required>`; los chips de
+   categoría son un atajo que fija el `<select>` real por JS, no un reemplazo. Se prioriza no
+   romper la validación HTML5 ni la cobertura Playwright existente por encima del parecido
+   pixel-perfect con la maqueta.
+
+**Alternativas (descartadas).**
+- **Esperar a la Épica 10 en su orden natural** — coherente con el protocolo, pero deja el
+  feedback de diseño (ya encargado y pagado en tiempo de diseño) sin usar durante 5+ épicas, y
+  arriesga que el criterio de diseño se pierda o haya que rehacerlo.
+- **Forzar una sola variante** (elegir "Enfoque" o "Control" a criterio del agente) — más simple,
+  pero es una decisión de producto que no le correspondía al agente tomar; el histórico de chat
+  del rediseño terminaba sin que el usuario se decantara.
+- **Sustituir el input de importe por un teclado numérico a medida** (como en la maqueta) —
+  visualmente más fiel, pero exige reimplementar la validación (`required`, tipo, `:invalid`) en
+  JS y rompe la prueba e2e `no permite guardar un gasto sin cuenta ni valor`. Se prefirió adaptar
+  la tecnología a la tecnología del proyecto, como pide el propio encargo del rediseño.
+
+**Consecuencias.**
+- La Épica 10 pasa a 🟡 en `docs/ROADMAP.md` con una nota explícita de qué falta.
+- Nueva tabla de colores de marca/estado (`--finlia-primary/-success/-danger/-warning`, ver
+  `resources/css/app.css`), más desaturada que la original de la Épica 1 — cualquier hex de marca
+  hardcodeado en una vista (incluidos los correos, que no pueden usar custom properties) debe
+  mantenerse sincronizado a mano.
+- Épicas 5-9 (aún no iniciadas) deben construir sus vistas nuevas sobre
+  [docs/UI_DESIGN.md](UI_DESIGN.md); `docs/CONVENTIONS.md`, `docs/ARCHITECTURE.md`, `CLAUDE.md`,
+  `AGENTS.md` y los skills/agentes de Claude Code (`implement-epic`, `epic-implementer`,
+  `laravel-reviewer`) quedan actualizados para exigirlo por defecto.
+- `design_variant()` es deuda de producto, no técnica: en algún momento alguien tiene que decidir
+  si "Enfoque" y "Control" conviven para siempre (como preferencia de usuario) o si el conmutador
+  desaparece a favor de una sola.
+
+**Estado.** ACEPTADA — 2026-08-27. Implementada en `resources/css/app.css`, `layouts/app.blade.php`,
+`layouts/partials/{mobile-bottom-nav,design-variant-switch}.blade.php`, `dashboard.blade.php` +
+`dashboard/_hero-*.blade.php`, `movements/{index,_item}.blade.php`, `expenses/incomes/_form.blade.php`,
+`App\Support\helpers.php::design_variant()`, `DesignVariantController`, y documentada en
+[docs/UI_DESIGN.md](UI_DESIGN.md).
 
 ---
 

@@ -21,13 +21,11 @@
         </a>
     </div>
 
-    {{-- Selector de período: esta semana / este mes / próximo mes.
-         btn-group ocupa el ancho completo en móvil para que las tres opciones
-         quepan sin desbordar ni romper los bordes redondeados. --}}
-    <div class="btn-group w-100 w-sm-auto mb-4" role="group" aria-label="Período consultado">
+    {{-- Selector de período: esta semana / este mes / próximo mes. --}}
+    <div class="chip-row mb-4" role="group" aria-label="Período consultado">
         @foreach (\App\Enums\BudgetScope::cases() as $option)
             <a href="{{ route('budgets.index', ['periodo' => $option->value]) }}"
-               class="btn btn-sm px-2 {{ $scope === $option ? 'btn-finlia' : 'btn-outline-secondary' }}"
+               class="chip {{ $scope === $option ? 'active' : '' }}"
                @if ($scope === $option) aria-current="page" @endif>
                 {{ $option->label() }}
             </a>
@@ -217,7 +215,7 @@
                              se comprime ni se corta. --}}
                         <div class="d-md-flex justify-content-between align-items-center gap-2 mb-2">
                             <div class="d-flex align-items-center flex-wrap gap-2 min-w-0">
-                                <span class="color-dot" style="background-color: {{ $row['color'] ?: '#0f766e' }}"></span>
+                                <span class="color-dot" style="background-color: {{ $row['color'] ?: '#0f6f66' }}"></span>
                                 <span class="fw-semibold text-truncate">{{ $row['name'] }}</span>
                                 @if ($row['level'] !== \App\Enums\BudgetAlertLevel::Ok)
                                     <span class="badge rounded-pill text-bg-{{ $row['level']->color() }}">
