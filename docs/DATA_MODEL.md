@@ -181,7 +181,7 @@ No es tabla. `summary(householdId, BudgetScope, ?referencia)` devuelve un array 
 ingresosEsperados = max(Σ expected_incomes activos × factor, ingresos registrados del período)
 comprometido      = presupuestoPendiente          (= max(total pendiente, Σ categorías pendientes))
                   + gastosFijos + recurrentes     (0.0 — Épica 5)
-                  + obligacionesDeuda             (0.0 — Épica 6)
+                  + obligacionesDeuda             (cuotas pendientes — Épica 6)
                   + ahorroProgramado              (0.0 — Épica 7)
 
 disponible = ingresosEsperados − gastado − comprometido     ← "puedes gastar"
@@ -253,7 +253,8 @@ No es tabla. Lógica de dominio de la épica (sin dependencias HTTP, ADR-0010):
 | institution | string, null | |
 | type | string | enum `DebtType`: credit_card, loan, vehicle, family, other |
 | original_amount | decimal(15,2) | |
-| current_balance | decimal(15,2) | |
+| current_balance | decimal(15,2) | **derivado** (ADR-0020): línea base − pagos. No fillable, no se teclea |
+| account_id | FK accounts, null | cuenta asociada si es tarjeta (ADR-0002) |
 | interest_rate | decimal(6,3), null | % anual |
 | interest_rate_type | string, null | fixed, variable |
 | minimum_payment | decimal(15,2), null | |
@@ -263,30 +264,41 @@ No es tabla. Lógica de dominio de la épica (sin dependencias HTTP, ADR-0010):
 | end_date | date, null | |
 | status | string | active, refinanced, paid, written_off |
 | notes | text, null | |
-| timestamps | | |
+| timestamps + deleted_at | | borrado lógico: una deuda saldada es historia financiera |
 
 ### `debt_payments`
 | Campo | Tipo | Notas |
 |---|---|---|
 | id, debt_id | FK (cascade) | |
 | household_id | | denormalizado para aislamiento/queries |
+| expense_id | FK expenses, null (nullOnDelete) | gasto real generado si el pago salió de una cuenta (ADR-0021) |
 | amount | decimal(15,2) | |
 | date | date | |
-| type | string | minimum, scheduled, extra |
+| type | string | enum `DebtPaymentType`: minimum, scheduled, extra |
 | notes | text, null | |
 | timestamps | | |
 
-### `credit_cards` ⚖️ ADR-0002
-Dos opciones:
-- **(a)** `accounts` con `type=credit_card` + tabla `credit_cards(account_id, credit_limit, available_credit, statement_date, payment_due_date, annual_fee, monthly_fee)`.
-- **(b)** Tabla `credit_cards` independiente.
+### `credit_cards` — ADR-0002 **ACEPTADA** (opción a)
+`accounts` con `type=credit_card` + tabla complementaria `credit_cards`. La tarjeta es una cuenta con atributos extra: así se reutiliza el motor de cuentas y movimientos y no se duplica la noción de saldo.
 
-*Recomendación: opción (a)* — la tarjeta es una cuenta con atributos extra; evita duplicar saldos. Pendiente confirmación.
+| Campo | Tipo | Notas |
+|---|---|---|
+| id | | |
+| account_id | FK accounts, **unique** (cascade) | una tarjeta por cuenta |
+| household_id | | denormalizado para aislamiento |
+| credit_limit | decimal(15,2) | cupo total |
+| available_credit | decimal(15,2) | derivado: cupo − usado |
+| statement_date | tinyint, null | día de corte (1-31) |
+| payment_due_date | tinyint, null | día límite de pago (1-31) |
+| annual_fee / monthly_fee | decimal(15,2), null | cuota de manejo |
+| timestamps | | |
 
-> **Seguridad**: nunca almacenar número completo de tarjeta, CVV, PIN. Solo últimos 4 dígitos si se quiere.
+> 🔒 **Seguridad**: **no existen** —ni deben añadirse— columnas para número de tarjeta, CVV o PIN. Lo que no se almacena no se puede filtrar. Hay un test que lo verifica contra el esquema real (`DebtTest::test_nunca_se_almacenan_datos_sensibles_de_la_tarjeta`).
 
-### `debt_refinancings` (opcional, Épica 6)
-Historial de refinanciación: debt_id, interest_rate, term, installment, start_date, refinanced_balance.
+### `debt_refinancings`
+Historial de refinanciación: `debt_id`, `household_id`, `refinanced_balance`, `interest_rate`, `term_months`, `installment`, `start_date`, `notes`.
+
+Cada refinanciación fija una **nueva línea base** del saldo (ADR-0020): a partir de `start_date` el saldo parte de `refinanced_balance` y solo restan los pagos posteriores.
 
 ---
 

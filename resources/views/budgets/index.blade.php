@@ -124,9 +124,9 @@
                                 <span>− Obligaciones próximas (SOAT, seguro)</span>
                                 <span class="fw-semibold">@money($summary['committed']['recurring'])</span>
                             </li>
-                            <li class="d-flex justify-content-between text-body-tertiary">
-                                <span>− Obligaciones de deuda</span>
-                                <span>Épica 6</span>
+                            <li class="d-flex justify-content-between gap-2">
+                                <span>− Cuotas de deuda pendientes</span>
+                                <span class="fw-semibold">@money($summary['committed']['debt'])</span>
                             </li>
                             <li class="d-flex justify-content-between text-body-tertiary">
                                 <span>− Ahorro programado</span>

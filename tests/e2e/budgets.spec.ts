@@ -40,8 +40,10 @@ test.describe('Presupuestos y dinero disponible (Épica 4)', () => {
     await expect(desglose.getByText('Ingresos esperados', { exact: true })).toBeVisible();
     await expect(desglose.getByText('− Ya gastado')).toBeVisible();
     await expect(desglose.getByText('= Puedes gastar')).toBeVisible();
-    // Los términos de las épicas 5-7 se anuncian, no se ocultan.
-    await expect(desglose.getByText('− Obligaciones de deuda')).toBeVisible();
+    // Los términos de la fórmula se anuncian, no se ocultan: los ya
+    // implementados con su cifra y los pendientes con su épica.
+    await expect(desglose.getByText('− Cuotas de deuda pendientes')).toBeVisible();
+    await expect(desglose.getByText('− Ahorro programado')).toBeVisible();
   });
 
   test('crea un presupuesto para el próximo mes y lo elimina', async ({ page }) => {

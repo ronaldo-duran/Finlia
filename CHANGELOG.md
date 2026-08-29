@@ -12,6 +12,98 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.8.2] - 2026-08-29 — Revisión de seguridad de la Épica 6
+
+### Seguridad
+- **XSS almacenado en el detalle de deuda (introducido en 0.8.0).** El nombre de la deuda se
+  interpolaba con `{{ }}` dentro del `onsubmit` del formulario de borrado. En un manejador en
+  línea el navegador **decodifica las entidades HTML antes de compilar el JavaScript**, así que
+  el `&#039;` del escape volvía a ser una comilla y cerraba el literal: un nombre como
+  `x');alert(1);//` ejecutaba código en el navegador de cualquier miembro del hogar que pulsara
+  «Eliminar deuda». Ahora se usa `@js()` (`Js::from()`), que escapa para contexto JavaScript.
+  El test de regresión decodifica el atributo igual que hace el navegador y se ha comprobado
+  que **falla** si se revierte a `{{ }}`.
+- Se documenta la regla general en `docs/SECURITY.md` §5: `{{ }}` protege contexto HTML, no
+  contexto JS; para datos de usuario dentro de JavaScript, `@js()` o un atributo `data-*`.
+
+### Corregido
+- `?estrategia[]=x` en el panel de deuda devolvía **500**: `query()` devuelve un array y
+  castearlo a string emite un warning que Laravel convierte en excepción. Ahora se comprueba
+  el tipo y se cae a la estrategia por defecto.
+
+## [0.8.1] - 2026-08-29 — El correo de recuperación, en español
+
+### Corregido
+- **El correo de recuperación de contraseña salía en inglés.** Usa la notificación nativa
+  de Laravel, cuyo texto vive en el framework, y el proyecto no tenía `lang/es.json`. Ahora
+  el asunto, el cuerpo, el botón, la subcopia y el pie están en español, de modo que los dos
+  únicos correos de Finlia (ADR-0015) hablan el mismo idioma.
+- Las claves de `lang/es.json` deben coincidir **carácter a carácter** con las cadenas del
+  framework —incluidos el salto de línea y las comillas escapadas de la subcopia del botón—
+  o la traducción se ignora sin avisar. Se añaden 5 tests que **renderizan el correo real** y
+  fallan si vuelve a aparecer texto en inglés, en lugar de comprobar solo que el archivo existe.
+
+### Notas
+- `.env.example` sigue **sin** el bloque `MAIL_*`: el archivo está bloqueado para escritura en
+  el entorno de trabajo actual. La configuración completa (SMTP de Hostinger, SPF/DKIM) está
+  en `docs/DEPLOYMENT.md` §4 y hay que copiarla a mano.
+
+## [0.8.0] - 2026-08-29 — Deudas y tarjetas de crédito (Épica 6)
+
+### Añadido
+- **Panel de deuda**: deuda total, pago mensual comprometido y progreso de amortización
+  del hogar, con listado por deuda y su barra de avance.
+- **`debts`**: tarjetas, préstamos, crédito de vehículo, préstamo familiar y otras, con
+  entidad, tasa (fija/variable), pago mínimo, cuota pactada, día de pago, fechas y estado
+  (`DebtType`, `DebtStatus`, `InterestRateType`). Borrado lógico: una deuda saldada es
+  historia financiera, no ruido.
+- **Historial de pagos** (`debt_payments`) con tipo mínimo/cuota/abono extra. Registrar un
+  pago baja el saldo; borrarlo lo devuelve.
+- **Refinanciación** (`debt_refinancings`): nuevas condiciones (tasa, plazo, cuota) y nuevo
+  saldo de partida, con su historial.
+- **Tarjetas de crédito** (`credit_cards`) como atributos de una cuenta `type=credit_card`
+  (ADR-0002, que estaba ACEPTADA y quedaba por implementar): cupo, cupo disponible, día de
+  corte, día límite de pago y cuota de manejo, con indicador de uso del cupo y aviso al
+  superar el 30 %.
+- **Proyección de fin de deuda**: "si mantienes este ritmo, terminarías hacia…", amortizando
+  mes a mes con la tasa. Se presenta **siempre como estimación** y detecta el caso en que la
+  cuota no cubre los intereses, donde decirlo es más útil que dar una fecha inventada.
+- **Estrategias avalancha y bola de nieve** (`DebtStrategy`) como criterio de orden. La
+  épica pedía preparar la arquitectura, no resolver el plan de pagos: el reparto del
+  excedente entre cuotas queda fuera de alcance.
+- Deudas de demostración en `DatabaseSeeder` (datos siempre falsos).
+- Tests: 19 unitarios de `DebtService` (saldo derivado, refinanciación, proyecciones,
+  estrategias, seam del dinero disponible) y 26 de feature con CRUD, validación, pagos con
+  y sin cuenta, mass assignment sobre el saldo y **11 de aislamiento entre hogares**.
+
+### Cambiado
+- **`BudgetCalculatorService` rellena el término `debt`**, que la Épica 4 dejó declarado en
+  cero (ADR-0014). El desglose "¿Cómo se calcula?" ya no muestra "Épica 6" sino las cuotas
+  pendientes reales.
+- **El saldo de una deuda es derivado, no se teclea** ([ADR-0020](docs/DECISIONS.md#adr-0020)):
+  `línea base − pagos`, donde la línea base es el monto original o el saldo de la última
+  refinanciación. No es fillable y el Form Request no lo acepta.
+- **Un pago con cuenta asociada genera el movimiento real**
+  ([ADR-0021](docs/DECISIONS.md#adr-0021)), en la misma transacción, para que el saldo de la
+  cuenta no mienta. Las cuotas **ya pagadas** salen del comprometido: sin esa resta, pagar
+  una deuda bajaría el "puedes gastar" dos veces.
+- `DATA_MODEL.md` cierra el marcador ⚖️ de ADR-0002, que llevaba pendiente desde la Épica 3
+  pese a que la decisión ya estaba ACEPTADA en `DECISIONS.md`.
+- "Deudas" pasa de marcador deshabilitado a entrada real del menú.
+
+### Corregido
+- Vista de detalle de cuenta: un `@php(...)` en línea combinado con un bloque
+  `@php … @endphp` posterior hacía que Blade emparejara mal las etiquetas y dejara de
+  compilar el resto del archivo. Se usa la forma de bloque.
+
+### Seguridad
+- **Nunca se almacena número completo de tarjeta, CVV ni PIN**: esas columnas no existen en
+  `credit_cards` y el Form Request no las acepta. Hay un test que lo verifica contra el
+  esquema real, no contra el código.
+- Los intereses **no se acumulan solos** (ADR-0020): el saldo solo baja con los pagos. Está
+  documentado en la UI y se corrige registrando una refinanciación con el saldo real, en
+  lugar de simular una amortización precisa pero falsa.
+
 ## [0.7.0] - 2026-08-27 — Gastos recurrentes y obligaciones futuras (Épica 5)
 
 ### Añadido

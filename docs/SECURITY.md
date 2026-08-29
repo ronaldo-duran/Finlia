@@ -109,8 +109,8 @@ Cubrir `index`, `show`, `store` (con `household_id` forzado), `update`, `destroy
 | Contraseñas | bcrypt/argon2 (Laravel default). Nunca en texto plano, nunca logueadas. |
 | Tokens de invitación | 64 chars aleatorios; almacenar **hash**, enviar en plano solo por enlace o correo de invitación; con expiración y un solo uso. **Nunca loguearlos.** |
 | Contenido de los correos | **Ningún dato financiero** (saldos, montos, movimientos, nombres de cuentas). La invitación lleva solo nombre del hogar, quién invita y el enlace. Ver [ADR-0015](DECISIONS.md#adr-0015). |
-| Número de tarjeta | **No almacenar completo**. Solo últimos 4 dígitos si se desea. |
-| CVV / PIN / fecha vencimiento completa | **No almacenar nunca.** |
+| Número de tarjeta | **No almacenar completo.** Implementado en Épica 6: la tabla `credit_cards` **no tiene** columna para el número (ni siquiera para los últimos 4 dígitos: `name` e `institution` bastan para identificarla). |
+| CVV / PIN / fecha vencimiento completa | **No almacenar nunca.** Esas columnas no existen; el Form Request tampoco las acepta, así que un campo así en la petición se descarta. Verificado contra el esquema real en `DebtTest::test_nunca_se_almacenan_datos_sensibles_de_la_tarjeta`. |
 | Montos | Permitidos; evitar loguear junto a PII innecesaria. |
 | Logs | Nunca contraseñas, tokens, números de tarjeta, datos personales sensibles. Usar canales y niveles adecuados. |
 
@@ -119,6 +119,10 @@ Cubrir `index`, `show`, `store` (con `household_id` forzado), `update`, `destroy
 ## 5. XSS · CSRF · SQLi
 
 - **XSS**: render con `{{ }}` (auto-escape). Evitar `{!! !!}`; si es imprescindible, solo con contenido generado por el sistema, nunca por input. `Content-Type` correcto en endpoints.
+- **XSS en contexto JavaScript — `{{ }}` NO basta.** Dentro de un manejador en línea (`onclick`, `onsubmit`…) el navegador **decodifica las entidades HTML antes de compilar el JS**, así que el `&#039;` con el que `{{ }}` escapa una comilla vuelve a ser `'` y cierra el literal de cadena. Un nombre de deuda como `x');alert(1);//` ejecutaba código (corregido en 0.8.2).
+  - Para interpolar datos de usuario en JavaScript se usa **`@js($valor)`** (`Illuminate\Support\Js::from()`), que emite JSON escapado para ese contexto.
+  - Mejor aún: evitar el JS en línea y pasar el dato por un atributo `data-*` leído desde un listener.
+  - `{{ }}` sigue siendo lo correcto en contexto HTML (texto, `value`, `title`): ahí `&#039;` es seguro.
 - **CSRF**: `@csrf` en todos los forms; métodos `POST/PUT/PATCH/DELETE` vía form o con header `X-CSRF-TOKEN`/`X-XSRF-TOKEN`. Laravel lo gestiona, pero no desactivarlo.
 - **SQLi**: Query Builder / Eloquent con bindings. **Nunca** `DB::raw`/`whereRaw` con concatenación de input; usar `?` y bindings.
 - **Cabeceras** (producción): HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` o CSP. Configurar vía `.htaccess` (Hostinger) o middleware.
