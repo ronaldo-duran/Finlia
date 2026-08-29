@@ -125,7 +125,7 @@
                             @elseif ($projection['months'] !== null)
                                 <i class="bi bi-flag me-1"></i>
                                 Si mantienes este ritmo, terminarías hacia
-                                <strong>{{ $projection['date']->translatedFormat('F \d\e Y') }}</strong>
+                                <strong>{{ $projection['date']->locale('es')->isoFormat('MMMM [de] YYYY') }}</strong>
                                 ({{ $projection['months'] }} {{ $projection['months'] === 1 ? 'mes' : 'meses' }}).
                             @endif
                         </div>

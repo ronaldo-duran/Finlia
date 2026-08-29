@@ -82,7 +82,7 @@
         $kpis = [
             ['label' => 'Ingresos del mes', 'value' => $totals['incomes'], 'icon' => 'bi-graph-up-arrow', 'tone' => 'finlia'],
             ['label' => 'Gastos del mes', 'value' => $totals['expenses'], 'icon' => 'bi-graph-down-arrow', 'tone' => 'finlia'],
-            ['label' => 'Balance del mes', 'value' => $totals['balance'], 'icon' => 'bi-scale', 'tone' => 'finlia'],
+            ['label' => 'Balance del mes', 'value' => $totals['balance'], 'icon' => 'bi-plus-slash-minus', 'tone' => 'finlia'],
             ['label' => 'Saldo en cuentas', 'value' => $totalBalance, 'icon' => 'bi-wallet2', 'tone' => 'finlia'],
         ];
     @endphp

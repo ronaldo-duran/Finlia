@@ -98,7 +98,7 @@
                     <i class="bi bi-flag-fill text-finlia"></i>
                     <div>
                         Si mantienes este ritmo, terminarías hacia
-                        <strong class="text-body">{{ $projection['date']->translatedFormat('F \d\e Y') }}</strong>
+                        <strong class="text-body">{{ $projection['date']->locale('es')->isoFormat('MMMM [de] YYYY') }}</strong>
                         ({{ $projection['months'] }} {{ $projection['months'] === 1 ? 'mes' : 'meses' }}),
                         pagando cerca de <strong class="text-body">@money($projection['total_interest'])</strong> en intereses.
                         <div class="mt-1"><em>Es una estimación</em>: no contempla cuotas de manejo, seguros, mora ni compras nuevas.</div>
