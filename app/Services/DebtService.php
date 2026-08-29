@@ -341,7 +341,7 @@ class DebtService
     public function projectPayoff(Debt $debt, ?CarbonInterface $reference = null): array
     {
         // Misma matemática que el simulador del formulario (ADR-0023): si
-        // cada uno usara la suya, la cuota pactada y la fecha proyectada se
+        // cada uno usara la suya, la cuota calculada y la fecha proyectada se
         // contradirían en pantalla.
         $result = $this->calculator->payOff(
             (float) $debt->current_balance,

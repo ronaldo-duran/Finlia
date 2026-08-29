@@ -461,6 +461,23 @@ class DebtTest extends TestCase
         }
     }
 
+    public function test_los_tipos_de_pago_hablan_el_idioma_del_formulario(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+        $debt = $this->debtFor($household, ['current_balance' => 1000000]);
+
+        $html = $this->actingAs($owner)->get(route('debts.show', $debt))->assertOk()->getContent();
+
+        // El campo obligatorio se llama «cuota mensual» desde ADR-0022: el
+        // tipo de pago equivalente no puede seguir llamándose de otra forma.
+        $this->assertStringContainsString('Cuota mensual', $html);
+        $this->assertStringNotContainsString('Cuota pactada', $html);
+
+        // El valor guardado no cambia: renombrar la etiqueta no migra datos.
+        $this->assertSame('scheduled', DebtPaymentType::Scheduled->value);
+        $this->assertSame('Cuota mensual', DebtPaymentType::Scheduled->label());
+    }
+
     // ===== Pagos =====
 
     public function test_registrar_un_pago_baja_el_saldo(): void

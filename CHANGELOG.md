@@ -22,6 +22,9 @@ reciente de este archivo.
   finanzas, confundir una estimación con un estado de cuenta lo paga el usuario con su dinero.
 
 ### Corregido
+- Al registrar un pago, el tipo «Cuota pactada» pasa a llamarse **«Cuota mensual»**, que es como
+  se llama el campo en el formulario de la deuda desde la 0.9.0. El valor guardado (`scheduled`)
+  no cambia: renombrar la etiqueta no obliga a migrar los pagos ya registrados.
 - **La barra lateral se encogía según el contenido de la página** (132 px en el panel de deudas,
   201 en presupuestos, 230 en el panel, frente a los 264 previstos), partiendo los rótulos en dos
   líneas. Le faltaba `flex-shrink: 0`: como flex item, `width` no impide que el hermano la
