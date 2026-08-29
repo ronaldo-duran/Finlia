@@ -79,7 +79,7 @@
                 <i class="bi bi-bar-chart-line me-1"></i> Ver reportes
             </a>
             <a href="{{ route('budgets.index') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-cash-stack me-1"></i> Presupuestos
+                <i class="bi bi-cash-stack me-1"></i> Ver presupuestos
             </a>
         </div>
     </div>
