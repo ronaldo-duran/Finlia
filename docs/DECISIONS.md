@@ -28,6 +28,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0022 — La deuda se pacta en cuotas, y el pago mínimo no es el plan de pago](#adr-0022) — **ACEPTADA**
 - [ADR-0023 — Registrar una deuda es un simulador de crédito, no un formulario en blanco](#adr-0023) — **ACEPTADA**
 - [ADR-0024 — Avisos que el usuario da por leídos, por clave y en servidor](#adr-0024) — **ACEPTADA**
+- [ADR-0025 — Metas de ahorro: ahorrado derivado, aportes que no mueven cuentas y aporte mensual programado](#adr-0025) — **ACEPTADA**
 
 ---
 
@@ -759,6 +760,36 @@ Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar 
 - Es un mecanismo de comodidad, no de autorización: no protege nada, solo decide cuánto ocupa un aviso.
 
 **Estado.** ACEPTADA — 2026-08-31, a petición del usuario tras ver el aviso en móvil. Implementada en `user_acknowledgements`, `AcknowledgementKey`, `UserAcknowledgement`, `User::hasAcknowledged()/acknowledge()`, `AcknowledgementController` y `<x-debt-disclaimer />`.
+
+---
+
+## ADR-0025
+### Metas de ahorro: ahorrado derivado, aportes que no mueven cuentas y aporte mensual programado — **ACEPTADA**
+
+**Contexto.** La Épica 7 introduce metas de ahorro. Había tres decisiones que no venían de la épica y afectan al modelo de dinero:
+
+1. ¿De dónde sale "lo ahorrado"? La épica dibujaba `current_amount` editable por el usuario.
+2. ¿Registrar un aporte debe mover dinero entre cuentas? "Guardar" puede entenderse como una transferencia (Nequi → ahorros).
+3. ¿Cómo entra el ahorro al dinero disponible (ADR-0014)? El seam `savings` nació en cero esperando esta épica.
+
+**Decisión.**
+
+1. **`current_amount` es derivado, no tecleado** — espejo de ADR-0020 para deudas: la fuente de verdad es el historial de `savings_goal_contributions` (Σ aportes − Σ retiros), recalculado en cada escritura de movimiento. Lo que ya tenías ahorrado se registra como aporte inicial. Al alcanzar el objetivo la meta pasa de activa a **lograda** automáticamente (y vuelve a activa si se borra un movimiento), toggle que refleja el de deuda pagada. No se valida que un retiro deje la meta en positivo más allá de no retirar más de lo ahorrado.
+2. **Los aportes NO mueven cuentas ni crean gastos.** Ahorrar no es gastar: si cada aporte fuera un gasto, el dinero disponible bajaría dos veces (una por el aporte, otra por el gasto de verdad cuando se use la meta) y las cifras mentirían. La transferencia real entre cuentas queda **deferida a la Épica 10** (botón "+" → transferencia). Un movimiento de meta es progreso hacia el objetivo, no un movimiento bancario.
+3. **El compromiso de ahorro entra por `monthly_commitment`** (opcional, "cuánto destinarás al mes"): alimenta el seam `savings` del presupuesto **solo para metas activas**, contando como mucho lo que le falte a la meta (la última cuota nunca supera el faltante). Pausar una meta es exactamente dejar de comprometer ese dinero — por eso pausa y reactivación son acciones dedicadas y no un campo del formulario. El *aporte mensual recomendado* (lo que falta repartido en los meses hasta la fecha objetivo) es solo una **estimación informativa** en pantalla: no escribe `monthly_commitment` ni nada.
+
+**Alternativas (descartadas).**
+- **`current_amount` editable a mano** — rápido de construir, pero un número que nadie sabe cómo llegó ahí y que una edición rompe en silencio; además pierde el historial de aportes, que es justo lo que motiva.
+- **Aporte = transferencia + gasto "ahorro"** — coherente en contabilidad, mentiroso en la práctica: duplica el impacto del ahorro en el disponible (ADR-0021 resolvió el caso contrario de las deudas, donde el pago SÍ mueve la cuenta porque es dinero que sale de verdad).
+- **`current_amount` como columna fuente y `monthly_commitment` calculado de atrás hacia adelante** — el aporte que "deberías" hacer no es el que pactaste; mezclarlo con el comprometido del presupuesto sorprendería.
+
+**Consecuencias y mitigaciones.**
+- El saldo de cuentas no refleja "cuánto hay ahorrado en metas" (la cuenta no sabe de la meta). Es a propósito: las metas son una capa de significado sobre el mismo dinero. La UI lo deja claro en el formulario ("no mueve tu saldo").
+- El compromiso entra al disponible aunque el aporte del mes no se haya registrado: es lo que la Épica 4 llama comprometido, no lo gastado.
+- `household_id` se desnormaliza en `savings_goal_contributions` para poder aislar por hogar sin joins, igual que en `debt_payments`.
+- Los aportes y retiros llevan `date <= hoy` (como las deudas): no se registra intención futura como si fuera dinero puesto.
+
+**Estado.** ACEPTADA — 2026-08-31, al implementar la Épica 7. Implementada en `SavingsGoalService` (recalculo, toggles, `committedMonthly`, `recommendedMonthlyContribution`), el seam `savings` de `BudgetCalculatorService` y las vistas de metas.
 
 ---
 

@@ -133,25 +133,16 @@
                             </a>
                         </li>
                         <li>
+                            <a class="nav-link @if(request()->routeIs('savings-goals.*'))active @endif" href="{{ route('savings-goals.index') }}">
+                                <i class="bi bi-piggy-bank"></i> Metas de ahorro
+                            </a>
+                        </li>
+                        <li>
                             <a class="nav-link @if(request()->routeIs('households.*'))active @endif" href="{{ route('households.index') }}">
                                 <i class="bi bi-house-heart"></i> Hogares
                             </a>
                         </li>
                     @endauth
-
-                    @php
-                        // Marcadores de navegación de épicas futuras (deshabilitadas).
-                        $proximos = [
-                            ['icon' => 'bi-piggy-bank', 'label' => 'Metas de ahorro', 'epic' => 'Épica 7'],
-                        ];
-                    @endphp
-                    @foreach ($proximos as $item)
-                        <li class="d-none d-lg-block">
-                            <span class="nav-link disabled" title="Disponible en la {{ $item['epic'] }}">
-                                <i class="bi {{ $item['icon'] }}"></i> {{ $item['label'] }}
-                            </span>
-                        </li>
-                    @endforeach
                 </ul>
             </div>
         </aside>

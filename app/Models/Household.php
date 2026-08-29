@@ -103,6 +103,18 @@ class Household extends Model
         return $this->hasMany(CreditCard::class);
     }
 
+    // ---- Épica 7: metas de ahorro ----
+
+    public function savingsGoals(): HasMany
+    {
+        return $this->hasMany(SavingsGoal::class);
+    }
+
+    public function savingsGoalContributions(): HasMany
+    {
+        return $this->hasMany(SavingsGoalContribution::class);
+    }
+
     /**
      * Indica si un usuario es miembro del hogar.
      */

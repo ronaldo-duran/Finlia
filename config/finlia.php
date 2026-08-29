@@ -18,7 +18,7 @@ return [
 
     // Versión actual del software (fuente de verdad; sincronizar con package.json
     // y CHANGELOG.md al publicar cada versión).
-    'version' => '0.11.0',
+    'version' => '0.12.0',
 
     // Mercado / idioma por defecto.
     'market' => env('FINLIA_MARKET', 'CO'),

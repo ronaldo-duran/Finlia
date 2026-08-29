@@ -8,6 +8,8 @@ use App\Enums\DebtPaymentType;
 use App\Enums\DebtType;
 use App\Enums\Frequency;
 use App\Enums\HouseholdRole;
+use App\Enums\SavingsGoalContributionType;
+use App\Enums\SavingsGoalPriority;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Expense;
@@ -18,6 +20,7 @@ use App\Models\User;
 use App\Services\AccountBalanceService;
 use App\Services\DebtService;
 use App\Services\HouseholdService;
+use App\Services\SavingsGoalService;
 use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -121,6 +124,7 @@ class DatabaseSeeder extends Seeder
         $this->seedBudgets($household, $expenseCategories, $incomeCategories);
         $this->seedRecurringExpenses($household, $accounts);
         $this->seedDebts($household, $accounts);
+        $this->seedSavingsGoals($household);
     }
 
     /**
@@ -251,6 +255,54 @@ class DatabaseSeeder extends Seeder
             'term_months' => 24,
             'due_day' => 5,
             'start_date' => $now->copy()->subMonth()->toDateString(),
+        ]);
+    }
+
+    /**
+     * Metas de ahorro FALSAS (Épica 7): un fondo de emergencia con algo de
+     * historial y una meta de viaje, para que el panel y el término
+     * `savings` del dinero disponible tengan datos desde el arranque.
+     */
+    private function seedSavingsGoals(Household $household): void
+    {
+        $goals = app(SavingsGoalService::class);
+        $now = Carbon::now(config('app.timezone'));
+
+        // Fondo de emergencia: 4 aportes de 250.000 en los últimos meses.
+        $fondo = $goals->createGoal($household, [
+            'name' => 'Fondo de emergencia',
+            'target_amount' => 6000000,
+            'target_date' => null,
+            'priority' => SavingsGoalPriority::High->value,
+            'monthly_commitment' => 500000,
+            'is_emergency_fund' => true,
+        ]);
+        foreach ([4, 3, 2, 1] as $monthsAgo) {
+            $goals->registerContribution($fondo, [
+                'amount' => 250000,
+                'date' => $now->copy()->subMonths($monthsAgo)->setDay(10)->toDateString(),
+                'type' => SavingsGoalContributionType::Deposit->value,
+            ]);
+        }
+
+        // Meta de viaje: un solo aporte inicial y un retiro de prueba.
+        $viaje = $goals->createGoal($household, [
+            'name' => 'Viaje a San Andrés',
+            'target_amount' => 3500000,
+            'target_date' => $now->copy()->addMonthsNoOverflow(10)->toDateString(),
+            'priority' => SavingsGoalPriority::Medium->value,
+            'monthly_commitment' => 300000,
+        ]);
+        $goals->registerContribution($viaje, [
+            'amount' => 700000,
+            'date' => $now->copy()->subMonths(2)->toDateString(),
+            'type' => SavingsGoalContributionType::Deposit->value,
+        ]);
+        $goals->registerContribution($viaje, [
+            'amount' => 200000,
+            'date' => $now->copy()->subMonth()->toDateString(),
+            'type' => SavingsGoalContributionType::Withdrawal->value,
+            'notes' => 'Gasto inesperado',
         ]);
     }
 }
