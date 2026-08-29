@@ -23,6 +23,7 @@ use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MovementsController;
 use App\Http\Controllers\RecurringExpenseController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SavingsGoalController;
 use Illuminate\Support\Facades\Route;
 
@@ -242,4 +243,13 @@ Route::middleware('auth')->group(function () {
         ->name('savings-goals.complete');
     Route::post('metas/{savingsGoal}/archivar', [SavingsGoalController::class, 'archive'])
         ->name('savings-goals.archive');
+
+    // ---- Épica 8: reportes financieros ----
+    // El dashboard completo: comparación de períodos, gráficos, insights y
+    // exportación. El hogar sale del activo en sesión, nunca de la URL.
+    Route::get('reportes', [ReportController::class, 'index'])
+        ->name('reports.index');
+    Route::get('reportes/exportar', [ReportController::class, 'export'])
+        ->name('reports.export')
+        ->middleware('throttle:10,1');
 });

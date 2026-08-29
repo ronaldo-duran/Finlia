@@ -29,6 +29,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0023 — Registrar una deuda es un simulador de crédito, no un formulario en blanco](#adr-0023) — **ACEPTADA**
 - [ADR-0024 — Avisos que el usuario da por leídos, por clave y en servidor](#adr-0024) — **ACEPTADA**
 - [ADR-0025 — Metas de ahorro: ahorrado derivado, aportes que no mueven cuentas y aporte mensual programado](#adr-0025) — **ACEPTADA**
+- [ADR-0026 — Reportes: panel ligero + pantalla dedicada, comparaciones honestas y CSV como único formato](#adr-0026) — **ACEPTADA**
 
 ---
 
@@ -793,7 +794,31 @@ Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar 
 
 ---
 
-## Cómo añadir un ADR
+## ADR-0026
+### Reportes: panel ligero + pantalla dedicada, comparaciones honestas y CSV como único formato — **ACEPTADA**
+
+**Contexto.** La Épica 8 pide un "dashboard" con resumen, cinco gráficos, comparación de períodos, insights y exportación — pero ella misma advierte *mobile-first: evitar demasiados gráficos simultáneos*. El Panel ya existe (las épicas 3-7 le fueron añadiendo tarjetas). Cuatro decisiones no venían resueltas: dónde viven los gráficos, cómo comparar períodos sin mentir, qué puede afirmar un insight, y cómo preparar el PDF sin construirlo todavía.
+
+**Decisión.**
+
+1. **El Panel se mantiene ligero; el dashboard completo vive en `/reportes`.** El Panel solo gana dos KPIs (deuda total, ahorro en metas) y el enlace "Ver reportes". Los cinco gráficos, la comparación de períodos y los insights van a la pantalla de reportes. La separación de propósitos queda así: Panel = *¿cuánto puedo gastar hoy?* (presente), Reportes = *¿qué ha pasado?* (histórico y comparación).
+2. **Períodos comparables honestos** (`ReportPeriod::resolve`): cada período se compara contra su equivalente anterior inmediato (mes ↔ mes previo, últimos 3 ↔ los 3 anteriores a aquellos). El **año se compara YTD contra el mismo tramo del año previo** — jamás contra el año completo anterior, que incluiría meses aún no ocurridos y fabricaría caídas ficticias. Los porcentajes solo se calculan si la base anterior existe (> 0); si no, se muestra solo la diferencia absoluta.
+3. **Insights = hechos descriptivos, con umbrales anti-ruido.** Solo afirmaciones calculadas sobre datos que existen (cinco reglas: cambio de gasto total ≥ 5 %, categoría que sube/baja ≥ 15 %, categoría dominante ≥ 10 % del gasto, balance en rojo). Nada de recomendaciones financieras ni de porcentajes sin base previa. Máximo cuatro por período.
+4. **CSV es el único formato; `ReportFormat` es el seam del PDF.** El enum tiene un solo caso (`csv`) y el controlador un `match` sobre él: el PDF Premium (Épica 12) añade su caso y su rama, reutilizando las mismas filas del Service. El CSV sale en streaming con **BOM UTF-8, separador `;` y coma decimal** para que Excel en español lo abra bien sin importar nada, y la ruta lleva `throttle:10,1`.
+
+**Alternativas (descartadas).**
+- **Poner los cinco gráficos en el Panel** — viola la guía mobile de la propia épica y convierte la respuesta a "¿cuánto puedo gastar?" en un muro de gráficos que hay que scrollear.
+- **Año contra año completo anterior** — la comparación más común en apps de banca, y la más deshonesta a mitad de año: enero–agosto 2026 vs todo 2025 siempre "cae".
+- **Insights sin umbrales** — un +2 % en alimentación es ruido del calendario, no información; sin umbral la pantalla grita siempre y el usuario deja de leerla.
+- **Log `report_exports` de exportaciones** — la épica lo menciona como posible; no lo exige y hoy no hay requisito de auditoría que lo justifique. Se deja fuera (se puede añadir sin migración rompiente si llega a hacer falta).
+
+**Consecuencias y mitigaciones.**
+- La evolución de deuda exigió calcular el saldo **en una fecha pasada** (`DebtService::balanceAt`): línea base vigente al corte (refinanciaciones incluidas) menos pagos hasta entonces, piso 0, y 0 antes de `start_date` — consistente con [ADR-0020](#adr-0020).
+- Dos superficies que muestran dinero (Panel y Reportes) obligan a que ambas sacaran siempre las cifras de los mismos Services; ya lo hacen (`DebtService::summary`, `SavingsGoalService::summary`, `MovementSummaryService`).
+- El enum de formatos en la query (`?format=csv`) hace que pedir `pdf` hoy de error de validación controlado, no 404 ni silencio.
+- De paso se corrigió un bug latente: el JSON de los gráficos del Panel se inyectaba con `{{ }}` dentro de `<script type="application/json">`, y Blade escapa `"` a `&quot;` — que los navegadores **no** decodifican dentro de `<script>`, así que `JSON.parse` fallaba y los gráficos del Panel llevaban rotos desde la Épica 3. Ahora se usa `json_encode($data, JSON_HEX_TAG)` (seguro contra `</script>` y JSON válido).
+
+**Estado.** ACEPTADA — 2026-08-29, al implementar la Épica 8. Implementada en `ReportService`, `ReportPeriod`, `ReportFormat`, `ReportController`, `DebtService::balanceEvolution` y las vistas `reports/index` y Panel.
 
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.

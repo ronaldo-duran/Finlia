@@ -108,6 +108,11 @@
                             </a>
                         </li>
                         <li>
+                            <a class="nav-link @if(request()->routeIs('reports.*'))active @endif" href="{{ route('reports.index') }}">
+                                <i class="bi bi-bar-chart-line"></i> Reportes
+                            </a>
+                        </li>
+                        <li>
                             <a class="nav-link @if(request()->routeIs('accounts.*'))active @endif" href="{{ route('accounts.index') }}">
                                 <i class="bi bi-wallet"></i> Cuentas
                             </a>

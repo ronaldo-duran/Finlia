@@ -13,7 +13,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 5 | Gastos recurrentes y obligaciones futuras | 🟢 | 3, 4 |
 | 6 | Deudas y tarjetas de crédito | 🟢 | 2, 3 |
 | 7 | Metas de ahorro | 🟢 | 3 |
-| 8 | Dashboard y reportes financieros | 🔴 | 3, 4, 5, 6, 7 |
+| 8 | Dashboard y reportes financieros | 🟢 | 3, 4, 5, 6, 7 |
 | 9 | Recordatorios y notificaciones | 🔴 | 5, 6, 7 |
 | 10 | UX mobile y PWA | 🟡 | 3 (y resto) |
 | 11 | Hardening, tests y producción | 🔴 | Todas |
@@ -48,8 +48,8 @@ Dos decisiones propias: el saldo es **derivado** de una línea base más los pag
 ### Épica 7 — Metas de ahorro ✅
 `savings_goals` + `savings_goal_contributions` ([ADR-0025](DECISIONS.md#adr-0025)). Panel con resumen, filtro por estado (vigentes/logradas/archivadas) y alerta de metas vencidas; detalle con progreso, **aporte mensual recomendado** (estimación informativa) e historial de aportes y retiros; prioridad, marca `emergency_fund`, pausar/reactivar/completar/archivar. El ahorrado es **derivado** del historial (Σ aportes − Σ retiros) y al llegar al objetivo la meta se marca lograda sola. Los movimientos **no mueven cuentas** (la transferencia real llega en la Épica 10) y el aporte mensual programado rellena el término `savings` del dinero disponible ([ADR-0014](DECISIONS.md#adr-0014)). Tarjeta de progreso en el dashboard.
 
-### Épica 8 — Dashboard y reportes
-Resumen (ingresos, gastos, balance, disponible, deuda, ahorro, metas), 5 gráficos Chart.js, comparación de períodos, insights sencillos, export CSV (preparar PDF).
+### Épica 8 — Dashboard y reportes ✅
+Pantalla **`/reportes`** con los cinco gráficos Chart.js (gastos por categoría, ingresos vs gastos, evolución mensual del balance, evolución de la deuda — nueva `DebtService::balanceEvolution`, consistente con [ADR-0020](DECISIONS.md#adr-0020) — y progreso de metas), comparación de **períodos honestos** (`ReportPeriod`: mes, mes anterior, últimos 3/6, año YTD contra el mismo tramo del año previo) e **insights descriptivos** con umbrales anti-ruido. Export **CSV** en streaming (BOM UTF-8, `;`, coma decimal — Excel en español) con `throttle:10,1`; el enum `ReportFormat` es el seam del PDF Premium (Épica 12). El Panel se mantiene **ligero** (guía mobile de la propia épica): solo gana los KPIs de deuda total y ahorro en metas y el enlace "Ver reportes" ([ADR-0026](DECISIONS.md#adr-0026)). De paso se corrigió un bug latente: el JSON de los gráficos del Panel se escapaba con `&quot;` dentro de `<script>` y llevaba roto desde la Épica 3.
 
 ### Épica 9 — Recordatorios y notificaciones
 `reminders` para recurrentes, deudas, metas, obligaciones anuales. Estados, **in-app** (WhatsApp/push como canales futuros). Laravel Scheduler + cron Hostinger.
