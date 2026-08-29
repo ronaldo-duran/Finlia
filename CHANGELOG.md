@@ -12,6 +12,23 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.8.1] - 2026-08-29 — El correo de recuperación, en español
+
+### Corregido
+- **El correo de recuperación de contraseña salía en inglés.** Usa la notificación nativa
+  de Laravel, cuyo texto vive en el framework, y el proyecto no tenía `lang/es.json`. Ahora
+  el asunto, el cuerpo, el botón, la subcopia y el pie están en español, de modo que los dos
+  únicos correos de Finlia (ADR-0015) hablan el mismo idioma.
+- Las claves de `lang/es.json` deben coincidir **carácter a carácter** con las cadenas del
+  framework —incluidos el salto de línea y las comillas escapadas de la subcopia del botón—
+  o la traducción se ignora sin avisar. Se añaden 5 tests que **renderizan el correo real** y
+  fallan si vuelve a aparecer texto en inglés, en lugar de comprobar solo que el archivo existe.
+
+### Notas
+- `.env.example` sigue **sin** el bloque `MAIL_*`: el archivo está bloqueado para escritura en
+  el entorno de trabajo actual. La configuración completa (SMTP de Hostinger, SPF/DKIM) está
+  en `docs/DEPLOYMENT.md` §4 y hay que copiarla a mano.
+
 ## [0.8.0] - 2026-08-29 — Deudas y tarjetas de crédito (Épica 6)
 
 ### Añadido

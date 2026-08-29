@@ -317,7 +317,7 @@ Hay tres razones para no dejar esa puerta abierta:
 - **Mandar los recordatorios de la Épica 9 por correo** — es la vía fácil para "engagement", y es exactamente lo que esta decisión prohíbe: convierte una app de finanzas en una fuente de ruido y quema la reputación del dominio.
 
 **Consecuencias y mitigaciones.**
-- El correo de recuperación de contraseña sigue usando la plantilla nativa de Laravel, que se renderiza **en inglés** (no hay `lang/es.json`). Queda pendiente traducirlo para que los dos únicos correos de Finlia hablen el mismo idioma.
+- El correo de recuperación de contraseña usa la plantilla nativa de Laravel, cuyo texto vive en el framework. Se traduce con `lang/es.json` (resuelto en 0.8.1), de modo que los dos únicos correos de Finlia hablan el mismo idioma. Las claves de ese archivo deben coincidir **carácter a carácter** con las cadenas del framework —incluidos el salto de línea y las comillas escapadas de la subcopia del botón—, o la traducción se ignora sin avisar; hay tests que renderizan el correo y fallan si vuelve a salir en inglés.
 - `HouseholdService::inviteMember()` pasa a devolver **tres** elementos. El desestructurado de dos que usan los tests existentes sigue siendo válido en PHP, así que no hubo cambios en cascada.
 - El Service llama a `Mail::` y el Mailable construye la URL con `route()`. No rompe ADR-0010: no se toca `request()`, `session()` ni `Auth::id()` — el nombre de quien invita entra como **dato explícito** desde el controlador, y `route()` es determinista a partir de `APP_URL`. Una futura API (Épica 14) reutiliza el envío sin escribir nada.
 - Sin SMTP configurado (`MAIL_MAILER=log`), la app funciona exactamente como antes de esta entrega. La configuración de producción está en `docs/DEPLOYMENT.md` §4.
