@@ -21,6 +21,8 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0015 — Correo transaccional mínimo: solo invitaciones y recuperación de contraseña](#adr-0015) — **ACEPTADA**
 - [ADR-0016 — Rediseño mobile-first adelantado (Épica 10 parcial) + sistema de diseño propio](#adr-0016) — **ACEPTADA**
 - [ADR-0017 — Identidad de marca Finlia (símbolo de puntos, petróleo/cobre)](#adr-0017) — **ACEPTADA**
+- [ADR-0018 — Recurrentes: seams fijo/obligación por frecuencia, ocurrencias reales y "marcar pagado"](#adr-0018) — **ACEPTADA**
+- [ADR-0019 — Los recursos financieros solo se operan desde su hogar activo](#adr-0019) — **ACEPTADA**
 
 ---
 
@@ -479,6 +481,113 @@ disponible") documentadas en el propio entregable.
 `layouts/{app,guest}.blade.php`, `dashboard/_hero-enfoque.blade.php`,
 `components/available-money-card.blade.php`, `resources/js/charts.js`, `public/*` (assets de
 marca), y documentada en [docs/BRAND.md](BRAND.md).
+
+---
+
+## ADR-0018
+### Recurrentes: seams fijo/obligación por frecuencia, ocurrencias reales y "marcar pagado" — **ACEPTADA**
+
+**Contexto.** La Épica 5 debe rellenar las claves `fixed_expenses` y `recurring` que la Épica 4
+declaró en `0.0` como *seams* ([ADR-0014](#adr-0014)) sin tocar la fórmula ni la UI del
+calculador. Eso deja cuatro decisiones abiertas: (1) qué separa un "gasto fijo" de una
+"obligación futura" cuando la tabla es única; (2) cuánto compromete cada recurrente en una
+ventana (la semana del calculador tiene 7 días, el mes 28-31); (3) cómo registrar el pago sin
+duplicar la obligación en el cálculo; (4) si la app genera los gastos sola.
+
+**Decisión.**
+
+1. **Clasificación determinista por frecuencia** (`Frequency::isFixedLike()`): semanal,
+   quincenal y mensual (y `custom` ≤ 31 días) alimentan `fixed_expenses`; trimestral,
+   semestral y anual (y `custom` > 31 días) alimentan `recurring`. La fórmula resta ambas por
+   igual, así que la separación es **transparencia del desglose** ("− Gastos fijos" vs "−
+   Obligaciones próximas"), no aritmética; por eso no se le pide al usuario que clasifique.
+2. **Comprometido por ocurrencias reales en la ventana, no prorrateo anual.**
+   `committedInRange()` simula el cursor desde `next_date` (`addMonthNoOverflow()` /
+   `addYearNoOverflow()` — seguro en años bisiestos: 29/feb/2028 → 28/feb/2029) y cuenta
+   cuántas veces cae cada recurrente en `[from, to]`. Un mercado semanal compromete 4-5 veces
+   en el mes; un SOAT anual solo si vence dentro de la ventana. Una obligación **vencida**
+   cuenta su siguiente ocurrencia real: la regularización es manual ("marcar pagado").
+3. **"Marcar pagado" es una transacción**: crea el gasto real vía `MovementService` (que
+   recomputa el saldo, [ADR-0012](#adr-0012)) **si el recurrente tiene cuenta asociada**, y
+   siempre avanza `next_date` una frecuencia. Sin cuenta (`expenses.account_id` es NOT NULL)
+   solo avanza la fecha y el mensaje avisa para registrar el gasto a mano. La no-duplicación
+   cae naturalmente: la ocurrencia sale del `comprometido` exactamente cuando entra al
+   `gastado`, y el **disponible no cambia** (hay test que lo fija).
+4. **Sin `auto_generate` todavía.** La generación automática de gastos exige el Scheduler
+   (Épica 9, cron en Hostinger); en la Épica 5 todo pago es una acción explícita del usuario.
+   La columna no se crea para no dejar un booleano muerto.
+5. **Ahorro mensual necesario** = `amount × ocurrenciasPorAño / 12`, redondeado a 2 decimales
+   (SOAT $600.000 anual → "separa ~$50.000/mes"). En la UI solo se muestra para frecuencias
+   ≠ mensual, donde no aporta ruido.
+6. **Cast `date:Y-m-d` en `next_date`.** El cast `date` por defecto serializa con el formato
+   *datetime* del grammar (`'Y-m-d H:i:s'`), y SQLite escribía `2026-09-05 00:00:00` en una
+   columna `date`; el formato explícito lo mantiene portable entre SQLite (tests) y MySQL.
+
+**Alternativas (descartadas).**
+- **Prorrateo mensual fijo** (el mismo `monthlySavings` para el comprometido) — más simple,
+  pero infla la ventana semana (un arriendo de $1.200.000 comprometería $1.200.000 en 7 días
+  aunque no venza) y contradice el espíritu del calculador: la semana pregunta "qué vence
+  ahora".
+- **Campo `is_fixed` elegido por el usuario** — más flexible, pero duplica lo deducible de la
+  frecuencia y añade fricción a un formulario que debe ser rápido.
+- **Comando que auto-genera gastos al día** — es exactamente el alcance de la Épica 9; hacerlo
+  aquí mezclaría épicas.
+
+**Consecuencias.**
+- `BudgetCalculatorService` no cambia su fórmula: inyecta `RecurringExpenseService` y
+  rellena los dos seams (patrón que repetirán Deuda y Metas).
+- La Épica 9 añadirá `auto_generate` como migración + scheduler, reutilizando
+  `markAsPaid()` como rutina de generación.
+- `frequency_interval` solo es obligatorio para `custom` (1-3650 días); el Form Request lo
+  descarta para las demás frecuencias.
+
+**Estado.** ACEPTADA — 2026-08-27. Implementada en `app/Enums/Frequency.php`,
+`app/Services/RecurringExpenseService.php`, `app/Services/BudgetCalculatorService.php`,
+`app/Models/RecurringExpense.php` y `app/Http/Controllers/RecurringExpenseController.php`.
+
+---
+
+## ADR-0019
+### Los recursos financieros solo se operan desde su hogar activo — **ACEPTADA**
+
+**Contexto.** Un `/security-checklist` sobre la Épica 5 destapó una fuga entre hogares **explotable desde la Épica 3**, no introducida por la 5.
+
+Había dos capas midiendo hogares distintos:
+
+- las **Policies** autorizaban contra el hogar **del recurso** (`$resource->household_id`);
+- los **Form Requests** acotaban `account_id`/`category_id` al hogar **activo en sesión** (`active_household_id()`).
+
+Para un usuario de un solo hogar coinciden. Para uno que pertenece a **varios** (escenario soportado por [ADR-0011](#adr-0011)) no, y ahí se abría el hueco: con el hogar A activo se podía editar un recurso del hogar B enlazándole una **cuenta de A**. Verificado ejecutando el ataque:
+
+```
+>>> gasto creado: household_id=2 account_id=1   (hogar B=2, cuenta del hogar A=1)
+>>> saldo cuenta de A: inicial='1200000.00' actual='700000.00'
+>>> tercero (solo miembro de B) ve "CuentaSecretaDeA": SÍ — FUGA
+```
+
+Es decir: el saldo del hogar A se alteraba por actividad del hogar B, y un miembro de B **sin ninguna relación con A** veía el nombre de una cuenta de A en `/movimientos`. Amenaza #1 de [SECURITY.md](SECURITY.md).
+
+**Decisión.** Autorizar un recurso financiero exige **dos** condiciones, no una:
+
+1. que el usuario sea **miembro** del hogar dueño del recurso, y
+2. que ese hogar sea además su **hogar activo**.
+
+Se implementa en un trait único, `App\Policies\Concerns\ChecksHouseholdAccess`, que usan las siete policies de recursos financieros (Account, Category, Expense, Income, Budget, ExpectedIncome, RecurringExpense). Con el invariante, hogar-de-validación y hogar-de-autorización son **siempre el mismo** y la discrepancia deja de existir. Para operar sobre otro hogar hay que activarlo, que es justo lo que hace la UI.
+
+`HouseholdPolicy` y `HouseholdInvitationPolicy` quedan **fuera** a propósito: gestionar un hogar (verlo, renombrarlo, invitar, activarlo) tiene que poder hacerse desde fuera del hogar activo o sería imposible cambiar de hogar.
+
+**Alternativas (descartadas).**
+- **Acotar los Form Requests al hogar del recurso** en vez de a la sesión — arregla los campos que te acuerdes de acotar, y deja viva la clase de fallo para el siguiente campo o recurso que se añada. Es un parche, no un invariante.
+- **Global scope `HouseholdScope`** — impediría incluso resolver el modelo (404 en vez de 403) y complica los tests y cualquier lectura administrativa futura. Reconsiderable en la Épica 11.
+- **Dejarlo como estaba** — descartado: la fuga alcanza a terceros que nunca tuvieron acceso.
+
+**Consecuencias.**
+- Un usuario multi-hogar que abra por URL un recurso de un hogar no activo recibe **403** en vez de operar sobre él. Es el comportamiento correcto y coincide con lo que la UI ofrece.
+- Las Policies dependen ahora de `active_household()` (estado de sesión) también en `view/update/delete`, no solo en `create`. Es capa HTTP dentro de capa HTTP, coherente con [ADR-0011](#adr-0011); los Services siguen sin tocar la sesión ([ADR-0010](#adr-0010)).
+- Los tests de aislamiento clásicos **no cubrían** esto: usan un intruso que no es miembro de nada, así que la membresía ya lo frenaba. Se añade `tests/Feature/Household/MultiHouseholdIsolationTest.php` con el caso multi-hogar recurso por recurso.
+- Efecto colateral positivo: elimina siete copias de `userInHousehold()`.
+
+**Estado.** ACEPTADA — 2026-08-22, a raíz del `/security-checklist` de la Épica 5. Suite completa (212 PHPUnit + 18 E2E) en verde tras el cambio, sin ajustar ningún test existente.
 
 ---
 

@@ -35,7 +35,9 @@
 
 **c) Policies (autorización por recurso)**
 - Una `Policy` por recurso perteneciente a un hogar.
-- `view/update/delete` verifican `$user->households->contains($resource->household_id)` **y** el rol si aplica.
+- `view/update/delete` exigen **dos** condiciones (ver [ADR-0019](DECISIONS.md#adr-0019)): que el usuario sea **miembro** del hogar dueño del recurso **y** que ese hogar sea su **hogar activo**. Usar el trait `App\Policies\Concerns\ChecksHouseholdAccess`; no reimplementar la comprobación a mano.
+- ⚠️ **La membresía sola no basta.** Un usuario puede pertenecer a varios hogares, y los Form Requests acotan `account_id`/`category_id` al hogar **activo**. Si la Policy autoriza contra el hogar **del recurso**, ambas capas miden hogares distintos y se puede enlazar una cuenta del hogar A a un recurso del hogar B.
+- Excepción deliberada: `HouseholdPolicy` y `HouseholdInvitationPolicy` **no** aplican el invariante — gestionar o activar un hogar debe poder hacerse desde fuera de él.
 - Llamar siempre a `$this->authorize()` o `authorizeResource()` en el controlador.
 
 **d) Form Requests blindan `household_id`**
@@ -63,6 +65,8 @@ public function test_usuario_no_puede_ver_gasto_de_otro_hogar(): void
 }
 ```
 Cubrir `index`, `show`, `store` (con `household_id` forzado), `update`, `destroy`.
+
+**Y además el caso multi-hogar**, que el test de arriba **no** cubre: con un intruso que no es miembro de nada, la membresía ya lo frena y el test pasa aunque la Policy sea insuficiente. Hace falta un usuario que sea miembro de **los dos** hogares, con A activo, intentando operar sobre un recurso de B (debe dar 403). Ver `tests/Feature/Household/MultiHouseholdIsolationTest.php`.
 
 ---
 

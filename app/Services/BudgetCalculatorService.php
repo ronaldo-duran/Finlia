@@ -34,6 +34,8 @@ use Illuminate\Support\Collection;
  */
 class BudgetCalculatorService
 {
+    public function __construct(private readonly RecurringExpenseService $recurringExpenses) {}
+
     /**
      * Resumen completo de un período. Es la única entrada que necesitan la
      * pantalla de presupuestos y la tarjeta del dashboard.
@@ -104,15 +106,19 @@ class BudgetCalculatorService
             (float) $categories->sum('remaining'),
         );
 
-        // Componentes que llegan en épicas posteriores. Se declaran en cero
-        // (no se omiten) para que la épica correspondiente solo tenga que
-        // rellenar su término sin tocar la fórmula ni la UI (ADR-0014).
+        // Componentes que llegan en épicas posteriores. Los de épicas no
+        // iniciadas se declaran en cero (no se omiten) para que su épica solo
+        // tenga que rellenar su término sin tocar la fórmula ni la UI (ADR-0014).
+        // Épica 5: recurrentes activos con ocurrencia en la ventana, separados
+        // en gastos fijos (alta frecuencia) y obligaciones (trimestral+).
+        $recurringCommitted = $this->recurringExpenses->committedInRange($householdId, $from, $to);
+
         $committed = [
             'budget' => $this->money($committedBudget),
-            'fixed_expenses' => 0.0,   // Épica 5 — gastos fijos
-            'recurring' => 0.0,        // Épica 5 — recurrentes próximos
-            'debt' => 0.0,             // Épica 6 — obligaciones de deuda
-            'savings' => 0.0,          // Épica 7 — ahorro programado
+            'fixed_expenses' => $this->money($recurringCommitted['fixed']),  // Épica 5 — arriendo, servicios…
+            'recurring' => $this->money($recurringCommitted['recurring']),   // Épica 5 — SOAT, matrícula…
+            'debt' => 0.0,                                                    // Épica 6 — obligaciones de deuda
+            'savings' => 0.0,                                                 // Épica 7 — ahorro programado
         ];
         $committedTotal = array_sum($committed);
         $committed['total'] = $this->money($committedTotal);

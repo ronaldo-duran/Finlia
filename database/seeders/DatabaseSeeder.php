@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\AccountType;
 use App\Enums\BudgetPeriod;
+use App\Enums\Frequency;
 use App\Enums\HouseholdRole;
 use App\Models\Account;
 use App\Models\Category;
@@ -115,6 +116,7 @@ class DatabaseSeeder extends Seeder
         $accounts->each(fn (Account $account) => $balanceService->recompute($account));
 
         $this->seedBudgets($household, $expenseCategories, $incomeCategories);
+        $this->seedRecurringExpenses($household, $accounts);
     }
 
     /**
@@ -151,5 +153,48 @@ class DatabaseSeeder extends Seeder
             'year' => $now->year,
             'month' => $now->month,
         ]));
+    }
+
+    /**
+     * Gastos recurrentes FALSOS (Épica 5): fijos mensuales + obligaciones
+     * anuales, para que "Próximas obligaciones" y el dinero disponible
+     * tengan datos desde el arranque.
+     */
+    private function seedRecurringExpenses(Household $household, Collection $accounts): void
+    {
+        $now = Carbon::now(config('app.timezone'));
+        $bank = $accounts->firstWhere('name', 'Bancolombia');
+        $categoryByName = Category::whereNull('household_id')
+            ->where('type', 'expense')
+            ->pluck('id', 'name');
+
+        // Fecha del próximo día 5 (arriendo) y próximo día 20 (suscripción).
+        $day5 = $now->copy()->setDay(5);
+        if ($day5->isPast()) {
+            $day5->addMonthNoOverflow();
+        }
+        $day20 = $now->copy()->setDay(20);
+        if ($day20->isPast()) {
+            $day20->addMonthNoOverflow();
+        }
+
+        collect([
+            // Fijos de alta frecuencia (seam fixed_expenses).
+            ['name' => 'Arriendo', 'amount' => 1200000, 'frequency' => Frequency::Monthly, 'next_date' => $day5, 'category' => 'Vivienda'],
+            ['name' => 'Internet hogares', 'amount' => 95000, 'frequency' => Frequency::Monthly, 'next_date' => $day20, 'category' => 'Servicios'],
+            // Obligaciones menos frecuentes (seam recurring).
+            ['name' => 'SOAT carro', 'amount' => 600000, 'frequency' => Frequency::Yearly, 'next_date' => $now->copy()->addDays(45), 'category' => 'Transporte'],
+            ['name' => 'Mantenimiento moto', 'amount' => 280000, 'frequency' => Frequency::Semester, 'next_date' => $now->copy()->addDays(12), 'category' => 'Transporte'],
+        ])->each(function (array $data) use ($household, $categoryByName, $bank): void {
+            $household->recurringExpenses()->create([
+                'category_id' => $categoryByName[$data['category']] ?? null,
+                'account_id' => $bank?->id,
+                'name' => $data['name'],
+                'amount' => $data['amount'],
+                'frequency' => $data['frequency']->value,
+                'next_date' => $data['next_date']->toDateString(),
+                'is_active' => true,
+            ]);
+        });
     }
 }

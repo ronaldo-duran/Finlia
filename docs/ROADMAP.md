@@ -10,7 +10,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 2 | Hogares, familias y miembros | 🟢 | 1 |
 | 3 | Cuentas, ingresos y gastos | 🟢 | 2 |
 | 4 | Presupuestos y dinero disponible | 🟢 | 3 |
-| 5 | Gastos recurrentes y obligaciones futuras | 🔴 | 3, 4 |
+| 5 | Gastos recurrentes y obligaciones futuras | 🟢 | 3, 4 |
 | 6 | Deudas y tarjetas de crédito | 🔴 | 2, 3 |
 | 7 | Metas de ahorro | 🔴 | 3 |
 | 8 | Dashboard y reportes financieros | 🔴 | 3, 4, 5, 6, 7 |
@@ -35,8 +35,8 @@ Configurar Laravel (PHP, MySQL, `.env`, timezone Colombia, locale español, COP)
 ### Épica 4 — Presupuestos y dinero disponible
 `budgets` (total + por categoría) y `expected_incomes` (ingresos mensuales fijos configurables, [ADR-0014](DECISIONS.md#adr-0014)). Servicio `BudgetCalculatorService`: ingresos esperados − gastado − comprometido = disponible; los términos de recurrentes, deuda y ahorro quedan **en cero como seams** para las épicas 5-7. Tarjeta "💰 Puedes gastar" (panel y dashboard), consulta semana/mes/próximo mes, indicadores de consumo y tendencia, alertas 80 %/100 %.
 
-### Épica 5 — Gastos recurrentes y obligaciones futuras
-`recurring_expenses` (frecuencias semanal→anual, próxima fecha). Sección "Próximas obligaciones", alertas, cálculo de ahorro mensual necesario. Integra al cálculo de dinero disponible **rellenando las claves `fixed_expenses` y `recurring`** de `BudgetCalculatorService` (hoy en `0.0`, ver [ADR-0014](DECISIONS.md#adr-0014)); no hay que tocar la fórmula ni la UI.
+### Épica 5 — Gastos recurrentes y obligaciones futuras 🟢
+`recurring_expenses` (frecuencias semanal→anual + personalizada, próxima fecha, cuenta/categoría opcionales, pausar). Sección "Próximas obligaciones" (agrupada: vencidas / esta semana / más adelante), alertas en el dashboard (ventana de 30 días), "Separa ~X al mes" (SOAT $600.000 anual → $50.000/mes) y **"Marcar pagado"** (registra el gasto y avanza la fecha, sin duplicar en el cálculo, [ADR-0018](DECISIONS.md#adr-0018)). Integra al cálculo de dinero disponible **rellenando las claves `fixed_expenses` y `recurring`** de `BudgetCalculatorService` (ver [ADR-0014](DECISIONS.md#adr-0014)) sin tocar la fórmula ni la UI. La generación automática de recordatorios queda para la Épica 9 (Scheduler).
 
 ### Épica 6 — Deudas y tarjetas de crédito
 `debts`, `debt_payments`, soporte de tarjetas (crédito, límite, fecha de pago). Dashboard de deuda, historial de pagos, refinanciación, proyecciones. Preparar (no implementar obligatoriamente) avalancha/bola de nieve.

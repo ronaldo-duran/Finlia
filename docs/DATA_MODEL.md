@@ -199,6 +199,12 @@ Cuatro conceptos que **no se mezclan**: **balance actual · disponible · compro
 
 ## Épica 5 — Gastos recurrentes y obligaciones futuras
 
+> 🟢 **Implementado** (Épica 5). Ver [ADR-0018](DECISIONS.md#adr-0018): clasificación
+> fijo/obligación por frecuencia, comprometido por ocurrencias reales en la ventana y
+> semántica de "marcar pagado" sin duplicar. La columna `auto_generate` **no existe
+> todavía**: la generación automática de gastos requiere el Scheduler y se añade en la
+> Épica 9.
+
 ### `recurring_expenses`
 | Campo | Tipo | Notas |
 |---|---|---|
@@ -206,14 +212,34 @@ Cuatro conceptos que **no se mezclan**: **balance actual · disponible · compro
 | name | string | "SOAT", "Arriendo" |
 | amount | decimal(15,2) | estimado |
 | frequency | string | enum `Frequency`: weekly, biweekly, monthly, quarterly, semester, yearly, custom |
-| frequency_interval | int, null | cada N (para custom) |
-| next_date | date | próxima fecha |
-| category_id | FK, null | |
-| account_id | FK, null | |
-| is_active | boolean | |
-| auto_generate | boolean | si genera gasto automáticamente (opcional) |
+| frequency_interval | int unsigned, null | cada N días (solo para `custom`, 1-3650) |
+| next_date | date | próxima fecha; puede ser pasada (= obligación vencida). Cast `date:Y-m-d` |
+| category_id | FK, null | categoría de tipo `expense` (`nullOnDelete`) |
+| account_id | FK, null | cuenta con la que se paga (`nullOnDelete`); habilita "marcar pagado" como gasto real |
+| is_active | boolean | pausado no cuenta en el cálculo ni aparece en próximas |
 | notes | text, null | |
 | timestamps | | |
+
+- Índices `(household_id, is_active)` y `(household_id, next_date)`.
+- `household_id` con `cascadeOnDelete`; no es fillable (se asigna por relación).
+
+### Servicio: `App\Services\RecurringExpenseService`
+No es tabla. Lógica de dominio de la épica (sin dependencias HTTP, ADR-0010):
+
+- `upcoming(householdId, ?referencia)` — "Próximas obligaciones": nombre, monto, días
+  restantes (negativos = vencida) y **ahorro mensual necesario** (`amount ×
+  ocurrenciasPorAño / 12`; SOAT $600.000 anual → separa $50.000/mes).
+- `alerts(...)` — subconjunto con `days_remaining ≤ 30` (ventana `ALERT_WINDOW_DAYS`)
+  para el dashboard.
+- `committedInRange(householdId, from, to)` — **rellena los seams `fixed_expenses` y
+  `recurring`** de `BudgetCalculatorService` (ADR-0014): semanal/quincenal/mensual (y
+  custom ≤ 31 días) van a `fixed`; trimestral/semestral/anual (y custom > 31 días) a
+  `recurring`. Cuenta **ocurrencias reales** simulando el cursor desde `next_date` con
+  `addMonthNoOverflow()`/`addYearNoOverflow()` (seguro en años bisiestos).
+- `markAsPaid(recurring, user, ?pagadoEl)` — transacción: registra el gasto real (con
+  `MovementService`, que recomputa el saldo, ADR-0012) **si hay cuenta asociada** y
+  avanza `next_date`. Sin cuenta, solo avanza la fecha. La ocurrencia sale del
+  comprometido exactamente cuando entra al gastado: no se duplica.
 
 ---
 

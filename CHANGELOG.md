@@ -12,6 +12,55 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.7.0] - 2026-08-27 — Gastos recurrentes y obligaciones futuras (Épica 5)
+
+### Añadido
+- **Gastos recurrentes** (`recurring_expenses`): frecuencias semanal, quincenal, mensual,
+  trimestral, semestral, anual y personalizada (cada N días), con próxima fecha, categoría y
+  cuenta opcionales, pausa y notas. Vista "Próximas obligaciones" agrupada (vencidas / esta
+  semana / más adelante) con días restantes y alerta de obligaciones vencidas y a ≤ 30 días
+  también en el Panel.
+- **"Separa ~X al mes"**: ahorro mensual necesario por obligación (SOAT $600.000 anual →
+  separa $50.000/mes) y total mensual en la cabecera de la vista.
+- **"Marcar pagado"**: registra el gasto real en la cuenta asociada (recomputando su saldo)
+  y avanza la próxima fecha dentro de una transacción — la ocurrencia sale del comprometido
+  exactamente cuando entra al gastado, sin duplicar
+  ([ADR-0018](docs/DECISIONS.md#adr-0018)).
+- Enum `Frequency` con aritmética de fechas segura en años bisiestos
+  (`addMonthNoOverflow`/`addYearNoOverflow`), factory, policy, form requests y 44 pruebas
+  nuevas (unitarias del servicio + CRUD/aislamiento por hogar + integración con el
+  calculador).
+
+### Cambiado
+- El cálculo de **dinero disponible** ahora resta los gastos recurrentes reales del hogar,
+  rellenando los *seams* `fixed_expenses` (arriendo, servicios — alta frecuencia) y
+  `recurring` (SOAT, matrícula — baja frecuencia) declarados en cero por la Épica 4
+  ([ADR-0014](docs/DECISIONS.md#adr-0014)); la fórmula y la UI del calculador no cambian, y
+  el desglose "¿Cómo se calcula?" de Presupuestos pasa de "próximamente" a montos reales.
+- El seeder de demo incluye arriendo, internet, SOAT y mantenimiento para que el Panel y las
+  obligaciones muestren datos desde el arranque.
+
+### Seguridad
+- **Corregida una fuga entre hogares presente desde la 0.3.0** (amenaza #1). Las Policies
+  autorizaban contra el hogar *del recurso* mientras los Form Requests acotaban
+  `account_id`/`category_id` al hogar *activo en sesión*. Para un usuario miembro de varios
+  hogares esos dos hogares no coinciden: con el hogar A activo se podía editar un recurso
+  del hogar B enlazándole una **cuenta de A**. Consecuencias reproducidas: el saldo de una
+  cuenta de A cambiaba por actividad de B, y un miembro de B **sin relación alguna con A**
+  veía el nombre de esa cuenta en sus movimientos.
+- Autorizar un recurso financiero exige ahora **dos** condiciones: ser miembro del hogar
+  dueño **y** que ese hogar sea el activo ([ADR-0019](docs/DECISIONS.md#adr-0019)). El
+  invariante vive en un trait único, `ChecksHouseholdAccess`, compartido por las siete
+  policies de recursos financieros. `HouseholdPolicy` queda fuera a propósito: gestionar o
+  activar un hogar debe poder hacerse desde fuera de él.
+- `UpdateRecurringExpenseRequest` autoriza **antes** de validar, como ya hacía
+  `UpdateExpenseRequest`: un usuario ajeno recibe 403 y no 422, sin importar los datos.
+- Nuevo `MultiHouseholdIsolationTest` (9 casos): cubre el escenario multi-hogar que los
+  tests de aislamiento clásicos no alcanzaban, porque usan un intruso que no es miembro de
+  nada y la membresía ya lo frenaba.
+
+---
+
 ## [0.6.0] - 2026-08-27 — Identidad de marca
 
 ### Añadido

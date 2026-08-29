@@ -6,37 +6,34 @@ namespace App\Policies;
 
 use App\Models\Expense;
 use App\Models\User;
+use App\Policies\Concerns\ChecksHouseholdAccess;
 
 /**
  * Autorización sobre gastos. Aislamiento multi-hogar (amenaza #1):
- * todo acceso requiere ser miembro del hogar dueño del gasto.
+ * todo acceso requiere ser miembro del hogar dueño del gasto Y que ese hogar
+ * sea el activo (ver ChecksHouseholdAccess).
  */
 class ExpensePolicy
 {
+    use ChecksHouseholdAccess;
+
     public function view(User $user, Expense $expense): bool
     {
-        return $this->userInHousehold($user, $expense->household_id);
+        return $this->canAccessHousehold($user, $expense->household_id);
     }
 
     public function create(User $user): bool
     {
-        $household = active_household();
-
-        return $household !== null && $household->hasMember($user);
+        return $this->canAccessActiveHousehold($user);
     }
 
     public function update(User $user, Expense $expense): bool
     {
-        return $this->userInHousehold($user, $expense->household_id);
+        return $this->canAccessHousehold($user, $expense->household_id);
     }
 
     public function delete(User $user, Expense $expense): bool
     {
-        return $this->userInHousehold($user, $expense->household_id);
-    }
-
-    private function userInHousehold(User $user, int $householdId): bool
-    {
-        return $user->households()->where('households.id', $householdId)->exists();
+        return $this->canAccessHousehold($user, $expense->household_id);
     }
 }

@@ -44,6 +44,31 @@
         </div>
     @endif
 
+    {{-- Épica 5: obligaciones vencidas o próximas a vencer (in-app, ADR-0015) --}}
+    @php
+        $vencidas = $recurringAlerts->where('is_overdue');
+        $proximas = $recurringAlerts->where('is_overdue', false);
+    @endphp
+    @if ($vencidas->isNotEmpty())
+        <div class="alert alert-danger d-flex gap-2" role="alert">
+            <i class="bi bi-exclamation-octagon-fill fs-5"></i>
+            <div>
+                <strong>Obligaciones vencidas</strong>:
+                {{ $vencidas->map(fn ($r) => $r['name'].' ('.money($r['amount']).')')->join(', ', ' y ') }}.
+                <a href="{{ route('recurring-expenses.index') }}" class="alert-link">Regularizar</a>
+            </div>
+        </div>
+    @endif
+    @if ($proximas->isNotEmpty())
+        <div class="alert alert-warning d-flex gap-2" role="alert">
+            <i class="bi bi-bell-fill fs-5"></i>
+            <div>
+                {{ $proximas->map(fn ($r) => $r['name'].' vence en '.$r['days_remaining'].' día'.($r['days_remaining'] === 1 ? '' : 's'))->join('; ', ' y ') }}.
+                <a href="{{ route('recurring-expenses.index') }}" class="alert-link">Ver obligaciones</a>
+            </div>
+        </div>
+    @endif
+
     @include('dashboard._hero-enfoque', ['budgetSummary' => $budgetSummary, 'isNegative' => $isNegative])
 
     {{-- KPIs del mes --}}

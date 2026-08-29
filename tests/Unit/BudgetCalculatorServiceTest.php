@@ -5,14 +5,17 @@ namespace Tests\Unit;
 use App\Enums\BudgetAlertLevel;
 use App\Enums\BudgetScope;
 use App\Enums\CategoryType;
+use App\Enums\Frequency;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Expense;
 use App\Models\Household;
 use App\Models\Income;
+use App\Models\RecurringExpense;
 use App\Models\User;
 use App\Services\BudgetCalculatorService;
 use App\Services\HouseholdService;
+use App\Services\RecurringExpenseService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -126,10 +129,71 @@ class BudgetCalculatorServiceTest extends TestCase
     {
         $summary = $this->summary();
 
+        // Épicas 6-7. Los de la Épica 5 (fijos/recurrentes) ya son reales:
+        // sin recurrentes configurados también son cero (caso vacío).
         $this->assertSame(0.0, $summary['committed']['fixed_expenses']);
         $this->assertSame(0.0, $summary['committed']['recurring']);
         $this->assertSame(0.0, $summary['committed']['debt']);
         $this->assertSame(0.0, $summary['committed']['savings']);
+    }
+
+    // ===== Épica 5: recurrentes en el comprometido =====
+
+    public function test_recurrentes_rellenan_los_seams_de_fijos_y_obligaciones(): void
+    {
+        $this->expectedIncome(3000000);
+        $this->recurring('Arriendo', 1200000, Frequency::Monthly, '2026-03-20'); // fijo
+        $this->recurring('SOAT', 600000, Frequency::Yearly, '2026-03-25');       // obligación
+
+        $summary = $this->summary();
+
+        $this->assertSame(1200000.0, $summary['committed']['fixed_expenses']);
+        $this->assertSame(600000.0, $summary['committed']['recurring']);
+        // Disponible = 3.000.000 − 0 gastado − 1.800.000 comprometido.
+        $this->assertSame(1200000.0, $summary['available']);
+    }
+
+    public function test_recurrentes_de_la_ventana_semana_solo_cuentan_si_ocurren_en_ella(): void
+    {
+        $this->expectedIncome(3000000);
+        // Semana del 9 al 15 de marzo de 2026 (referencia: 10/03).
+        $this->recurring('Arriendo', 1200000, Frequency::Monthly, '2026-03-20'); // fuera de la semana
+        $this->recurring('Mercado', 50000, Frequency::Weekly, '2026-03-12');     // dentro (12 y no más)
+
+        $summary = $this->summary(BudgetScope::Week);
+
+        $this->assertSame(50000.0, $summary['committed']['fixed_expenses']);
+        $this->assertSame(0.0, $summary['committed']['recurring']);
+    }
+
+    public function test_recurrente_marcado_pagado_no_se_duplica_con_el_gasto_registrado(): void
+    {
+        $this->expectedIncome(3000000);
+        $recurring = $this->recurring('Arriendo', 1200000, Frequency::Monthly, '2026-03-20');
+        // "Marcar pagado" solo registra el gasto si hay cuenta asociada.
+        $recurring->update(['account_id' => $this->account->id]);
+
+        // Antes de pagar: comprometido por el fijo, nada gastado.
+        $this->assertSame(1200000.0, $this->summary()['committed']['fixed_expenses']);
+        $this->assertSame(1800000.0, $this->summary()['available']);
+
+        app(RecurringExpenseService::class)
+            ->markAsPaid($recurring, $this->owner, Carbon::parse(self::REFERENCE));
+
+        // Después: el gasto quedó registrado (gastado) y salió del comprometido.
+        // El disponible no cambia: es el mismo dinero contado una sola vez.
+        $summary = $this->summary();
+        $this->assertSame(1200000.0, $summary['spent']);
+        $this->assertSame(0.0, $summary['committed']['fixed_expenses']);
+        $this->assertSame(1800000.0, $summary['available']);
+    }
+
+    public function test_recurrentes_inactivos_no_cuentan(): void
+    {
+        $this->expectedIncome(3000000);
+        $this->recurring('Arriendo', 1200000, Frequency::Monthly, '2026-03-20', false);
+
+        $this->assertSame(0.0, $this->summary()['committed']['total']);
     }
 
     public function test_disponible_puede_ser_negativo(): void
@@ -415,6 +479,17 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->household->expectedIncomes()->create([
             'name' => 'Fuente '.$amount,
             'amount' => $amount,
+            'is_active' => $active,
+        ]);
+    }
+
+    private function recurring(string $name, float $amount, Frequency $frequency, string $nextDate, bool $active = true): RecurringExpense
+    {
+        return $this->household->recurringExpenses()->create([
+            'name' => $name,
+            'amount' => $amount,
+            'frequency' => $frequency->value,
+            'next_date' => $nextDate,
             'is_active' => $active,
         ]);
     }

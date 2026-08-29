@@ -6,37 +6,34 @@ namespace App\Policies;
 
 use App\Models\Account;
 use App\Models\User;
+use App\Policies\Concerns\ChecksHouseholdAccess;
 
 /**
  * Autorización sobre cuentas. Aislamiento multi-hogar (amenaza #1):
- * todo acceso requiere ser miembro del hogar dueño de la cuenta.
+ * todo acceso requiere ser miembro del hogar dueño de la cuenta Y que ese
+ * hogar sea el activo (ver ChecksHouseholdAccess).
  */
 class AccountPolicy
 {
+    use ChecksHouseholdAccess;
+
     public function view(User $user, Account $account): bool
     {
-        return $this->userInHousehold($user, $account->household_id);
+        return $this->canAccessHousehold($user, $account->household_id);
     }
 
     public function create(User $user): bool
     {
-        $household = active_household();
-
-        return $household !== null && $household->hasMember($user);
+        return $this->canAccessActiveHousehold($user);
     }
 
     public function update(User $user, Account $account): bool
     {
-        return $this->userInHousehold($user, $account->household_id);
+        return $this->canAccessHousehold($user, $account->household_id);
     }
 
     public function delete(User $user, Account $account): bool
     {
-        return $this->userInHousehold($user, $account->household_id);
-    }
-
-    private function userInHousehold(User $user, int $householdId): bool
-    {
-        return $user->households()->where('households.id', $householdId)->exists();
+        return $this->canAccessHousehold($user, $account->household_id);
     }
 }
