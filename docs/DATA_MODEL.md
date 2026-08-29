@@ -243,6 +243,21 @@ No es tabla. Lógica de dominio de la épica (sin dependencias HTTP, ADR-0010):
 
 ---
 
+## Transversal — Avisos leídos
+
+### `user_acknowledgements` (ADR-0024)
+| Campo | Tipo | Notas |
+|---|---|---|
+| id | | |
+| user_id | FK users (cascade) | preferencia del **usuario**, no del hogar |
+| key | string(60) | valor de `AcknowledgementKey`; lista cerrada, validada antes de insertar |
+| acknowledged_at | timestamp | fecha del acuse; no se mueve al repetir |
+| timestamps | | |
+
+`unique(user_id, key)`: un acuse por usuario y aviso. Tabla por clave en lugar de una columna por aviso, para que las épicas 7 y 8 reutilicen el mecanismo sin tocar `users`.
+
+---
+
 ## Épica 6 — Deudas y tarjetas de crédito
 
 ### `debts`
@@ -251,17 +266,18 @@ No es tabla. Lógica de dominio de la épica (sin dependencias HTTP, ADR-0010):
 | id, household_id | | |
 | name | string | "Tarjeta Davivienda", "Préstamo coche" |
 | institution | string, null | |
-| type | string | enum `DebtType`: credit_card, loan, vehicle, family, other |
+| type | string | enum `DebtType`: credit_card, loan, vehicle, **mortgage**, family, other |
 | original_amount | decimal(15,2) | |
 | current_balance | decimal(15,2) | **derivado** (ADR-0020): línea base − pagos. No fillable, no se teclea |
 | account_id | FK accounts, null | cuenta asociada si es tarjeta (ADR-0002) |
 | interest_rate | decimal(6,3), null | % anual |
 | interest_rate_type | string, null | fixed, variable |
-| minimum_payment | decimal(15,2), null | |
-| scheduled_payment | decimal(15,2), null | cuota pactada |
+| minimum_payment | decimal(15,2), null | lo que **exige la entidad**: la obligación |
+| planned_payment | decimal(15,2), null | lo que el usuario **decide** pagar al mes; vacío = solo el mínimo (ADR-0022) |
+| term_months | smallint, null | nº de cuotas pactadas; tope por tipo (`DebtType::maxTermMonths()`) |
 | due_day | tinyint, null | día de pago mensual |
 | start_date | date, null | |
-| end_date | date, null | |
+| end_date | date, null | **derivada** (ADR-0022): `start_date + term_months`. No fillable |
 | status | string | active, refinanced, paid, written_off |
 | notes | text, null | |
 | timestamps + deleted_at | | borrado lógico: una deuda saldada es historia financiera |

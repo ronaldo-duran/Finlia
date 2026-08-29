@@ -25,6 +25,9 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0019 — Los recursos financieros solo se operan desde su hogar activo](#adr-0019) — **ACEPTADA**
 - [ADR-0020 — Saldo de deuda derivado de una línea base más los pagos](#adr-0020) — **ACEPTADA**
 - [ADR-0021 — Un pago de deuda genera el movimiento real de la cuenta](#adr-0021) — **ACEPTADA**
+- [ADR-0022 — La deuda se pacta en cuotas, y el pago mínimo no es el plan de pago](#adr-0022) — **ACEPTADA**
+- [ADR-0023 — Registrar una deuda es un simulador de crédito, no un formulario en blanco](#adr-0023) — **ACEPTADA**
+- [ADR-0024 — Avisos que el usuario da por leídos, por clave y en servidor](#adr-0024) — **ACEPTADA**
 
 ---
 
@@ -649,6 +652,113 @@ La Épica 5 ya resolvió el caso gemelo: "Marcar pagado" en un gasto recurrente 
 - La FK `expense_id` es `nullOnDelete`: borrar el movimiento desde /movimientos no borra el historial de la deuda, solo rompe el vínculo.
 
 **Estado.** ACEPTADA — 2026-08-29. Implementada en `DebtService::registerPayment()` / `deletePayment()` / `committedInRange()` y en `BudgetCalculatorService`.
+
+---
+
+## ADR-0022
+### La deuda se pacta en cuotas, y el pago mínimo no es el plan de pago — **ACEPTADA**
+
+**Contexto.** Al usar el módulo de deudas recién entregado (Épica 6) salieron dos problemas de modelado que el propio usuario detectó:
+
+1. **`end_date` como fecha que se teclea.** Nadie pacta con un banco una *fecha* de fin: se pactan **cuotas**. La fecha es la consecuencia, no el dato. Además, pedir una fecha libre deja pasar plazos absurdos (una tarjeta a 20 años).
+2. **`minimum_payment` + `scheduled_payment` ("cuota pactada").** El nombre miente: no es lo que pacta la entidad, es lo que el usuario **decide** pagar. Puestos uno al lado del otro sin explicación, nadie sabe cuál rellenar.
+
+**Decisión.**
+
+1. **El plazo se expresa en `term_months` (número de cuotas)** y `end_date` pasa a ser **derivada**: `start_date + term_months`, calculada en `DebtService`. Deja de ser `fillable` y desaparece del formulario. Sin fecha de inicio no hay fin previsto, y se dice así en lugar de inventarlo.
+2. **Tope de cuotas por tipo de deuda** (`DebtType::maxTermMonths()`): tarjeta 100, vehículo 96, hipotecario 480, y 120 para préstamo, familiar y otras. Son topes **prácticos** para atajar errores de dedo (escribir 1200 en vez de 120), **no límites legales**: ninguna norma colombiana fija estos números y cada entidad tiene los suyos, así que se es deliberadamente generoso.
+3. **Nuevo tipo `DebtType::Mortgage`** (crédito hipotecario). No estaba en la Épica 6 y su plazo no cabe en ningún otro tipo: registrarlo como "préstamo" lo habría limitado a 120 cuotas cuando lo normal son 180-240.
+4. **`scheduled_payment` se renombra a `planned_payment`**, y los dos campos se explican por lo que son:
+   - **Cuota mínima** (`minimum_payment`): lo que **exige la entidad**. Es la obligación; por debajo hay mora.
+   - **Lo que planeas pagar** (`planned_payment`): lo que **tú decides**. Vacío significa "solo el mínimo".
+   - Validación: el plan **nunca** por debajo del mínimo, pero solo se compara si hay mínimo declarado (si no, `gte` compararía contra null y rechazaría cualquier valor).
+5. **El comportamiento no cambia**: `monthlyCommitment()` sigue siendo `plan ?? mínimo`. Ya era lo correcto —lo que sale del bolsillo es lo que vas a pagar de verdad— y esa cifra alimenta tanto el dinero comprometido como la proyección. Lo que cambia son los nombres.
+
+**Alternativas (descartadas).**
+- **Dejar la fecha de fin y solo validarla** — no resuelve la objeción de fondo: se seguiría pidiendo un dato que el usuario no tiene a mano y que puede teclear mal.
+- **Un solo campo de cuota** — más simple, pero pierde cuál es el mínimo exigido, que es justo lo que marca la mora en una tarjeta y lo que hace útil el aviso de "estás pagando solo el mínimo".
+- **Solo cambiar las etiquetas, sin tocar la columna** — habría dejado un nombre que miente en la base de datos, y el siguiente que lea `scheduled_payment` volverá a entender "cuota pactada con el banco".
+- **Topes legales por tipo** — no existen como tales; fingir una regulación que no se ha verificado sería peor que un tope práctico declarado como tal.
+
+**Consecuencias y mitigaciones.**
+- Migración de renombrado sobre una tabla recién creada. Se verificó `up` y `down` contra el esquema real, no solo en tests.
+- La refinanciación ya traía `term_months` e `installment`: ahora también copia el plazo a la deuda y su cuota va a `planned_payment`, que es lo que es.
+- El formulario ajusta el tope de cuotas al tipo elegido con JavaScript, pero **la validación de verdad está en el servidor**: el JS es comodidad, no control (docs/SECURITY.md).
+- Sigue sin acumularse interés (ADR-0020): el plazo pactado y el plazo que sale de la proyección pueden no coincidir, y son cosas distintas a propósito — uno es lo acordado, el otro lo que pasaría a tu ritmo real.
+
+**Estado.** ACEPTADA — 2026-08-30, a petición del usuario tras probar la Épica 6. Implementada en `DebtType`, `Debt`, `DebtService`, `StoreDebtRequest` y el formulario de deudas.
+
+---
+
+## ADR-0023
+### Registrar una deuda es un simulador de crédito, no un formulario en blanco — **ACEPTADA**
+
+**Contexto.** Al usar el alta de deudas salieron tres problemas de experiencia, y los dos últimos son el mismo:
+
+1. **El formulario vivía incrustado en el panel**, siempre visible. Uno adquiere deudas de vez en cuando, no a diario: ocupaba la mitad de la pantalla para algo que se usa dos veces al año.
+2. **Se podía registrar una deuda imposible.** El caso real: 10.000.000, tasa 0 %, cuota mínima 0, 120 cuotas y un plan de 20.000 al mes. La aplicación lo aceptaba sin rechistar y después calculaba, con razón, que a ese ritmo se tardarían 500 meses. Los datos se contradecían entre sí desde el momento de guardarlos.
+3. **Los campos eran los equivocados.** Se pedía la cuota como dato de entrada cuando en un crédito la cuota es *consecuencia* del monto, la tasa y el plazo. Es al revés de como lo pide cualquier banco.
+
+**Decisión.**
+
+1. **El alta se mueve a su propia pantalla** (`debts.create`), con un botón «Registrar deuda» en la cabecera del panel, siguiendo el patrón que ya usan cuentas y presupuestos. El botón es `w-100 w-sm-auto`, así que en móvil ocupa el ancho y en escritorio no.
+2. **El formulario es un simulador.** El usuario declara lo que pacta —**monto, tasa y número de cuotas**— y la aplicación calcula **cuota mensual**, **fecha de fin** e **intereses totales**, en vivo mientras escribe.
+3. **La cuota se muestra calculada y bloqueada**, con un interruptor «Mi entidad cobra otra cuota» que la desbloquea. Ni imponerla (una entidad real cobra seguros y cuota de manejo encima de la fórmula) ni dejarla en blanco (era la puerta a la incoherencia): calculada por defecto, ajustable a propósito.
+4. **La coherencia se valida en el servidor**, no solo en el navegador:
+   - la cuota debe cubrir al menos los intereses del primer mes, o el saldo sube en lugar de bajar;
+   - la cuota debe bastar para saldar el monto en el plazo pactado, con un 1 % de holgura por redondeos. El mensaje dice **cuánto haría falta**, no solo que está mal.
+5. **Una sola matemática** (`DebtCalculator`), compartida por el simulador, la validación y la proyección del panel. Si cada uno tuviera la suya, la cuota pactada y la fecha proyectada volverían a contradecirse en pantalla, que es el problema original.
+6. **La tasa se interpreta como efectiva anual (E.A.)**, como se cotiza el crédito en Colombia, y la mensual equivalente es `(1 + EA)^(1/12) − 1`. Antes se dividía entre 12, que es la convención **nominal** y sobreestima el interés: con 28,5 % E.A. daba 2,375 % mensual en lugar del 2,114 % real.
+7. **La cuota se redondea al céntimo hacia arriba.** Con el redondeo al más cercano se quedaba unos céntimos corta y hacía falta un mes extra para saldar el resto: el simulador decía «36 cuotas» y la proyección «37 meses».
+8. **Sin JavaScript sigue funcionando**: si la cuota llega vacía, la deriva `DebtService` al guardar.
+
+**Alternativas (descartadas).**
+- **Un modal en vez de una pantalla** — el formulario tiene cuatro secciones; en un móvil un modal con scroll propio es peor que una página.
+- **Dejar la cuota siempre editable con un aviso** — el aviso se ignora, y era exactamente lo que permitió registrar la deuda imposible.
+- **Bloquearla del todo, sin escape** — obligaría a mentir a quien tenga una cuota real distinta por seguros o cuota de manejo.
+- **Validar solo en el navegador** — se salta desactivando JavaScript o enviando la petición a mano; la validación de verdad tiene que estar en el Form Request.
+- **Mantener la tasa nominal (`EA/12`)** — más simple, pero da cuotas más altas que las del banco y el simulador dejaría de servir para comparar.
+
+**Consecuencias y mitigaciones.**
+- Cambia la convención de tasa, así que las proyecciones existentes darán números algo distintos (menores). Es una corrección, no una regresión: los anteriores sobreestimaban el interés.
+- Los datos de demostración dejan de fijar la cuota a mano y la derivan, de modo que el seeder no puede generar una deuda incoherente.
+- Los campos de dinero pasan a `data-money-input` (docs/UI_DESIGN.md); antes usaban `type="number"`, que no admite el punto de miles.
+- La confirmación de borrado pasa a `data-confirm`, el mecanismo que ya existía en `app.js` para no meter datos del usuario dentro de JavaScript en línea. Sustituye al parche con `@js()` de la 0.8.2 y elimina el JS en línea del todo.
+- La validación vive en el Form Request, así que crear deudas por Service (seeder, factories, futura API) sigue sin comprobarla. Es coherente con ADR-0010: validar es responsabilidad de la capa HTTP.
+- **Ninguna cifra se presenta como definitiva.** El componente `<x-debt-disclaimer />` avisa, en el alta, en el panel y en el detalle, de que cuota, intereses y fechas son estimaciones y de que cada entidad aplica sus propias reglas. No es letra pequeña al pie: es un bloque visible junto a los números, porque el error de leer una estimación como un estado de cuenta lo paga el usuario con su dinero. El interruptor «Mi entidad cobra otra cuota» refuerza lo mismo desde el otro lado: además de desbloquear el campo, recuerda que el banco cobra cosas que la fórmula no conoce.
+
+**Estado.** ACEPTADA — 2026-08-30, tras probar el alta de deudas. Implementada en `DebtCalculator`, `DebtService`, `StoreDebtRequest`, `debts/create`, `debts/_form` y el simulador de `resources/js/app.js`.
+
+---
+
+## ADR-0024
+### Avisos que el usuario da por leídos, por clave y en servidor — **ACEPTADA**
+
+**Contexto.** El aviso de que las cifras de deuda son estimaciones (ADR-0023) ocupa media pantalla en un móvil y salía **en cada visita**. Un aviso que se ve siempre deja de leerse a la tercera vez: se convierte en ruido, que es lo contrario de lo que pretende. Pero quitarlo del todo tampoco vale — en una app de finanzas, que la advertencia desaparezca es el escenario que se paga con dinero del usuario.
+
+Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar una política una sola vez al registrarse, o descartarlo con constancia en servidor.
+
+**Decisión.**
+
+1. **El aviso se puede dar por leído, pero no desaparece: se reduce.** Primera vez, bloque completo con «Entendido, no mostrar de nuevo»; a partir de ahí, una línea discreta que sigue junto a las cifras. Deja de estorbar sin dejar de advertir.
+2. **La constancia va en el servidor**, no en el navegador. Persiste entre dispositivos —lo cierras en el móvil y el portátil lo respeta—, sobrevive a un borrado de datos de navegación y deja registrada la fecha, que importa el día que haya Premium o una reclamación.
+3. **Tabla por clave (`user_acknowledgements`), no una columna por aviso.** Metas de ahorro (Épica 7) y reportes (Épica 8) traerán advertencias parecidas; con una columna por cada una, `users` acabaría con media docena de `*_ack_at`. La tabla lleva `unique(user_id, key)`.
+4. **La clave se valida contra un enum cerrado** (`AcknowledgementKey`). Llega en la URL, así que sin lista blanca cualquiera podría llenar la tabla de filas inventadas. Una clave desconocida es un 404.
+5. **Es una preferencia del USUARIO, no del hogar.** Dos miembros del mismo hogar leen el aviso por separado; que uno lo descarte no se lo oculta al otro.
+6. **Formulario normal, sin JavaScript.** Funciona con el JS desactivado y no depende del navegador para nada. El `user_id` sale siempre del usuario autenticado, nunca de la petición.
+7. **`acknowledge()` es idempotente**: pulsar dos veces no duplica la fila ni mueve la fecha original.
+
+**Alternativas (descartadas).**
+- **localStorage o cookie** — cero backend, pero es por dispositivo y navegador: lo descartas en el móvil y reaparece en el portátil. Se pierde al borrar datos o en incógnito, y no queda constancia de que se leyó.
+- **Aceptar una política al registrarse y no volver a avisar** — deja la interfaz limpia, pero los usuarios ya existentes nunca lo verían y la advertencia desaparece justo del sitio donde están los números. Seis meses después nadie recuerda qué aceptó. Además, redactar términos de aceptación tiene implicaciones legales que no conviene improvisar.
+- **Una columna `debt_disclaimer_ack_at` en `users`** — más simple hoy, insostenible en cuanto haya tres avisos.
+
+**Consecuencias y mitigaciones.**
+- El componente consulta el acuse en cada render. `hasAcknowledged()` usa la relación si está cargada, para no lanzar una consulta por cada componente de la misma página.
+- Si algún día conviene reponer un aviso ya descartado —porque el texto cambia de forma sustancial—, basta con una clave nueva (`debt_estimates_v2`); los acuses viejos quedan como historial.
+- Es un mecanismo de comodidad, no de autorización: no protege nada, solo decide cuánto ocupa un aviso.
+
+**Estado.** ACEPTADA — 2026-08-31, a petición del usuario tras ver el aviso en móvil. Implementada en `user_acknowledgements`, `AcknowledgementKey`, `UserAcknowledgement`, `User::hasAcknowledged()/acknowledge()`, `AcknowledgementController` y `<x-debt-disclaimer />`.
 
 ---
 

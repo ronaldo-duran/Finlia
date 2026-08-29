@@ -65,6 +65,25 @@ class DebtController extends Controller
     }
 
     /**
+     * Formulario de alta. Registrar una deuda es algo puntual, así que vive en
+     * su propia pantalla en lugar de ocupar sitio en el panel (ADR-0023).
+     */
+    public function create(): View|RedirectResponse
+    {
+        $household = active_household();
+
+        if ($household === null) {
+            return redirect()->route('households.create');
+        }
+
+        $this->authorize('create', Debt::class);
+
+        return view('debts.create', [
+            'accounts' => $household->accounts()->orderBy('name')->get(),
+        ]);
+    }
+
+    /**
      * Detalle: condiciones, progreso, historial de pagos y refinanciaciones.
      */
     public function show(Debt $debt): View
@@ -101,10 +120,9 @@ class DebtController extends Controller
     {
         $this->authorize('update', $debt);
 
-        $debt->update($request->validatedData());
-
-        // Cambiar el monto original mueve la línea base del saldo (ADR-0020).
-        $this->debts->recalculateBalance($debt);
+        // El Service recalcula lo derivado: fin previsto (ADR-0022) y saldo,
+        // porque cambiar el monto original mueve su línea base (ADR-0020).
+        $this->debts->updateDebt($debt, $request->validatedData());
 
         return redirect()
             ->route('debts.show', $debt)

@@ -67,6 +67,8 @@
         </div>
     </div>
 
+    <x-debt-disclaimer />
+
     {{-- Progreso y proyección --}}
     <div class="card border-0 mb-4"><div class="card-body">
         <div class="d-flex justify-content-between small mb-1">
@@ -86,7 +88,7 @@
                     <div>
                         @if ($commitment <= 0)
                             <strong>Sin cuota registrada</strong> no se puede estimar cuándo terminarías.
-                            Añade el pago mínimo o la cuota pactada con «Editar».
+                            Añade la cuota mensual con «Editar».
                         @else
                             Con esta cuota <strong>no se cubren los intereses</strong>: a este ritmo el saldo
                             no bajaría. Si puedes, sube la cuota o abona extra.
@@ -98,10 +100,9 @@
                     <i class="bi bi-flag-fill text-finlia"></i>
                     <div>
                         Si mantienes este ritmo, terminarías hacia
-                        <strong class="text-body">{{ $projection['date']->translatedFormat('F \d\e Y') }}</strong>
+                        <strong class="text-body">{{ $projection['date']->locale('es')->isoFormat('MMMM [de] YYYY') }}</strong>
                         ({{ $projection['months'] }} {{ $projection['months'] === 1 ? 'mes' : 'meses' }}),
                         pagando cerca de <strong class="text-body">@money($projection['total_interest'])</strong> en intereses.
-                        <div class="mt-1"><em>Es una estimación</em>: no contempla cuotas de manejo, seguros, mora ni compras nuevas.</div>
                     </div>
                 </div>
             @endif
@@ -134,7 +135,7 @@
                                 @endif
                             </div>
                             <form method="POST" action="{{ route('debts.payments.destroy', [$debt, $payment]) }}"
-                                  onsubmit="return confirm('¿Eliminar este pago? El saldo volverá a subir y se borrará el movimiento asociado.');">
+                                  data-confirm="¿Eliminar este pago? El saldo volverá a subir y se borrará el movimiento asociado.">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-icon text-danger" aria-label="Eliminar pago">
@@ -304,13 +305,12 @@
                 </div>
             </div>
 
-            {{-- Eliminar.
-                 El nombre va con @js (Js::from), no con {{ }}: dentro de un
-                 manejador en línea el navegador DECODIFICA las entidades HTML
-                 antes de compilar el JS, así que un `&#039;` vuelve a ser una
-                 comilla y escapa del literal. {{ }} protege HTML, no JS. --}}
+            {{-- Eliminar. El nombre viaja en `data-confirm` (atributo, dato) y
+                 lo lee el listener de app.js, nunca dentro de un manejador en
+                 línea: ahí el navegador decodifica las entidades antes de
+                 compilar el JS y la comilla escaparía del literal. --}}
             <form method="POST" action="{{ route('debts.destroy', $debt) }}"
-                  onsubmit="return confirm('¿Eliminar la deuda «' + @js($debt->name) + '»?');">
+                  data-confirm="¿Eliminar la deuda «{{ $debt->name }}»?">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-sm btn-outline-danger w-100">

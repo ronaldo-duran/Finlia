@@ -28,10 +28,10 @@ use Illuminate\Support\Facades\DB;
  */
 class DebtService
 {
-    /** Techo de meses que se proyecta hacia adelante (50 años). */
-    private const MAX_PROJECTION_MONTHS = 600;
-
-    public function __construct(private readonly MovementService $movements) {}
+    public function __construct(
+        private readonly MovementService $movements,
+        private readonly DebtCalculator $calculator,
+    ) {}
 
     // ---------------------------------------------------------------
     // Saldo
@@ -110,9 +110,61 @@ class DebtService
     {
         $debt = $household->debts()->make($data);
         $debt->current_balance = $data['original_amount'];
+        $debt->minimum_payment = $this->deriveInstallment($debt);
+        $debt->end_date = $this->deriveEndDate($debt);
         $debt->save();
 
         return $debt;
+    }
+
+    /**
+     * Actualiza los datos editables y recalcula lo derivado: la fecha de fin
+     * (inicio + cuotas, ADR-0022) y el saldo (ADR-0020).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function updateDebt(Debt $debt, array $data): Debt
+    {
+        $debt->fill($data);
+        $debt->minimum_payment = $this->deriveInstallment($debt);
+        $debt->end_date = $this->deriveEndDate($debt);
+        $debt->save();
+
+        return $this->recalculateBalance($debt);
+    }
+
+    /**
+     * Cuota mensual exigida (ADR-0023). Si el usuario no la escribió —porque
+     * la dejó calculada, o porque tiene el JavaScript desactivado— sale del
+     * monto, la tasa y el plazo. Si la escribió, se respeta: su entidad puede
+     * cobrarle seguros o cuota de manejo encima.
+     */
+    private function deriveInstallment(Debt $debt): ?float
+    {
+        if ($debt->minimum_payment !== null) {
+            return (float) $debt->minimum_payment;
+        }
+
+        return $this->calculator->installment(
+            $debt->original_amount !== null ? (float) $debt->original_amount : null,
+            $debt->interest_rate !== null ? (float) $debt->interest_rate : null,
+            $debt->term_months,
+        );
+    }
+
+    /**
+     * Fecha de fin prevista: uno pacta un número de cuotas, no una fecha
+     * (ADR-0022). Sin inicio o sin plazo no hay nada que derivar.
+     */
+    private function deriveEndDate(Debt $debt): ?string
+    {
+        if ($debt->start_date === null || $debt->term_months === null) {
+            return null;
+        }
+
+        return Carbon::parse($debt->start_date)
+            ->addMonthsNoOverflow((int) $debt->term_months)
+            ->toDateString();
     }
 
     /**
@@ -198,12 +250,15 @@ class DebtService
             }
 
             if (! empty($data['installment'])) {
-                $changes['scheduled_payment'] = $data['installment'];
+                $changes['planned_payment'] = $data['installment'];
             }
 
             if (! empty($data['term_months'])) {
+                $changes['term_months'] = (int) $data['term_months'];
+                // addMonthsNoOverflow: un 31 de enero + 1 mes es 28/29 de
+                // febrero, no el 2 o 3 de marzo.
                 $changes['end_date'] = Carbon::parse($data['start_date'])
-                    ->addMonths((int) $data['term_months'])
+                    ->addMonthsNoOverflow((int) $data['term_months'])
                     ->toDateString();
             }
 
@@ -285,48 +340,24 @@ class DebtService
      */
     public function projectPayoff(Debt $debt, ?CarbonInterface $reference = null): array
     {
-        $balance = (float) $debt->current_balance;
-        $payment = $debt->monthlyCommitment();
-        $monthlyRate = (float) ($debt->interest_rate ?? 0) / 100 / 12;
+        // Misma matemática que el simulador del formulario (ADR-0023): si
+        // cada uno usara la suya, la cuota calculada y la fecha proyectada se
+        // contradirían en pantalla.
+        $result = $this->calculator->payOff(
+            (float) $debt->current_balance,
+            $debt->interest_rate !== null ? (float) $debt->interest_rate : null,
+            $debt->monthlyCommitment(),
+        );
+
         $start = $reference !== null ? Carbon::parse($reference) : Carbon::now(config('app.timezone'));
 
-        $empty = ['months' => null, 'date' => null, 'total_interest' => 0.0, 'never_ends' => false];
-
-        if ($balance <= 0.0) {
-            return $empty;
-        }
-
-        // Sin cuota registrada no hay ritmo que proyectar.
-        if ($payment <= 0.0) {
-            return [...$empty, 'never_ends' => true];
-        }
-
-        // Si la cuota no cubre ni los intereses del primer mes, el saldo
-        // crece: la deuda no termina nunca a este ritmo. Decirlo es más útil
-        // que devolver una fecha inventada.
-        if ($payment <= $balance * $monthlyRate) {
-            return [...$empty, 'never_ends' => true];
-        }
-
-        $totalInterest = 0.0;
-        $months = 0;
-
-        while ($balance > 0.0 && $months < self::MAX_PROJECTION_MONTHS) {
-            $interest = round($balance * $monthlyRate, 2);
-            $totalInterest += $interest;
-            $balance = round($balance + $interest - $payment, 2);
-            $months++;
-        }
-
-        if ($balance > 0.0) {
-            return [...$empty, 'never_ends' => true];
-        }
-
         return [
-            'months' => $months,
-            'date' => $start->copy()->startOfDay()->addMonths($months),
-            'total_interest' => round($totalInterest, 2),
-            'never_ends' => false,
+            'months' => $result['months'],
+            'date' => $result['months'] !== null
+                ? $start->copy()->startOfDay()->addMonthsNoOverflow($result['months'])
+                : null,
+            'total_interest' => $result['total_interest'],
+            'never_ends' => $result['never_ends'],
         ];
     }
 

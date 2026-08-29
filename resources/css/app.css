@@ -345,6 +345,11 @@ a { color: var(--finlia-primary); }
     --bs-offcanvas-bg: transparent;
     --bs-offcanvas-color: var(--finlia-text);
     width: var(--finlia-sidebar-width);
+    /* Sin esto la barra es un flex item encogible: el contenido de <main>
+       la comprimía por debajo de su ancho (132 px en el panel de deudas) y
+       los rótulos se partían en dos líneas. En móvil es offcanvas fijo, así
+       que la propiedad es inerte allí. */
+    flex-shrink: 0;
     min-height: calc(100vh - 56px);
     background-color: var(--finlia-surface);
     -webkit-backdrop-filter: blur(var(--finlia-blur)) saturate(160%);

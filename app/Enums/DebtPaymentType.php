@@ -6,6 +6,14 @@ namespace App\Enums;
 
 /**
  * Naturaleza de un pago de deuda (Épica 6).
+ *
+ * Las etiquetas hablan el mismo idioma que el formulario de la deuda tras
+ * ADR-0022: allí el campo obligatorio se llama «cuota mensual», así que un
+ * pago de esa cantidad es una «cuota mensual», no una «cuota pactada» —
+ * nombre que desapareció con el renombrado.
+ *
+ * Los VALORES del enum no cambian (`scheduled` sigue siendo `scheduled`):
+ * renombrarlos obligaría a migrar los pagos ya registrados sin ganar nada.
  */
 enum DebtPaymentType: string
 {
@@ -17,7 +25,7 @@ enum DebtPaymentType: string
     {
         return match ($this) {
             self::Minimum => 'Pago mínimo',
-            self::Scheduled => 'Cuota pactada',
+            self::Scheduled => 'Cuota mensual',
             self::Extra => 'Abono extra',
         };
     }

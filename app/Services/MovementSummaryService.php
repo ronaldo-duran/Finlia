@@ -127,7 +127,12 @@ class MovementSummaryService
                 ->when($filters['from'] ?? null, fn ($q, $d) => $q->where('date', '>=', $d))
                 ->when($filters['to'] ?? null, fn ($q, $d) => $q->where('date', '<=', $d))
                 ->with(['category', 'account', 'user'])
+                // `date` es DATE (sin hora): sin desempate, los movimientos del
+                // mismo día quedan en un orden arbitrario y el recién creado
+                // puede caerse del LIMIT. created_at sí lleva hora.
                 ->orderByDesc('date')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->take($limit)
                 ->get()
                 ->each(fn (Income $i) => $movements->push($this->normalize($i, 'income')));
@@ -142,12 +147,32 @@ class MovementSummaryService
                 ->when($filters['to'] ?? null, fn ($q, $d) => $q->where('date', '<=', $d))
                 ->with(['category', 'account', 'user'])
                 ->orderByDesc('date')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->take($limit)
                 ->get()
                 ->each(fn (Expense $e) => $movements->push($this->normalize($e, 'expense')));
         }
 
-        return $movements->sortByDesc(fn (array $m) => $m['date']->getTimestamp())->values();
+        // Se toman $limit de cada tabla: al mezclarlas hay que reordenar con el
+        // mismo criterio y recortar otra vez, o el llamador recibe el doble.
+        return $movements
+            ->sortByDesc(fn (array $m) => $this->sortKey($m))
+            ->take($limit)
+            ->values();
+    }
+
+    /**
+     * Clave de orden de un movimiento: día, luego hora de registro, luego id.
+     *
+     * Se compone como cadena de ancho fijo para que la comparación sea
+     * lexicográfica y equivalga a ordenar por las tres columnas.
+     */
+    private function sortKey(array $m): string
+    {
+        return $m['date']->format('Ymd')
+            .str_pad((string) $m['registered_at']?->getTimestamp(), 12, '0', STR_PAD_LEFT)
+            .str_pad((string) $m['id'], 12, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -160,6 +185,8 @@ class MovementSummaryService
             'id' => $m->id,
             'amount' => (float) $m->amount,
             'date' => $m->date,
+            // Hora real de registro: `date` no la tiene (columna DATE).
+            'registered_at' => $m->created_at,
             'description' => $m->description,
             'category_name' => $m->category?->name ?? 'Sin categoría',
             'category_color' => $m->category?->color,

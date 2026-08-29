@@ -58,7 +58,7 @@ class StoreDebtPaymentRequest extends FormRequest
             'amount.min' => 'El pago debe ser mayor que cero.',
             'date.required' => 'Indica la fecha del pago.',
             'date.before_or_equal' => 'No se pueden registrar pagos con fecha futura.',
-            'type.required' => 'Indica si fue pago mínimo, cuota pactada o abono extra.',
+            'type.required' => 'Indica si fue el pago mínimo, la cuota mensual o un abono extra.',
         ];
     }
 

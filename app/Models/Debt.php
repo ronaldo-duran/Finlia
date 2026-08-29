@@ -25,8 +25,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 #[Fillable([
     'name', 'institution', 'type', 'original_amount', 'interest_rate',
-    'interest_rate_type', 'minimum_payment', 'scheduled_payment', 'due_day',
-    'start_date', 'end_date', 'status', 'notes', 'account_id',
+    'interest_rate_type', 'minimum_payment', 'planned_payment', 'term_months',
+    'due_day', 'start_date', 'status', 'notes', 'account_id',
 ])]
 class Debt extends Model
 {
@@ -37,7 +37,8 @@ class Debt extends Model
 
     /**
      * household_id NO es fillable: lo asigna el controlador desde el hogar
-     * activo. current_balance tampoco: es derivado (ADR-0020).
+     * activo. current_balance tampoco: es derivado (ADR-0020), ni end_date,
+     * que se calcula desde start_date + term_months (ADR-0022).
      */
     protected function casts(): array
     {
@@ -46,7 +47,8 @@ class Debt extends Model
             'current_balance' => 'decimal:2',
             'interest_rate' => 'decimal:3',
             'minimum_payment' => 'decimal:2',
-            'scheduled_payment' => 'decimal:2',
+            'planned_payment' => 'decimal:2',
+            'term_months' => 'integer',
             'type' => DebtType::class,
             'status' => DebtStatus::class,
             'interest_rate_type' => InterestRateType::class,
@@ -111,9 +113,26 @@ class Debt extends Model
         return round(max(0.0, min(100.0, $paid / $original * 100)), 1);
     }
 
-    /** La cuota que el hogar se comprometió a pagar cada mes. */
+    /**
+     * Lo que el hogar va a sacar del bolsillo cada mes por esta deuda.
+     *
+     * Es lo que el usuario PLANEA pagar; si no ha dicho nada, la cuota mínima
+     * que exige la entidad. Se usa tanto para el dinero comprometido como para
+     * la proyección: pagar de más acorta la deuda y reduce lo disponible, y
+     * ambas cosas deben reflejarlo (ADR-0022).
+     */
     public function monthlyCommitment(): float
     {
-        return (float) ($this->scheduled_payment ?? $this->minimum_payment ?? 0);
+        return (float) ($this->planned_payment ?? $this->minimum_payment ?? 0);
+    }
+
+    /**
+     * ¿El usuario decidió pagar por encima del mínimo exigido?
+     */
+    public function paysAboveMinimum(): bool
+    {
+        return $this->minimum_payment !== null
+            && $this->planned_payment !== null
+            && (float) $this->planned_payment > (float) $this->minimum_payment;
     }
 }

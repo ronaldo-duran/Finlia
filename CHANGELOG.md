@@ -12,6 +12,117 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.11.0] - 2026-08-31 — El aviso de estimación se puede dar por leído
+
+### Añadido
+- **El aviso de deudas se puede descartar, pero no desaparece: se reduce a una línea**
+  ([ADR-0024](docs/DECISIONS.md#adr-0024)). En móvil ocupaba media pantalla en cada visita, y un
+  aviso que se ve siempre deja de leerse. Ahora la primera vez sale completo con «Entendido, no
+  mostrar de nuevo» y a partir de ahí queda un recordatorio discreto que **sigue junto a las
+  cifras**: que la advertencia se esfume del todo es el escenario que en una app de finanzas paga
+  el usuario con su dinero.
+- **Mecanismo genérico de avisos leídos** (`user_acknowledgements`), por clave y no por columna:
+  las metas de ahorro y los reportes traerán advertencias parecidas y lo reutilizan sin tocar
+  `users`. La constancia va en el servidor, así que persiste entre dispositivos, sobrevive a un
+  borrado de datos de navegación y queda con fecha.
+
+### Seguridad
+- La clave del aviso llega en la URL y se valida contra un **enum cerrado**: una clave inventada
+  es un 404, no una fila basura en la tabla.
+- El acuse es siempre del usuario autenticado; el `user_id` no sale nunca de la petición, así que
+  no hay forma de marcar el aviso de otra persona. Cubierto con test.
+- Funciona sin JavaScript: es un formulario normal con `@csrf`.
+
+## [0.10.1] - 2026-08-30 — Aviso de estimación y ancho de la barra lateral
+
+### Añadido
+- **Aviso visible de que las cifras de deuda son aproximadas**, en las tres pantallas donde el
+  usuario lee un número: al registrar, en el panel y en el detalle. Nuevo componente
+  `<x-debt-disclaimer />`, para que el texto viva en un solo sitio. Sustituye al pie de página en
+  gris que solo estaba en el panel y al inciso escondido dentro de la proyección: en una app de
+  finanzas, confundir una estimación con un estado de cuenta lo paga el usuario con su dinero.
+
+### Corregido
+- Al registrar un pago, el tipo «Cuota pactada» pasa a llamarse **«Cuota mensual»**, que es como
+  se llama el campo en el formulario de la deuda desde la 0.9.0. El valor guardado (`scheduled`)
+  no cambia: renombrar la etiqueta no obliga a migrar los pagos ya registrados.
+- **La barra lateral se encogía según el contenido de la página** (132 px en el panel de deudas,
+  201 en presupuestos, 230 en el panel, frente a los 264 previstos), partiendo los rótulos en dos
+  líneas. Le faltaba `flex-shrink: 0`: como flex item, `width` no impide que el hermano la
+  comprima. Bug preexistente, no introducido por las deudas; ahora mide 264 px en todas las
+  pantallas y en móvil sigue siendo un offcanvas oculto.
+- El detalle de deuda sugería «añade el pago mínimo o la cuota pactada», nombres que dejaron de
+  existir en la 0.9.0.
+
+## [0.10.0] - 2026-08-30 — El alta de deudas, como un simulador de crédito
+
+### Cambiado
+- **Registrar una deuda se mueve a su propia pantalla** con un botón en la cabecera del panel
+  (`w-100 w-sm-auto`: ancho completo en móvil, botón normal en escritorio). Adquirir deuda es
+  puntual y no tenía sentido que el formulario ocupara media pantalla siempre ([ADR-0023](docs/DECISIONS.md#adr-0023)).
+- **El formulario funciona como un simulador de crédito**: declaras monto, tasa y número de
+  cuotas, y la aplicación calcula **cuota mensual**, **fecha de fin** e **intereses totales**
+  mientras escribes. Es el orden en que lo pide cualquier banco, y el inverso del anterior.
+- **La cuota se muestra calculada y bloqueada**, con un interruptor «Mi entidad cobra otra cuota»
+  para ajustarla cuando hay seguros o cuota de manejo de por medio.
+- Los campos de dinero pasan a `data-money-input` (punto de miles colombiano), como manda
+  `docs/UI_DESIGN.md`; antes usaban `type="number"`.
+
+### Corregido
+- **Se podía registrar una deuda imposible.** Con 10.000.000 en 120 cuotas y un plan de 20.000 al
+  mes la aplicación guardaba sin protestar y luego calculaba, con razón, 500 meses. Ahora se
+  valida **en el servidor** que la cuota cubra los intereses y baste para el plazo pactado, y el
+  mensaje dice cuánto haría falta (83.333,34 en ese caso), no solo que está mal.
+- **La tasa anual se interpretaba como nominal.** Se dividía entre 12 cuando en Colombia el
+  crédito se cotiza en **efectiva anual**: la mensual equivalente es `(1+EA)^(1/12)−1`. Con
+  28,5 % E.A. se calculaba 2,375 % mensual en vez del 2,114 % real, sobreestimando los intereses.
+- **El simulador y la proyección podían discrepar en un mes** por redondeo: la cuota se redondeaba
+  al céntimo más cercano y se quedaba corta. Ahora se redondea hacia arriba, como hacen los bancos,
+  y pagar la cuota calculada salda la deuda en el plazo exacto (verificado de 36 a 240 cuotas).
+- Los datos de demostración tenían una cuota mínima incoherente con su monto y plazo. Ahora la
+  deriva el Service, así que el seeder no puede generar una deuda imposible.
+
+### Seguridad
+- La confirmación de borrado pasa a `data-confirm`, el mecanismo que ya existía en `app.js` para
+  no meter datos del usuario dentro de JavaScript en línea. Sustituye al parche con `@js()` de la
+  0.8.2 y elimina el JS en línea por completo; el test de regresión ahora comprueba que **ningún**
+  manejador en línea lleva datos del usuario.
+
+## [0.9.0] - 2026-08-30 — Correcciones de uso y plazo de las deudas
+
+### Corregido
+- **«Balance del mes» no mostraba icono**: `bi-scale` no existe en Bootstrap Icons, y un `bi-*`
+  mal escrito no da error, simplemente no pinta nada. Se usa `bi-plus-slash-minus`. Un barrido
+  de los 2078 iconos del paquete confirma que era el único roto, y ahora hay un test que lo
+  comprueba en cada ejecución.
+- **El mes de la proyección de deuda salía en inglés**: `translatedFormat` usa el locale
+  **global** de Carbon, que su service provider sincroniza con `APP_LOCALE`. Con `APP_LOCALE=en`
+  —lo que trae la plantilla de Laravel— se veía «December de 2028» aunque el resto de la interfaz
+  estuviera en español, porque esa está escrita a mano en Blade. Se fija el locale en la instancia,
+  como ya hacían los otros cinco sitios del repo que formatean fechas.
+- **Los últimos movimientos se ordenaban de forma arbitraria y perdían registros.** La columna
+  `date` es DATE, sin hora, y el orden era `orderByDesc('date')` a secas: todos los movimientos
+  del mismo día empatan y su orden queda a criterio del motor. Como el LIMIT se aplica sobre ese
+  orden, un movimiento recién creado —el de «marcar pagado» de un recurrente, o un pago de deuda—
+  podía **no aparecer**. Ahora se desempata por `created_at` y luego por `id`.
+- El mismo método tomaba N movimientos de cada tabla y las mezclaba sin recortar: el panel pedía
+  6 y recibía hasta 12.
+
+### Cambiado
+- **La deuda se pacta en cuotas, no en una fecha** ([ADR-0022](docs/DECISIONS.md#adr-0022)):
+  `end_date` deja de teclearse y pasa a derivarse de `start_date + term_months`. Cada tipo tiene
+  su tope de cuotas (tarjeta 100, vehículo 96, hipotecario 480, resto 120), pensados para atajar
+  errores de dedo, no como límites legales.
+- **Nuevo tipo de deuda: crédito hipotecario.** Su plazo no cabía en ningún tipo existente.
+- **`scheduled_payment` pasa a `planned_payment`**, y los dos campos se explican por lo que son:
+  *cuota mínima* es lo que **exige la entidad**, *lo que planeas pagar* es lo que **tú decides**
+  (vacío = solo el mínimo). Se valida que el plan nunca quede por debajo del mínimo. El
+  comportamiento no cambia: lo que sale del bolsillo cada mes ya era `plan ?? mínimo`.
+
+### Seguridad
+- `type[]=x` en el alta de deuda habría devuelto 500 por el mismo cast inseguro que se corrigió
+  en 0.8.2 para `?estrategia[]=`. Se comprueba el tipo antes de resolver el enum, con test.
+
 ## [0.8.2] - 2026-08-29 — Revisión de seguridad de la Épica 6
 
 ### Seguridad

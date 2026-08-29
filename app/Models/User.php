@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\AcknowledgementKey;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -30,6 +31,41 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Avisos que el usuario ya dio por leídos (ADR-0024).
+     */
+    public function acknowledgements(): HasMany
+    {
+        return $this->hasMany(UserAcknowledgement::class);
+    }
+
+    /**
+     * ¿Ya leyó este aviso? Usa la relación si está cargada, para no lanzar
+     * una consulta por cada componente que pregunte en la misma página.
+     */
+    public function hasAcknowledged(AcknowledgementKey $key): bool
+    {
+        if ($this->relationLoaded('acknowledgements')) {
+            return $this->acknowledgements->contains('key', $key);
+        }
+
+        return $this->acknowledgements()->where('key', $key->value)->exists();
+    }
+
+    /**
+     * Marca un aviso como leído. Idempotente: pulsar dos veces «Entendido»
+     * no crea dos filas ni mueve la fecha original.
+     */
+    public function acknowledge(AcknowledgementKey $key): void
+    {
+        $this->acknowledgements()->firstOrCreate(
+            ['key' => $key->value],
+            ['acknowledged_at' => now()],
+        );
+
+        $this->unsetRelation('acknowledgements');
     }
 
     /**
