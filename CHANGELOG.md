@@ -12,6 +12,25 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.8.2] - 2026-08-29 — Revisión de seguridad de la Épica 6
+
+### Seguridad
+- **XSS almacenado en el detalle de deuda (introducido en 0.8.0).** El nombre de la deuda se
+  interpolaba con `{{ }}` dentro del `onsubmit` del formulario de borrado. En un manejador en
+  línea el navegador **decodifica las entidades HTML antes de compilar el JavaScript**, así que
+  el `&#039;` del escape volvía a ser una comilla y cerraba el literal: un nombre como
+  `x');alert(1);//` ejecutaba código en el navegador de cualquier miembro del hogar que pulsara
+  «Eliminar deuda». Ahora se usa `@js()` (`Js::from()`), que escapa para contexto JavaScript.
+  El test de regresión decodifica el atributo igual que hace el navegador y se ha comprobado
+  que **falla** si se revierte a `{{ }}`.
+- Se documenta la regla general en `docs/SECURITY.md` §5: `{{ }}` protege contexto HTML, no
+  contexto JS; para datos de usuario dentro de JavaScript, `@js()` o un atributo `data-*`.
+
+### Corregido
+- `?estrategia[]=x` en el panel de deuda devolvía **500**: `query()` devuelve un array y
+  castearlo a string emite un warning que Laravel convierte en excepción. Ahora se comprueba
+  el tipo y se cae a la estrategia por defecto.
+
 ## [0.8.1] - 2026-08-29 — El correo de recuperación, en español
 
 ### Corregido

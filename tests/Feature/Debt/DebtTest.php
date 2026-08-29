@@ -108,6 +108,18 @@ class DebtTest extends TestCase
             ->assertSee('nunca te pedirá el número completo', false);
     }
 
+    public function test_una_estrategia_manipulada_no_rompe_el_panel(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+        $this->debtFor($household);
+
+        foreach (['?estrategia[]=x', '?estrategia=inventada', '?estrategia='] as $query) {
+            $this->actingAs($owner)
+                ->get(route('debts.index').$query)
+                ->assertOk(); // cae a la estrategia por defecto, no a un 500
+        }
+    }
+
     // ===== CRUD =====
 
     public function test_usuario_puede_registrar_una_deuda(): void
@@ -368,6 +380,28 @@ class DebtTest extends TestCase
         foreach (['card_number', 'cvv', 'pin', 'number'] as $forbidden) {
             $this->assertNotContains($forbidden, $columns, "La tabla credit_cards no debe tener la columna $forbidden.");
         }
+    }
+
+    public function test_el_nombre_de_la_deuda_no_puede_escapar_del_javascript_en_linea(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+        // Carga clásica de XSS en contexto JS: cierra el literal y ejecuta.
+        $debt = $this->debtFor($household, ['name' => "x');alert(1);//"]);
+
+        $html = $this->actingAs($owner)->get(route('debts.show', $debt))->getContent();
+
+        // Solo importa el contexto JavaScript: en HTML (título, value del
+        // formulario) `&#039;` es correcto y seguro.
+        preg_match('/onsubmit="([^"]*)"/', $html, $m);
+        $this->assertNotEmpty($m, 'No se encontró el manejador onsubmit.');
+        $handler = html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
+
+        // `{{ }}` escaparía la comilla como `&#039;`, pero el navegador
+        // DECODIFICA las entidades antes de compilar el manejador, así que
+        // volvería a ser `'` y cerraría el literal. Se comprueba sobre el
+        // manejador ya decodificado, que es lo que el navegador ejecuta.
+        $this->assertStringNotContainsString("');alert(1)", $handler);
+        $this->assertStringContainsString('\u0027', $handler);
     }
 
     // ===== Aislamiento entre hogares (amenaza #1) =====

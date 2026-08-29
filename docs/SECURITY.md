@@ -119,6 +119,10 @@ Cubrir `index`, `show`, `store` (con `household_id` forzado), `update`, `destroy
 ## 5. XSS · CSRF · SQLi
 
 - **XSS**: render con `{{ }}` (auto-escape). Evitar `{!! !!}`; si es imprescindible, solo con contenido generado por el sistema, nunca por input. `Content-Type` correcto en endpoints.
+- **XSS en contexto JavaScript — `{{ }}` NO basta.** Dentro de un manejador en línea (`onclick`, `onsubmit`…) el navegador **decodifica las entidades HTML antes de compilar el JS**, así que el `&#039;` con el que `{{ }}` escapa una comilla vuelve a ser `'` y cierra el literal de cadena. Un nombre de deuda como `x');alert(1);//` ejecutaba código (corregido en 0.8.2).
+  - Para interpolar datos de usuario en JavaScript se usa **`@js($valor)`** (`Illuminate\Support\Js::from()`), que emite JSON escapado para ese contexto.
+  - Mejor aún: evitar el JS en línea y pasar el dato por un atributo `data-*` leído desde un listener.
+  - `{{ }}` sigue siendo lo correcto en contexto HTML (texto, `value`, `title`): ahí `&#039;` es seguro.
 - **CSRF**: `@csrf` en todos los forms; métodos `POST/PUT/PATCH/DELETE` vía form o con header `X-CSRF-TOKEN`/`X-XSRF-TOKEN`. Laravel lo gestiona, pero no desactivarlo.
 - **SQLi**: Query Builder / Eloquent con bindings. **Nunca** `DB::raw`/`whereRaw` con concatenación de input; usar `?` y bindings.
 - **Cabeceras** (producción): HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` o CSP. Configurar vía `.htaccess` (Hostinger) o middleware.

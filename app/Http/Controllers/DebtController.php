@@ -38,7 +38,11 @@ class DebtController extends Controller
 
         $this->authorize('viewAny', Debt::class);
 
-        $strategy = DebtStrategy::tryFrom((string) $request->query('estrategia'))
+        // `?estrategia[]=x` haría que query() devuelva un array: castearlo a
+        // string emite un warning que Laravel convierte en 500. Se comprueba
+        // el tipo antes de mirar el valor.
+        $requested = $request->query('estrategia');
+        $strategy = (is_string($requested) ? DebtStrategy::tryFrom($requested) : null)
             ?? DebtStrategy::Avalanche;
 
         $ordered = $this->debts->orderByStrategy($household->id, $strategy);

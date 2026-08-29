@@ -304,9 +304,13 @@
                 </div>
             </div>
 
-            {{-- Eliminar --}}
+            {{-- Eliminar.
+                 El nombre va con @js (Js::from), no con {{ }}: dentro de un
+                 manejador en línea el navegador DECODIFICA las entidades HTML
+                 antes de compilar el JS, así que un `&#039;` vuelve a ser una
+                 comilla y escapa del literal. {{ }} protege HTML, no JS. --}}
             <form method="POST" action="{{ route('debts.destroy', $debt) }}"
-                  onsubmit="return confirm('¿Eliminar la deuda «{{ $debt->name }}»?');">
+                  onsubmit="return confirm('¿Eliminar la deuda «' + @js($debt->name) + '»?');">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-sm btn-outline-danger w-100">
