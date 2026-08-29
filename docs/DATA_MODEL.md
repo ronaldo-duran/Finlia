@@ -180,9 +180,9 @@ No es tabla. `summary(householdId, BudgetScope, ?referencia)` devuelve un array 
 ```
 ingresosEsperados = max(Σ expected_incomes activos × factor, ingresos registrados del período)
 comprometido      = presupuestoPendiente          (= max(total pendiente, Σ categorías pendientes))
-                  + gastosFijos + recurrentes     (0.0 — Épica 5)
+                  + gastosFijos + recurrentes     (ocurrencias en la ventana — Épica 5)
                   + obligacionesDeuda             (cuotas pendientes — Épica 6)
-                  + ahorroProgramado              (0.0 — Épica 7)
+                  + ahorroProgramado              (aportes de metas activas, tope faltante — Épica 7)
 
 disponible = ingresosEsperados − gastado − comprometido     ← "puedes gastar"
 libre      = balanceActual − comprometido
@@ -320,30 +320,39 @@ Cada refinanciación fija una **nueva línea base** del saldo (ADR-0020): a part
 
 ## Épica 7 — Metas de ahorro
 
+> 🟢 **Implementado** (Épica 7). Ver [ADR-0025](DECISIONS.md#adr-0025): el ahorrado es
+> derivado (Σ aportes − Σ retiros, espejo de ADR-0020), los movimientos **no** mueven
+> cuentas ni crean gastos (la transferencia real llega en la Épica 10) y el aporte
+> mensual programado (`monthly_commitment`) alimenta el seam `savings` del dinero
+> disponible (ADR-0014) solo para metas activas.
+
 ### `savings_goals`
 | Campo | Tipo | Notas |
 |---|---|---|
-| id, household_id | | |
+| id, household_id | | FK cascade |
 | name | string | "Fondo de emergencia" |
 | target_amount | decimal(15,2) | |
-| current_amount | decimal(15,2) | |
-| target_date | date, null | |
+| current_amount | decimal(15,2) | **derivado**: recalculado en cada escritura de movimiento |
+| target_date | date, null | pasada → la meta se marca "vencida" en la UI |
+| monthly_commitment | decimal(15,2), null | aporte mensual programado → seam `savings` |
 | priority | string, null | low, medium, high |
 | status | string | active, paused, completed, archived |
 | is_emergency_fund | boolean | la marca para cálculos futuros |
 | notes | text, null | |
 | timestamps | | |
+| **Índices** | | `(household_id, status)`, `(household_id, target_date)` |
 
 ### `savings_goal_contributions`
 | Campo | Tipo | Notas |
 |---|---|---|
 | id, savings_goal_id | FK (cascade) | |
-| household_id | | |
-| amount | decimal(15,2) | positivo aporte, negativo retiro (o `type`) |
+| household_id | | denormalizado para aislar por hogar sin joins |
+| amount | decimal(15,2) | siempre positivo; la dirección la da `type` |
 | type | string | deposit, withdrawal |
-| date | date | |
+| date | date | ≤ hoy: no se registra intención futura como dinero puesto |
 | notes | text, null | |
 | timestamps | | |
+| **Índices** | | `(household_id, date)`, `(savings_goal_id, date)` |
 
 ---
 

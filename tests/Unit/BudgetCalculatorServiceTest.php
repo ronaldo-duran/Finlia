@@ -125,12 +125,12 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->assertSame(1000000.0, $summary['available']);
     }
 
-    public function test_los_componentes_de_epicas_futuras_estan_en_cero(): void
+    public function test_sin_obligaciones_configuradas_los_seams_estan_en_cero(): void
     {
         $summary = $this->summary();
 
-        // Épicas 6-7. Los de la Épica 5 (fijos/recurrentes) ya son reales:
-        // sin recurrentes configurados también son cero (caso vacío).
+        // Épicas 5-7: sin fijos, recurrentes, deudas ni metas configuradas,
+        // el comprometido es cero (caso vacío).
         $this->assertSame(0.0, $summary['committed']['fixed_expenses']);
         $this->assertSame(0.0, $summary['committed']['recurring']);
         $this->assertSame(0.0, $summary['committed']['debt']);

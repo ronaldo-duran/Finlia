@@ -23,6 +23,7 @@ use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MovementsController;
 use App\Http\Controllers\RecurringExpenseController;
+use App\Http\Controllers\SavingsGoalController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -207,4 +208,38 @@ Route::middleware('auth')->group(function () {
         ->name('accounts.credit-card.update');
     Route::delete('cuentas/{account}/tarjeta', [CreditCardController::class, 'destroy'])
         ->name('accounts.credit-card.destroy');
+
+    // ---- Épica 7: metas de ahorro ----
+    // URI en español ('metas'), nombres de ruta 'savings-goals.*'.
+    Route::get('metas', [SavingsGoalController::class, 'index'])
+        ->name('savings-goals.index');
+    Route::get('metas/registrar', [SavingsGoalController::class, 'create'])
+        ->name('savings-goals.create');
+    Route::post('metas', [SavingsGoalController::class, 'store'])
+        ->name('savings-goals.store');
+    Route::get('metas/{savingsGoal}', [SavingsGoalController::class, 'show'])
+        ->name('savings-goals.show');
+    Route::get('metas/{savingsGoal}/editar', [SavingsGoalController::class, 'edit'])
+        ->name('savings-goals.edit');
+    Route::put('metas/{savingsGoal}', [SavingsGoalController::class, 'update'])
+        ->name('savings-goals.update');
+    Route::delete('metas/{savingsGoal}', [SavingsGoalController::class, 'destroy'])
+        ->name('savings-goals.destroy');
+
+    // Aportes y retiros (no mueven cuentas: progreso de la meta, ADR-0025).
+    Route::post('metas/{savingsGoal}/aportes', [SavingsGoalController::class, 'contribute'])
+        ->name('savings-goals.contributions.store');
+    Route::delete('metas/{savingsGoal}/aportes/{contribution}', [SavingsGoalController::class, 'destroyContribution'])
+        ->name('savings-goals.contributions.destroy');
+
+    // Estados como acciones dedicadas (no un select en el formulario):
+    // pausar, completar y archivar son decisiones puntuales.
+    Route::post('metas/{savingsGoal}/pausar', [SavingsGoalController::class, 'pause'])
+        ->name('savings-goals.pause');
+    Route::post('metas/{savingsGoal}/reactivar', [SavingsGoalController::class, 'resume'])
+        ->name('savings-goals.resume');
+    Route::post('metas/{savingsGoal}/completar', [SavingsGoalController::class, 'complete'])
+        ->name('savings-goals.complete');
+    Route::post('metas/{savingsGoal}/archivar', [SavingsGoalController::class, 'archive'])
+        ->name('savings-goals.archive');
 });

@@ -37,6 +37,7 @@ class BudgetCalculatorService
     public function __construct(
         private readonly RecurringExpenseService $recurringExpenses,
         private readonly DebtService $debts,
+        private readonly SavingsGoalService $savingsGoals,
     ) {}
 
     /**
@@ -121,12 +122,18 @@ class BudgetCalculatorService
         // figura como gasto (ADR-0021): contarlas aquí lo restaría dos veces.
         $debtCommitted = $this->debts->committedInRange($householdId, $from, $to);
 
+        // Épica 7: aporte mensual programado de las metas activas. Pausar una
+        // meta es exactamente dejar de comprometer ese dinero, y cada meta
+        // cuenta como máximo lo que le falte (la última cuota no pasa del
+        // objetivo).
+        $savingsCommitted = $this->savingsGoals->committedMonthly($householdId);
+
         $committed = [
             'budget' => $this->money($committedBudget),
             'fixed_expenses' => $this->money($recurringCommitted['fixed']),  // Épica 5 — arriendo, servicios…
             'recurring' => $this->money($recurringCommitted['recurring']),   // Épica 5 — SOAT, matrícula…
             'debt' => $this->money($debtCommitted),                          // Épica 6 — cuotas pendientes
-            'savings' => 0.0,                                                 // Épica 7 — ahorro programado
+            'savings' => $this->money($savingsCommitted),                    // Épica 7 — ahorro programado
         ];
         $committedTotal = array_sum($committed);
         $committed['total'] = $this->money($committedTotal);

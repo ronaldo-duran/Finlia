@@ -12,7 +12,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 4 | Presupuestos y dinero disponible | 🟢 | 3 |
 | 5 | Gastos recurrentes y obligaciones futuras | 🟢 | 3, 4 |
 | 6 | Deudas y tarjetas de crédito | 🟢 | 2, 3 |
-| 7 | Metas de ahorro | 🔴 | 3 |
+| 7 | Metas de ahorro | 🟢 | 3 |
 | 8 | Dashboard y reportes financieros | 🔴 | 3, 4, 5, 6, 7 |
 | 9 | Recordatorios y notificaciones | 🔴 | 5, 6, 7 |
 | 10 | UX mobile y PWA | 🟡 | 3 (y resto) |
@@ -45,8 +45,8 @@ Dos decisiones propias: el saldo es **derivado** de una línea base más los pag
 
 > 🔒 Nunca se almacena número completo de tarjeta, CVV ni PIN: esas columnas no existen, y un test lo verifica contra el esquema.
 
-### Épica 7 — Metas de ahorro
-`savings_goals` + `savings_goal_contributions`. Aportes/retiros, progreso, aporte mensual recomendado, marca `emergency_fund`.
+### Épica 7 — Metas de ahorro ✅
+`savings_goals` + `savings_goal_contributions` ([ADR-0025](DECISIONS.md#adr-0025)). Panel con resumen, filtro por estado (vigentes/logradas/archivadas) y alerta de metas vencidas; detalle con progreso, **aporte mensual recomendado** (estimación informativa) e historial de aportes y retiros; prioridad, marca `emergency_fund`, pausar/reactivar/completar/archivar. El ahorrado es **derivado** del historial (Σ aportes − Σ retiros) y al llegar al objetivo la meta se marca lograda sola. Los movimientos **no mueven cuentas** (la transferencia real llega en la Épica 10) y el aporte mensual programado rellena el término `savings` del dinero disponible ([ADR-0014](DECISIONS.md#adr-0014)). Tarjeta de progreso en el dashboard.
 
 ### Épica 8 — Dashboard y reportes
 Resumen (ingresos, gastos, balance, disponible, deuda, ahorro, metas), 5 gráficos Chart.js, comparación de períodos, insights sencillos, export CSV (preparar PDF).

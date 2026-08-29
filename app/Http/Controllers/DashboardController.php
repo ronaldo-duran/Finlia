@@ -8,6 +8,7 @@ use App\Enums\BudgetScope;
 use App\Services\BudgetCalculatorService;
 use App\Services\MovementSummaryService;
 use App\Services\RecurringExpenseService;
+use App\Services\SavingsGoalService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ class DashboardController extends Controller
         private readonly MovementSummaryService $summary,
         private readonly BudgetCalculatorService $budgets,
         private readonly RecurringExpenseService $recurring,
+        private readonly SavingsGoalService $savingsGoals,
     ) {}
 
     /**
@@ -69,6 +71,8 @@ class DashboardController extends Controller
             'budgetSummary' => $this->budgets->summary($householdId, BudgetScope::Month),
             // Épica 5: avisos de obligaciones vencidas o próximas a vencer.
             'recurringAlerts' => $this->recurring->alerts($householdId),
+            // Épica 7: progreso de las metas de ahorro vigentes.
+            'savingsGoals' => $this->savingsGoals->outstandingGoals($householdId),
             'totals' => $totals,
             'totalBalance' => $totalBalance,
             'byCategory' => $byCategory,

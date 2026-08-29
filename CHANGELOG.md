@@ -12,6 +12,47 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.12.0] - 2026-08-31 — Metas de ahorro (Épica 7)
+
+### Añadido
+- **Panel de metas de ahorro** (`/metas`) con resumen del hogar (total ahorrado, objetivo,
+  aporte mensual programado), filtro por estado —vigentes, logradas, archivadas— y aviso de
+  metas vencidas. Alta con prioridad, fecha objetivo opcional (una meta sin fecha es abierta,
+  como el fondo de emergencia) y marca de **fondo de emergencia**.
+- **Detalle con historial**: progreso hacia el objetivo, aporte o retiro puntual con nota, y
+  **aporte mensual recomendado** — lo que falta repartido en los meses que quedan — marcado
+  siempre como estimación (misma honestidad que las proyecciones de deuda).
+- **Acciones de estado**: pausar, reactivar, marcar lograda y archivar, cada una con su
+  propósito (pausar deja de comprometer el aporte; archivar saca la meta del panel sin perder
+  el historial). Nada de cambiar el estado con un select del formulario.
+- **El ahorro entra al dinero disponible** ([ADR-0025](docs/DECISIONS.md#adr-0025)): el
+  «aporte mensual que destinarás» de cada meta activa suma al término `savings` del
+  comprometido ([ADR-0014](docs/DECISIONS.md#adr-0014)), tope el faltante de la meta — la
+  última cuota nunca supera lo que falta. Pausar una meta libera ese dinero al instante.
+- **Tarjeta de metas en el dashboard** con el progreso de las tres metas más urgentes
+  (prioridad alta primero, luego fecha objetivo).
+
+### Decisiones ([ADR-0025](docs/DECISIONS.md#adr-0025))
+- **Lo ahorrado no se teclea**: es derivado del historial (Σ aportes − Σ retiros), como el
+  saldo de las deudas ([ADR-0020](docs/DECISIONS.md#adr-0020)). Lo que ya tenías se registra
+  como aporte inicial. Al cubrir el objetivo la meta pasa a lograda sola, y si borras el
+  movimiento vuelve a activa.
+- **Registrar un aporte no mueve cuentas ni crea gastos**: ahorrar no es gastar, y contar el
+  aporte como salida haría bajar el disponible dos veces. La transferencia real entre cuentas
+  llega con el botón "+" de la Épica 10.
+- Los retiros no pueden superar lo ahorrado, y las metas logradas o archivadas no aceptan
+  movimientos — con mensajes que dicen el estado, no un «dato inválido».
+
+### Seguridad
+- Aislamiento por hogar cubierto con Policy y test: otro hogar recibe **403** al ver, editar,
+  borrar o aportar a una meta ajena; `household_id` no es asignable en masa y un intento de
+  suplantarlo al crear se ignora (test incluido).
+- **La autorización corre antes de validar** en el registro de aportes (mismo patrón que
+  gastos/ingresos): las reglas que dependen de la meta incrustan su estado y su saldo en los
+  mensajes de error, así que un usuario ajeno recibe 403 sin que la validación llegue a
+  revelar cifras de otro hogar — detectado en revisión de seguridad y cubierto con test.
+- Dinero en `DECIMAL(15,2)` y fechas de movimiento acotadas a hoy hacia atrás.
+
 ## [0.11.0] - 2026-08-31 — El aviso de estimación se puede dar por leído
 
 ### Añadido

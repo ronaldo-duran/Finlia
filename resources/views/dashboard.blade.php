@@ -145,6 +145,36 @@
         </div>
     </div>
 
+    {{-- Metas de ahorro: progreso visual (Épica 7) --}}
+    @if ($savingsGoals->isNotEmpty())
+        <div class="card border-0 mb-4">
+            <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center fw-semibold">
+                <span><i class="bi bi-piggy-bank me-1"></i> Metas de ahorro</span>
+                <a href="{{ route('savings-goals.index') }}" class="btn btn-sm btn-outline-secondary">Ver todas</a>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @foreach ($savingsGoals->take(3) as $goal)
+                        <div class="col-12 col-md-4">
+                            <div class="small fw-semibold text-truncate">
+                                <i class="bi {{ $goal->is_emergency_fund ? 'bi-shield-check' : 'bi-flag' }} me-1"></i>{{ $goal->name }}
+                            </div>
+                            <div class="progress mt-1" style="height:.4rem" role="progressbar"
+                                 aria-label="Progreso de {{ $goal->name }}" aria-valuenow="{{ $goal->progressPercent() }}"
+                                 aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress-bar bg-success" style="width: {{ $goal->progressPercent() }}%"></div>
+                            </div>
+                            <div class="small text-muted mt-1">
+                                @money($goal->current_amount) de @money($goal->target_amount)
+                                ({{ str_replace('.', ',', (string) $goal->progressPercent()) }} %)
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Últimos movimientos --}}
     <div class="card border-0">
         <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center fw-semibold">
