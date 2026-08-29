@@ -12,6 +12,24 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.10.1] - 2026-08-30 — Aviso de estimación y ancho de la barra lateral
+
+### Añadido
+- **Aviso visible de que las cifras de deuda son aproximadas**, en las tres pantallas donde el
+  usuario lee un número: al registrar, en el panel y en el detalle. Nuevo componente
+  `<x-debt-disclaimer />`, para que el texto viva en un solo sitio. Sustituye al pie de página en
+  gris que solo estaba en el panel y al inciso escondido dentro de la proyección: en una app de
+  finanzas, confundir una estimación con un estado de cuenta lo paga el usuario con su dinero.
+
+### Corregido
+- **La barra lateral se encogía según el contenido de la página** (132 px en el panel de deudas,
+  201 en presupuestos, 230 en el panel, frente a los 264 previstos), partiendo los rótulos en dos
+  líneas. Le faltaba `flex-shrink: 0`: como flex item, `width` no impide que el hermano la
+  comprima. Bug preexistente, no introducido por las deudas; ahora mide 264 px en todas las
+  pantallas y en móvil sigue siendo un offcanvas oculto.
+- El detalle de deuda sugería «añade el pago mínimo o la cuota pactada», nombres que dejaron de
+  existir en la 0.9.0.
+
 ## [0.10.0] - 2026-08-30 — El alta de deudas, como un simulador de crédito
 
 ### Cambiado

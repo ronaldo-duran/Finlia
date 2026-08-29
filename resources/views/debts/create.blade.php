@@ -16,6 +16,8 @@
                 las calculamos nosotros.
             </p>
 
+            <x-debt-disclaimer />
+
             <div class="card border-0">
                 <div class="card-body">
                     <form method="POST" action="{{ route('debts.store') }}">

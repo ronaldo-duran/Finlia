@@ -724,6 +724,7 @@ La Épica 5 ya resolvió el caso gemelo: "Marcar pagado" en un gasto recurrente 
 - Los campos de dinero pasan a `data-money-input` (docs/UI_DESIGN.md); antes usaban `type="number"`, que no admite el punto de miles.
 - La confirmación de borrado pasa a `data-confirm`, el mecanismo que ya existía en `app.js` para no meter datos del usuario dentro de JavaScript en línea. Sustituye al parche con `@js()` de la 0.8.2 y elimina el JS en línea del todo.
 - La validación vive en el Form Request, así que crear deudas por Service (seeder, factories, futura API) sigue sin comprobarla. Es coherente con ADR-0010: validar es responsabilidad de la capa HTTP.
+- **Ninguna cifra se presenta como definitiva.** El componente `<x-debt-disclaimer />` avisa, en el alta, en el panel y en el detalle, de que cuota, intereses y fechas son estimaciones y de que cada entidad aplica sus propias reglas. No es letra pequeña al pie: es un bloque visible junto a los números, porque el error de leer una estimación como un estado de cuenta lo paga el usuario con su dinero. El interruptor «Mi entidad cobra otra cuota» refuerza lo mismo desde el otro lado: además de desbloquear el campo, recuerda que el banco cobra cosas que la fórmula no conoce.
 
 **Estado.** ACEPTADA — 2026-08-30, tras probar el alta de deudas. Implementada en `DebtCalculator`, `DebtService`, `StoreDebtRequest`, `debts/create`, `debts/_form` y el simulador de `resources/js/app.js`.
 

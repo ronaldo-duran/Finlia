@@ -67,6 +67,8 @@
         </div>
     </div>
 
+    <x-debt-disclaimer />
+
     {{-- Progreso y proyección --}}
     <div class="card border-0 mb-4"><div class="card-body">
         <div class="d-flex justify-content-between small mb-1">
@@ -86,7 +88,7 @@
                     <div>
                         @if ($commitment <= 0)
                             <strong>Sin cuota registrada</strong> no se puede estimar cuándo terminarías.
-                            Añade el pago mínimo o la cuota pactada con «Editar».
+                            Añade la cuota mensual con «Editar».
                         @else
                             Con esta cuota <strong>no se cubren los intereses</strong>: a este ritmo el saldo
                             no bajaría. Si puedes, sube la cuota o abona extra.
@@ -101,7 +103,6 @@
                         <strong class="text-body">{{ $projection['date']->locale('es')->isoFormat('MMMM [de] YYYY') }}</strong>
                         ({{ $projection['months'] }} {{ $projection['months'] === 1 ? 'mes' : 'meses' }}),
                         pagando cerca de <strong class="text-body">@money($projection['total_interest'])</strong> en intereses.
-                        <div class="mt-1"><em>Es una estimación</em>: no contempla cuotas de manejo, seguros, mora ni compras nuevas.</div>
                     </div>
                 </div>
             @endif

@@ -33,6 +33,10 @@
         <a href="{{ route('budgets.index') }}">cuánto puedes gastar</a>.
     </p>
 
+    @if ($summary['count'] > 0)
+        <x-debt-disclaimer />
+    @endif
+
     <div class="row g-3">
         <div class="col-12">
 
@@ -168,9 +172,4 @@
 
     </div>
 
-    <p class="text-muted small mt-4 mb-0">
-        <i class="bi bi-info-circle me-1"></i>
-        Las fechas de fin son <strong>estimaciones</strong>: suponen que mantienes la cuota
-        y no contemplan cuotas de manejo, seguros, mora ni compras nuevas.
-    </p>
 @endsection

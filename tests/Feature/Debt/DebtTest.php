@@ -90,7 +90,9 @@ class DebtTest extends TestCase
             ->assertSee('Crédito moto')
             ->assertSee('800.000,00')            // saldo tras el abono
             ->assertSee('Abono extra')           // historial
-            ->assertSee('Es una estimación', false); // la proyección se marca como tal
+            // El aviso de aproximación ya no se esconde dentro de la proyección:
+            // vive en su propio bloque, visible sobre las cifras.
+            ->assertSee('Los valores son aproximados');
     }
 
     public function test_el_detalle_de_una_cuenta_tarjeta_muestra_el_bloque_de_tarjeta(): void
@@ -438,6 +440,25 @@ class DebtTest extends TestCase
 
         // Si el simulador dice 36 cuotas, la proyección no puede decir otra cosa.
         $this->assertSame(36, app(DebtService::class)->projectPayoff($debt)['months']);
+    }
+
+    public function test_el_aviso_de_que_los_valores_son_aproximados_se_ve_en_las_tres_pantallas(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+        $debt = $this->debtFor($household, ['current_balance' => 1000000, 'planned_payment' => 100000]);
+
+        $pantallas = [
+            'alta' => route('debts.create'),
+            'panel' => route('debts.index'),
+            'detalle' => route('debts.show', $debt),
+        ];
+
+        foreach ($pantallas as $nombre => $url) {
+            $this->actingAs($owner)->get($url)
+                ->assertOk()
+                ->assertSee('Los valores son aproximados')
+                ->assertSee('Tu entidad puede aplicar otras reglas', false);
+        }
     }
 
     // ===== Pagos =====
