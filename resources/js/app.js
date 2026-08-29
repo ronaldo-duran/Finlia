@@ -128,3 +128,164 @@ document.addEventListener('submit', function (e) {
         e.preventDefault();
     }
 });
+
+/*
+|----------------------------------------------------------------------
+| Simulador de deuda (ADR-0023).
+|----------------------------------------------------------------------
+| Replica en el navegador la matemática de App\Services\DebtCalculator para
+| que el usuario vea la cuota y la fecha de fin mientras escribe. La verdad
+| sigue estando en el servidor: StoreDebtRequest valida la coherencia y
+| DebtService recalcula al guardar. Esto es comodidad, no control.
+*/
+(function () {
+    var form = document.querySelector('form [data-sim-amount]');
+    if (!form) return;
+    form = form.closest('form');
+
+    var $ = function (sel) { return form.querySelector(sel); };
+
+    var amount = $('[data-sim-amount]');
+    var rate = $('[data-sim-rate]');
+    var term = $('[data-sim-term]');
+    var installment = $('[data-sim-installment]');
+    var planned = $('[data-sim-planned]');
+    var adjust = $('[data-sim-adjust]');
+    var endOut = $('[data-sim-end]');
+    var interestOut = $('[data-sim-interest]');
+    var planHelp = $('[data-sim-plan-help]');
+    var termHelp = $('[data-term-help]');
+    var type = $('[data-debt-type]');
+
+    if (!amount || !term || !installment) return;
+
+    var limitsTag = document.querySelector('[data-debt-term-limits]');
+    var limits = limitsTag ? JSON.parse(limitsTag.textContent) : {};
+
+    var pesos = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+    var mesAno = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' });
+
+    function num(input) {
+        if (!input) return null;
+        var raw = input.hasAttribute('data-money-input')
+            ? window.FinliaMoney.parse(input.value)
+            : input.value;
+        var v = parseFloat(raw);
+
+        return isNaN(v) ? null : v;
+    }
+
+    // (1 + E.A.)^(1/12) − 1. Dividir entre 12 sería la convención nominal.
+    function tasaMensual(anual) {
+        if (!anual || anual <= 0) return 0;
+
+        return Math.pow(1 + anual / 100, 1 / 12) - 1;
+    }
+
+    function cuota(monto, anual, cuotas) {
+        if (!monto || monto <= 0 || !cuotas || cuotas < 1) return null;
+        var i = tasaMensual(anual);
+        var c = i <= 0 ? monto / cuotas : (monto * i) / (1 - Math.pow(1 + i, -cuotas));
+
+        // Hacia arriba al céntimo, igual que en PHP: si no, faltaría un mes.
+        return Math.ceil(c * 100) / 100;
+    }
+
+    function meses(saldo, anual, pago) {
+        if (!saldo || saldo <= 0 || !pago || pago <= 0) return null;
+        var i = tasaMensual(anual);
+        if (pago <= saldo * i) return null;
+
+        var n = 0, interes = 0;
+        while (saldo > 0.005 && n < 600) {
+            var delMes = Math.round(saldo * i * 100) / 100;
+            interes += delMes;
+            saldo = Math.round((saldo + delMes - pago) * 100) / 100;
+            n++;
+        }
+
+        return n >= 600 ? null : { meses: n, interes: interes };
+    }
+
+    function pintar() {
+        var monto = num(amount);
+        var anual = num(rate);
+        var cuotas = parseInt(term.value, 10) || null;
+        var teorica = cuota(monto, anual, cuotas);
+
+        // La cuota solo la escribe el simulador si el usuario no la ajustó.
+        if (teorica !== null && (!adjust || !adjust.checked)) {
+            installment.value = window.FinliaMoney.fromNumeric(teorica.toFixed(2));
+        }
+
+        var efectiva = num(installment);
+        var resultado = meses(monto, anual, efectiva);
+
+        if (resultado) {
+            var fin = new Date();
+            fin.setMonth(fin.getMonth() + resultado.meses);
+            endOut.textContent = mesAno.format(fin);
+            interestOut.textContent = anual > 0
+                ? 'Intereses: ' + pesos.format(resultado.interes)
+                : 'Sin intereses.';
+        } else {
+            endOut.textContent = '—';
+            interestOut.textContent = efectiva && monto
+                ? 'Con esa cuota la deuda no bajaría.'
+                : '';
+        }
+
+        // Qué ganas pagando de más.
+        var plan = num(planned);
+        if (plan && efectiva && plan > efectiva && resultado) {
+            var conPlan = meses(monto, anual, plan);
+            if (conPlan) {
+                var ahorro = resultado.interes - conPlan.interes;
+                planHelp.textContent =
+                    'Pagando ' + pesos.format(plan) + ' terminarías en ' + conPlan.meses +
+                    ' meses en vez de ' + resultado.meses +
+                    (ahorro > 1 ? ', ahorrando ' + pesos.format(ahorro) + ' en intereses.' : '.');
+            }
+        } else if (plan && efectiva && plan < efectiva) {
+            planHelp.textContent = 'No puede ser menor que la cuota mensual.';
+        } else {
+            planHelp.textContent =
+                'Déjalo vacío si vas a pagar la cuota. Si puedes abonar más, ponlo aquí y verás cuánto te ahorras.';
+        }
+    }
+
+    function ajustarTope() {
+        if (!type || !limits[type.value]) return;
+        var max = limits[type.value];
+        term.max = max;
+        if (term.value && Number(term.value) > max) term.value = max;
+        if (termHelp) termHelp.textContent = 'Máximo ' + max + ' para este tipo.';
+    }
+
+    function bloquearCuota() {
+        installment.readOnly = !(adjust && adjust.checked);
+    }
+
+    [amount, rate, term, planned].forEach(function (el) {
+        if (!el) return;
+        el.addEventListener('input', pintar);
+        el.addEventListener('money-input:change', pintar);
+    });
+
+    if (installment) {
+        installment.addEventListener('input', pintar);
+        installment.addEventListener('money-input:change', pintar);
+    }
+
+    if (type) {
+        type.addEventListener('change', function () { ajustarTope(); pintar(); });
+    }
+
+    if (adjust) {
+        adjust.addEventListener('change', function () { bloquearCuota(); pintar(); });
+    }
+
+    ajustarTope();
+    bloquearCuota();
+    pintar();
+})();

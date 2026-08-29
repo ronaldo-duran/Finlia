@@ -11,6 +11,7 @@ use App\Models\Debt;
 use App\Models\DebtPayment;
 use App\Models\Household;
 use App\Models\User;
+use App\Services\DebtService;
 use App\Services\HouseholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -309,6 +310,136 @@ class DebtTest extends TestCase
         $this->assertTrue($debt->paysAboveMinimum());
     }
 
+    // ===== Simulador y coherencia (ADR-0023) =====
+
+    public function test_el_alta_vive_en_su_propia_pantalla_y_el_panel_solo_tiene_el_boton(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+
+        // El panel ya no lleva el formulario incrustado, solo el acceso.
+        $panel = $this->actingAs($owner)->get(route('debts.index'))->assertOk();
+        $panel->assertSee(route('debts.create'), false);
+        $panel->assertDontSee('name="original_amount"', false);
+
+        // Y el formulario está en su pantalla.
+        $this->actingAs($owner)->get(route('debts.create'))
+            ->assertOk()
+            ->assertSee('name="original_amount"', false)
+            ->assertSee('Lo que pactaste');
+    }
+
+    public function test_la_cuota_se_calcula_sola_si_no_la_escribes(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+
+        // Sin JavaScript el campo llega vacío: lo deriva el servidor.
+        $this->actingAs($owner)->post(route('debts.store'), [
+            'name' => 'Sin cuota escrita',
+            'type' => DebtType::Loan->value,
+            'original_amount' => 10000000,
+            'interest_rate' => 0,
+            'term_months' => 120,
+        ])->assertRedirect();
+
+        $debt = Debt::firstWhere('name', 'Sin cuota escrita');
+        $this->assertSame('83333.34', $debt->minimum_payment);
+    }
+
+    public function test_si_escribes_la_cuota_se_respeta(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+
+        // Una entidad puede cobrar seguros encima de la cuota teórica.
+        $this->actingAs($owner)->post(route('debts.store'), [
+            'name' => 'Con seguro',
+            'type' => DebtType::Loan->value,
+            'original_amount' => 10000000,
+            'interest_rate' => 0,
+            'term_months' => 120,
+            'minimum_payment' => 90000,
+        ])->assertRedirect();
+
+        $this->assertSame('90000.00', Debt::firstWhere('name', 'Con seguro')->minimum_payment);
+    }
+
+    /**
+     * El caso exacto que se reportó: 10.000.000 en 120 cuotas pagando 20.000
+     * al mes. La aplicación lo aceptaba y luego calculaba 500 meses.
+     */
+    public function test_no_se_puede_registrar_una_deuda_imposible(): void
+    {
+        [$owner] = $this->setupHousehold();
+
+        $response = $this->actingAs($owner)->post(route('debts.store'), [
+            'name' => 'Imposible',
+            'type' => DebtType::Loan->value,
+            'original_amount' => 10000000,
+            'interest_rate' => 0,
+            'term_months' => 120,
+            'minimum_payment' => 20000,
+        ]);
+
+        $response->assertSessionHasErrors('minimum_payment');
+        $this->assertDatabaseMissing('debts', ['name' => 'Imposible']);
+
+        // El mensaje dice cuánto haría falta, no solo que está mal.
+        $this->assertStringContainsString(
+            '83.333',
+            session('errors')->first('minimum_payment'),
+        );
+    }
+
+    public function test_una_cuota_que_no_cubre_los_intereses_se_rechaza(): void
+    {
+        [$owner] = $this->setupHousehold();
+
+        // 24 % E.A. sobre 1.000.000 son ~18.100 al mes solo de intereses.
+        $this->actingAs($owner)->post(route('debts.store'), [
+            'name' => 'Nunca baja',
+            'type' => DebtType::CreditCard->value,
+            'original_amount' => 1000000,
+            'interest_rate' => 24,
+            'term_months' => 60,
+            'minimum_payment' => 15000,
+        ])->assertSessionHasErrors('minimum_payment');
+    }
+
+    public function test_una_cuota_coherente_se_acepta(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+
+        $this->actingAs($owner)->post(route('debts.store'), [
+            'name' => 'Coherente',
+            'type' => DebtType::Vehicle->value,
+            'original_amount' => 9000000,
+            'interest_rate' => 16,
+            'term_months' => 48,
+            'minimum_payment' => 250176.49,
+            'start_date' => '2026-01-15',
+        ])->assertSessionDoesntHaveErrors();
+
+        $debt = Debt::firstWhere('name', 'Coherente');
+        $this->assertSame('2030-01-15', $debt->end_date->toDateString());
+    }
+
+    public function test_la_proyeccion_coincide_con_el_plazo_pactado(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+
+        $this->actingAs($owner)->post(route('debts.store'), [
+            'name' => 'Cuadrada',
+            'type' => DebtType::Loan->value,
+            'original_amount' => 12000000,
+            'interest_rate' => 28.5,
+            'term_months' => 36,
+        ])->assertRedirect();
+
+        $debt = Debt::firstWhere('name', 'Cuadrada');
+
+        // Si el simulador dice 36 cuotas, la proyección no puede decir otra cosa.
+        $this->assertSame(36, app(DebtService::class)->projectPayoff($debt)['months']);
+    }
+
     // ===== Pagos =====
 
     public function test_registrar_un_pago_baja_el_saldo(): void
@@ -500,18 +631,20 @@ class DebtTest extends TestCase
 
         $html = $this->actingAs($owner)->get(route('debts.show', $debt))->getContent();
 
-        // Solo importa el contexto JavaScript: en HTML (título, value del
-        // formulario) `&#039;` es correcto y seguro.
-        preg_match('/onsubmit="([^"]*)"/', $html, $m);
-        $this->assertNotEmpty($m, 'No se encontró el manejador onsubmit.');
-        $handler = html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
+        // El nombre debe viajar como DATO (atributo data-confirm), nunca
+        // dentro de un manejador en línea: ahí el navegador decodifica las
+        // entidades antes de compilar el JS y la comilla cerraría el literal.
+        $this->assertMatchesRegularExpression('/data-confirm="[^"]*Eliminar la deuda/', $html);
 
-        // `{{ }}` escaparía la comilla como `&#039;`, pero el navegador
-        // DECODIFICA las entidades antes de compilar el manejador, así que
-        // volvería a ser `'` y cerraría el literal. Se comprueba sobre el
-        // manejador ya decodificado, que es lo que el navegador ejecuta.
-        $this->assertStringNotContainsString("');alert(1)", $handler);
-        $this->assertStringContainsString('\u0027', $handler);
+        // Ningún manejador en línea puede llevar datos del usuario.
+        preg_match_all('/\son(?:submit|click)="([^"]*)"/', $html, $m);
+        foreach ($m[1] as $handler) {
+            $this->assertStringNotContainsString(
+                'alert(1)',
+                html_entity_decode($handler, ENT_QUOTES, 'UTF-8'),
+                'El nombre de la deuda acabó dentro de un manejador JavaScript en línea.',
+            );
+        }
     }
 
     // ===== Aislamiento entre hogares (amenaza #1) =====

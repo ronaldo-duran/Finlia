@@ -12,6 +12,40 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.10.0] - 2026-08-30 — El alta de deudas, como un simulador de crédito
+
+### Cambiado
+- **Registrar una deuda se mueve a su propia pantalla** con un botón en la cabecera del panel
+  (`w-100 w-sm-auto`: ancho completo en móvil, botón normal en escritorio). Adquirir deuda es
+  puntual y no tenía sentido que el formulario ocupara media pantalla siempre ([ADR-0023](docs/DECISIONS.md#adr-0023)).
+- **El formulario funciona como un simulador de crédito**: declaras monto, tasa y número de
+  cuotas, y la aplicación calcula **cuota mensual**, **fecha de fin** e **intereses totales**
+  mientras escribes. Es el orden en que lo pide cualquier banco, y el inverso del anterior.
+- **La cuota se muestra calculada y bloqueada**, con un interruptor «Mi entidad cobra otra cuota»
+  para ajustarla cuando hay seguros o cuota de manejo de por medio.
+- Los campos de dinero pasan a `data-money-input` (punto de miles colombiano), como manda
+  `docs/UI_DESIGN.md`; antes usaban `type="number"`.
+
+### Corregido
+- **Se podía registrar una deuda imposible.** Con 10.000.000 en 120 cuotas y un plan de 20.000 al
+  mes la aplicación guardaba sin protestar y luego calculaba, con razón, 500 meses. Ahora se
+  valida **en el servidor** que la cuota cubra los intereses y baste para el plazo pactado, y el
+  mensaje dice cuánto haría falta (83.333,34 en ese caso), no solo que está mal.
+- **La tasa anual se interpretaba como nominal.** Se dividía entre 12 cuando en Colombia el
+  crédito se cotiza en **efectiva anual**: la mensual equivalente es `(1+EA)^(1/12)−1`. Con
+  28,5 % E.A. se calculaba 2,375 % mensual en vez del 2,114 % real, sobreestimando los intereses.
+- **El simulador y la proyección podían discrepar en un mes** por redondeo: la cuota se redondeaba
+  al céntimo más cercano y se quedaba corta. Ahora se redondea hacia arriba, como hacen los bancos,
+  y pagar la cuota calculada salda la deuda en el plazo exacto (verificado de 36 a 240 cuotas).
+- Los datos de demostración tenían una cuota mínima incoherente con su monto y plazo. Ahora la
+  deriva el Service, así que el seeder no puede generar una deuda imposible.
+
+### Seguridad
+- La confirmación de borrado pasa a `data-confirm`, el mecanismo que ya existía en `app.js` para
+  no meter datos del usuario dentro de JavaScript en línea. Sustituye al parche con `@js()` de la
+  0.8.2 y elimina el JS en línea por completo; el test de regresión ahora comprueba que **ningún**
+  manejador en línea lleva datos del usuario.
+
 ## [0.9.0] - 2026-08-30 — Correcciones de uso y plazo de las deudas
 
 ### Corregido

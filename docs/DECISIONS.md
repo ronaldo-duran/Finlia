@@ -26,6 +26,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0020 — Saldo de deuda derivado de una línea base más los pagos](#adr-0020) — **ACEPTADA**
 - [ADR-0021 — Un pago de deuda genera el movimiento real de la cuenta](#adr-0021) — **ACEPTADA**
 - [ADR-0022 — La deuda se pacta en cuotas, y el pago mínimo no es el plan de pago](#adr-0022) — **ACEPTADA**
+- [ADR-0023 — Registrar una deuda es un simulador de crédito, no un formulario en blanco](#adr-0023) — **ACEPTADA**
 
 ---
 
@@ -685,6 +686,46 @@ La Épica 5 ya resolvió el caso gemelo: "Marcar pagado" en un gasto recurrente 
 - Sigue sin acumularse interés (ADR-0020): el plazo pactado y el plazo que sale de la proyección pueden no coincidir, y son cosas distintas a propósito — uno es lo acordado, el otro lo que pasaría a tu ritmo real.
 
 **Estado.** ACEPTADA — 2026-08-30, a petición del usuario tras probar la Épica 6. Implementada en `DebtType`, `Debt`, `DebtService`, `StoreDebtRequest` y el formulario de deudas.
+
+---
+
+## ADR-0023
+### Registrar una deuda es un simulador de crédito, no un formulario en blanco — **ACEPTADA**
+
+**Contexto.** Al usar el alta de deudas salieron tres problemas de experiencia, y los dos últimos son el mismo:
+
+1. **El formulario vivía incrustado en el panel**, siempre visible. Uno adquiere deudas de vez en cuando, no a diario: ocupaba la mitad de la pantalla para algo que se usa dos veces al año.
+2. **Se podía registrar una deuda imposible.** El caso real: 10.000.000, tasa 0 %, cuota mínima 0, 120 cuotas y un plan de 20.000 al mes. La aplicación lo aceptaba sin rechistar y después calculaba, con razón, que a ese ritmo se tardarían 500 meses. Los datos se contradecían entre sí desde el momento de guardarlos.
+3. **Los campos eran los equivocados.** Se pedía la cuota como dato de entrada cuando en un crédito la cuota es *consecuencia* del monto, la tasa y el plazo. Es al revés de como lo pide cualquier banco.
+
+**Decisión.**
+
+1. **El alta se mueve a su propia pantalla** (`debts.create`), con un botón «Registrar deuda» en la cabecera del panel, siguiendo el patrón que ya usan cuentas y presupuestos. El botón es `w-100 w-sm-auto`, así que en móvil ocupa el ancho y en escritorio no.
+2. **El formulario es un simulador.** El usuario declara lo que pacta —**monto, tasa y número de cuotas**— y la aplicación calcula **cuota mensual**, **fecha de fin** e **intereses totales**, en vivo mientras escribe.
+3. **La cuota se muestra calculada y bloqueada**, con un interruptor «Mi entidad cobra otra cuota» que la desbloquea. Ni imponerla (una entidad real cobra seguros y cuota de manejo encima de la fórmula) ni dejarla en blanco (era la puerta a la incoherencia): calculada por defecto, ajustable a propósito.
+4. **La coherencia se valida en el servidor**, no solo en el navegador:
+   - la cuota debe cubrir al menos los intereses del primer mes, o el saldo sube en lugar de bajar;
+   - la cuota debe bastar para saldar el monto en el plazo pactado, con un 1 % de holgura por redondeos. El mensaje dice **cuánto haría falta**, no solo que está mal.
+5. **Una sola matemática** (`DebtCalculator`), compartida por el simulador, la validación y la proyección del panel. Si cada uno tuviera la suya, la cuota pactada y la fecha proyectada volverían a contradecirse en pantalla, que es el problema original.
+6. **La tasa se interpreta como efectiva anual (E.A.)**, como se cotiza el crédito en Colombia, y la mensual equivalente es `(1 + EA)^(1/12) − 1`. Antes se dividía entre 12, que es la convención **nominal** y sobreestima el interés: con 28,5 % E.A. daba 2,375 % mensual en lugar del 2,114 % real.
+7. **La cuota se redondea al céntimo hacia arriba.** Con el redondeo al más cercano se quedaba unos céntimos corta y hacía falta un mes extra para saldar el resto: el simulador decía «36 cuotas» y la proyección «37 meses».
+8. **Sin JavaScript sigue funcionando**: si la cuota llega vacía, la deriva `DebtService` al guardar.
+
+**Alternativas (descartadas).**
+- **Un modal en vez de una pantalla** — el formulario tiene cuatro secciones; en un móvil un modal con scroll propio es peor que una página.
+- **Dejar la cuota siempre editable con un aviso** — el aviso se ignora, y era exactamente lo que permitió registrar la deuda imposible.
+- **Bloquearla del todo, sin escape** — obligaría a mentir a quien tenga una cuota real distinta por seguros o cuota de manejo.
+- **Validar solo en el navegador** — se salta desactivando JavaScript o enviando la petición a mano; la validación de verdad tiene que estar en el Form Request.
+- **Mantener la tasa nominal (`EA/12`)** — más simple, pero da cuotas más altas que las del banco y el simulador dejaría de servir para comparar.
+
+**Consecuencias y mitigaciones.**
+- Cambia la convención de tasa, así que las proyecciones existentes darán números algo distintos (menores). Es una corrección, no una regresión: los anteriores sobreestimaban el interés.
+- Los datos de demostración dejan de fijar la cuota a mano y la derivan, de modo que el seeder no puede generar una deuda incoherente.
+- Los campos de dinero pasan a `data-money-input` (docs/UI_DESIGN.md); antes usaban `type="number"`, que no admite el punto de miles.
+- La confirmación de borrado pasa a `data-confirm`, el mecanismo que ya existía en `app.js` para no meter datos del usuario dentro de JavaScript en línea. Sustituye al parche con `@js()` de la 0.8.2 y elimina el JS en línea del todo.
+- La validación vive en el Form Request, así que crear deudas por Service (seeder, factories, futura API) sigue sin comprobarla. Es coherente con ADR-0010: validar es responsabilidad de la capa HTTP.
+
+**Estado.** ACEPTADA — 2026-08-30, tras probar el alta de deudas. Implementada en `DebtCalculator`, `DebtService`, `StoreDebtRequest`, `debts/create`, `debts/_form` y el simulador de `resources/js/app.js`.
 
 ---
 

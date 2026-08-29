@@ -134,7 +134,7 @@
                                 @endif
                             </div>
                             <form method="POST" action="{{ route('debts.payments.destroy', [$debt, $payment]) }}"
-                                  onsubmit="return confirm('¿Eliminar este pago? El saldo volverá a subir y se borrará el movimiento asociado.');">
+                                  data-confirm="¿Eliminar este pago? El saldo volverá a subir y se borrará el movimiento asociado.">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-icon text-danger" aria-label="Eliminar pago">
@@ -304,13 +304,12 @@
                 </div>
             </div>
 
-            {{-- Eliminar.
-                 El nombre va con @js (Js::from), no con {{ }}: dentro de un
-                 manejador en línea el navegador DECODIFICA las entidades HTML
-                 antes de compilar el JS, así que un `&#039;` vuelve a ser una
-                 comilla y escapa del literal. {{ }} protege HTML, no JS. --}}
+            {{-- Eliminar. El nombre viaja en `data-confirm` (atributo, dato) y
+                 lo lee el listener de app.js, nunca dentro de un manejador en
+                 línea: ahí el navegador decodifica las entidades antes de
+                 compilar el JS y la comilla escaparía del literal. --}}
             <form method="POST" action="{{ route('debts.destroy', $debt) }}"
-                  onsubmit="return confirm('¿Eliminar la deuda «' + @js($debt->name) + '»?');">
+                  data-confirm="¿Eliminar la deuda «{{ $debt->name }}»?">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-sm btn-outline-danger w-100">

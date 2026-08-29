@@ -15,11 +15,18 @@
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
         <h1 class="h3 mb-0"><i class="bi bi-credit-card-2-front me-2"></i>Deudas</h1>
-        @if ($summary['count'] > 0)
-            <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2">
-                @money($summary['monthly_commitment'])/mes comprometidos
-            </span>
-        @endif
+        <div class="d-flex flex-wrap align-items-center gap-2 w-100 w-sm-auto">
+            @if ($summary['count'] > 0)
+                <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2">
+                    @money($summary['monthly_commitment'])/mes comprometidos
+                </span>
+            @endif
+            {{-- Registrar una deuda es puntual: un botón, no un formulario
+                 ocupando la pantalla todo el rato (ADR-0023). --}}
+            <a href="{{ route('debts.create') }}" class="btn btn-finlia w-100 w-sm-auto">
+                <i class="bi bi-plus-lg me-1"></i> Registrar deuda
+            </a>
+        </div>
     </div>
     <p class="text-muted mb-4">
         Tarjetas, préstamos y cuotas. Las cuotas pendientes se descuentan de
@@ -27,8 +34,7 @@
     </p>
 
     <div class="row g-3">
-        {{-- Columna principal --}}
-        <div class="col-12 col-lg-8">
+        <div class="col-12">
 
             {{-- Resumen --}}
             <div class="row g-3 mb-3">
@@ -135,9 +141,12 @@
                 <div class="card border-0"><div class="card-body text-center py-5">
                     <i class="bi bi-emoji-smile fs-1 text-muted"></i>
                     <p class="mb-1 mt-2 fw-semibold">No tienes deudas registradas</p>
-                    <p class="text-muted small mb-0">
+                    <p class="text-muted small mb-3">
                         Si tienes una tarjeta o un préstamo, regístralo para ver cuánto te queda y cuándo terminarías.
                     </p>
+                    <a href="{{ route('debts.create') }}" class="btn btn-finlia">
+                        <i class="bi bi-plus-lg me-1"></i> Registrar deuda
+                    </a>
                 </div></div>
             @endforelse
 
@@ -157,21 +166,6 @@
             @endif
         </div>
 
-        {{-- Columna: alta --}}
-        <div class="col-12 col-lg-4">
-            <div class="card border-0">
-                <div class="card-header border-0 bg-transparent fw-semibold">
-                    <i class="bi bi-plus-circle me-1"></i> Registrar deuda
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ route('debts.store') }}">
-                        @csrf
-                        @include('debts._form', ['debt' => null, 'prefix' => 'new_'])
-                        <button type="submit" class="btn btn-finlia w-100 mt-3">Guardar deuda</button>
-                    </form>
-                </div>
-            </div>
-        </div>
     </div>
 
     <p class="text-muted small mt-4 mb-0">

@@ -221,7 +221,8 @@ class DatabaseSeeder extends Seeder
             'original_amount' => 4800000,
             'interest_rate' => 28.5,
             'interest_rate_type' => 'fixed',
-            'minimum_payment' => 240000,
+            // minimum_payment se omite a propósito: lo calcula el Service a
+            // partir de monto, tasa y plazo (ADR-0023), igual que el formulario.
             'planned_payment' => 800000,
             'term_months' => 12,
             'due_day' => 15,

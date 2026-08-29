@@ -177,6 +177,8 @@ Route::middleware('auth')->group(function () {
     // ---- Épica 6: deudas y tarjetas de crédito ----
     Route::get('deudas', [DebtController::class, 'index'])
         ->name('debts.index');
+    Route::get('deudas/registrar', [DebtController::class, 'create'])
+        ->name('debts.create');
     Route::post('deudas', [DebtController::class, 'store'])
         ->name('debts.store');
     Route::get('deudas/{debt}', [DebtController::class, 'show'])
