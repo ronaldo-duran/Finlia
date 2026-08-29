@@ -357,7 +357,16 @@ Cada refinanciación fija una **nueva línea base** del saldo (ADR-0020): a part
 ---
 
 ## Épica 8 — Dashboard y reportes
-Sin tablas nuevas de dominio. Posible `report_exports` (log de exportaciones) si se requiere auditoría. Vistas y queries de agregación.
+
+> 🟢 **Implementado** (Épica 8) **sin tablas nuevas**: todo son agregaciones sobre las tablas de las épicas 3-7. Ver [ADR-0026](DECISIONS.md#adr-0026).
+
+- **`App\Enums\ReportPeriod`** — períodos comparables (`month`, `last_month`, `last_3_months`, `last_6_months`, `year`). `resolve()` devuelve la ventana actual **y su equivalente anterior** (`from`, `to`, `previous_from`, `previous_to`); el año se compara YTD contra el mismo tramo del año previo.
+- **`App\Enums\ReportFormat`** — formatos de exportación. Hoy solo `csv`; es el **seam del PDF** (Épica 12).
+- **`ReportService`** — overview comparado (totales + deltas absolutos/porcentuales), `monthlySeries` (serie mensual ≤ 12 puntos), `insights` (hechos descriptivos con umbrales) y `exportRows` (filas del CSV vía `MovementSummaryService::filtered`).
+- **`DebtService::balanceEvolution`** — saldo total de deuda a fin de cada mes (últimos N), calculado con `balanceAt` (línea base + pagos hasta la fecha de corte, refinanciaciones incluidas, consistente con [ADR-0020](DECISIONS.md#adr-0020)).
+- **`MovementSummaryService::rangeTotals`** — ingresos/gastos/balance de un rango arbitrario (generaliza `monthTotals`).
+- Rutas: `GET /reportes` (`reports.index`) y `GET /reportes/exportar` (`reports.export`, `throttle:10,1`).
+- La tabla `report_exports` (log de exportaciones) **no se creó**: la épica no la exige y la auditoría actual no la requiere.
 
 ---
 

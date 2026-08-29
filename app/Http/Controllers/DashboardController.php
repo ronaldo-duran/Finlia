@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\BudgetScope;
 use App\Services\BudgetCalculatorService;
+use App\Services\DebtService;
 use App\Services\MovementSummaryService;
 use App\Services\RecurringExpenseService;
 use App\Services\SavingsGoalService;
@@ -21,6 +22,7 @@ class DashboardController extends Controller
         private readonly BudgetCalculatorService $budgets,
         private readonly RecurringExpenseService $recurring,
         private readonly SavingsGoalService $savingsGoals,
+        private readonly DebtService $debts,
     ) {}
 
     /**
@@ -42,7 +44,8 @@ class DashboardController extends Controller
 
         [$from, $to] = [$hoy->copy()->startOfMonth(), $hoy->copy()->endOfMonth()];
 
-        $byCategory = $this->summary->expensesByCategory($householdId, $from, $to);
+        // Top 5 + "Otras": una torta con muchas porciones no se lee en móvil.
+        $byCategory = $this->summary->expensesByCategory($householdId, $from, $to, top: 5);
         $trend = $this->summary->monthlyTrend($householdId, 6);
         $recent = $this->summary->recentMovements($householdId, 6);
 
@@ -73,6 +76,9 @@ class DashboardController extends Controller
             'recurringAlerts' => $this->recurring->alerts($householdId),
             // Épica 7: progreso de las metas de ahorro vigentes.
             'savingsGoals' => $this->savingsGoals->outstandingGoals($householdId),
+            // Épica 8: deuda total y ahorro acumulado completan el resumen.
+            'debtSummary' => $this->debts->summary($householdId),
+            'savingsSummary' => $this->savingsGoals->summary($householdId),
             'totals' => $totals,
             'totalBalance' => $totalBalance,
             'byCategory' => $byCategory,

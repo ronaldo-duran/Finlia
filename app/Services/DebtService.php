@@ -403,6 +403,88 @@ class DebtService
         return round($committed, 2);
     }
 
+    // ---------------------------------------------------------------
+    // Reportes (Épica 8)
+    // ---------------------------------------------------------------
+
+    /**
+     * Saldo total de deuda a fin de cada uno de los últimos N meses.
+     *
+     * Es la serie del gráfico "Evolución de deuda": qué debía el hogar en
+     * cada cierre de mes. Incluye deudas ya pagadas (su historia cuenta) y
+     * excluye las borradas (SoftDeletes las saca del query).
+     *
+     * @return list<array{label: string, balance: float}>
+     */
+    public function balanceEvolution(int $householdId, int $months = 6): array
+    {
+        // Cargar payments y refinancings en memoria: a escala de hogar son
+        // pocas filas y evita una query por deuda y mes.
+        $debts = Debt::where('household_id', $householdId)
+            ->with(['payments', 'refinancings'])
+            ->get();
+
+        $cursor = Carbon::now(config('app.timezone'))->startOfMonth();
+        $points = [];
+
+        for ($i = 0; $i < $months; $i++) {
+            $cutoff = $cursor->copy()->endOfMonth()->endOfDay();
+
+            $balance = $debts->sum(fn (Debt $debt) => $this->balanceAt($debt, $cutoff));
+
+            array_unshift($points, [
+                'label' => $cursor->locale('es')->isoFormat('MMM YY'),
+                'balance' => round((float) $balance, 2),
+            ]);
+
+            $cursor->subMonth();
+        }
+
+        return $points;
+    }
+
+    /**
+     * Saldo de una deuda en un corte temporal: ADR-0020 llevado al pasado.
+     *
+     * Línea base vigente EN ESE CORTE (original o refinanciación más
+     * reciente con fecha ≤ corte) menos los pagos posteriores a ella, sin
+     * bajar de cero. Antes de `start_date` la deuda no existía: suma 0.
+     */
+    public function balanceAt(Debt $debt, CarbonInterface $cutoff): float
+    {
+        $cutoff = Carbon::parse($cutoff);
+        $start = $debt->start_date?->startOfDay();
+
+        if ($start !== null && $start->gt($cutoff)) {
+            return 0.0;
+        }
+
+        $base = (float) $debt->original_amount;
+        $since = $start;
+
+        // Refinanciaciones en orden ascendente: la última con fecha ≤ corte
+        // es la línea base vigente en ese momento.
+        foreach ($debt->refinancings->sortBy('start_date') as $refinancing) {
+            $refStart = Carbon::parse($refinancing->start_date)->startOfDay();
+
+            if ($refStart->lte($cutoff)) {
+                $base = (float) $refinancing->refinanced_balance;
+                $since = $refStart;
+            }
+        }
+
+        $paid = (float) $debt->payments
+            ->filter(function (DebtPayment $payment) use ($cutoff, $since): bool {
+                $date = Carbon::parse($payment->date)->startOfDay();
+
+                return $date->lte($cutoff)
+                    && ($since === null || $date->gte($since));
+            })
+            ->sum('amount');
+
+        return round(max(0.0, $base - $paid), 2);
+    }
+
     /**
      * Fechas de pago de una deuda dentro de la ventana, según su día de pago
      * mensual. Sin `due_day` se asume una cuota por mes natural cubierto.

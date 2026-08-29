@@ -12,6 +12,60 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.13.0] - 2026-08-29 — Reportes financieros (Épica 8)
+
+### Añadido
+- **Pantalla de reportes** (`/reportes`) con los cinco gráficos de la épica: gastos por categoría,
+  ingresos vs gastos, evolución mensual del balance, **evolución de la deuda** y progreso de metas
+  (barras horizontales apiladas: ahorrado + faltante). Cada gráfico con su estado vacío; la deuda
+  se dibuja a fin de cada mes de los últimos seis y respeta refinanciaciones y pagos reales
+  ([ADR-0020](docs/DECISIONS.md#adr-0020)).
+- **Comparación de períodos** con chips — mes actual, mes anterior, últimos 3, últimos 6, año —
+  que muestran ingresos, gastos y balance del período contra su **equivalente anterior** (mes
+  contra mes previo, año YTD contra el mismo tramo del año pasado: nunca contra meses que aún no
+  han ocurrido). Deltas absolutos siempre; porcentuales solo cuando la base anterior existe.
+- **Observaciones (insights) descriptivas**: hechos calculados — "Gastaste $ 150.000,00 menos que
+  en julio 2026", "«Alimentación» aumentó 18 %", "balance en rojo" — con **umbrales anti-ruido**
+  (≥ 5 % el total, ≥ 15 % una categoría) para que la pantalla no grite con cambios de calendario.
+  Sin recomendaciones financieras; máximo cuatro por período.
+- **Exportación CSV** de los movimientos del período (`/reportes/exportar`), en streaming con BOM
+  UTF-8, separador `;` y coma decimal: Excel en español lo abre bien sin importar nada. Con
+  rate limiting (`throttle:10,1`). El enum `ReportFormat` queda como **seam del PDF Premium**
+  (Épica 12): añadirlo es un caso nuevo del enum y una rama del controlador, no un rediseño.
+- **El Panel gana solo lo que le falta**: KPIs de deuda total y ahorro en metas, y el enlace "Ver
+  reportes". La guía mobile de la propia épica pedía no amontonar gráficos; el Panel responde
+  "¿cuánto puedo gastar hoy?" y los reportes "¿qué ha pasado?" ([ADR-0026](docs/DECISIONS.md#adr-0026)).
+
+### Cambiado
+- **Las tortas (Panel y Reportes) muestran top 5 categorías + "Otras"**: con muchas categorías,
+  el gráfico de gastos por categoría era una rueda de porciones ilegibles. El resto se pliega
+  en una fila "Otras" (gris neutro, suma real del resto) tanto en el Panel como en Reportes;
+  los cálculos internos (insights, comparaciones) siguen usando la lista completa.
+- **La lista de Movimientos carga de a 20 con "Cargar más"** (antes traía 200 de golpe). El
+  botón pide la siguiente página de la misma ruta conservando los filtros y anexa los grupos
+  con JavaScript mínimo (fetch + insertAdjacentHTML). El corte de página **nunca parte un día
+  por la mitad**: si los 20 caen dentro de un grupo, la página se extiende hasta cerrarlo,
+  para no ver el mismo día repetido en dos pantallas. El "Balance del filtro" sigue siendo el
+  de **todo** el filtro, no el de la página visible.
+
+### Corregido
+- **Los gráficos del Panel llevaban rotos desde la Épica 3**: el JSON de datos se inyectaba con
+  `{{ }}` dentro de `<script type="application/json">` y Blade escapa `"` a `&quot;`, que los
+  navegadores no decodifican dentro de `<script>` — `JSON.parse` fallaba en silencio. Ahora se
+  inyecta con `json_encode(..., JSON_HEX_TAG)`, que es JSON válido e inyectable con seguridad.
+
+### Seguridad
+- Sin hogares ajenos en los reportes: todas las consultas salen del hogar activo en sesión y hay
+  test que verifica que el CSV de un hogar **no contiene** movimientos de otro.
+- El período y el formato llegan por query y se validan con reglas `in:` contra los enums
+  cerrados: un valor inventado es un error de validación con mensaje, no una excepción ni un
+  camino nuevo. No hay `household_id` en la petición que suplantar.
+- Ruta de exportación con `throttle:10,1` (peticiones por minuto y usuario).
+- **El CSV neutraliza la inyección de fórmulas** (OWASP): los textos controlados por el
+  usuario —descripción, categoría, cuenta, quien registra— que empiezan por `=`, `+`, `-` o `@`
+  se prefijan con `'` para que Excel no los evalúe como fórmula al abrir el archivo. Con test
+  de regresión; detectado en la pasada `/security-checklist`.
+
 ## [0.12.0] - 2026-08-31 — Metas de ahorro (Épica 7)
 
 ### Añadido

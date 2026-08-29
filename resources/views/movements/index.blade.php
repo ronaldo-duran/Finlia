@@ -6,8 +6,9 @@
         'Gastos' => 'expense',
         'Ingresos' => 'income',
     ];
-    $groups = $movements->groupBy(fn ($m) => $m['date']->format('Y-m-d'));
-    $filterBalance = $movements->sum(fn ($m) => $m['type'] === 'income' ? $m['amount'] : -$m['amount']);
+    // El balance es de todo el filtro, no de la página visible (viene del
+    // Service en `filterTotals`): cargar más páginas no lo cambia.
+    $filterBalance = $filterTotals['balance'];
     $hasAdvancedFilters = $filters['category_id'] || $filters['account_id'] || $filters['user_id'] || $filters['from'] || $filters['to'];
 @endphp
 
@@ -100,7 +101,7 @@
         </div>
     @endif
 
-    {{-- Lista agrupada por día --}}
+    {{-- Lista agrupada por día, paginada con "Cargar más" --}}
     @if ($movements->isEmpty())
         <div class="card border-0">
             <div class="card-body text-center text-muted py-5">
@@ -109,27 +110,44 @@
             </div>
         </div>
     @else
-        <div class="d-flex flex-column gap-3">
-            @foreach ($groups as $day => $items)
-                @php
-                    $dayTotal = $items->sum(fn ($m) => $m['type'] === 'income' ? $m['amount'] : -$m['amount']);
-                @endphp
-                <div>
-                    <div class="d-flex justify-content-between align-items-baseline mb-2">
-                        <span class="day-group-label">{{ ucfirst($items->first()['date']->locale('es')->isoFormat('dddd D [de] MMMM')) }}</span>
-                        <span class="small fw-semibold {{ $dayTotal >= 0 ? 'text-success' : 'text-danger' }} budget-figures">
-                            {{ $dayTotal >= 0 ? '+' : '−' }}@money(abs($dayTotal))
-                        </span>
-                    </div>
-                    <div class="card border-0">
-                        <div class="list-group list-group-flush">
-                            @foreach ($items as $m)
-                                @include('movements._item', ['m' => $m, 'showActions' => true])
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            @endforeach
+        <div id="lista-movimientos">
+            @include('movements._groups')
         </div>
+
+        <script>
+            // "Cargar más": pide la siguiente página de esta misma ruta (con
+            // los filtros actuales en la URL) y anexa los grupos que devuelve.
+            // Delegación sobre el contenedor: el botón se reemplaza en cada carga.
+            (function () {
+                var lista = document.getElementById('lista-movimientos');
+                if (!lista) return;
+
+                lista.addEventListener('click', function (e) {
+                    var btn = e.target.closest('#cargarMasBtn');
+                    if (!btn || btn.disabled) return;
+
+                    btn.disabled = true;
+
+                    var params = new URLSearchParams(window.location.search);
+                    params.set('offset', btn.dataset.nextOffset);
+
+                    fetch(window.location.pathname + '?' + params.toString(), {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                        .then(function (r) {
+                            return r.ok ? r.text() : Promise.reject(new Error('HTTP ' + r.status));
+                        })
+                        .then(function (html) {
+                            var wrapper = document.getElementById('cargarMasWrapper');
+                            if (wrapper) wrapper.remove();
+
+                            lista.insertAdjacentHTML('beforeend', html);
+                        })
+                        .catch(function () {
+                            btn.disabled = false; // reintentar si falla la red
+                        });
+                });
+            })();
+        </script>
     @endif
 @endsection

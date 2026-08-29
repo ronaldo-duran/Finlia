@@ -67,6 +67,64 @@ class MovementSummaryServiceTest extends TestCase
         $this->assertSame(10000.0, $byName['Transporte']['total']);
     }
 
+    public function test_expenses_by_category_pliega_el_resto_en_otras(): void
+    {
+        [$householdId, $accountId] = $this->setupHouseholdWithAccount();
+        $today = Carbon::now()->format('Y-m-d');
+
+        // 8 categorías con montos decrecientes: Cat 1 = 80.000 … Cat 8 = 10.000.
+        // Top 5 se queda con Cat 1-5; "Otras" = Cat 6+7+8 = 60.000.
+        foreach (range(1, 8) as $n) {
+            $cat = Category::create([
+                'name' => "Cat {$n}", 'type' => CategoryType::Expense->value,
+                'household_id' => null, 'is_default' => true,
+            ]);
+
+            Expense::factory()->create([
+                'household_id' => $householdId,
+                'account_id' => $accountId,
+                'category_id' => $cat->id,
+                'amount' => 90000 - $n * 10000,
+                'date' => $today,
+            ]);
+        }
+
+        $rows = app(MovementSummaryService::class)->expensesByCategory(
+            $householdId,
+            Carbon::now()->startOfMonth(),
+            Carbon::now()->endOfMonth(),
+            top: 5,
+        );
+
+        // Top 5 + "Otras" = 6 filas; el resto sumado y en gris neutro.
+        $this->assertCount(6, $rows);
+        $this->assertSame('Cat 1', $rows[0]['name']);
+        $this->assertSame('Cat 5', $rows[4]['name']);
+        $this->assertSame('Otras', $rows[5]['name']);
+        $this->assertSame(60000.0, $rows[5]['total']);
+        $this->assertSame('#adb5bd', $rows[5]['color']);
+    }
+
+    public function test_expenses_by_category_sin_exceso_no_inventa_fila_otras(): void
+    {
+        [$householdId, $accountId] = $this->setupHouseholdWithAccount();
+        $today = Carbon::now()->format('Y-m-d');
+
+        $cat = Category::create(['name' => 'Comida', 'type' => CategoryType::Expense->value, 'household_id' => null, 'is_default' => true]);
+        Expense::factory()->create(['household_id' => $householdId, 'account_id' => $accountId, 'category_id' => $cat->id, 'amount' => 30000, 'date' => $today]);
+
+        $rows = app(MovementSummaryService::class)->expensesByCategory(
+            $householdId,
+            Carbon::now()->startOfMonth(),
+            Carbon::now()->endOfMonth(),
+            top: 5,
+        );
+
+        // Una sola categoría: no aparece una fila "Otras" vacía.
+        $this->assertCount(1, $rows);
+        $this->assertSame('Comida', $rows[0]['name']);
+    }
+
     private function setupHouseholdWithAccount(): array
     {
         $owner = User::factory()->create();

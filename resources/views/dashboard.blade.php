@@ -71,12 +71,17 @@
 
     @include('dashboard._hero-enfoque', ['budgetSummary' => $budgetSummary, 'isNegative' => $isNegative])
 
-    {{-- KPIs del mes --}}
-    <div class="d-flex justify-content-between align-items-center mb-2">
+    {{-- KPIs del mes (Épica 8: el resumen completo — deuda y ahorro incluidos) --}}
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
         <span class="small fw-semibold text-muted text-uppercase">Resumen del mes</span>
-        <a href="{{ route('budgets.index') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-cash-stack me-1"></i> Ver presupuestos
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-bar-chart-line me-1"></i> Ver reportes
+            </a>
+            <a href="{{ route('budgets.index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-cash-stack me-1"></i> Ver presupuestos
+            </a>
+        </div>
     </div>
     @php
         $kpis = [
@@ -84,11 +89,13 @@
             ['label' => 'Gastos del mes', 'value' => $totals['expenses'], 'icon' => 'bi-graph-down-arrow', 'tone' => 'finlia'],
             ['label' => 'Balance del mes', 'value' => $totals['balance'], 'icon' => 'bi-plus-slash-minus', 'tone' => 'finlia'],
             ['label' => 'Saldo en cuentas', 'value' => $totalBalance, 'icon' => 'bi-wallet2', 'tone' => 'finlia'],
+            ['label' => 'Deuda total', 'value' => $debtSummary['total_balance'], 'icon' => 'bi-credit-card-2-front', 'tone' => 'finlia'],
+            ['label' => 'Ahorro en metas', 'value' => $savingsSummary['total_saved'], 'icon' => 'bi-piggy-bank', 'tone' => 'finlia'],
         ];
     @endphp
     <div class="row g-2 g-md-3 mb-4">
         @foreach ($kpis as $kpi)
-            <div class="col-6 col-xl-3">
+            <div class="col-6 col-xl-4">
                 <div class="card h-100 border-0">
                     {{-- El icono se oculta bajo sm: a 375 px los 48 px del avatar
                          dejaban sin sitio al importe, que quedaba truncado. --}}
@@ -195,7 +202,11 @@
         @endif
     </div>
 
-    {{-- Datos para Chart.js (leídos por resources/js/charts.js) --}}
-    <script type="application/json" id="finlia-chart-data">{{ json_encode($chartData) }}</script>
+    {{-- Datos para Chart.js (leídos por resources/js/charts.js).
+         JSON_HEX_TAG: sin él, un "</script>" en un nombre de categoría
+         cerraría este bloque; y el {{ }} de Blade escapa a &quot;, que
+         JSON.parse no puede leer dentro de <script> (el navegador no
+         decodifica entidades ahí): los gráficos quedaban en blanco. --}}
+    <script type="application/json" id="finlia-chart-data">{!! json_encode($chartData, JSON_HEX_TAG) !!}</script>
     @vite('resources/js/charts.js')
 @endsection

@@ -95,25 +95,26 @@ class DatabaseSeeder extends Seeder
         $expenseCategories = Category::whereNull('household_id')->where('type', 'expense')->pluck('id');
         $users = [$demo->id, $miembro->id];
 
-        // Ingresos (varios en los últimos 2 meses).
-        foreach (range(1, 5) as $i) {
+        // Ingresos: ~uno por mes en los últimos 6 meses (Épica 8: la
+        // comparación de períodos y la evolución mensual necesitan historial).
+        foreach (range(1, 7) as $i) {
             Income::factory()->create([
                 'household_id' => $household->id,
                 'user_id' => fake()->randomElement($users),
                 'account_id' => $accounts->random()->id,
                 'category_id' => $incomeCategories->random(),
-                'date' => fake()->dateTimeBetween('-2 months', 'now')->format('Y-m-d'),
+                'date' => fake()->dateTimeBetween('-5 months', 'now')->format('Y-m-d'),
             ]);
         }
 
-        // Gastos (varios en los últimos 2 meses).
-        foreach (range(1, 22) as $i) {
+        // Gastos repartidos en los últimos 6 meses.
+        foreach (range(1, 30) as $i) {
             Expense::factory()->create([
                 'household_id' => $household->id,
                 'user_id' => fake()->randomElement($users),
                 'account_id' => $accounts->random()->id,
                 'category_id' => $expenseCategories->random(),
-                'date' => fake()->dateTimeBetween('-2 months', 'now')->format('Y-m-d'),
+                'date' => fake()->dateTimeBetween('-5 months', 'now')->format('Y-m-d'),
             ]);
         }
 

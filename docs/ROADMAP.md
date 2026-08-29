@@ -13,7 +13,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 5 | Gastos recurrentes y obligaciones futuras | 🟢 | 3, 4 |
 | 6 | Deudas y tarjetas de crédito | 🟢 | 2, 3 |
 | 7 | Metas de ahorro | 🟢 | 3 |
-| 8 | Dashboard y reportes financieros | 🔴 | 3, 4, 5, 6, 7 |
+| 8 | Dashboard y reportes financieros | 🟢 | 3, 4, 5, 6, 7 |
 | 9 | Recordatorios y notificaciones | 🔴 | 5, 6, 7 |
 | 10 | UX mobile y PWA | 🟡 | 3 (y resto) |
 | 11 | Hardening, tests y producción | 🔴 | Todas |
@@ -48,8 +48,8 @@ Dos decisiones propias: el saldo es **derivado** de una línea base más los pag
 ### Épica 7 — Metas de ahorro ✅
 `savings_goals` + `savings_goal_contributions` ([ADR-0025](DECISIONS.md#adr-0025)). Panel con resumen, filtro por estado (vigentes/logradas/archivadas) y alerta de metas vencidas; detalle con progreso, **aporte mensual recomendado** (estimación informativa) e historial de aportes y retiros; prioridad, marca `emergency_fund`, pausar/reactivar/completar/archivar. El ahorrado es **derivado** del historial (Σ aportes − Σ retiros) y al llegar al objetivo la meta se marca lograda sola. Los movimientos **no mueven cuentas** (la transferencia real llega en la Épica 10) y el aporte mensual programado rellena el término `savings` del dinero disponible ([ADR-0014](DECISIONS.md#adr-0014)). Tarjeta de progreso en el dashboard.
 
-### Épica 8 — Dashboard y reportes
-Resumen (ingresos, gastos, balance, disponible, deuda, ahorro, metas), 5 gráficos Chart.js, comparación de períodos, insights sencillos, export CSV (preparar PDF).
+### Épica 8 — Dashboard y reportes ✅
+Pantalla **`/reportes`** con los cinco gráficos Chart.js (gastos por categoría, ingresos vs gastos, evolución mensual del balance, evolución de la deuda — nueva `DebtService::balanceEvolution`, consistente con [ADR-0020](DECISIONS.md#adr-0020) — y progreso de metas), comparación de **períodos honestos** (`ReportPeriod`: mes, mes anterior, últimos 3/6, año YTD contra el mismo tramo del año previo) e **insights descriptivos** con umbrales anti-ruido. Export **CSV** en streaming (BOM UTF-8, `;`, coma decimal — Excel en español) con `throttle:10,1`; el enum `ReportFormat` es el seam del PDF Premium (Épica 12). El Panel se mantiene **ligero** (guía mobile de la propia épica): solo gana los KPIs de deuda total y ahorro en metas y el enlace "Ver reportes" ([ADR-0026](DECISIONS.md#adr-0026)). De paso se corrigió un bug latente: el JSON de los gráficos del Panel se escapaba con `&quot;` dentro de `<script>` y llevaba roto desde la Épica 3.
 
 ### Épica 9 — Recordatorios y notificaciones
 `reminders` para recurrentes, deudas, metas, obligaciones anuales. Estados, **in-app** (WhatsApp/push como canales futuros). Laravel Scheduler + cron Hostinger.
@@ -63,6 +63,20 @@ Navbar/botones/forms/tablas/gráficos optimizados móvil. Botón flotante "+" (g
 
 ### Épica 11 — Hardening, tests y producción
 Auditoría de seguridad completa, privacy, DB (índices, FK, DECIMAL), tests de funciones críticas, performance (N+1, paginación), producción (.env, cache, cron). README completo de instalación.
+
+> **Deuda de performance/patrón detectada en la revisión de la Épica 8** (2026-08-29, rama `epica-8-dashboard-reportes`; las líneas son de ese momento). Ningún punto nota el usuario hoy — son de patrón, no de latencia — pero conviene cerrarlos aquí:
+>
+> 1. **N+1 de `category` en el detalle de cuenta** (épica 3): `AccountController::show` carga los últimos 10 ingresos/gastos sin `with('category')` y la vista accede a `->category?->name` en los bucles (hasta 20 lookups por PK). Fix: `->load(['incomes' => fn ($q) => $q->with('category')->latest('date')->take(10), ...])`.
+> 2. **`monthlySeries`/`monthlyTrend`: 2 queries por mes** (`ReportService`/`MovementSummaryService`): con "Año" son ~24 `SUM` idénticos en estructura. Fix: 2 queries totales con `GROUP BY` por mes natural (`strftime('%Y-%m', date)` vale para MySQL y SQLite) mapeadas al array de puntos.
+> 3. **`/reportes` calcula dos veces los mismos números**: `overview()` e `insights()` ejecutan cada uno `rangeTotals` del período y del anterior (4 sums, 2 redundantes); `expensesByCategory` del período corre dos veces (lista completa + top 5). Fix: memoizar por hogar+rango en la instancia del service, o inyectar los cálculos.
+> 4. **`DebtService::committedInRange`: `exists()` por deuda y vencimiento**: N queries diminutas en cada carga de Panel/presupuestos/reportes. Fix: `with('payments')` y `contains` sobre la colección (el patrón correcto ya está en `balanceEvolution`).
+> 5. **Triple query a `savings_goals`** en Panel y Reportes (`outstandingGoals` + `summary` + `committedMonthly`). Fix: que `summary()` acepte la colección ya cargada.
+> 6. **`SavingsGoalService::recalculateAmount` suma en PHP**: materializa todas las filas para sumarlas. Fix: `SUM(CASE type WHEN 'deposit' THEN amount ELSE -amount END)` en SQL.
+> 7. **`chartData` de la torta duplicada** entre `DashboardController` y `ReportController` (shape + fallback de color). Fix: presenter compartido o método del service.
+> 8. **`percent()` reinventado en ~11 líneas repartidas en 6 vistas** (reports, savings, dashboard, accounts, debts): `str_replace('.', ',', ...)` manual — riesgo de deriva de formato. Fix: usar el helper `percent()` o directiva `@percent` junto a `@money`.
+> 9. **`household_id` en `#[Fillable]` de `Income`/`Expense`** cuando `Debt`/`SavingsGoal` no lo traen (se asigna siempre desde el hogar activo). Inconsistencia de convención, no hueco activo. Fix: unificar quitándolo.
+>
+> Ya verificado **sin** problema en esa revisión (no re-auditar): índices cubren todas las queries calientes (`(household_id, date)`, `(household_id, category_id)`, `(household_id, status)`, etc.), dinero siempre `DECIMAL(15,2)`, FKs con `onDelete` explícito, eager loading correcto en el resto de listados, vistas sin queries en bucles y lista larga paginada.
 
 ### Épica 12 — Monetización y SaaS
 `plans`, `subscriptions`, features/limits. Plan gratuito útil; Premium futuro (más hogares, PDF, multi-moneda, etc.). Puntos de publicidad no invasiva. Autorización de features en backend.

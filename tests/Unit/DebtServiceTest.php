@@ -373,4 +373,78 @@ class DebtServiceTest extends TestCase
 
         $this->assertSame(0.0, $committed);
     }
+
+    // ---- Evolución temporal (Épica 8, gráfico de reportes) ----
+
+    public function test_la_evolucion_baja_el_saldo_en_los_meses_con_pago(): void
+    {
+        $debt = $this->debt([
+            'original_amount' => 1000000,
+            'current_balance' => 1000000,
+            'start_date' => now()->subMonthsNoOverflow(6)->startOfMonth()->toDateString(),
+        ]);
+
+        // Dos cuotas: hace 2 meses y hace 1 (día 15 de cada uno).
+        foreach ([2, 1] as $monthsAgo) {
+            $debt->payments()->forceCreate([
+                'household_id' => $this->household->id,
+                'amount' => 250000,
+                'date' => now()->subMonthsNoOverflow($monthsAgo)->setDay(15)->toDateString(),
+                'type' => DebtPaymentType::Scheduled->value,
+            ]);
+        }
+        $this->service->recalculateBalance($debt);
+
+        $points = $this->service->balanceEvolution($this->household->id, 4);
+
+        // 4 puntos, del más antiguo al más reciente. El corte es a fin de
+        // mes, así que la cuota del día 15 ya cuenta en ese mes.
+        $this->assertCount(4, $points);
+        $this->assertSame(1000000.0, $points[0]['balance']);
+        $this->assertSame(750000.0, $points[1]['balance']);
+        $this->assertSame(500000.0, $points[2]['balance']);
+        $this->assertSame(500000.0, $points[3]['balance']);
+    }
+
+    public function test_antes_de_la_fecha_de_inicio_la_deuda_no_existia(): void
+    {
+        $this->debt([
+            'original_amount' => 800000,
+            'current_balance' => 800000,
+            'start_date' => now()->startOfMonth()->toDateString(), // nació este mes
+        ]);
+
+        $points = $this->service->balanceEvolution($this->household->id, 3);
+
+        $this->assertSame(0.0, $points[0]['balance']);
+        $this->assertSame(0.0, $points[1]['balance']);
+        $this->assertSame(800000.0, $points[2]['balance']);
+    }
+
+    public function test_la_refinanciacion_mueve_la_linea_base_desde_su_fecha(): void
+    {
+        $debt = $this->debt([
+            'original_amount' => 2000000,
+            'current_balance' => 2000000,
+            'start_date' => now()->subMonthsNoOverflow(5)->startOfMonth()->toDateString(),
+        ]);
+
+        // Refinanciada hace 2 meses con saldo de 1.800.000.
+        $this->service->registerRefinancing($debt, [
+            'refinanced_balance' => 1800000,
+            'interest_rate' => 20.0,
+            'term_months' => 18,
+            'installment' => 120000,
+            'start_date' => now()->subMonthsNoOverflow(2)->startOfMonth()->toDateString(),
+        ]);
+
+        $points = $this->service->balanceEvolution($this->household->id, 4);
+
+        // Antes de la refinanciación la línea base era el original; desde su
+        // fecha, el saldo parte de 1.800.000.
+        $this->assertSame(2000000.0, $points[0]['balance']);
+        $this->assertSame(1800000.0, $points[1]['balance']);
+        $this->assertSame(1800000.0, $points[2]['balance']);
+        $this->assertSame(1800000.0, $points[3]['balance']);
+    }
 }
