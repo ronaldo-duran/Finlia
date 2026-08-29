@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AcknowledgementController;
 use App\Http\Controllers\ActiveHouseholdController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -173,6 +174,11 @@ Route::middleware('auth')->group(function () {
         ->name('recurring-expenses.destroy');
     Route::post('recurrentes/{recurringExpense}/pagar', [RecurringExpenseController::class, 'markPaid'])
         ->name('recurring-expenses.mark-paid');
+
+    // Avisos dados por leídos (ADR-0024). Sin {key} libre: se valida contra
+    // el enum en el controlador.
+    Route::post('avisos/{key}', [AcknowledgementController::class, 'store'])
+        ->name('acknowledgements.store');
 
     // ---- Épica 6: deudas y tarjetas de crédito ----
     Route::get('deudas', [DebtController::class, 'index'])

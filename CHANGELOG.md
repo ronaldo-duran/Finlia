@@ -12,6 +12,27 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.11.0] - 2026-08-31 — El aviso de estimación se puede dar por leído
+
+### Añadido
+- **El aviso de deudas se puede descartar, pero no desaparece: se reduce a una línea**
+  ([ADR-0024](docs/DECISIONS.md#adr-0024)). En móvil ocupaba media pantalla en cada visita, y un
+  aviso que se ve siempre deja de leerse. Ahora la primera vez sale completo con «Entendido, no
+  mostrar de nuevo» y a partir de ahí queda un recordatorio discreto que **sigue junto a las
+  cifras**: que la advertencia se esfume del todo es el escenario que en una app de finanzas paga
+  el usuario con su dinero.
+- **Mecanismo genérico de avisos leídos** (`user_acknowledgements`), por clave y no por columna:
+  las metas de ahorro y los reportes traerán advertencias parecidas y lo reutilizan sin tocar
+  `users`. La constancia va en el servidor, así que persiste entre dispositivos, sobrevive a un
+  borrado de datos de navegación y queda con fecha.
+
+### Seguridad
+- La clave del aviso llega en la URL y se valida contra un **enum cerrado**: una clave inventada
+  es un 404, no una fila basura en la tabla.
+- El acuse es siempre del usuario autenticado; el `user_id` no sale nunca de la petición, así que
+  no hay forma de marcar el aviso de otra persona. Cubierto con test.
+- Funciona sin JavaScript: es un formulario normal con `@csrf`.
+
 ## [0.10.1] - 2026-08-30 — Aviso de estimación y ancho de la barra lateral
 
 ### Añadido

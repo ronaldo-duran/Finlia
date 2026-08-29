@@ -27,6 +27,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0021 — Un pago de deuda genera el movimiento real de la cuenta](#adr-0021) — **ACEPTADA**
 - [ADR-0022 — La deuda se pacta en cuotas, y el pago mínimo no es el plan de pago](#adr-0022) — **ACEPTADA**
 - [ADR-0023 — Registrar una deuda es un simulador de crédito, no un formulario en blanco](#adr-0023) — **ACEPTADA**
+- [ADR-0024 — Avisos que el usuario da por leídos, por clave y en servidor](#adr-0024) — **ACEPTADA**
 
 ---
 
@@ -727,6 +728,37 @@ La Épica 5 ya resolvió el caso gemelo: "Marcar pagado" en un gasto recurrente 
 - **Ninguna cifra se presenta como definitiva.** El componente `<x-debt-disclaimer />` avisa, en el alta, en el panel y en el detalle, de que cuota, intereses y fechas son estimaciones y de que cada entidad aplica sus propias reglas. No es letra pequeña al pie: es un bloque visible junto a los números, porque el error de leer una estimación como un estado de cuenta lo paga el usuario con su dinero. El interruptor «Mi entidad cobra otra cuota» refuerza lo mismo desde el otro lado: además de desbloquear el campo, recuerda que el banco cobra cosas que la fórmula no conoce.
 
 **Estado.** ACEPTADA — 2026-08-30, tras probar el alta de deudas. Implementada en `DebtCalculator`, `DebtService`, `StoreDebtRequest`, `debts/create`, `debts/_form` y el simulador de `resources/js/app.js`.
+
+---
+
+## ADR-0024
+### Avisos que el usuario da por leídos, por clave y en servidor — **ACEPTADA**
+
+**Contexto.** El aviso de que las cifras de deuda son estimaciones (ADR-0023) ocupa media pantalla en un móvil y salía **en cada visita**. Un aviso que se ve siempre deja de leerse a la tercera vez: se convierte en ruido, que es lo contrario de lo que pretende. Pero quitarlo del todo tampoco vale — en una app de finanzas, que la advertencia desaparezca es el escenario que se paga con dinero del usuario.
+
+Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar una política una sola vez al registrarse, o descartarlo con constancia en servidor.
+
+**Decisión.**
+
+1. **El aviso se puede dar por leído, pero no desaparece: se reduce.** Primera vez, bloque completo con «Entendido, no mostrar de nuevo»; a partir de ahí, una línea discreta que sigue junto a las cifras. Deja de estorbar sin dejar de advertir.
+2. **La constancia va en el servidor**, no en el navegador. Persiste entre dispositivos —lo cierras en el móvil y el portátil lo respeta—, sobrevive a un borrado de datos de navegación y deja registrada la fecha, que importa el día que haya Premium o una reclamación.
+3. **Tabla por clave (`user_acknowledgements`), no una columna por aviso.** Metas de ahorro (Épica 7) y reportes (Épica 8) traerán advertencias parecidas; con una columna por cada una, `users` acabaría con media docena de `*_ack_at`. La tabla lleva `unique(user_id, key)`.
+4. **La clave se valida contra un enum cerrado** (`AcknowledgementKey`). Llega en la URL, así que sin lista blanca cualquiera podría llenar la tabla de filas inventadas. Una clave desconocida es un 404.
+5. **Es una preferencia del USUARIO, no del hogar.** Dos miembros del mismo hogar leen el aviso por separado; que uno lo descarte no se lo oculta al otro.
+6. **Formulario normal, sin JavaScript.** Funciona con el JS desactivado y no depende del navegador para nada. El `user_id` sale siempre del usuario autenticado, nunca de la petición.
+7. **`acknowledge()` es idempotente**: pulsar dos veces no duplica la fila ni mueve la fecha original.
+
+**Alternativas (descartadas).**
+- **localStorage o cookie** — cero backend, pero es por dispositivo y navegador: lo descartas en el móvil y reaparece en el portátil. Se pierde al borrar datos o en incógnito, y no queda constancia de que se leyó.
+- **Aceptar una política al registrarse y no volver a avisar** — deja la interfaz limpia, pero los usuarios ya existentes nunca lo verían y la advertencia desaparece justo del sitio donde están los números. Seis meses después nadie recuerda qué aceptó. Además, redactar términos de aceptación tiene implicaciones legales que no conviene improvisar.
+- **Una columna `debt_disclaimer_ack_at` en `users`** — más simple hoy, insostenible en cuanto haya tres avisos.
+
+**Consecuencias y mitigaciones.**
+- El componente consulta el acuse en cada render. `hasAcknowledged()` usa la relación si está cargada, para no lanzar una consulta por cada componente de la misma página.
+- Si algún día conviene reponer un aviso ya descartado —porque el texto cambia de forma sustancial—, basta con una clave nueva (`debt_estimates_v2`); los acuses viejos quedan como historial.
+- Es un mecanismo de comodidad, no de autorización: no protege nada, solo decide cuánto ocupa un aviso.
+
+**Estado.** ACEPTADA — 2026-08-31, a petición del usuario tras ver el aviso en móvil. Implementada en `user_acknowledgements`, `AcknowledgementKey`, `UserAcknowledgement`, `User::hasAcknowledged()/acknowledge()`, `AcknowledgementController` y `<x-debt-disclaimer />`.
 
 ---
 

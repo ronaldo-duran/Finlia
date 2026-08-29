@@ -243,6 +243,21 @@ No es tabla. Lógica de dominio de la épica (sin dependencias HTTP, ADR-0010):
 
 ---
 
+## Transversal — Avisos leídos
+
+### `user_acknowledgements` (ADR-0024)
+| Campo | Tipo | Notas |
+|---|---|---|
+| id | | |
+| user_id | FK users (cascade) | preferencia del **usuario**, no del hogar |
+| key | string(60) | valor de `AcknowledgementKey`; lista cerrada, validada antes de insertar |
+| acknowledged_at | timestamp | fecha del acuse; no se mueve al repetir |
+| timestamps | | |
+
+`unique(user_id, key)`: un acuse por usuario y aviso. Tabla por clave en lugar de una columna por aviso, para que las épicas 7 y 8 reutilicen el mecanismo sin tocar `users`.
+
+---
+
 ## Épica 6 — Deudas y tarjetas de crédito
 
 ### `debts`
