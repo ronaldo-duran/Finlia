@@ -81,7 +81,7 @@ class UiRegressionTest extends TestCase
             'original_amount' => 1200000,
             'current_balance' => 1200000,
             'interest_rate' => 0,
-            'scheduled_payment' => 100000, // 12 cuotas exactas
+            'planned_payment' => 100000, // 12 cuotas exactas
             'minimum_payment' => null,
             'due_day' => 15,
         ]);

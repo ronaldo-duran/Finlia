@@ -134,7 +134,7 @@ class DebtServiceTest extends TestCase
         $this->assertSame('900000.00', $debt->current_balance);
         $this->assertSame(DebtStatus::Refinanced, $debt->status);
         // Las nuevas condiciones se copian a la deuda.
-        $this->assertSame('45000.00', $debt->scheduled_payment);
+        $this->assertSame('45000.00', $debt->planned_payment);
 
         // Un pago posterior sí resta del nuevo saldo.
         $this->service->registerPayment($debt, [
@@ -154,7 +154,7 @@ class DebtServiceTest extends TestCase
             'original_amount' => 1000000,
             'current_balance' => 1000000,
             'interest_rate' => 0,
-            'scheduled_payment' => 100000,
+            'planned_payment' => 100000,
         ]);
 
         $projection = $this->service->projectPayoff($debt, Carbon::parse('2026-01-15'));
@@ -171,7 +171,7 @@ class DebtServiceTest extends TestCase
             'original_amount' => 1000000,
             'current_balance' => 1000000,
             'interest_rate' => 24, // 2 % mensual
-            'scheduled_payment' => 100000,
+            'planned_payment' => 100000,
         ]);
 
         $projection = $this->service->projectPayoff($debt);
@@ -188,7 +188,7 @@ class DebtServiceTest extends TestCase
             'original_amount' => 1000000,
             'current_balance' => 1000000,
             'interest_rate' => 24,
-            'scheduled_payment' => 15000,
+            'planned_payment' => 15000,
             'minimum_payment' => null,
         ]);
 
@@ -213,7 +213,7 @@ class DebtServiceTest extends TestCase
 
     public function test_una_deuda_saldada_no_proyecta_nada(): void
     {
-        $debt = $this->debt(['current_balance' => 0, 'scheduled_payment' => 50000]);
+        $debt = $this->debt(['current_balance' => 0, 'planned_payment' => 50000]);
 
         $projection = $this->service->projectPayoff($debt);
 
@@ -225,10 +225,10 @@ class DebtServiceTest extends TestCase
 
     public function test_el_resumen_suma_saldo_y_compromiso_mensual(): void
     {
-        $this->debt(['original_amount' => 1000000, 'current_balance' => 600000, 'scheduled_payment' => 50000]);
-        $this->debt(['original_amount' => 500000, 'current_balance' => 500000, 'scheduled_payment' => 30000]);
+        $this->debt(['original_amount' => 1000000, 'current_balance' => 600000, 'planned_payment' => 50000]);
+        $this->debt(['original_amount' => 500000, 'current_balance' => 500000, 'planned_payment' => 30000]);
         // Pagada: no cuenta.
-        $this->debt(['original_amount' => 200000, 'current_balance' => 0, 'scheduled_payment' => 10000, 'status' => DebtStatus::Paid]);
+        $this->debt(['original_amount' => 200000, 'current_balance' => 0, 'planned_payment' => 10000, 'status' => DebtStatus::Paid]);
 
         $summary = $this->service->summary($this->household->id);
 
@@ -252,7 +252,7 @@ class DebtServiceTest extends TestCase
 
     public function test_el_resumen_solo_ve_deudas_del_hogar(): void
     {
-        $this->debt(['current_balance' => 500000, 'scheduled_payment' => 50000]);
+        $this->debt(['current_balance' => 500000, 'planned_payment' => 50000]);
 
         $otro = Household::factory()->create();
         Debt::factory()->create(['household_id' => $otro->id, 'current_balance' => 9999999]);
@@ -266,7 +266,7 @@ class DebtServiceTest extends TestCase
     {
         $this->debt([
             'current_balance' => 1000000,
-            'scheduled_payment' => 120000,
+            'planned_payment' => 120000,
             'due_day' => 15,
         ]);
 
@@ -283,7 +283,7 @@ class DebtServiceTest extends TestCase
     {
         $debt = $this->debt([
             'current_balance' => 1000000,
-            'scheduled_payment' => 120000,
+            'planned_payment' => 120000,
             'due_day' => 15,
         ]);
 
@@ -308,7 +308,7 @@ class DebtServiceTest extends TestCase
     {
         $this->debt([
             'current_balance' => 30000, // queda menos que la cuota
-            'scheduled_payment' => 120000,
+            'planned_payment' => 120000,
             'due_day' => 15,
         ]);
 
@@ -342,7 +342,7 @@ class DebtServiceTest extends TestCase
     {
         $this->debt([
             'current_balance' => 1000000,
-            'scheduled_payment' => 50000,
+            'planned_payment' => 50000,
             'due_day' => 31,
         ]);
 
@@ -360,7 +360,7 @@ class DebtServiceTest extends TestCase
     {
         $this->debt([
             'current_balance' => 0,
-            'scheduled_payment' => 90000,
+            'planned_payment' => 90000,
             'due_day' => 5,
             'status' => DebtStatus::Paid,
         ]);

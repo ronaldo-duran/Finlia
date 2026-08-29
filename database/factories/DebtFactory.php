@@ -36,8 +36,9 @@ class DebtFactory extends Factory
             'interest_rate' => fake()->randomFloat(3, 8, 32),
             'interest_rate_type' => InterestRateType::Fixed->value,
             'minimum_payment' => round($original * 0.02, 2),
-            'scheduled_payment' => round($original * 0.05, 2),
+            'planned_payment' => round($original * 0.05, 2),
             'due_day' => fake()->numberBetween(1, 28),
+            'term_months' => 48,
             'start_date' => fake()->dateTimeBetween('-2 years', '-1 month')->format('Y-m-d'),
             'end_date' => null,
             'status' => DebtStatus::Active->value,
@@ -58,6 +59,11 @@ class DebtFactory extends Factory
     /** Sin cuota registrada: no se puede proyectar el fin de la deuda. */
     public function withoutInstallment(): static
     {
-        return $this->state(fn () => ['minimum_payment' => null, 'scheduled_payment' => null]);
+        return $this->state(fn () => ['minimum_payment' => null, 'planned_payment' => null]);
+    }
+
+    public function mortgage(): static
+    {
+        return $this->state(fn () => ['type' => DebtType::Mortgage->value, 'term_months' => 240]);
     }
 }

@@ -110,9 +110,40 @@ class DebtService
     {
         $debt = $household->debts()->make($data);
         $debt->current_balance = $data['original_amount'];
+        $debt->end_date = $this->deriveEndDate($debt);
         $debt->save();
 
         return $debt;
+    }
+
+    /**
+     * Actualiza los datos editables y recalcula lo derivado: la fecha de fin
+     * (inicio + cuotas, ADR-0022) y el saldo (ADR-0020).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function updateDebt(Debt $debt, array $data): Debt
+    {
+        $debt->fill($data);
+        $debt->end_date = $this->deriveEndDate($debt);
+        $debt->save();
+
+        return $this->recalculateBalance($debt);
+    }
+
+    /**
+     * Fecha de fin prevista: uno pacta un número de cuotas, no una fecha
+     * (ADR-0022). Sin inicio o sin plazo no hay nada que derivar.
+     */
+    private function deriveEndDate(Debt $debt): ?string
+    {
+        if ($debt->start_date === null || $debt->term_months === null) {
+            return null;
+        }
+
+        return Carbon::parse($debt->start_date)
+            ->addMonthsNoOverflow((int) $debt->term_months)
+            ->toDateString();
     }
 
     /**
@@ -198,12 +229,15 @@ class DebtService
             }
 
             if (! empty($data['installment'])) {
-                $changes['scheduled_payment'] = $data['installment'];
+                $changes['planned_payment'] = $data['installment'];
             }
 
             if (! empty($data['term_months'])) {
+                $changes['term_months'] = (int) $data['term_months'];
+                // addMonthsNoOverflow: un 31 de enero + 1 mes es 28/29 de
+                // febrero, no el 2 o 3 de marzo.
                 $changes['end_date'] = Carbon::parse($data['start_date'])
-                    ->addMonths((int) $data['term_months'])
+                    ->addMonthsNoOverflow((int) $data['term_months'])
                     ->toDateString();
             }
 

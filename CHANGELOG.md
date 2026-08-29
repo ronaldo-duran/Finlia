@@ -12,6 +12,41 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.9.0] - 2026-08-30 — Correcciones de uso y plazo de las deudas
+
+### Corregido
+- **«Balance del mes» no mostraba icono**: `bi-scale` no existe en Bootstrap Icons, y un `bi-*`
+  mal escrito no da error, simplemente no pinta nada. Se usa `bi-plus-slash-minus`. Un barrido
+  de los 2078 iconos del paquete confirma que era el único roto, y ahora hay un test que lo
+  comprueba en cada ejecución.
+- **El mes de la proyección de deuda salía en inglés**: `translatedFormat` usa el locale
+  **global** de Carbon, que su service provider sincroniza con `APP_LOCALE`. Con `APP_LOCALE=en`
+  —lo que trae la plantilla de Laravel— se veía «December de 2028» aunque el resto de la interfaz
+  estuviera en español, porque esa está escrita a mano en Blade. Se fija el locale en la instancia,
+  como ya hacían los otros cinco sitios del repo que formatean fechas.
+- **Los últimos movimientos se ordenaban de forma arbitraria y perdían registros.** La columna
+  `date` es DATE, sin hora, y el orden era `orderByDesc('date')` a secas: todos los movimientos
+  del mismo día empatan y su orden queda a criterio del motor. Como el LIMIT se aplica sobre ese
+  orden, un movimiento recién creado —el de «marcar pagado» de un recurrente, o un pago de deuda—
+  podía **no aparecer**. Ahora se desempata por `created_at` y luego por `id`.
+- El mismo método tomaba N movimientos de cada tabla y las mezclaba sin recortar: el panel pedía
+  6 y recibía hasta 12.
+
+### Cambiado
+- **La deuda se pacta en cuotas, no en una fecha** ([ADR-0022](docs/DECISIONS.md#adr-0022)):
+  `end_date` deja de teclearse y pasa a derivarse de `start_date + term_months`. Cada tipo tiene
+  su tope de cuotas (tarjeta 100, vehículo 96, hipotecario 480, resto 120), pensados para atajar
+  errores de dedo, no como límites legales.
+- **Nuevo tipo de deuda: crédito hipotecario.** Su plazo no cabía en ningún tipo existente.
+- **`scheduled_payment` pasa a `planned_payment`**, y los dos campos se explican por lo que son:
+  *cuota mínima* es lo que **exige la entidad**, *lo que planeas pagar* es lo que **tú decides**
+  (vacío = solo el mínimo). Se valida que el plan nunca quede por debajo del mínimo. El
+  comportamiento no cambia: lo que sale del bolsillo cada mes ya era `plan ?? mínimo`.
+
+### Seguridad
+- `type[]=x` en el alta de deuda habría devuelto 500 por el mismo cast inseguro que se corrigió
+  en 0.8.2 para `?estrategia[]=`. Se comprueba el tipo antes de resolver el enum, con test.
+
 ## [0.8.2] - 2026-08-29 — Revisión de seguridad de la Épica 6
 
 ### Seguridad

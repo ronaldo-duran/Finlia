@@ -101,10 +101,9 @@ class DebtController extends Controller
     {
         $this->authorize('update', $debt);
 
-        $debt->update($request->validatedData());
-
-        // Cambiar el monto original mueve la línea base del saldo (ADR-0020).
-        $this->debts->recalculateBalance($debt);
+        // El Service recalcula lo derivado: fin previsto (ADR-0022) y saldo,
+        // porque cambiar el monto original mueve su línea base (ADR-0020).
+        $this->debts->updateDebt($debt, $request->validatedData());
 
         return redirect()
             ->route('debts.show', $debt)

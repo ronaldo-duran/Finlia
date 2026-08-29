@@ -25,6 +25,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0019 — Los recursos financieros solo se operan desde su hogar activo](#adr-0019) — **ACEPTADA**
 - [ADR-0020 — Saldo de deuda derivado de una línea base más los pagos](#adr-0020) — **ACEPTADA**
 - [ADR-0021 — Un pago de deuda genera el movimiento real de la cuenta](#adr-0021) — **ACEPTADA**
+- [ADR-0022 — La deuda se pacta en cuotas, y el pago mínimo no es el plan de pago](#adr-0022) — **ACEPTADA**
 
 ---
 
@@ -649,6 +650,41 @@ La Épica 5 ya resolvió el caso gemelo: "Marcar pagado" en un gasto recurrente 
 - La FK `expense_id` es `nullOnDelete`: borrar el movimiento desde /movimientos no borra el historial de la deuda, solo rompe el vínculo.
 
 **Estado.** ACEPTADA — 2026-08-29. Implementada en `DebtService::registerPayment()` / `deletePayment()` / `committedInRange()` y en `BudgetCalculatorService`.
+
+---
+
+## ADR-0022
+### La deuda se pacta en cuotas, y el pago mínimo no es el plan de pago — **ACEPTADA**
+
+**Contexto.** Al usar el módulo de deudas recién entregado (Épica 6) salieron dos problemas de modelado que el propio usuario detectó:
+
+1. **`end_date` como fecha que se teclea.** Nadie pacta con un banco una *fecha* de fin: se pactan **cuotas**. La fecha es la consecuencia, no el dato. Además, pedir una fecha libre deja pasar plazos absurdos (una tarjeta a 20 años).
+2. **`minimum_payment` + `scheduled_payment` ("cuota pactada").** El nombre miente: no es lo que pacta la entidad, es lo que el usuario **decide** pagar. Puestos uno al lado del otro sin explicación, nadie sabe cuál rellenar.
+
+**Decisión.**
+
+1. **El plazo se expresa en `term_months` (número de cuotas)** y `end_date` pasa a ser **derivada**: `start_date + term_months`, calculada en `DebtService`. Deja de ser `fillable` y desaparece del formulario. Sin fecha de inicio no hay fin previsto, y se dice así en lugar de inventarlo.
+2. **Tope de cuotas por tipo de deuda** (`DebtType::maxTermMonths()`): tarjeta 100, vehículo 96, hipotecario 480, y 120 para préstamo, familiar y otras. Son topes **prácticos** para atajar errores de dedo (escribir 1200 en vez de 120), **no límites legales**: ninguna norma colombiana fija estos números y cada entidad tiene los suyos, así que se es deliberadamente generoso.
+3. **Nuevo tipo `DebtType::Mortgage`** (crédito hipotecario). No estaba en la Épica 6 y su plazo no cabe en ningún otro tipo: registrarlo como "préstamo" lo habría limitado a 120 cuotas cuando lo normal son 180-240.
+4. **`scheduled_payment` se renombra a `planned_payment`**, y los dos campos se explican por lo que son:
+   - **Cuota mínima** (`minimum_payment`): lo que **exige la entidad**. Es la obligación; por debajo hay mora.
+   - **Lo que planeas pagar** (`planned_payment`): lo que **tú decides**. Vacío significa "solo el mínimo".
+   - Validación: el plan **nunca** por debajo del mínimo, pero solo se compara si hay mínimo declarado (si no, `gte` compararía contra null y rechazaría cualquier valor).
+5. **El comportamiento no cambia**: `monthlyCommitment()` sigue siendo `plan ?? mínimo`. Ya era lo correcto —lo que sale del bolsillo es lo que vas a pagar de verdad— y esa cifra alimenta tanto el dinero comprometido como la proyección. Lo que cambia son los nombres.
+
+**Alternativas (descartadas).**
+- **Dejar la fecha de fin y solo validarla** — no resuelve la objeción de fondo: se seguiría pidiendo un dato que el usuario no tiene a mano y que puede teclear mal.
+- **Un solo campo de cuota** — más simple, pero pierde cuál es el mínimo exigido, que es justo lo que marca la mora en una tarjeta y lo que hace útil el aviso de "estás pagando solo el mínimo".
+- **Solo cambiar las etiquetas, sin tocar la columna** — habría dejado un nombre que miente en la base de datos, y el siguiente que lea `scheduled_payment` volverá a entender "cuota pactada con el banco".
+- **Topes legales por tipo** — no existen como tales; fingir una regulación que no se ha verificado sería peor que un tope práctico declarado como tal.
+
+**Consecuencias y mitigaciones.**
+- Migración de renombrado sobre una tabla recién creada. Se verificó `up` y `down` contra el esquema real, no solo en tests.
+- La refinanciación ya traía `term_months` e `installment`: ahora también copia el plazo a la deuda y su cuota va a `planned_payment`, que es lo que es.
+- El formulario ajusta el tope de cuotas al tipo elegido con JavaScript, pero **la validación de verdad está en el servidor**: el JS es comodidad, no control (docs/SECURITY.md).
+- Sigue sin acumularse interés (ADR-0020): el plazo pactado y el plazo que sale de la proyección pueden no coincidir, y son cosas distintas a propósito — uno es lo acordado, el otro lo que pasaría a tu ritmo real.
+
+**Estado.** ACEPTADA — 2026-08-30, a petición del usuario tras probar la Épica 6. Implementada en `DebtType`, `Debt`, `DebtService`, `StoreDebtRequest` y el formulario de deudas.
 
 ---
 

@@ -16,7 +16,8 @@
 
     <div class="col-12 col-sm-6">
         <label for="{{ $prefix }}type" class="form-label small fw-semibold">Tipo</label>
-        <select name="type" id="{{ $prefix }}type" required class="form-select @error('type') is-invalid @enderror">
+        <select name="type" id="{{ $prefix }}type" required data-debt-type
+                class="form-select @error('type') is-invalid @enderror">
             @foreach (\App\Enums\DebtType::cases() as $case)
                 <option value="{{ $case->value }}" @selected(old('type', $debt?->type?->value) === $case->value)>
                     {{ $case->label() }}
@@ -69,27 +70,31 @@
         </select>
     </div>
 
-    <div class="col-6">
-        <label for="{{ $prefix }}minimum_payment" class="form-label small fw-semibold">Pago mínimo</label>
+    <div class="col-12 col-sm-6">
+        <label for="{{ $prefix }}minimum_payment" class="form-label small fw-semibold">Cuota mínima</label>
         <div class="input-group">
             <span class="input-group-text">$</span>
             <input type="number" name="minimum_payment" id="{{ $prefix }}minimum_payment" step="0.01" min="0"
                    class="form-control @error('minimum_payment') is-invalid @enderror"
                    value="{{ old('minimum_payment', $debt?->minimum_payment) }}">
         </div>
+        <div class="form-text">Lo que te exige la entidad cada mes.</div>
         @error('minimum_payment')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
 
-    <div class="col-6">
-        <label for="{{ $prefix }}scheduled_payment" class="form-label small fw-semibold">Cuota pactada</label>
+    <div class="col-12 col-sm-6">
+        <label for="{{ $prefix }}planned_payment" class="form-label small fw-semibold">Lo que planeas pagar</label>
         <div class="input-group">
             <span class="input-group-text">$</span>
-            <input type="number" name="scheduled_payment" id="{{ $prefix }}scheduled_payment" step="0.01" min="0"
-                   class="form-control @error('scheduled_payment') is-invalid @enderror"
-                   value="{{ old('scheduled_payment', $debt?->scheduled_payment) }}">
+            <input type="number" name="planned_payment" id="{{ $prefix }}planned_payment" step="0.01" min="0"
+                   class="form-control @error('planned_payment') is-invalid @enderror"
+                   value="{{ old('planned_payment', $debt?->planned_payment) }}">
         </div>
-        <div class="form-text">Es la que se usa para proyectar.</div>
-        @error('scheduled_payment')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        <div class="form-text">
+            Si solo vas a pagar el mínimo, déjalo vacío. Si abonas de más,
+            ponlo aquí: es lo que se usa para saber cuándo terminarías.
+        </div>
+        @error('planned_payment')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
 
     <div class="col-4">
@@ -109,11 +114,19 @@
     </div>
 
     <div class="col-4">
-        <label for="{{ $prefix }}end_date" class="form-label small fw-semibold">Fin previsto</label>
-        <input type="date" name="end_date" id="{{ $prefix }}end_date"
-               class="form-control @error('end_date') is-invalid @enderror"
-               value="{{ old('end_date', $debt?->end_date?->format('Y-m-d')) }}">
-        @error('end_date')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        <label for="{{ $prefix }}term_months" class="form-label small fw-semibold">N.º de cuotas</label>
+        <input type="number" name="term_months" id="{{ $prefix }}term_months" min="1"
+               max="{{ $debt?->type?->maxTermMonths() ?? \App\Enums\DebtType::CreditCard->maxTermMonths() }}"
+               data-term-input
+               class="form-control @error('term_months') is-invalid @enderror"
+               value="{{ old('term_months', $debt?->term_months) }}">
+        @error('term_months')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+    </div>
+
+    <div class="col-12">
+        <div class="form-text" data-term-help>
+            El fin previsto se calcula solo: inicio + cuotas.
+        </div>
     </div>
 
     <div class="col-12">
@@ -148,3 +161,43 @@
         @error('notes')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
 </div>
+
+
+@once
+    @push('scripts')
+        <script>
+            // Tope de cuotas por tipo de deuda. La validación de verdad está
+            // en el servidor (StoreDebtRequest); esto solo evita que el
+            // usuario escriba un número que le van a rechazar.
+            (function () {
+                const limites = @js(\App\Enums\DebtType::termLimits());
+
+                document.querySelectorAll('[data-debt-type]').forEach(function (select) {
+                    const form = select.closest('form');
+                    if (!form) return;
+
+                    const input = form.querySelector('[data-term-input]');
+                    const ayuda = form.querySelector('[data-term-help]');
+                    if (!input) return;
+
+                    function ajustar() {
+                        const max = limites[select.value];
+                        if (!max) return;
+
+                        input.max = max;
+                        if (input.value && Number(input.value) > max) {
+                            input.value = max;
+                        }
+                        if (ayuda) {
+                            ayuda.textContent =
+                                'El fin previsto se calcula solo: inicio + cuotas. Máximo ' + max + ' cuotas para este tipo.';
+                        }
+                    }
+
+                    select.addEventListener('change', ajustar);
+                    ajustar();
+                });
+            })();
+        </script>
+    @endpush
+@endonce

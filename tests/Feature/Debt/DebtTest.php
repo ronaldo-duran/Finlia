@@ -54,7 +54,7 @@ class DebtTest extends TestCase
             'name' => 'Tarjeta Ahorros',
             'original_amount' => 4800000,
             'current_balance' => 4000000,
-            'scheduled_payment' => 800000,
+            'planned_payment' => 800000,
         ]);
 
         $this->actingAs($owner)
@@ -73,7 +73,7 @@ class DebtTest extends TestCase
             'original_amount' => 1000000,
             'current_balance' => 1000000,
             'interest_rate' => 0,
-            'scheduled_payment' => 100000,
+            'planned_payment' => 100000,
             'minimum_payment' => null,
         ]);
 
@@ -130,7 +130,7 @@ class DebtTest extends TestCase
             'name' => 'Préstamo moto',
             'type' => DebtType::Vehicle->value,
             'original_amount' => 6000000,
-            'scheduled_payment' => 300000,
+            'planned_payment' => 300000,
             'due_day' => 5,
         ])->assertRedirect();
 
@@ -168,7 +168,7 @@ class DebtTest extends TestCase
             'name' => 'Renombrada',
             'type' => $debt->type->value,
             'original_amount' => 1000000,
-            'scheduled_payment' => 90000,
+            'planned_payment' => 90000,
         ])->assertRedirect(route('debts.show', $debt));
 
         $this->assertSame('Renombrada', $debt->fresh()->name);
@@ -197,6 +197,116 @@ class DebtTest extends TestCase
             'original_amount' => 0,   // debe ser > 0
             'due_day' => 45,          // fuera de rango
         ])->assertSessionHasErrors(['name', 'type', 'original_amount', 'due_day']);
+    }
+
+    // ===== Plazo en cuotas y compromiso de pago (ADR-0022) =====
+
+    public function test_el_fin_previsto_se_calcula_desde_inicio_mas_cuotas(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+
+        $this->actingAs($owner)->post(route('debts.store'), [
+            'name' => 'Crédito moto',
+            'type' => DebtType::Vehicle->value,
+            'original_amount' => 6000000,
+            'start_date' => '2026-01-31',
+            'term_months' => 24,
+        ])->assertRedirect();
+
+        // 31/01 + 24 meses debe caer el 31/01, no desbordar a marzo.
+        $this->assertSame('2028-01-31', Debt::firstWhere('name', 'Crédito moto')->end_date->toDateString());
+    }
+
+    public function test_sin_fecha_de_inicio_no_hay_fin_previsto(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+
+        $this->actingAs($owner)->post(route('debts.store'), [
+            'name' => 'Sin inicio',
+            'type' => DebtType::Loan->value,
+            'original_amount' => 1000000,
+            'term_months' => 12,
+        ])->assertRedirect();
+
+        $this->assertNull(Debt::firstWhere('name', 'Sin inicio')->end_date);
+    }
+
+    public function test_cada_tipo_de_deuda_tiene_su_tope_de_cuotas(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+
+        // Una tarjeta a 240 cuotas no tiene sentido: el tope es 100.
+        $this->actingAs($owner)->post(route('debts.store'), [
+            'name' => 'Tarjeta larga',
+            'type' => DebtType::CreditCard->value,
+            'original_amount' => 1000000,
+            'term_months' => 240,
+        ])->assertSessionHasErrors('term_months');
+
+        // Ese mismo plazo sí es normal en un hipotecario (tope 480).
+        $this->actingAs($owner)->post(route('debts.store'), [
+            'name' => 'Casa',
+            'type' => DebtType::Mortgage->value,
+            'original_amount' => 300000000,
+            'term_months' => 240,
+        ])->assertSessionDoesntHaveErrors('term_months');
+
+        $this->assertDatabaseHas('debts', ['name' => 'Casa', 'type' => 'mortgage', 'term_months' => 240]);
+    }
+
+    public function test_un_tipo_manipulado_no_rompe_la_validacion(): void
+    {
+        [$owner] = $this->setupHousehold();
+
+        // type[]=x haría que input() devuelva un array.
+        $this->actingAs($owner)->post(route('debts.store'), [
+            'name' => 'Manipulada',
+            'type' => ['credit_card'],
+            'original_amount' => 1000000,
+            'term_months' => 12,
+        ])->assertSessionHasErrors('type');
+    }
+
+    public function test_no_se_puede_planear_pagar_menos_que_el_minimo(): void
+    {
+        [$owner] = $this->setupHousehold();
+
+        $this->actingAs($owner)->post(route('debts.store'), [
+            'name' => 'Incoherente',
+            'type' => DebtType::CreditCard->value,
+            'original_amount' => 1000000,
+            'minimum_payment' => 100000,
+            'planned_payment' => 50000, // menos que el mínimo exigido
+        ])->assertSessionHasErrors('planned_payment');
+    }
+
+    public function test_sin_plan_propio_el_compromiso_es_la_cuota_minima(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+
+        $debt = $this->debtFor($household, [
+            'minimum_payment' => 120000,
+            'planned_payment' => null,
+            'current_balance' => 1000000,
+        ]);
+
+        $this->assertSame(120000.0, $debt->monthlyCommitment());
+        $this->assertFalse($debt->paysAboveMinimum());
+    }
+
+    public function test_si_planeas_pagar_de_mas_manda_tu_plan(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+
+        $debt = $this->debtFor($household, [
+            'minimum_payment' => 120000,
+            'planned_payment' => 400000,
+            'current_balance' => 1000000,
+        ]);
+
+        // Lo que sale del bolsillo es el plan, no el mínimo.
+        $this->assertSame(400000.0, $debt->monthlyCommitment());
+        $this->assertTrue($debt->paysAboveMinimum());
     }
 
     // ===== Pagos =====

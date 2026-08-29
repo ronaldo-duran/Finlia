@@ -222,7 +222,8 @@ class DatabaseSeeder extends Seeder
             'interest_rate' => 28.5,
             'interest_rate_type' => 'fixed',
             'minimum_payment' => 240000,
-            'scheduled_payment' => 800000,
+            'planned_payment' => 800000,
+            'term_months' => 12,
             'due_day' => 15,
             'start_date' => $now->copy()->subMonths(8)->toDateString(),
         ]);
@@ -245,7 +246,8 @@ class DatabaseSeeder extends Seeder
             'original_amount' => 9000000,
             'interest_rate' => 16.0,
             'interest_rate_type' => 'fixed',
-            'scheduled_payment' => 450000,
+            'planned_payment' => 450000,
+            'term_months' => 24,
             'due_day' => 5,
             'start_date' => $now->copy()->subMonth()->toDateString(),
         ]);
