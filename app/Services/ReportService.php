@@ -191,10 +191,11 @@ class ReportService
      */
     public function exportRows(int $householdId, CarbonInterface $from, CarbonInterface $to): Collection
     {
-        // La exportación no puede truncarse en silencio: el tope de 200 de
-        // `filtered()` protege la pantalla de navegación, no un archivo que
-        // el usuario va a conciliar. 10.000 filas cubre con holgura un año a
-        // escala personal y sigue siendo un límite de memoria prudente.
+        // La exportación no puede truncarse en silencio: los topes de
+        // `filtered()` (20 por defecto, ventana de página+50) protegen la
+        // pantalla de navegación, no un archivo que el usuario va a
+        // conciliar. 10.000 filas cubre con holgura un año a escala
+        // personal y sigue siendo un límite de memoria prudente.
         return $this->movements->filtered($householdId, [
             'from' => Carbon::parse($from)->toDateString(),
             'to' => Carbon::parse($to)->toDateString(),

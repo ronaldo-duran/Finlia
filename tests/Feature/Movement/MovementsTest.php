@@ -118,6 +118,15 @@ class MovementsTest extends TestCase
         ]);
     }
 
+    public function test_usuario_sin_hogar_es_redirigido_a_crear_hogar(): void
+    {
+        // Guard defensivo (ADR-0011): sin hogar no hay lista que mostrar.
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('movements.index'))
+            ->assertRedirect(route('households.create'));
+    }
+
     public function test_la_lista_carga_de_a_20_con_boton_de_cargar_mas(): void
     {
         [$owner, $household, $account, $category] = $this->setupForPagination();

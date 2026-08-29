@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Category;
 use App\Services\MovementSummaryService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -21,13 +22,19 @@ class MovementsController extends Controller
 
     public function __construct(private readonly MovementSummaryService $summary) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $household = active_household();
+
+        // Defensivo: un usuario autenticado siempre tiene hogar (ADR-0011).
+        if ($household === null) {
+            return redirect()->route('households.create');
+        }
+
         $householdId = $household->id;
 
         $filters = $this->filters($request);
-        $offset = max(0, (int) $request->query('offset', 0));
+        $offset = max(0, (int) $request->query('offset'));
 
         [$movements, $hasMore] = $this->summary->filteredPage($householdId, $filters, $offset, self::PAGE_SIZE);
 
