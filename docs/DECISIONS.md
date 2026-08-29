@@ -23,6 +23,8 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0017 — Identidad de marca Finlia (símbolo de puntos, petróleo/cobre)](#adr-0017) — **ACEPTADA**
 - [ADR-0018 — Recurrentes: seams fijo/obligación por frecuencia, ocurrencias reales y "marcar pagado"](#adr-0018) — **ACEPTADA**
 - [ADR-0019 — Los recursos financieros solo se operan desde su hogar activo](#adr-0019) — **ACEPTADA**
+- [ADR-0020 — Saldo de deuda derivado de una línea base más los pagos](#adr-0020) — **ACEPTADA**
+- [ADR-0021 — Un pago de deuda genera el movimiento real de la cuenta](#adr-0021) — **ACEPTADA**
 
 ---
 
@@ -588,6 +590,65 @@ Se implementa en un trait único, `App\Policies\Concerns\ChecksHouseholdAccess`,
 - Efecto colateral positivo: elimina siete copias de `userInHousehold()`.
 
 **Estado.** ACEPTADA — 2026-08-22, a raíz del `/security-checklist` de la Épica 5. Suite completa (212 PHPUnit + 18 E2E) en verde tras el cambio, sin ajustar ningún test existente.
+
+---
+
+## ADR-0020
+### Saldo de deuda derivado de una línea base más los pagos — **ACEPTADA**
+
+**Contexto.** La Épica 6 guarda `original_amount` y `current_balance`. Había que decidir qué es `current_balance`: un número que el usuario teclea y mantiene a mano, o algo derivado de los pagos registrados.
+
+El proyecto ya resolvió la pregunta equivalente para cuentas en ADR-0012 (saldo persistido y recomputado desde la fuente en cada escritura). Pero una deuda tiene una complicación que una cuenta no tiene: **los intereses**, y la posibilidad de **refinanciar**, que cambia el punto de partida.
+
+**Decisión.**
+
+1. **`current_balance` es derivado, nunca se teclea.** Se recalcula como `línea base − Σ pagos posteriores a esa línea base`, y se persiste (igual que ADR-0012: derivado pero materializado, para no recalcular en cada lectura).
+2. **La línea base es `original_amount`**, o el `refinanced_balance` de la **refinanciación más reciente** si la hay. Los pagos anteriores a una refinanciación ya están incorporados en el saldo refinanciado, así que no se vuelven a restar.
+3. **El saldo nunca baja de cero.** Un sobrepago deja la deuda en 0, no en negativo: un saldo negativo sería un préstamo a favor, que no es lo que modela esta entidad.
+4. **El estado se mueve solo entre `active` y `paid`.** Al llegar a cero la deuda se marca pagada; si vuelve a haber saldo (se borró un pago) regresa a activa. `refinanced` y `written_off` los pone el usuario y el sistema no los pisa.
+5. **`current_balance` no es fillable** y el Form Request no lo acepta, así que no se puede forzar por mass assignment.
+
+**Alternativas (descartadas).**
+- **Saldo tecleado por el usuario** — es lo que hace una hoja de cálculo, y arrastra su mismo problema: en cuanto el usuario registra un pago y olvida actualizar el saldo, los dos números se contradicen y el panel de deuda deja de ser fiable.
+- **Saldo derivado con amortización real de intereses** (recalcular mes a mes aplicando la tasa) — es lo correcto para un banco, pero exigiría conocer la fecha exacta de capitalización, los días de mora, las cuotas de manejo y los seguros. Sin esos datos la simulación daría un número *preciso pero falso*, que es peor que uno aproximado y honesto.
+- **Saldo incremental** (sumar/restar en cada pago sin recomputar) — un borrado o una edición dejan el saldo desviado para siempre, sin forma de detectarlo.
+
+**Consecuencias y mitigaciones.**
+- **Los intereses no se acumulan solos.** El saldo solo baja con los pagos; si el banco capitaliza intereses, el saldo real será mayor que el que muestra Finlia. La vía para corregirlo es registrar una **refinanciación** con el saldo real, que fija una nueva línea base. Está documentado en la UI como estimación.
+- La proyección de fin de deuda (`projectPayoff`) **sí** aplica la tasa mes a mes, pero solo para *estimar* una fecha, nunca para mover el saldo guardado. La UI lo marca como estimación y advierte de lo que no contempla.
+- Borrar un pago devuelve el saldo automáticamente: no hay que recordar ajustar nada.
+- Cambiar `original_amount` mueve la línea base, así que el controlador recalcula el saldo tras cada edición.
+
+**Estado.** ACEPTADA — 2026-08-29. Implementada en `DebtService::recalculateBalance()`, `baseline()` y las tablas `debts` / `debt_payments` / `debt_refinancings`.
+
+---
+
+## ADR-0021
+### Un pago de deuda genera el movimiento real de la cuenta — **ACEPTADA**
+
+**Contexto.** Pagar una deuda son dos hechos a la vez: baja lo que debes **y** sale dinero de una cuenta. Si Finlia solo registrara lo primero, el saldo de la cuenta quedaría inflado y el "puedes gastar" mentiría justo después de la operación más importante del mes.
+
+La Épica 5 ya resolvió el caso gemelo: "Marcar pagado" en un gasto recurrente crea el `Expense` sobre la cuenta asociada.
+
+**Decisión.**
+
+1. **`debt_payments.account_id` es opcional.** Si se indica una cuenta del hogar, `DebtService::registerPayment()` crea el `Expense` correspondiente vía `MovementService` **en la misma transacción**: o quedan las dos cosas, o ninguna. El pago guarda `expense_id` para no perder el vínculo.
+2. **Sin cuenta, solo baja la deuda.** Es el caso del pago en efectivo o desde una cuenta que el hogar no lleva en Finlia. La UI lo dice explícitamente en vez de inventarse un movimiento.
+3. **Borrar un pago deshace las dos cosas**: elimina el gasto (lo que devuelve el dinero al saldo de la cuenta, ADR-0012) y recalcula la deuda.
+4. **El término `debt` del dinero disponible cuenta solo las cuotas PENDIENTES** de la ventana. Si la cuota del mes ya se pagó, sale del comprometido, porque ese dinero ya figura como gasto. Sin esta resta, pagar una deuda bajaría el "puedes gastar" **dos veces**: una como gasto y otra como cuota comprometida.
+
+**Alternativas (descartadas).**
+- **Crear siempre el gasto, obligando a elegir cuenta** — rompe el caso real del pago en efectivo o desde una cuenta no registrada, y forzaría al usuario a inventarse una cuenta falsa.
+- **No crear nunca el gasto** — deja el saldo de las cuentas mintiendo y obliga a registrar el mismo pago dos veces, a mano, en dos pantallas distintas.
+- **Un tipo de movimiento propio "pago de deuda"** en lugar de un `Expense` — duplicaría el motor de movimientos y su recálculo de saldos por una distinción que la descripción del gasto ya expresa.
+
+**Consecuencias y mitigaciones.**
+- El gasto generado lleva la descripción `"<deuda> (pago de deuda)"`, así que se distingue en /movimientos sin necesidad de un tipo nuevo.
+- La categoría es opcional: si el hogar tiene una categoría "Deudas" puede elegirla y el pago entra en sus informes de gasto por categoría.
+- `expenses` usa borrado lógico, así que al borrar un pago el movimiento queda como historial pero deja de contar para el saldo.
+- La FK `expense_id` es `nullOnDelete`: borrar el movimiento desde /movimientos no borra el historial de la deuda, solo rompe el vínculo.
+
+**Estado.** ACEPTADA — 2026-08-29. Implementada en `DebtService::registerPayment()` / `deletePayment()` / `committedInRange()` y en `BudgetCalculatorService`.
 
 ---
 

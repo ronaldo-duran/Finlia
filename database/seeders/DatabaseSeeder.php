@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Enums\AccountType;
 use App\Enums\BudgetPeriod;
+use App\Enums\DebtPaymentType;
+use App\Enums\DebtType;
 use App\Enums\Frequency;
 use App\Enums\HouseholdRole;
 use App\Models\Account;
@@ -14,6 +16,7 @@ use App\Models\HouseholdInvitation;
 use App\Models\Income;
 use App\Models\User;
 use App\Services\AccountBalanceService;
+use App\Services\DebtService;
 use App\Services\HouseholdService;
 use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -117,6 +120,7 @@ class DatabaseSeeder extends Seeder
 
         $this->seedBudgets($household, $expenseCategories, $incomeCategories);
         $this->seedRecurringExpenses($household, $accounts);
+        $this->seedDebts($household, $accounts);
     }
 
     /**
@@ -196,5 +200,54 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]);
         });
+    }
+
+    /**
+     * Deudas de demostración (Épica 6). Datos FALSOS: una tarjeta con algo
+     * de historial de pagos y un préstamo recién empezado, para que el panel
+     * de deuda y las proyecciones no salgan vacíos.
+     */
+    private function seedDebts(Household $household, Collection $accounts): void
+    {
+        $debts = app(DebtService::class);
+        $now = Carbon::now(config('app.timezone'));
+        $card = $accounts->firstWhere('type', AccountType::CreditCard);
+
+        $tarjeta = $debts->createDebt($household, [
+            'account_id' => $card?->id,
+            'name' => 'Tarjeta de crédito',
+            'institution' => 'Banco de demostración',
+            'type' => DebtType::CreditCard->value,
+            'original_amount' => 4800000,
+            'interest_rate' => 28.5,
+            'interest_rate_type' => 'fixed',
+            'minimum_payment' => 240000,
+            'scheduled_payment' => 800000,
+            'due_day' => 15,
+            'start_date' => $now->copy()->subMonths(8)->toDateString(),
+        ]);
+
+        // Un par de cuotas ya pagadas: el saldo baja solo (ADR-0020).
+        foreach ([2, 1] as $monthsAgo) {
+            $tarjeta->payments()->forceCreate([
+                'household_id' => $household->id,
+                'amount' => 800000,
+                'date' => $now->copy()->subMonths($monthsAgo)->setDay(15)->toDateString(),
+                'type' => DebtPaymentType::Scheduled->value,
+            ]);
+        }
+        $debts->recalculateBalance($tarjeta);
+
+        $debts->createDebt($household, [
+            'name' => 'Crédito moto',
+            'institution' => 'Financiera de demostración',
+            'type' => DebtType::Vehicle->value,
+            'original_amount' => 9000000,
+            'interest_rate' => 16.0,
+            'interest_rate_type' => 'fixed',
+            'scheduled_payment' => 450000,
+            'due_day' => 5,
+            'start_date' => $now->copy()->subMonth()->toDateString(),
+        ]);
     }
 }

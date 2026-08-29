@@ -34,7 +34,10 @@ use Illuminate\Support\Collection;
  */
 class BudgetCalculatorService
 {
-    public function __construct(private readonly RecurringExpenseService $recurringExpenses) {}
+    public function __construct(
+        private readonly RecurringExpenseService $recurringExpenses,
+        private readonly DebtService $debts,
+    ) {}
 
     /**
      * Resumen completo de un período. Es la única entrada que necesitan la
@@ -113,11 +116,16 @@ class BudgetCalculatorService
         // en gastos fijos (alta frecuencia) y obligaciones (trimestral+).
         $recurringCommitted = $this->recurringExpenses->committedInRange($householdId, $from, $to);
 
+        // Épica 6: cuotas de deuda que vencen en la ventana y aún no se han
+        // pagado. Las ya pagadas salen del comprometido porque ese dinero ya
+        // figura como gasto (ADR-0021): contarlas aquí lo restaría dos veces.
+        $debtCommitted = $this->debts->committedInRange($householdId, $from, $to);
+
         $committed = [
             'budget' => $this->money($committedBudget),
             'fixed_expenses' => $this->money($recurringCommitted['fixed']),  // Épica 5 — arriendo, servicios…
             'recurring' => $this->money($recurringCommitted['recurring']),   // Épica 5 — SOAT, matrícula…
-            'debt' => 0.0,                                                    // Épica 6 — obligaciones de deuda
+            'debt' => $this->money($debtCommitted),                          // Épica 6 — cuotas pendientes
             'savings' => 0.0,                                                 // Épica 7 — ahorro programado
         ];
         $committedTotal = array_sum($committed);

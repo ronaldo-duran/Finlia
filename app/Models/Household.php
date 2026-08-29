@@ -86,6 +86,23 @@ class Household extends Model
         return $this->hasMany(RecurringExpense::class);
     }
 
+    // ---- Épica 6: deudas y tarjetas de crédito ----
+
+    public function debts(): HasMany
+    {
+        return $this->hasMany(Debt::class);
+    }
+
+    public function debtPayments(): HasMany
+    {
+        return $this->hasMany(DebtPayment::class);
+    }
+
+    public function creditCards(): HasMany
+    {
+        return $this->hasMany(CreditCard::class);
+    }
+
     /**
      * Indica si un usuario es miembro del hogar.
      */

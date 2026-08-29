@@ -8,7 +8,11 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CreditCardController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DebtController;
+use App\Http\Controllers\DebtPaymentController;
+use App\Http\Controllers\DebtRefinancingController;
 use App\Http\Controllers\ExpectedIncomeController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\HouseholdController;
@@ -169,4 +173,30 @@ Route::middleware('auth')->group(function () {
         ->name('recurring-expenses.destroy');
     Route::post('recurrentes/{recurringExpense}/pagar', [RecurringExpenseController::class, 'markPaid'])
         ->name('recurring-expenses.mark-paid');
+
+    // ---- Épica 6: deudas y tarjetas de crédito ----
+    Route::get('deudas', [DebtController::class, 'index'])
+        ->name('debts.index');
+    Route::post('deudas', [DebtController::class, 'store'])
+        ->name('debts.store');
+    Route::get('deudas/{debt}', [DebtController::class, 'show'])
+        ->name('debts.show');
+    Route::put('deudas/{debt}', [DebtController::class, 'update'])
+        ->name('debts.update');
+    Route::delete('deudas/{debt}', [DebtController::class, 'destroy'])
+        ->name('debts.destroy');
+
+    Route::post('deudas/{debt}/pagos', [DebtPaymentController::class, 'store'])
+        ->name('debts.payments.store');
+    Route::delete('deudas/{debt}/pagos/{payment}', [DebtPaymentController::class, 'destroy'])
+        ->name('debts.payments.destroy');
+
+    Route::post('deudas/{debt}/refinanciacion', [DebtRefinancingController::class, 'store'])
+        ->name('debts.refinancings.store');
+
+    // Datos de tarjeta sobre una cuenta type=credit_card (ADR-0002).
+    Route::put('cuentas/{account}/tarjeta', [CreditCardController::class, 'update'])
+        ->name('accounts.credit-card.update');
+    Route::delete('cuentas/{account}/tarjeta', [CreditCardController::class, 'destroy'])
+        ->name('accounts.credit-card.destroy');
 });
