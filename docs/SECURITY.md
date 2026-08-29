@@ -9,7 +9,7 @@
 | 1 | Acceso a datos de otro hogar (IDOR / manipulación de ID/URL) | Crítico | Alta | 🔴 Máxima |
 | 2 | Fuga de secretos al repo público (`.env`, keys, datos reales) | Crítico | Media | 🔴 Máxima |
 | 3 | Mass assignment (escalar privilegios / inyectar `household_id`) | Alto | Media | 🟠 Alta |
-| 4 | Datos reales de Ronaldo/Vanessa en el repo | Alto | Media | 🟠 Alta |
+| 4 | Datos reales en el repo | Alto | Media | 🟠 Alta |
 | 5 | Almacenamiento de datos sensibles de tarjetas | Alto | Baja | 🟠 Alta |
 | 6 | Desbordamiento de funcionalidad Premium por frontend | Medio | Media | 🟡 Media |
 | 7 | XSS / CSRF / SQLi | Alto | Baja | 🟠 Alta |
@@ -76,7 +76,7 @@ Cubrir `index`, `show`, `store` (con `household_id` forzado), `update`, `destroy
 - `.env`, `.env.production`, `.env.backup`, ningún `.env.*` con valores.
 - Contraseñas, API keys, tokens de servicios, SMTP reales.
 - `auth.json`, `storage/*.key`, certificados, `.pem`.
-- **Datos financieros reales** de cualquier persona (Ronaldo, Vanessa, etc.).
+- **Datos financieros reales** de cualquier persona.
 - Screenshots, dumps CSV/SQL, logs con datos reales.
 - Tokens de invitación en texto plano en fixtures/seeders.
 
