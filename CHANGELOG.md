@@ -12,6 +12,34 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.16.0] - 2026-08-30 — Perfil: contraseña y cambio de correo (Plan 02)
+
+### Añadido
+- **Pantalla `/perfil`** (menú del avatar → "Mi perfil"): nombre, contraseña y correo
+  con su estado. Preferencia del usuario, no del hogar — sin IDs ajenos en la URL,
+  solo el autenticado existe ([ADR-0030](docs/DECISIONS.md#adr-0030)).
+- **Cambio de contraseña con re-autenticación**: pide la contraseña actual y al
+  cambiarla **revoca las demás sesiones** y cookies de "recuérdame" (middleware
+  `AuthenticateSession`); la sesión actual sigue viva. Aviso al propio correo con la
+  vía de recuperación si no fuiste tú.
+- **Cambio de correo con doble confirmación**: el correo nuevo queda pendiente hasta
+  que **esa bandeja** confirma el enlace (token de un uso, 60 min, guardado hasheado).
+  Confirmar marca el correo como verificado, conserva hogares/preferencias/sesión, y
+  **avisa al correo anterior** — la pierna antifraude del flujo. Coherente con el
+  anti-squatting del registro: un fantasma sin verificar no bloquea el cambio, una
+  cuenta verificada sí.
+
+### Cambiado
+- La política de correo pasa a **7 correos** (+3 transaccionales de seguridad del
+  perfil — tabla de [ARCHITECTURE §7](docs/ARCHITECTURE.md)).
+- La recuperación de contraseña por correo ahora **cierra las demás sesiones** por
+  construcción (re-hashea la contraseña): una cuenta comprometida se limpia con un
+  reset.
+
+### Notas
+- Sin cambios en `.env` ni en el cron. Migración solo añade las columnas
+  `pending_email*` a `users`.
+
 ## [0.15.0] - 2026-08-30 — Verificación de correo en el registro (Plan 01)
 
 ### Añadido

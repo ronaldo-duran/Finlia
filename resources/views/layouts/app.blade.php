@@ -62,6 +62,11 @@
                             <li><span class="dropdown-item-text small text-muted">{{ Auth::user()->email }}</span></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
+                                <a class="dropdown-item" href="{{ route('profile.edit') }}">
+                                    <i class="bi bi-person me-1"></i> Mi perfil
+                                </a>
+                            </li>
+                            <li>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
                                     <button type="submit" class="dropdown-item text-danger">

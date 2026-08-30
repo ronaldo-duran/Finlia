@@ -23,6 +23,7 @@ use App\Http\Controllers\HouseholdMemberController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MovementsController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecurringExpenseController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReportController;
@@ -91,6 +92,15 @@ Route::get('verificar-correo/{id}/{hash}', [EmailVerificationController::class, 
     ->name('verification.verify')
     ->middleware(['signed', 'throttle:6,1']);
 
+// ---- Confirmación del cambio de correo (Plan 02) ----
+// Público con token aleatorio (hash sha256 en la base, patrón de las
+// invitaciones): el click llega desde la bandeja NUEVA, sin sesión. El
+// token ES la autorización — poseerlo equivale a controlar esa bandeja
+// (mismo criterio que la verificación del registro). GET muta a propósito.
+Route::get('confirmar-correo/{token}', [ProfileController::class, 'confirmEmail'])
+    ->name('profile.email.confirm')
+    ->middleware('throttle:6,1');
+
 // ---- Rutas privadas ----
 // Nivel 1 (solo sesión): cerrar sesión y el flujo de verificación son lo
 // ÚNICO alcanzable sin correo confirmado. Nivel 2 (sesión + verified):
@@ -110,6 +120,21 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)
         ->name('dashboard');
+
+    // ---- Perfil: nombre, contraseña y correo (Plan 02) ----
+    // Preferencia del USUARIO, no del hogar: vive fuera del multi-tenant.
+    // Solo alcanza al propio autenticado (UserPolicy), nunca por ID de URL.
+    Route::get('perfil', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('perfil/datos', [ProfileController::class, 'update'])->name('profile.update');
+    // Re-autenticación (current_password) + revocación de otras sesiones.
+    Route::put('perfil/contrasena', [ProfileController::class, 'updatePassword'])
+        ->name('profile.password.update')
+        ->middleware('throttle:6,1');
+    // Dispara un correo a la bandeja nueva: mismo throttle del reenvío de
+    // verificación (3/min por usuario).
+    Route::put('perfil/correo', [ProfileController::class, 'updateEmail'])
+        ->name('profile.email.update')
+        ->middleware('throttle:verification');
 
     // ---- Hogares (Épica 2) ----
     Route::get('hogares', [HouseholdController::class, 'index'])->name('households.index');
