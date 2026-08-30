@@ -38,6 +38,12 @@ class RegistrationTest extends TestCase
             'name' => 'María González',
             'email_verified_at' => null,
         ]);
+
+        // Todo usuario arranca con su hogar personal activo (Épica 2) —
+        // la aserción vive aquí desde el plan 01: el e2e ya no llega al
+        // dashboard para ver el selector de hogares.
+        $user = User::firstWhere('email', 'maria@ejemplo.com');
+        $this->assertTrue($user->households()->where('name', 'Mi hogar')->exists());
     }
 
     public function test_no_se_puede_registrar_un_correo_duplicado(): void

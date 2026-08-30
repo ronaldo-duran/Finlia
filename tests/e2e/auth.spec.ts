@@ -33,7 +33,7 @@ test.describe('Autenticación', () => {
     await expect(page).toHaveURL(/\/login$/);
   });
 
-  test('el registro crea la cuenta y el hogar inicial "Mi hogar"', async ({ page }) => {
+  test('el registro crea la cuenta y bloquea la app hasta verificar el correo', async ({ page }) => {
     const email = `playwright-${Date.now()}@finlia.test`;
 
     await page.goto('/registro');
@@ -43,9 +43,20 @@ test.describe('Autenticación', () => {
     await page.fill('input[name="password_confirmation"]', 'ClavePlaywright1');
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
 
-    await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByText('¡Bienvenido a Finlia')).toBeVisible();
-    // Todo usuario arranca con su hogar personal activo (Épica 2).
-    await expect(page.locator('.household-selector-btn')).toContainText('Mi hogar');
+    // Plan 01: no entra al dashboard; queda en el aviso "Revisa tu correo"
+    // (la creación del hogar "Mi hogar" se verifica en PHPUnit: aquí no hay
+    // bandeja real donde recibir el enlace).
+    await expect(page).toHaveURL(/\/verificar-correo$/);
+    await expect(page.getByRole('heading', { name: 'Revisa tu correo' })).toBeVisible();
+    await expect(page.getByText(email)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reenviar enlace' })).toBeVisible();
+
+    // Sin verificar no se navega: cualquier página privada rebota al aviso.
+    await page.goto('/dashboard');
+    await expect(page).toHaveURL(/\/verificar-correo$/);
+
+    // Cerrar sesión sigue disponible (única salida honesta sin confirmar).
+    await page.getByRole('button', { name: 'Cerrar sesión' }).click();
+    await expect(page).toHaveURL(/\/login$/);
   });
 });
