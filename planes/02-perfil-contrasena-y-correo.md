@@ -58,20 +58,25 @@ El nuevo correo **debe verificarse antes** de reemplazar al actual:
 
 ## Alcance
 
-- [ ] Ruta+pantalla `/perfil` (GET) + `PUT /perfil/datos` (nombre).
-- [ ] `PUT /perfil/contrasena` (Request con `current_password` + reglas
-      fuertes; Policy: solo el propio usuario — `updateOwnProfile`).
-- [ ] `PUT /perfil/correo` (arranca el flujo pending) + GET público
+> ✅ **Implementado el 2026-08-30** — [ADR-0030](../docs/DECISIONS.md#adr-0030),
+> CHANGELOG 0.16.0, 444 tests en verde. Lo que sigue es el alcance original
+> (cumplido) tal como se planeó.
+
+- [x] Ruta+pantalla `/perfil` (GET) + `PUT /perfil/datos` (nombre).
+- [x] `PUT /perfil/contrasena` (Request con `current_password` + reglas
+      fuertes; Policy: solo el propio usuario — `UserPolicy::update`).
+- [x] `PUT /perfil/correo` (arranca el flujo pending) + GET público
       `confirmar-correo/{token}`.
-- [ ] Dos correos propios (aviso contraseña, confirmación correo nuevo) +
+- [x] Dos correos propios (aviso contraseña, confirmación correo nuevo) +
       aviso al correo antiguo. Estilo Finlia, español, transaccionales
       (ADR-0015).
-- [ ] Tests: contraseña correcta/incorrecta; otras sesiones mueren; correo
+- [x] Tests: contraseña correcta/incorrecta; otras sesiones mueren; correo
       en uso rechazado (incluye pending ajeno); token válido cambia y
       verifica; token inválido/expirado rechaza; aviso al correo antiguo;
       aislamiento (nadie cambia el perfil de otro).
 
-**No incluye**: 2FA (ni existe épica que lo pida), historial de sesiones.
+**No incluye** (se mantiene): 2FA (ni existe épica que lo pida), historial
+de sesiones.
 
 ## Docs al implementar
 

@@ -25,6 +25,9 @@
 | email_verified_at | timestamp, null | |
 | password | string (hash) | |
 | remember_token | string | |
+| pending_email | string, null | correo nuevo esperando confirmación (Plan 02, ADR-0030) |
+| pending_email_token | string(64), null, index | **sha256** del token público — nunca el token en claro |
+| pending_email_requested_at | timestamp, null | expiración del enlace: 60 min |
 | preferred_currency | string, null | default COP; multi-moneda futuro |
 | locale | string, null | default 'es' |
 | timezone | string, null | default 'America/Bogota' |

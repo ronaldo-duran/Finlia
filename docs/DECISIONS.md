@@ -916,6 +916,38 @@ Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar 
 
 **Estado.** ACEPTADA — 2026-08-30 (Plan 01 de `planes/`). Implementada en `User` (implements `MustVerifyEmail` + envío propio), `VerifyEmailMail` + `emails/auth/verify-email*`, `EmailVerificationController`, la vista `auth/verify-email`, el grupo `verified` de `routes/web.php`, el reclaim de `RegisteredUserController` + `StoreRegistrationRequest`, la exclusión del digest en `SendReminderDigests`, el `RateLimiter` de `AppServiceProvider`, `config/auth.php` (`verification.expire`) y la migración `2026_09_03_000001`.
 
+---
+
+## ADR-0030
+### Perfil propio: cambio de contraseña con revocación de sesiones y cambio de correo con doble confirmación — **ACEPTADA**
+
+**Contexto.** No existía pantalla de perfil: la única vía de rotar la contraseña era "olvidé mi contraseña" (que exige salir de la sesión), y el correo era **inmutable** para siempre. Con [ADR-0029](#adr-0029) la inmutabilidad dejó de ser anecdótica: el correo **verificado** es la llave de la cuenta (digest, recuperación, avisos de seguridad). Cambiarlo "a lo bruto" habría roto ese invariante — un correo nuevo sin probar habría pasado a recibir datos y poder de recuperación de la cuenta.
+
+**Decisión.**
+
+1. **Pantalla `/perfil`** (propia del usuario, fuera del multi-tenant de finanzas — nada de `household_id`): nombre, contraseña y correo con su estado. El plan 04 añadirá nacimiento/región/género sobre la misma pantalla. Enrutada sin `{user}` a propósito: **solo existe el autenticado** (`UserPolicy::update` = `$user->is($target)`), el aislamiento es estructural.
+2. **Contraseña con re-autenticación**: regla `current_password` (probar la identidad antes de rotar la llave) + `Auth::logoutOtherDevices()`. En Laravel 11+ eso re-hashea la contraseña; quien cierra las demás sesiones es el middleware `AuthenticateSession` (registrado en el grupo `web`), que compara el hash en **cada** sesión y cookie de "recuérdame" (el recaller lleva el hash firmado). La sesión actual sobrevive — el middleware re-almacena el hash nuevo dentro de la misma request. Corolario deseable: **la recuperación por correo también revoca todas las sesiones** por construcción (re-hashea), que es exactamente lo que quiere una víctima de sesión robada. Aviso al propio correo ("si no fuiste tú → recuperar contraseña").
+3. **Cambio de correo con doble confirmación**: el correo nuevo vive en `users.pending_email` (+ `pending_email_token` = **sha256** del token público, patrón de `household_invitations` — un volcado no revela enlaces; `pending_email_requested_at`, TTL 60 min). La confirmación es **GET público `confirmar-correo/{token}`** (throttle 6/min): poseer el token equivale a controlar la bandeja nueva, mismo criterio que `verification.verify`. Al confirmar, swap transaccional: `email = pending`, `email_verified_at = now()` (**verificado por construcción**), limpieza de pendientes, y **aviso al correo ANTIGUO** (la pierna antifraude: si alguien robó la sesión y movió la cuenta, el dueño real se entera donde siempre recibió).
+4. **Invariante preservado**: ningún correo entra a `users.email` sin bandeja verificada — por el registro ([ADR-0029](#adr-0029)) o por esta confirmación. Hogares, preferencias (p. ej. el opt-in del digest) y sesión siguen intactos: consultan el `email` vigente, nada que migrar.
+5. **Anti-squatting coherente con ADR-0029**: la validación solo rechaza correos **verificados** de otros o **pendientes** de otros; al confirmar, un fantasma sin verificar con ese correo se reclama (borra, igual que el registro — es inerte por construcción) y un conflicto con cuenta **verificada** se rechaza limpio con limpieza del pendiente. Repetir el propio pendiente regenera el enlace (el hash anterior muere).
+6. **Enmienda a la tabla de correos de [ADR-0015](#adr-0015)/[ADR-0029](#adr-0029)**: pasa a **7 correos** (+ aviso de contraseña, confirmación al correo nuevo, aviso al correo antiguo). Los tres son transaccionales de seguridad — el aviso de fraude es información que el destinatario no puede ver dentro de la app porque quizá ni siquiera es él quien está dentro. Sin datos financieros; fallan en silencio (`Log::warning` sin PII) porque la acción ya quedó hecha y no llevan enlace con secreto.
+
+**Alternativas (descartadas).**
+- **Cambiar el correo directo, sin confirmación** — rompe el invariante (punto 4): el digest y la recuperación saldrían a una bandeja sin probar, el problema exacto que ADR-0029 cerró.
+- **Reutilizar el enlace firmado de verificación** — la firma ata `id+hash(email)` al usuario, no al intento de cambio; un token de BD por solicitud (regenerable, revocable al repetir) es el mecanismo correcto y ya existía (`household_invitations`).
+- **Pantalla intermedia con POST en la confirmación** — un GET que muta aquí es seguro: el secreto es el token de la URL, no la sesión; igual que `verification.verify` y `password.reset` en su momento.
+- **Purgar sesiones a mano** (`DELETE FROM sessions WHERE user_id = ?`) — acopla al driver y duplica lo que el framework resuelve; se optó por el mecanismo nativo (`AuthenticateSession`).
+- **Avisar al correo antiguo ANTES de confirmar** — ruido para el caso feliz (99 %); el aviso posterior es el que sirve al dueño real: llega con el cambio ya hecho y la instrucción de reaccionar.
+
+**Consecuencias y mitigaciones.**
+- `AuthenticateSession` corre en **toda** request autenticada: un `hash_equals` por request, despreciable frente a la garantía de revocación.
+- El middleware también store/valida el hash en la cookie de "recuérdame" (`viaRemember`): un dispositivo recordado con hash viejo muere, no resucita.
+- Carrera menor heredada de ADR-0029: dos confirmaciones simultáneas sobre el mismo correo chocan en el `unique` de `users.email`; cubierta por el throttle de la ruta.
+- `pending_email` **no** lleva índice unique a propósito: un pendiente no es propiedad — el primero que confirma gana el correo y el segundo recibe el rechazo honesto (conflicto verificado).
+- El test de revocación simula "la otra sesión" sembrando `password_hash_web` con el hash anterior — exactamente el estado en que ese middleware deja toda sesión viva.
+
+**Estado.** ACEPTADA — 2026-08-30 (Plan 02 de `planes/`). Implementada en `ProfileController` + `ProfileService`, `UserPolicy`, los Requests de `App\Http\Requests\Profile`, `PasswordChangedMail`/`ConfirmEmailChangeMail`/`EmailChangedNoticeMail` + `emails/profile/*`, las vistas `profile/edit` y `profile/email-error`, las rutas `perfil*` y `confirmar-correo/{token}` de `routes/web.php`, `AuthenticateSession` en `bootstrap/app.php`, `User` (cast + `pending_email_token` oculto) y la migración `2026_09_04_000001`.
+
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.
 3. Incluye: contexto, decisión, alternativas, consecuencias.

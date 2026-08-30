@@ -25,7 +25,8 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 > producto **antes** de la Épica 10 — verificación de correo, perfil (contraseña y
 > cambio de correo), términos versionados, datos personales, eliminación/suspensión y
 > política de datos con export. Estado: **01 ✅ verificación de correo
-> ([ADR-0029](DECISIONS.md#adr-0029))** · 02–06 pendientes.
+> ([ADR-0029](DECISIONS.md#adr-0029)) · 02 ✅ perfil: contraseña y cambio de correo
+> ([ADR-0030](DECISIONS.md#adr-0030))** · 03–06 pendientes.
 
 ## Resumen por épica
 

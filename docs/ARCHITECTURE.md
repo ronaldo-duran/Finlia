@@ -124,6 +124,7 @@ Ver [docs/CONVENTIONS.md](CONVENTIONS.md#dinero).
 - Login, registro, logout, recuperación de contraseña (Épica 1).
 - Rate limiting en login/registro.
 - Rutas privadas bajo middleware `auth` + `verified`: el correo se **verifica obligatoriamente** en el registro (Plan 01, [ADR-0029](DECISIONS.md#adr-0029)) — sin confirmar solo son alcanzables logout, el aviso y el reenvío.
+- **Perfil propio** (`/perfil`, Plan 02, [ADR-0030](DECISIONS.md#adr-0030)): contraseña con re-autenticación y revocación de otras sesiones (`AuthenticateSession` en el grupo `web`), y cambio de correo con **doble confirmación** (el nuevo queda `pending_*` hasta que su bandeja confirma el enlace). Sin `{user}` en la URL: solo existe el autenticado.
 
 ## 7. Notificaciones y scheduler (Épica 9)
 
@@ -140,6 +141,9 @@ Finlia **sí** envía correo, pero muy poco y con reglas: lo imprescindible (don
 | **Invitar a alguien al hogar** | ✅ Sí | El invitado puede no tener cuenta todavía: no hay bandeja in-app donde avisarle. |
 | **Recuperar contraseña** | ✅ Sí | El usuario está fuera de la sesión por definición. |
 | **Verificar el correo del registro** (Plan 01, [ADR-0029](DECISIONS.md#adr-0029)) | ✅ Sí | Sin confirmar, el usuario no puede entrar a la app: no hay bandeja in-app donde avisarle. Enlace firmado a 60 min; reenvío con throttle. |
+| **Aviso de contraseña cambiada** (Plan 02, [ADR-0030](DECISIONS.md#adr-0030)) | ✅ Sí | Aviso de seguridad: si no fue el dueño, es su señal de reaccionar (recuperar la contraseña revoca las sesiones). |
+| **Confirmar el correo nuevo** en un cambio (Plan 02, [ADR-0030](DECISIONS.md#adr-0030)) | ✅ Sí | Va a la bandeja NUEVA: solo quien la controla completa el cambio. Token de un uso, 60 min. |
+| **Aviso de correo cambiado** al correo anterior (Plan 02, [ADR-0030](DECISIONS.md#adr-0030)) | ✅ Sí | La pierna antifraude: si alguien robó la sesión y movió la cuenta, el dueño real se entera donde siempre recibió. |
 | **Digest diario de recordatorios** (Épica 9, [ADR-0028](DECISIONS.md#adr-0028)) | ✅ Solo opt-in y **solo a correos verificados** | La app avisa cuando el usuario la abre; una obligación vencida que nadie vio es el caso donde el correo aporta valor real. Máx. 1 por hogar y miembro al día, solo con urgentes. |
 | Correos por evento ("pagaste X", "vence Y mañana") | ❌ No | Ruido: para eso está el digest y la app. |
 | Resúmenes periódicos, informes, novedades, marketing | ❌ Nunca | No son imprescindibles y convierten la app en una fuente de ruido. |
