@@ -23,6 +23,7 @@ use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MovementsController;
 use App\Http\Controllers\RecurringExpenseController;
+use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SavingsGoalController;
 use Illuminate\Support\Facades\Route;
@@ -67,6 +68,18 @@ Route::middleware('guest')->group(function () {
         ->name('password.update')
         ->middleware('throttle:5,1');
 });
+
+// ---- Baja del digest desde el correo (Épica 9, ADR-0028) ----
+// URL firmada por usuario+hogar: funciona con o sin sesión (el click llega
+// desde el buzón, no desde la app). La firma es la autorización: nadie puede
+// forjar la baja de otro. GET = confirmación visible; POST = one-click
+// RFC 8058 (Gmail/Yahoo). No lleva 'guest' a propósito: un usuario con
+// sesión abierta también debe poder darse de baja desde su correo.
+Route::get('recordatorios/correo/baja', [ReminderController::class, 'unsubscribe'])
+    ->name('reminders.unsubscribe')
+    ->middleware('signed');
+Route::post('recordatorios/correo/baja', [ReminderController::class, 'unsubscribe'])
+    ->middleware('signed');
 
 // ---- Rutas privadas (requieren sesión) ----
 Route::middleware('auth')->group(function () {
@@ -252,4 +265,25 @@ Route::middleware('auth')->group(function () {
     Route::get('reportes/exportar', [ReportController::class, 'export'])
         ->name('reports.export')
         ->middleware('throttle:10,1');
+
+    // ---- Épica 9: recordatorios y notificaciones ----
+    // Lista unificada (recurrentes + deudas + metas + sueltos, ADR-0027) y
+    // CRUD de los sueltos. El hogar sale del activo en sesión.
+    Route::get('recordatorios', [ReminderController::class, 'index'])
+        ->name('reminders.index');
+    Route::post('recordatorios', [ReminderController::class, 'store'])
+        ->name('reminders.store');
+    // Interruptor del hogar (solo administrador, HouseholdPolicy::update).
+    // Antes de {reminder}: la URI fija debe ganarle al parámetro.
+    Route::put('recordatorios/configuracion', [ReminderController::class, 'settings'])
+        ->name('reminders.settings');
+    // Preferencia personal de digest por correo (ADR-0028), misma regla de orden.
+    Route::put('recordatorios/correo', [ReminderController::class, 'email'])
+        ->name('reminders.email');
+    Route::put('recordatorios/{reminder}', [ReminderController::class, 'update'])
+        ->name('reminders.update');
+    Route::delete('recordatorios/{reminder}', [ReminderController::class, 'destroy'])
+        ->name('reminders.destroy');
+    Route::post('recordatorios/{reminder}/completar', [ReminderController::class, 'complete'])
+        ->name('reminders.complete');
 });

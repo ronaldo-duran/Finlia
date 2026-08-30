@@ -37,6 +37,9 @@
             {{-- Acciones a la derecha --}}
             <ul class="navbar-nav flex-row align-items-center gap-1">
                 @auth
+                    {{-- Recordatorios (Épica 9): campanita con conteo in-app --}}
+                    @include('layouts.partials.reminders-bell')
+
                     {{-- Toggle de tema (claro/oscuro) --}}
                     <li class="nav-item">
                         <button type="button" class="btn-icon" data-theme-toggle aria-label="Cambiar tema">
@@ -140,6 +143,11 @@
                         <li>
                             <a class="nav-link @if(request()->routeIs('savings-goals.*'))active @endif" href="{{ route('savings-goals.index') }}">
                                 <i class="bi bi-piggy-bank"></i> Metas de ahorro
+                            </a>
+                        </li>
+                        <li>
+                            <a class="nav-link @if(request()->routeIs('reminders.*'))active @endif" href="{{ route('reminders.index') }}">
+                                <i class="bi bi-bell"></i> Recordatorios
                             </a>
                         </li>
                         <li>

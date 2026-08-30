@@ -14,7 +14,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 6 | Deudas y tarjetas de crédito | 🟢 | 2, 3 |
 | 7 | Metas de ahorro | 🟢 | 3 |
 | 8 | Dashboard y reportes financieros | 🟢 | 3, 4, 5, 6, 7 |
-| 9 | Recordatorios y notificaciones | 🔴 | 5, 6, 7 |
+| 9 | Recordatorios y notificaciones | 🟢 | 5, 6, 7 |
 | 10 | UX mobile y PWA | 🟡 | 3 (y resto) |
 | 11 | Hardening, tests y producción | 🔴 | Todas |
 | 12 | Monetización y modelo SaaS | 🔴 | 2, 11 |
@@ -51,15 +51,17 @@ Dos decisiones propias: el saldo es **derivado** de una línea base más los pag
 ### Épica 8 — Dashboard y reportes ✅
 Pantalla **`/reportes`** con los cinco gráficos Chart.js (gastos por categoría, ingresos vs gastos, evolución mensual del balance, evolución de la deuda — nueva `DebtService::balanceEvolution`, consistente con [ADR-0020](DECISIONS.md#adr-0020) — y progreso de metas), comparación de **períodos honestos** (`ReportPeriod`: mes, mes anterior, últimos 3/6, año YTD contra el mismo tramo del año previo) e **insights descriptivos** con umbrales anti-ruido. Export **CSV** en streaming (BOM UTF-8, `;`, coma decimal — Excel en español) con `throttle:10,1`; el enum `ReportFormat` es el seam del PDF Premium (Épica 12). El Panel se mantiene **ligero** (guía mobile de la propia épica): solo gana los KPIs de deuda total y ahorro en metas y el enlace "Ver reportes" ([ADR-0026](DECISIONS.md#adr-0026)). De paso se corrigió un bug latente: el JSON de los gráficos del Panel se escapaba con `&quot;` dentro de `<script>` y llevaba roto desde la Épica 3.
 
-### Épica 9 — Recordatorios y notificaciones
-`reminders` para recurrentes, deudas, metas, obligaciones anuales. Estados, **in-app** (WhatsApp/push como canales futuros). Laravel Scheduler + cron Hostinger.
+### Épica 9 — Recordatorios y notificaciones ✅
+Recordatorios **derivados en vivo** de sus fuentes —recurrentes (`next_date`), deudas (cuota del mes, [`due_day`](DECISIONS.md#adr-0020)), metas con fecha objetivo— más avisos sueltos del usuario ("obligación anual": tecnomecánica, pasaporte…) en la tabla `reminders` ([ADR-0027](DECISIONS.md#adr-0027)): el estado se calcula contra hoy, así ningún cron puede dejarlo caducado, y un aviso **se apaga pagando**, no cerrando la notificación. Página `/recordatorios` con la lista unificada (vencidas / vencen pronto en 7 días / más adelante) y acción por origen; campanita en el navbar con el conteo urgente (con **caché corta invalidada por eventos de modelo**, para no pagar el cálculo en cada página) y banner "🔔 Tienes N obligaciones próximas" en el Panel; interruptor del hogar (solo administrador). Casilla `auto_generate` en recurrentes: el **Scheduler** (`finlia:generate-recurring-payments`, diario 06:00, cron de Hostinger) registra el gasto vencido reutilizando `markAsPaid` ([ADR-0018](DECISIONS.md#adr-0018)) — una ocurrencia por corrida, con su fecha real, sin ráfagas.
 
-> 📧 **Los recordatorios NO van por correo.** El correo queda reservado a lo imprescindible —invitar a alguien al hogar y recuperar la contraseña— porque ahí el destinatario no puede ver el aviso dentro de la app. Ver [ADR-0015](DECISIONS.md#adr-0015).
+> 📧 **Digest diario opcional por correo** ([ADR-0028](DECISIONS.md#adr-0028)): un correo por hogar y miembro al día (`finlia:send-reminder-digests`, 06:30), **solo si hay urgentes** y **solo a quien lo pidió** en `/recordatorios` (opt-in por miembro; jamás marketing). Síncrono dentro del cron vía SMTP (Brevo free en producción, ver DEPLOYMENT §4) — corre en el proceso del cron, así que nunca añade latencia a la app. Con volumen (umbral ~200–250 digest diarios), la Fase 2 es un Job por destinatario + `queue:work --stop-when-empty` ([ADR-0028](DECISIONS.md#adr-0028) §4). El correo trae título/fecha/monto de las urgentes y el enlace, nunca saldos ni cuentas, y **la baja está a un click**: enlace firmado (60 días, sin sesión) + cabeceras `List-Unsubscribe` RFC 8058, el botón nativo de Gmail/Yahoo.
 
 ### Épica 10 — UX mobile y PWA
 Navbar/botones/forms/tablas/gráficos optimizados móvil. Botón flotante "+" (gasto, ingreso, transferencia, aporte, pago deuda). PWA (manifest, iconos, instalación). Selects inteligentes (última categoría/cuenta usada).
 
 > 🟡 **Parcialmente adelantada** (igual que el theming se adelantó a la Épica 1): rediseño mobile-first del Panel, Movimientos y Registrar gasto/ingreso, con barra de navegación inferior + botón flotante "+" y sistema de diseño documentado en [docs/UI_DESIGN.md](UI_DESIGN.md). Puramente visual/UX — **falta** el manifest/instalación PWA, "gasto/ingreso" desde el FAB como hoja unificada (hoy navega a `/gastos/crear` o `/ingresos/crear`), transferencia/aporte/pago de deuda en el FAB (dependen de las épicas 6-7) y selects inteligentes.
+
+> 🔔 Aquí llega el **push de recordatorios**: Web Push nativo con VAPID (W3C, sin proveedor ni cuota — gratis de verdad, ver [ADR-0028](DECISIONS.md#adr-0028) §7). Requiere el Service Worker del PWA y HTTPS (Hostinger lo trae). Consumirá `ReminderService::list()/summary()` tal cual, sin reescribir lógica.
 
 ### Épica 11 — Hardening, tests y producción
 Auditoría de seguridad completa, privacy, DB (índices, FK, DECIMAL), tests de funciones críticas, performance (N+1, paginación), producción (.env, cache, cron). README completo de instalación.

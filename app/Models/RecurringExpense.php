@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * suscripciones… Alimenta las claves fixed_expenses/recurring del cálculo
  * de dinero disponible (ADR-0014).
  */
-#[Fillable(['name', 'amount', 'frequency', 'frequency_interval', 'next_date', 'category_id', 'account_id', 'is_active', 'notes'])]
+#[Fillable(['name', 'amount', 'frequency', 'frequency_interval', 'next_date', 'category_id', 'account_id', 'is_active', 'auto_generate', 'notes'])]
 class RecurringExpense extends Model
 {
     /** @use HasFactory<RecurringExpenseFactory> */
@@ -36,6 +36,7 @@ class RecurringExpense extends Model
             // guarda "2026-09-05 00:00:00" en una columna DATE.
             'next_date' => 'date:Y-m-d',
             'is_active' => 'boolean',
+            'auto_generate' => 'boolean', // Épica 9 (ADR-0018): pago automático vía Scheduler
         ];
     }
 

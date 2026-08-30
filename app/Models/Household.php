@@ -14,11 +14,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['name', 'owner_id', 'currency', 'timezone'])]
+#[Fillable(['name', 'owner_id', 'currency', 'timezone', 'reminders_enabled'])]
 class Household extends Model
 {
     /** @use HasFactory<HouseholdFactory> */
     use HasFactory, SoftDeletes;
+
+    protected function casts(): array
+    {
+        return [
+            'reminders_enabled' => 'boolean', // Épica 9: interruptor de recordatorios
+        ];
+    }
 
     /**
      * Creador / administrador del hogar.
@@ -35,7 +42,7 @@ class Household extends Model
     {
         return $this->belongsToMany(User::class, 'household_user')
             ->using(HouseholdMember::class)
-            ->withPivot(['role', 'joined_at'])
+            ->withPivot(['role', 'joined_at', 'reminders_email', 'last_reminder_digest_at'])
             ->withTimestamps()
             ->orderByPivot('joined_at');
     }
@@ -113,6 +120,13 @@ class Household extends Model
     public function savingsGoalContributions(): HasMany
     {
         return $this->hasMany(SavingsGoalContribution::class);
+    }
+
+    // ---- Épica 9: recordatorios y notificaciones ----
+
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(Reminder::class);
     }
 
     /**

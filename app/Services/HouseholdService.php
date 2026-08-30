@@ -140,7 +140,7 @@ class HouseholdService
         string $plainToken,
         ?string $invitedByName,
     ): bool {
-        if (! $this->mailIsDeliverable()) {
+        if (! mail_is_deliverable()) {
             return false;
         }
 
@@ -160,24 +160,6 @@ class HouseholdService
         }
 
         return true;
-    }
-
-    /**
-     * ¿El mailer configurado entrega a una bandeja real?
-     * Con `log`/`array` (desarrollo y tests) se responde `false` para que la
-     * UI no le prometa al owner un correo que nadie va a recibir.
-     */
-    private function mailIsDeliverable(): bool
-    {
-        if (! config('finlia.mail.enabled', true)) {
-            return false;
-        }
-
-        return ! in_array(
-            config('mail.default'),
-            (array) config('finlia.mail.fake_transports', []),
-            true,
-        );
     }
 
     /**

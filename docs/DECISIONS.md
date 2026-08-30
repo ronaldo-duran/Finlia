@@ -330,6 +330,8 @@ Hay tres razones para no dejar esa puerta abierta:
 
 **Estado.** ACEPTADA — 2026-08-26. Implementada en `HouseholdInvitationMail`, `HouseholdService::inviteMember()`, `config/finlia.php` (`finlia.mail`) y las vistas `emails/households/invitation*`.
 
+> **Enmendada en 2026-08-30 por [ADR-0028](#adr-0028)**: se añade un tercer correo, el digest diario de recordatorios, **opt-in por miembro** y solo con urgentes. El espíritu se mantiene intacto — jamás marketing, jamás correos por evento — y la propia 0028 es el ADR que el punto 7 exigía. El resto de esta decisión no cambia.
+
 ---
 
 ## ADR-0016
@@ -819,6 +821,68 @@ Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar 
 - De paso se corrigió un bug latente: el JSON de los gráficos del Panel se inyectaba con `{{ }}` dentro de `<script type="application/json">`, y Blade escapa `"` a `&quot;` — que los navegadores **no** decodifican dentro de `<script>`, así que `JSON.parse` fallaba y los gráficos del Panel llevaban rotos desde la Épica 3. Ahora se usa `json_encode($data, JSON_HEX_TAG)` (seguro contra `</script>` y JSON válido).
 
 **Estado.** ACEPTADA — 2026-08-29, al implementar la Épica 8. Implementada en `ReportService`, `ReportPeriod`, `ReportFormat`, `ReportController`, `DebtService::balanceEvolution` y las vistas `reports/index` y Panel.
+
+## ADR-0027
+### Recordatorios derivados de su fuente + tabla solo para avisos sueltos — **ACEPTADA**
+
+**Contexto.** La Épica 9 pide avisos de cuatro orígenes (gasto recurrente, deuda, meta, obligación anual) con estados pendiente/próximo/vencido/completado, 100 % in-app ([ADR-0015](#adr-0015)). El diseño provisional de `docs/DATA_MODEL.md` planteaba una tabla con `source_type` morph, `user_id` y `scheduled_at`, "o usar `notifications` de Laravel — decidir en Épica 9". Tres problemas: los avisos de los tres primeros orígenes **ya existen** como datos (la fecha de vencimiento es `next_date`, el día de pago o `target_date`) y duplicarlos en otra tabla crea dos verdades que se desincronizan; una tabla poblada por cron puede quedar **caducada** si el cron no corre (hosting compartido); y el modelo de "notificación leída" es equivocado para pagos — marcar leída no debe silenciar un aviso de cuota.
+
+**Decisión.**
+
+1. **Derivar en vivo; la tabla es solo para avisos sueltos.** `ReminderService::list()` construye la lista unificada consultando las fuentes (`recurring_expenses` activos, deudas vigentes con cuota, metas vigentes con fecha) y le suma los avisos creados a mano por el usuario ("tecnomecánica", "renovar pasaporte"), que son los únicos que viven en `reminders`. La fuente es la verdad: no hay copia que desincronizar.
+2. **El estado se deriva contra hoy, no se persiste.** `ReminderStatus::resolve(dueDate, today, 7)` decide vencido/próximo/pendiente en cada lectura; en la tabla solo se persisten `pending`/`completed`. Sin cron, los estados son correctos igual — el scheduler solo **ejecuta pagos** (`auto_generate`), nunca mantiene estados.
+3. **"Completar" no genera gasto.** Un recordatorio es un aviso, no un movimiento (igual que los aportes de metas, [ADR-0025](#adr-0025)): si se repite, avanza una frecuencia; si no, queda completado. El gasto se registra desde su origen (marcar pagado, pago de deuda, aporte a meta) — la vista enlaza esa acción según `source`.
+4. **Sin `user_id` ni `scheduled_at`.** El aviso es del **hogar** (coherente con el resto del multi-tenant) y la fecha de notificar se deriva de `due_date` − ventana; almacenarla sería otra copia desincronizable. `frequency` reutiliza el enum `Frequency` (subconjunto mensual→anual; `null` = una sola vez).
+5. **Interruptor por hogar (`households.reminders_enabled`)** que solo el administrador mueve: apaga campanita, banner y listado de todo el hogar de una vez, sin tocar los datos subyacentes.
+6. **Seam de canales:** WhatsApp/push futuros consumen `list()/summary()` tal cual; el servicio no conoce rutas ni HTTP ([ADR-0010](#adr-0010)) — la vista es la que decide qué acción sigue a cada origen.
+
+**Alternativas (descartadas).**
+- **Tabla `notifications` de Laravel** — su modelo es "evento con leído/no leído"; aquí el aviso se apaga pagando. Además cada recordatorio derivado tendría que crearse/actualizarse por cron, reintroduciendo el problema de caducidad.
+- **Tabla densa con morph `source_type`/`source_id` para todo** — duplica `next_date`/`due_day`/`target_date` y exige un generador cron que, si falla, deja la campanita en silencio falso.
+- **`user_id` por aviso** — rompería la semántica de hogar (el SOAT le urge a la casa, no a un miembro) y multiplicaría las filas por miembro.
+
+**Consecuencias y mitigaciones.**
+- Los ítems derivados no tienen `Reminder` en DB: la lista es una colección de arrays serializables con `source` + `id`, y las acciones (editar/borrar) solo existen para los sueltos — el resto se administra desde su épica.
+- La cuota de deuda usa la colección de pagos **eager-loaded** (`with('payments')`) para saber si el mes ya está pagado, sin una query por deuda (no empeorar la deuda de performance #4 registrada para la Épica 11).
+- `finlia:generate-recurring-payments` (diario 06:00, cron Hostinger) registra **una** ocurrencia por corrida con su **fecha real** (no hoy): un atraso de N meses se recupera en N corridas, sin una ráfaga de gastos todos fechados "hoy".
+- La ventana de "próximo" quedó fijada en 7 días (`UPCOMING_DAYS`), distinta de la de 30 días de las próximas obligaciones de la Épica 5: la campanita avisa lo urgente, la planificación mira más lejos.
+
+**Estado.** ACEPTADA — 2026-08-29, al implementar la Épica 9. Implementada en `ReminderService`, `Reminder`, `ReminderSource`, `ReminderStatus`, `ReminderPolicy`, `ReminderController`, la vista `reminders/index`, la campanita del navbar, el banner del Panel y el comando `finlia:generate-recurring-payments`.
+
+---
+
+## ADR-0028
+### Digest de recordatorios por correo: opt-in, síncrono por cron y SMTP gratis (Brevo) — **ACEPTADA**
+
+**Contexto.** A petición del producto se quiso correo para los recordatorios y push gratuito, con una restricción dura de infraestructura: el despliegue es **hosting compartido (Hostinger)**, sin VM ni workers persistentes — el único latido es el cron que ejecuta `schedule:run` cada minuto ([ADR-0008](#adr-0008), DEPLOYMENT §6). Además, [ADR-0015](#adr-0015) había cerrado el correo a invitación + contraseña con un criterio explícito: "solo lo que el destinatario no puede ver dentro de la app".
+
+**Decisión.**
+
+1. **Un digest diario, no correos por evento.** Comando `finlia:send-reminder-digests` (Scheduler, 06:30 — después del `generate-recurring-payments` de 06:00 para reflejar los pagos de la mañana). Un correo por hogar y miembro al día, **solo si hay urgentes** (`attention > 0`): sin urgentes hay silencio, porque el silencio también es información.
+2. **Opt-in por miembro** (`household_user.reminders_email`, default `false`): preferencia personal gestionada en `/recordatorios`, nunca del hogar ni global. Todo lo demás de [ADR-0015](#adr-0015) sigue en pie: **jamás marketing**, jamás novedades de producto.
+3. **Idempotencia por pivote**: `last_reminder_digest_at` guarda el último envío y la corrida respeta "ya recibió hoy" — reintentos del cron o doble corrida no duplican. Un envío que falla no marca el pivote, así que se reintenta al día siguiente.
+4. **Envío síncrono dentro del comando (Fase 1).** Sin colas: con Brevo free (300 correos/día) y una base pequeña de usuarios, la corrida de madrugada sobra — y como corre en el **proceso del cron**, nunca añade latencia a la app (el cuello real con volumen es el límite de duración del proceso en hosting compartido y la cuota del proveedor, no el HTTP). **La Fase 2, cuando los opt-in con urgentes rocen ~200–250/día, es un Job `SendReminderDigest` por destinatario**, despachado desde el comando y procesado por el `queue:work --stop-when-empty` de DEPLOYMENT §6 (cola `database`, [ADR-0008](#adr-0008)). El Job marca `last_reminder_digest_at` **después** de enviar de verdad. Ojo: encolar el Mailable directo (`ShouldQueue`) no vale — marcaría el pivote al despachar y un worker caído dejaría el día "enviado" sin correo. Ambos eventos del Scheduler llevan `withoutOverlapping()` para que una corrida larga no se solape con la del minuto siguiente.
+5. **Brevo por SMTP puro, cero código de proveedor.** `config/mail.php` es el estándar de Laravel: Brevo son cuatro variables de `.env` (`smtp-relay.brevo.com:587`, ver DEPLOYMENT §4). Cambiar de proveedor es cambiar `.env`, no código. Nada de SDK ni API propia del proveedor.
+6. **Enmienda puntual y explícita a [ADR-0015](#adr-0015)**: el digest es el tercer correo, y este ADR es la justificación que su punto 7 exigía. La razón de peso: la app solo puede avisar cuando el usuario la abre; una obligación vencida que nadie vio es justo el caso donde el correo aporta valor real. En transporte de datos es más pobre que la app a propósito: solo título, fecha y monto de cada urgente — **nunca** saldos, nombres de cuentas ni historial.
+7. **Push: Web Push nativo (VAPID) queda documentado para la Épica 10.** El estándar W3C no necesita proveedor ni tiene cuota — gratis de verdad, sin SDK — pero exige Service Worker + HTTPS, que llegan con la PWA de la Épica 10. Consumirá `ReminderService::list()/summary()` tal cual (seam del punto 6 de [ADR-0027](#adr-0027)).
+8. **Baja de un click desde el propio correo (RFC 8058).** El pie del digest trae un enlace "Ya no quiero recibir este resumen" a una **URL firmada por usuario+hogar** (validez 60 días), válida **sin sesión** — el click llega desde el buzón, no desde la app; la firma es la autorización. GET muestra confirmación; POST al mismo URL ejecuta la baja directa (el botón nativo "Cancelar suscripción" de Gmail/Yahoo, vía cabeceras `List-Unsubscribe`/`List-Unsubscribe-Post`). Es la válvula de escape barata: convierte un "reportar spam" (caro para la reputación del dominio) en una baja (gratis), y es la postura correcta ante la Ley 1581. Idempotente, por hogar (la baja del digest de A no toca el de B), y **no aplica** a invitaciones ni recuperación — son transaccionales de un solo envío.
+
+**Alternativas (descartadas).**
+- **Cola con `queue:work`** — no hay workers en hosting compartido; improvisar un worker con cron por minuto es frágil y duplica estados. La cola `database` queda como seam, no como dependencia.
+- **API de Brevo con su SDK** — acopla código al proveedor y no aporta nada sobre SMTP para 300 correos al día.
+- **OneSignal u otro push "gratis"** — gratis con condiciones (límites, branding), SDK de tercero, y el proveedor ve los payloads; para datos financieros, VAPID nativo sin intermediarios.
+- **Push ya, sin PWA** — sin Service Worker no hay Web Push; montarlo fuera de la Épica 10 sería construir la PWA a destiempo.
+- **Digest aunque no haya urgentes** ("resumen diario de que no debes nada") — un correo diario que dice "nada" se ignora a la tercera vez y entrena al usuario para borrar los de verdad importantes.
+
+**Consecuencias y mitigaciones.**
+- 300 correos/día de cuota sobran para el MVP; si el volumen crece, la Fase 2 (cola) reparte el envío y/o se sube de plan — el código no cambia.
+- **La Fase 2 no se activa antes de tiempo a propósito**: exige la línea del worker en el cron de producción, y sin ella los digests fallarían **en silencio** (la misma razón por la que [ADR-0015](#adr-0015) no encola las invitaciones). Umbral de activación: ~200–250 opt-in con urgentes por día, donde la cuota free de Brevo se cruza antes que el límite de duración del proceso del cron.
+- La corrida itera destinatarios con `try/catch`: un buzón que rebota registra `Log::warning` y no frena al resto (patrón de `inviteMember`, ADR-0015).
+- El correo reafirma que **no apaga nada**: "un aviso se apaga pagando" ([ADR-0027](#adr-0027)) — el digest es un dedo que trae de vuelta, la app sigue siendo la verdad.
+- Tests con `Mail::fake` (opt-in, silencio sin urgentes, hogar desactivado, no duplicación) más un render real del Mailable HTML, que caza errores de Blade que `assertSent` no toca.
+- La preferencia y la fecha de último envío viven en el pivote `household_user` con `withPivot`/casts — un usuario multi-hogar opta y recibe por separado en cada hogar (máximo uno por hogar al día).
+
+**Estado.** ACEPTADA — 2026-08-30, a petición del usuario (Brevo free; push diferido a la Épica 10). Implementada en `SendReminderDigests`, `ReminderDigest` + `emails/reminders/digest*`, preferencias en `household_user`, `UpdateReminderEmailRequest`, `ReminderController::email()/unsubscribe()`, la vista `reminders/unsubscribe`, el bloque "Resumen por correo" de `/recordatorios`, la ruta firmada `recordatorios/correo/baja` y el schedule 06:30 de `routes/console.php`.
 
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.

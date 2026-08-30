@@ -76,23 +76,27 @@ QUEUE_CONNECTION=database       # se procesa vía cron, no worker persistente
 
 FILESYSTEM_DISK=local           # o 'public' para assets accesibles
 
-# Correo transaccional (ADR-0015): SOLO invitaciones y recuperación de contraseña.
-# Hostinger → Emails → Cuentas de correo; usa una cuenta del propio dominio
-# (mejora la entregabilidad frente a un Gmail personal).
+# Correo: invitaciones + recuperación (ADR-0015) y digest de recordatorios
+# (ADR-0028). Proveedor elegido: Brevo free (300 correos/día) vía SMTP puro
+# — cero código acoplado al proveedor, cambiarlo es cambiar este bloque.
 MAIL_MAILER=smtp
-MAIL_HOST=smtp.hostinger.com
-MAIL_PORT=465
+MAIL_HOST=smtp-relay.brevo.com
+MAIL_PORT=587
 MAIL_USERNAME=no-responder@tudominio.com
-MAIL_PASSWORD=contraseña_del_buzón
-MAIL_SCHEME=smtps               # 465 = smtps (TLS implícito); para 587 usa 'smtp'
+MAIL_PASSWORD=smtp-key-de-brevo     # Brevo → SMTP & API → SMTP keys (NO la contraseña de la cuenta)
+MAIL_SCHEME=smtp                   # 587 = smtp (STARTTLS)
 MAIL_FROM_ADDRESS=no-responder@tudominio.com
 MAIL_FROM_NAME="${APP_NAME}"
-FINLIA_MAIL_ENABLED=true        # ponlo en false para apagar el correo transaccional
+FINLIA_MAIL_ENABLED=true        # ponlo en false para apagar TODO el correo (invitaciones y digest)
 ```
 
-> **Sin SMTP la app funciona igual.** Con `MAIL_MAILER=log` los correos van a `storage/logs` y la invitación se comparte con el enlace manual que la pantalla del hogar muestra al administrador. Nunca se le promete al usuario un correo que no va a salir.
+> **Brevo en 4 pasos** ([ADR-0028](DECISIONS.md#adr-0028)): (1) cuenta gratis en brevo.com → 300 correos/día; (2) **autenticar el dominio** en Brevo → Senders & IP → Senders (añade los registros SPF/DKIM que te da en la zona DNS de Hostinger; sin esto acaba en spam); (3) crear una **SMTP key** y usarla como `MAIL_PASSWORD`; (4) usar un remitente **del propio dominio** — Brevo no deja enviar desde gmail/outlook sin verificación. La alternativa sin Brevo es el SMTP del propio Hostinger (`smtp.hostinger.com:465`, `MAIL_SCHEME=smtps`), pero su límite diario es menor.
 >
-> **Entregabilidad**: configura **SPF** y **DKIM** del dominio en el panel de Hostinger. Sin ellos las invitaciones acaban en spam. Comprueba el envío con `php artisan tinker` → `Mail::raw('prueba', fn ($m) => $m->to('tucorreo@ejemplo.com')->subject('Prueba Finlia'));`
+> **Cuota**: 300/día cubre con holgura el digest (máx. 1 por miembro y hogar al día, solo con urgentes). Si algún día se queda corta, subir de plan o cambiar de proveedor es solo `.env`.
+>
+> **Sin SMTP la app funciona igual.** Con `MAIL_MAILER=log` los correos van a `storage/logs`, la invitación se comparte con el enlace manual y el digest ni siquiera corre: `mail_is_deliverable()` trata `log`/`array` como "no hay bandeja real" y el comando se salta el envío sin marcar el pivote (ADR-0015).
+>
+> **Entregabilidad**: además del SPF/DKIM de Brevo, comprueba el envío con `php artisan tinker` → `Mail::raw('prueba', fn ($m) => $m->to('tucorreo@ejemplo.com')->subject('Prueba Finlia'));`
 
 > Configuración de Colombia (timezone, locale, COP) se establece en **Épica 1**. Los valores exactos para `config/app.php` y `.env` se documentan aquí como referencia.
 
@@ -124,6 +128,8 @@ Para **colas** (si se usan) sin worker persistente, procesar dentro del schedule
 > **Principio**: nada que requiera un proceso **24/7**. Si una función lo necesita, rediseñarla para cron/cola programada. Ver Épica 9.
 >
 > El correo transaccional (invitaciones, recuperación de contraseña) se envía **de forma síncrona** y **no depende del cron** (ADR-0015). Son dos correos puntuales disparados por una acción del usuario; encolarlos sin este cron activo los perdería en silencio.
+>
+> El **digest de recordatorios** (`finlia:send-reminder-digests`, 06:30) sí vive en el Scheduler y es el único correo en lote (ADR-0028): síncrono dentro de la corrida — corre en el proceso del cron, nunca añade latencia a la app — con `try/catch` por destinatario y `withoutOverlapping()` para que una corrida larga no se solape con la del minuto siguiente. Si el volumen creciera hasta hacer larga la corrida (umbral: ~200–250 digest diarios, donde también se cruza la cuota free de Brevo), la Fase 2 de ADR-0028 es un Job `SendReminderDigest` por destinatario despachado desde el comando y procesado por el `queue:work --stop-when-empty` de arriba; el Job marca el pivote tras enviar de verdad, y el comando pasa de enviar a despachar.
 
 ## 7. Permisos
 

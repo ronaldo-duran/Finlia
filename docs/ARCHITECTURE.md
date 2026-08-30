@@ -127,28 +127,29 @@ Ver [docs/CONVENTIONS.md](CONVENTIONS.md#dinero).
 
 ## 7. Notificaciones y scheduler (Épica 9)
 
-- Recordatorios generados por un **comando programado** (`schedule:run`) vía cron de Hostinger (1 vez por minuto).
+- Recordatorios derivados en vivo de su fuente (ADR-0027) + comandos programados (`schedule:run`) vía cron de Hostinger (1 vez por minuto).
 - **Sin** workers de cola persistentes obligatorios. Si se usan colas, driver `database` y un cron que ejecute `queue:work --stop-when-empty` o `schedule:run`.
-- Canal de recordatorios: **in-app** (tabla `notifications` de Laravel o tabla propia `reminders`). WhatsApp/Push quedan como canales futuros.
+- Canal de recordatorios: **in-app** (tabla propia `reminders` para los avisos sueltos; el resto se deriva). Además, **digest diario opcional por correo** (ADR-0028). WhatsApp/Push quedan como canales futuros (push VAPID en la Épica 10).
 
-### Política de correo — **estrictamente lo imprescindible** (ADR-0015)
+### Política de correo — **estrictamente lo imprescindible** (ADR-0015, enmendada por ADR-0028)
 
-Finlia **sí** envía correo, pero solo cuando **no existe otra vía**: es decir, cuando el destinatario no puede ver el mensaje dentro de la app (porque aún no tiene cuenta o no puede entrar).
+Finlia **sí** envía correo, pero muy poco y con reglas: lo imprescindible (donde el destinatario no puede ver el mensaje dentro de la app) más un único digest opt-in de recordatorios.
 
 | Caso | ¿Correo? | Por qué |
 |---|---|---|
 | **Invitar a alguien al hogar** | ✅ Sí | El invitado puede no tener cuenta todavía: no hay bandeja in-app donde avisarle. |
 | **Recuperar contraseña** | ✅ Sí | El usuario está fuera de la sesión por definición. |
-| Recordatorios de pagos, deudas y metas (Épica 9) | ❌ No | El usuario entra a la app; se resuelven **in-app**. |
+| **Digest diario de recordatorios** (Épica 9, [ADR-0028](DECISIONS.md#adr-0028)) | ✅ Solo opt-in | La app avisa cuando el usuario la abre; una obligación vencida que nadie vio es el caso donde el correo aporta valor real. Máx. 1 por hogar y miembro al día, solo con urgentes. |
+| Correos por evento ("pagaste X", "vence Y mañana") | ❌ No | Ruido: para eso está el digest y la app. |
 | Resúmenes periódicos, informes, novedades, marketing | ❌ Nunca | No son imprescindibles y convierten la app en una fuente de ruido. |
 
 Reglas que acompañan a la política:
 
-- **Ningún correo lleva datos financieros** (saldos, montos, movimientos, nombres de cuentas). Como máximo, el nombre del hogar y quién invita.
-- **El correo es opcional**: si no hay SMTP configurado la app funciona igual. La invitación siempre deja un **enlace manual** que el administrador puede compartir; el correo es una comodidad, no el mecanismo.
-- Interruptor global en `config/finlia.php` → `finlia.mail.enabled`. Con los transports `log`/`array` (desarrollo y tests) la UI no le promete al usuario un correo que nadie recibirá.
-- Añadir un correo nuevo **exige un ADR**: hay que justificar por qué no puede ser in-app.
-- Envío **síncrono** por ahora (son dos correos puntuales, disparados por una acción del usuario). Si el volumen crece, se encolan con driver `database` y el cron ya documentado; no hace falta cambiar nada más.
+- **Los correos llevan lo mínimo**: la invitación solo nombre del hogar y quién invita; el digest solo título, fecha y monto de las urgentes — **nunca** saldos, movimientos ni nombres de cuentas.
+- **El correo es opcional**: si no hay SMTP configurado la app funciona igual. La invitación siempre deja un **enlace manual** que el administrador puede compartir; el digest con transport falso (`log`/`array`) ni siquiera corre (`mail_is_deliverable()`), para no gastar el envío del día.
+- Interruptor global en `config/finlia.php` → `finlia.mail.enabled`. Apaga invitaciones **y** digest.
+- Añadir un correo nuevo **exige un ADR**: así entró el digest (ADR-0028).
+- Envío **síncrono** por ahora (invitaciones: acción del usuario; digest: corrida del cron de madrugada con `try/catch` por destinatario). Si el volumen crece, se encola con `ShouldQueue` + driver `database` y el cron ya documentado; no hace falta cambiar nada más.
 
 ## 8. Frontend
 

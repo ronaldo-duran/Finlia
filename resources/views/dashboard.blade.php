@@ -69,6 +69,23 @@
         </div>
     @endif
 
+    {{-- Épica 9: resumen de TODAS las fuentes (recurrentes, deudas, metas y
+         sueltos). Es navegación hacia /recordatorios, no una alarma más:
+         borde y tinte de marca, discreto. --}}
+    @if ($reminderSummary !== null && $reminderSummary['attention'] > 0)
+        <div class="alert d-flex gap-2 align-items-center mb-3 border border-finlia bg-finlia-subtle text-finlia" role="status">
+            <i class="bi bi-bell-fill fs-5"></i>
+            <div>
+                🔔 Tienes
+                <strong>{{ $reminderSummary['attention'] }} {{ $reminderSummary['attention'] === 1 ? 'obligación próxima' : 'obligaciones próximas' }}</strong>
+                @if ($reminderSummary['overdue'] > 0)
+                    ({{ $reminderSummary['overdue'] }} {{ $reminderSummary['overdue'] === 1 ? 'vencida' : 'vencidas' }})
+                @endif.
+                <a href="{{ route('reminders.index') }}" class="alert-link">Ver recordatorios</a>
+            </div>
+        </div>
+    @endif
+
     @include('dashboard._hero-enfoque', ['budgetSummary' => $budgetSummary, 'isNegative' => $isNegative])
 
     {{-- KPIs del mes (Épica 8: el resumen completo — deuda y ahorro incluidos) --}}

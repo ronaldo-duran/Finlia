@@ -53,9 +53,12 @@
 | user_id | FK | |
 | role | string | enum: `owner`, `member` (→ `App\Enums\HouseholdRole`) |
 | joined_at | timestamp | |
+| reminders_email | boolean, `false` | Épica 9: opt-in del digest diario ([ADR-0028](DECISIONS.md#adr-0028)) |
+| last_reminder_digest_at | timestamp, null | idempotencia: "ya recibió el correo de hoy" |
 | timestamps | | |
 
 - Un usuario puede pertenecer a varios hogares (la spec lo permite si no complica). El hogar **activo** se guarda en sesión.
+- Las preferencias de correo son **por miembro y por hogar** (viven en el pivote): cada quien decide en qué hogar quiere el digest.
 
 ### `household_invitations`
 | Campo | Tipo | Notas |
@@ -201,9 +204,8 @@ Cuatro conceptos que **no se mezclan**: **balance actual · disponible · compro
 
 > 🟢 **Implementado** (Épica 5). Ver [ADR-0018](DECISIONS.md#adr-0018): clasificación
 > fijo/obligación por frecuencia, comprometido por ocurrencias reales en la ventana y
-> semántica de "marcar pagado" sin duplicar. La columna `auto_generate` **no existe
-> todavía**: la generación automática de gastos requiere el Scheduler y se añade en la
-> Épica 9.
+> semántica de "marcar pagado" sin duplicar. La columna `auto_generate` (generación
+> automática vía Scheduler) se añadió con la **Épica 9** — ver su sección.
 
 ### `recurring_expenses`
 | Campo | Tipo | Notas |
@@ -372,20 +374,77 @@ Cada refinanciación fija una **nueva línea base** del saldo (ADR-0020): a part
 
 ## Épica 9 — Recordatorios y notificaciones
 
-### `reminders`
+> 🟢 **Implementado** (Épica 9). Ver [ADR-0027](DECISIONS.md#adr-0027): los avisos de
+> recurrentes, deudas y metas se **derivan en vivo** de su fuente y solo los avisos
+> sueltos del usuario viven en tabla. No se usa la tabla `notifications` de Laravel:
+> "marcar leída" no debe silenciar un aviso de pago — se apaga pagando.
+
+### `reminders` (solo avisos sueltos)
 | Campo | Tipo | Notas |
 |---|---|---|
 | id, household_id | | |
-| user_id | FK, null | a quién va dirigido |
-| source_type | string | morph: recurring_expense, debt, savings_goal, custom |
-| source_id | bigint, null | |
-| title | string | |
-| due_date | date | |
-| status | string | pending, upcoming, overdue, completed |
-| scheduled_at | timestamp | cuándo notificar |
+| title | string | "Tecnomecánica", "Renovar pasaporte" |
+| amount | decimal(15,2), null | informativo; no genera movimiento |
+| due_date | date | puede ser pasada (= vencido). Cast `date:Y-m-d` |
+| frequency | string, null | enum `Frequency` (mensual→anual); `null` = una sola vez. Cast enum |
+| status | string | solo se persisten `pending`/`completed`; vencido/próximo se **deriva** contra hoy |
+| notes | text, null | |
 | timestamps | | |
 
-- O usar la tabla `notifications` de Laravel para in-app. Decidir en Épica 9.
+- Índice `(household_id, status, due_date)`. Sin `user_id` (el aviso es del hogar) ni
+  `scheduled_at` (derivable de `due_date` − ventana). `household_id` no es fillable.
+
+### Columnas nuevas en épicas anteriores
+- `recurring_expenses.auto_generate` (boolean, `false`) — el Scheduler registra el pago
+  vencido como gasto real (Épica 5 dejaba este seam, [ADR-0018](DECISIONS.md#adr-0018)).
+- `households.reminders_enabled` (boolean, `true`) — interruptor del hogar; solo el
+  administrador lo mueve (`HouseholdPolicy::update`).
+
+### Servicio: `App\Services\ReminderService`
+Lógica de dominio (sin HTTP, ADR-0010); es también el **seam de canales futuros**
+(WhatsApp/push consumen lo mismo, [ADR-0015](DECISIONS.md#adr-0015)):
+
+- `list(householdId, ?referencia)` — lista unificada: recurrentes activos (vencen en
+  `next_date`), deudas vigentes con cuota (vencen en su día de pago del mes; si el mes
+  ya tiene pago, avisa la del siguiente), metas vigentes con fecha objetivo (monto =
+  lo que falta) y avisos sueltos pendientes. Cada ítem: `source` (enum `ReminderSource`),
+  `id`, `title`, `amount`, `due_date`, `days_remaining`, `status` (enum `ReminderStatus`,
+  derivado contra hoy) y `detail`. La vista decide la acción por `source` (marcar pagado,
+  ir a la deuda, aportar…); el servicio no conoce rutas.
+- `summary(householdId, ?referencia)` — `{overdue, upcoming, attention, total}` para la
+  campanita y el banner del Panel. Ventana de "próximo": `UPCOMING_DAYS = 7`.
+- `cachedSummary(householdId)` — el mismo conteo con caché corta (`reminders.summary.{id}`,
+  TTL 10 min, driver database): la campanita corre en cada página y no debe pagar las
+  queries de `list()` en todas. La invalidación es por **eventos de modelo**
+  (`ReminderSummaryCacheObserver` sobre Debt, DebtPayment, Household, RecurringExpense,
+  Reminder, SavingsGoal y SavingsGoalContribution); el TTL solo cubre el paso de
+  medianoche. `list()` nunca se cachea: `/recordatorios` siempre muestra estado fresco.
+- `complete(Reminder)` — atiende un aviso suelto: si se repite, avanza `due_date` una
+  frecuencia y sigue pendiente; si no, queda completado. **No genera gasto** (ADR-0027).
+
+### Scheduler (compatible con cron de Hostinger)
+- `finlia:generate-recurring-payments` (diario 06:00): por cada recurrente con
+  `auto_generate` + activo y `next_date` vencida, **una** ocurrencia por corrida vía
+  `markAsPaid()` — gasto con la **fecha real** de la ocurrencia (un atraso de N meses se
+  recupera en N corridas, sin ráfaga fechada hoy) — atribuido al propietario del hogar.
+- `finlia:send-reminder-digests` (diario 06:30, [ADR-0028](DECISIONS.md#adr-0028)): digest
+  de urgentes por correo. Solo hogares con recordatorios activos, solo miembros con
+  `reminders_email` y sin digest ya enviado hoy (`last_reminder_digest_at`), y solo si
+  `attention > 0`. Envío síncrono (`Mail::to()->send()` con `try/catch` por destinatario);
+  el seam de cola es `ShouldQueue` en `ReminderDigest`. Transporta título/fecha/monto de
+  las urgentes, nunca saldos ni cuentas.
+
+### Rutas
+`/recordatorios` (`reminders.index/store/update/destroy/complete`),
+`PUT /recordatorios/configuracion` (`reminders.settings`) y
+`PUT /recordatorios/correo` (`reminders.email`: preferencia personal de digest). Las dos
+URI fijas van declaradas **antes** de `{reminder}` para que ganen al parámetro.
+
+Además, **pública y firmada** (fuera del grupo `auth`): `GET|POST /recordatorios/correo/baja`
+(`reminders.unsubscribe`, middleware `signed`) — baja del digest desde el propio correo,
+por URL firmada de usuario+hogar (60 días). GET confirma en página propia
+(`reminders/unsubscribe`, sin sesión); POST es el one-click de RFC 8058 que disparan
+Gmail/Yahoo (devuelve 204). Idempotente y por hogar.
 
 ---
 
