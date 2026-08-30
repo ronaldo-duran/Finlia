@@ -9,6 +9,7 @@ use App\Services\BudgetCalculatorService;
 use App\Services\DebtService;
 use App\Services\MovementSummaryService;
 use App\Services\RecurringExpenseService;
+use App\Services\ReminderService;
 use App\Services\SavingsGoalService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +24,7 @@ class DashboardController extends Controller
         private readonly RecurringExpenseService $recurring,
         private readonly SavingsGoalService $savingsGoals,
         private readonly DebtService $debts,
+        private readonly ReminderService $reminders,
     ) {}
 
     /**
@@ -79,6 +81,10 @@ class DashboardController extends Controller
             // Épica 8: deuda total y ahorro acumulado completan el resumen.
             'debtSummary' => $this->debts->summary($householdId),
             'savingsSummary' => $this->savingsGoals->summary($householdId),
+            // Épica 9: campanita del panel (null si el hogar los desactivó).
+            'reminderSummary' => $household->reminders_enabled
+                ? $this->reminders->cachedSummary($householdId)
+                : null,
             'totals' => $totals,
             'totalBalance' => $totalBalance,
             'byCategory' => $byCategory,

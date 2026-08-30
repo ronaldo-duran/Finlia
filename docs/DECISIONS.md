@@ -820,6 +820,33 @@ Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar 
 
 **Estado.** ACEPTADA — 2026-08-29, al implementar la Épica 8. Implementada en `ReportService`, `ReportPeriod`, `ReportFormat`, `ReportController`, `DebtService::balanceEvolution` y las vistas `reports/index` y Panel.
 
+## ADR-0027
+### Recordatorios derivados de su fuente + tabla solo para avisos sueltos — **ACEPTADA**
+
+**Contexto.** La Épica 9 pide avisos de cuatro orígenes (gasto recurrente, deuda, meta, obligación anual) con estados pendiente/próximo/vencido/completado, 100 % in-app ([ADR-0015](#adr-0015)). El diseño provisional de `docs/DATA_MODEL.md` planteaba una tabla con `source_type` morph, `user_id` y `scheduled_at`, "o usar `notifications` de Laravel — decidir en Épica 9". Tres problemas: los avisos de los tres primeros orígenes **ya existen** como datos (la fecha de vencimiento es `next_date`, el día de pago o `target_date`) y duplicarlos en otra tabla crea dos verdades que se desincronizan; una tabla poblada por cron puede quedar **caducada** si el cron no corre (hosting compartido); y el modelo de "notificación leída" es equivocado para pagos — marcar leída no debe silenciar un aviso de cuota.
+
+**Decisión.**
+
+1. **Derivar en vivo; la tabla es solo para avisos sueltos.** `ReminderService::list()` construye la lista unificada consultando las fuentes (`recurring_expenses` activos, deudas vigentes con cuota, metas vigentes con fecha) y le suma los avisos creados a mano por el usuario ("tecnomecánica", "renovar pasaporte"), que son los únicos que viven en `reminders`. La fuente es la verdad: no hay copia que desincronizar.
+2. **El estado se deriva contra hoy, no se persiste.** `ReminderStatus::resolve(dueDate, today, 7)` decide vencido/próximo/pendiente en cada lectura; en la tabla solo se persisten `pending`/`completed`. Sin cron, los estados son correctos igual — el scheduler solo **ejecuta pagos** (`auto_generate`), nunca mantiene estados.
+3. **"Completar" no genera gasto.** Un recordatorio es un aviso, no un movimiento (igual que los aportes de metas, [ADR-0025](#adr-0025)): si se repite, avanza una frecuencia; si no, queda completado. El gasto se registra desde su origen (marcar pagado, pago de deuda, aporte a meta) — la vista enlaza esa acción según `source`.
+4. **Sin `user_id` ni `scheduled_at`.** El aviso es del **hogar** (coherente con el resto del multi-tenant) y la fecha de notificar se deriva de `due_date` − ventana; almacenarla sería otra copia desincronizable. `frequency` reutiliza el enum `Frequency` (subconjunto mensual→anual; `null` = una sola vez).
+5. **Interruptor por hogar (`households.reminders_enabled`)** que solo el administrador mueve: apaga campanita, banner y listado de todo el hogar de una vez, sin tocar los datos subyacentes.
+6. **Seam de canales:** WhatsApp/push futuros consumen `list()/summary()` tal cual; el servicio no conoce rutas ni HTTP ([ADR-0010](#adr-0010)) — la vista es la que decide qué acción sigue a cada origen.
+
+**Alternativas (descartadas).**
+- **Tabla `notifications` de Laravel** — su modelo es "evento con leído/no leído"; aquí el aviso se apaga pagando. Además cada recordatorio derivado tendría que crearse/actualizarse por cron, reintroduciendo el problema de caducidad.
+- **Tabla densa con morph `source_type`/`source_id` para todo** — duplica `next_date`/`due_day`/`target_date` y exige un generador cron que, si falla, deja la campanita en silencio falso.
+- **`user_id` por aviso** — rompería la semántica de hogar (el SOAT le urge a la casa, no a un miembro) y multiplicaría las filas por miembro.
+
+**Consecuencias y mitigaciones.**
+- Los ítems derivados no tienen `Reminder` en DB: la lista es una colección de arrays serializables con `source` + `id`, y las acciones (editar/borrar) solo existen para los sueltos — el resto se administra desde su épica.
+- La cuota de deuda usa la colección de pagos **eager-loaded** (`with('payments')`) para saber si el mes ya está pagado, sin una query por deuda (no empeorar la deuda de performance #4 registrada para la Épica 11).
+- `finlia:generate-recurring-payments` (diario 06:00, cron Hostinger) registra **una** ocurrencia por corrida con su **fecha real** (no hoy): un atraso de N meses se recupera en N corridas, sin una ráfaga de gastos todos fechados "hoy".
+- La ventana de "próximo" quedó fijada en 7 días (`UPCOMING_DAYS`), distinta de la de 30 días de las próximas obligaciones de la Épica 5: la campanita avisa lo urgente, la planificación mira más lejos.
+
+**Estado.** ACEPTADA — 2026-08-29, al implementar la Épica 9. Implementada en `ReminderService`, `Reminder`, `ReminderSource`, `ReminderStatus`, `ReminderPolicy`, `ReminderController`, la vista `reminders/index`, la campanita del navbar, el banner del Panel y el comando `finlia:generate-recurring-payments`.
+
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.
 3. Incluye: contexto, decisión, alternativas, consecuencias.

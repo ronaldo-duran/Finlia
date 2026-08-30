@@ -118,12 +118,24 @@
                         </div>
 
                         <input type="hidden" name="is_active" value="0">
-                        <div class="form-check mb-3">
+                        <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" name="is_active" value="1"
                                    id="is_active" checked>
                             <label class="form-check-label" for="is_active">
                                 Contar en el dinero disponible y avisarme
                             </label>
+                        </div>
+                        <input type="hidden" name="auto_generate" value="0">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="auto_generate" value="1"
+                                   id="auto_generate">
+                            <label class="form-check-label" for="auto_generate">
+                                Registrar el pago solo cuando llegue la fecha
+                            </label>
+                            <div class="form-text">
+                                Al vencer, el pago se registra automáticamente de madrugada
+                                (requiere el programa diario del servidor; en desarrollo local no corre solo).
+                            </div>
                         </div>
 
                         <button type="submit" class="btn btn-finlia">
@@ -203,6 +215,7 @@
                                                     data-category="{{ $edit->category_id }}"
                                                     data-account="{{ $edit->account_id }}"
                                                     data-active="{{ $edit->is_active ? '1' : '0' }}"
+                                                    data-auto="{{ $edit->auto_generate ? '1' : '0' }}"
                                                     data-notes="{{ $edit->notes }}">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
@@ -252,6 +265,7 @@
                                     data-category="{{ $edit->category_id }}"
                                     data-account="{{ $edit->account_id }}"
                                     data-active="{{ $edit->is_active ? '1' : '0' }}"
+                                    data-auto="{{ $edit->auto_generate ? '1' : '0' }}"
                                     data-notes="{{ $edit->notes }}">
                                 <i class="bi bi-pencil"></i>
                             </button>
@@ -325,6 +339,13 @@
                                 Contar en el dinero disponible y avisarme
                             </label>
                         </div>
+                        <input type="hidden" name="auto_generate" value="0">
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="auto_generate" value="1" id="edit-re-auto">
+                            <label class="form-check-label" for="edit-re-auto">
+                                Registrar el pago solo cuando llegue la fecha
+                            </label>
+                        </div>
                     </div>
                     <div class="modal-footer border-0">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -370,6 +391,7 @@
                 document.getElementById('edit-re-interval').value = btn.getAttribute('data-interval') || '';
                 document.getElementById('edit-re-notes').value = btn.getAttribute('data-notes') || '';
                 document.getElementById('edit-re-active').checked = btn.getAttribute('data-active') === '1';
+                document.getElementById('edit-re-auto').checked = btn.getAttribute('data-auto') === '1';
 
                 var frequency = document.getElementById('edit-re-frequency');
                 frequency.value = btn.getAttribute('data-frequency') || '';

@@ -12,6 +12,45 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.14.0] - 2026-08-29 — Recordatorios y notificaciones (Épica 9)
+
+### Añadido
+- **Página `/recordatorios`** con la lista unificada de todo lo que vence: gastos
+  recurrentes, cuotas de deuda, metas con fecha y avisos propios del usuario, agrupada
+  en vencidas / vencen pronto (7 días) / más adelante, con la acción de cada origen al
+  alcance (marcar pagado, ir a la deuda, aportar a la meta). Los avisos derivados **no
+  se duplican en tabla**: se calculan en vivo desde su fuente, así que nunca quedan
+  caducados aunque el cron no corra ([ADR-0027](docs/DECISIONS.md#adr-0027)).
+- **Avisos sueltos del usuario** ("obligación anual": tecnomecánica, pasaporte, predial)
+  con alta, edición, borrado y "atender": si se repite avanza una frecuencia y sigue
+  pendiente; si es de una sola vez queda completado. **Atender no genera gasto** — un
+  recordatorio es un aviso, no un movimiento.
+- **Campanita en el navbar** con el conteo urgente (vencidas + próximas) y desplegable
+  de resumen, presente en todas las páginas autenticadas.
+- **Banner en el Panel**: "🔔 Tienes N obligaciones próximas (M vencidas)" con enlace
+  directo a la lista, en tono informativo (no de alarma).
+- **Casilla "Registrar el pago solo cuando llegue la fecha"** en gastos recurrentes
+  (`auto_generate`) y comando del Scheduler `finlia:generate-recurring-payments`
+  (diario 06:00, compatible con el cron de Hostinger): registra el gasto vencido
+  reutilizando "Marcar pagado" — **una ocurrencia por corrida con su fecha real**, para
+  que un atraso de N meses se recupere en N días sin una ráfaga fechada "hoy"
+  ([ADR-0018](docs/DECISIONS.md#adr-0018)).
+- **Interruptor del hogar** (`households.reminders_enabled`, solo el administrador):
+  apaga campanita, banner y listado de todo el hogar de una vez, sin borrar datos.
+- **Campanita sin costo por página**: el conteo de la campanita va con **caché corta
+  invalidada por eventos de modelo** (`cachedSummary` + `ReminderSummaryCacheObserver`:
+  cualquier cambio en recurrentes, deudas/pagos, metas/aportes, avisos o el hogar borra
+  la clave de ese hogar; el TTL de 10 min solo cubre el paso de medianoche). La página
+  `/recordatorios` sigue leyendo el estado fresco (`list()` no se cachea).
+- 30 tests nuevos (estados derivados, cuota de deuda pagada/impaga, resumen, atender,
+  aislamiento multi-hogar, comando del scheduler, invalidación de caché) — suite total:
+  **391 en verde**.
+
+### Cambiado
+- El seeder de demo incluye tres avisos sueltos (uno vencido, uno próximo, uno anual
+  lejano) y activa la generación automática en la suscripción de internet, para que la
+  página y la campanita muestren los tres estados desde el primer arranque.
+
 ## [0.13.0] - 2026-08-29 — Reportes financieros (Épica 8)
 
 ### Añadido

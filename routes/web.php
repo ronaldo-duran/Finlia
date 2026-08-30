@@ -23,6 +23,7 @@ use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MovementsController;
 use App\Http\Controllers\RecurringExpenseController;
+use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SavingsGoalController;
 use Illuminate\Support\Facades\Route;
@@ -252,4 +253,22 @@ Route::middleware('auth')->group(function () {
     Route::get('reportes/exportar', [ReportController::class, 'export'])
         ->name('reports.export')
         ->middleware('throttle:10,1');
+
+    // ---- Épica 9: recordatorios y notificaciones ----
+    // Lista unificada (recurrentes + deudas + metas + sueltos, ADR-0027) y
+    // CRUD de los sueltos. El hogar sale del activo en sesión.
+    Route::get('recordatorios', [ReminderController::class, 'index'])
+        ->name('reminders.index');
+    Route::post('recordatorios', [ReminderController::class, 'store'])
+        ->name('reminders.store');
+    // Interruptor del hogar (solo administrador, HouseholdPolicy::update).
+    // Antes de {reminder}: la URI fija debe ganarle al parámetro.
+    Route::put('recordatorios/configuracion', [ReminderController::class, 'settings'])
+        ->name('reminders.settings');
+    Route::put('recordatorios/{reminder}', [ReminderController::class, 'update'])
+        ->name('reminders.update');
+    Route::delete('recordatorios/{reminder}', [ReminderController::class, 'destroy'])
+        ->name('reminders.destroy');
+    Route::post('recordatorios/{reminder}/completar', [ReminderController::class, 'complete'])
+        ->name('reminders.complete');
 });

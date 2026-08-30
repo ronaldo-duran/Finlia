@@ -126,6 +126,7 @@ class DatabaseSeeder extends Seeder
         $this->seedRecurringExpenses($household, $accounts);
         $this->seedDebts($household, $accounts);
         $this->seedSavingsGoals($household);
+        $this->seedReminders($household);
     }
 
     /**
@@ -190,7 +191,7 @@ class DatabaseSeeder extends Seeder
         collect([
             // Fijos de alta frecuencia (seam fixed_expenses).
             ['name' => 'Arriendo', 'amount' => 1200000, 'frequency' => Frequency::Monthly, 'next_date' => $day5, 'category' => 'Vivienda'],
-            ['name' => 'Internet hogares', 'amount' => 95000, 'frequency' => Frequency::Monthly, 'next_date' => $day20, 'category' => 'Servicios'],
+            ['name' => 'Internet hogares', 'amount' => 95000, 'frequency' => Frequency::Monthly, 'next_date' => $day20, 'category' => 'Servicios', 'auto_generate' => true],
             // Obligaciones menos frecuentes (seam recurring).
             ['name' => 'SOAT carro', 'amount' => 600000, 'frequency' => Frequency::Yearly, 'next_date' => $now->copy()->addDays(45), 'category' => 'Transporte'],
             ['name' => 'Mantenimiento moto', 'amount' => 280000, 'frequency' => Frequency::Semester, 'next_date' => $now->copy()->addDays(12), 'category' => 'Transporte'],
@@ -203,6 +204,7 @@ class DatabaseSeeder extends Seeder
                 'frequency' => $data['frequency']->value,
                 'next_date' => $data['next_date']->toDateString(),
                 'is_active' => true,
+                'auto_generate' => $data['auto_generate'] ?? false,
             ]);
         });
     }
@@ -304,6 +306,38 @@ class DatabaseSeeder extends Seeder
             'date' => $now->copy()->subMonth()->toDateString(),
             'type' => SavingsGoalContributionType::Withdrawal->value,
             'notes' => 'Gasto inesperado',
+        ]);
+    }
+
+    /**
+     * Recordatorios sueltos FALSOS (Épica 9): los derivados (recurrentes,
+     * deudas, metas) ya existen por los seeds anteriores; aquí solo hacen
+     * falta avisos propios para que la lista muestre los tres estados.
+     */
+    private function seedReminders(Household $household): void
+    {
+        $now = Carbon::now(config('app.timezone'));
+
+        $household->reminders()->create([
+            'title' => 'Tecnomecánica del carro',
+            'amount' => 250000,
+            'due_date' => $now->copy()->subDays(4)->toDateString(),
+            'frequency' => null,
+            'notes' => 'Revisar el certificado vigente antes de la cita.',
+        ]);
+
+        $household->reminders()->create([
+            'title' => 'Renovar pasaporte',
+            'amount' => 180000,
+            'due_date' => $now->copy()->addDays(6)->toDateString(),
+            'frequency' => null,
+        ]);
+
+        $household->reminders()->create([
+            'title' => 'Impuesto predial',
+            'amount' => 900000,
+            'due_date' => $now->copy()->addMonths(3)->setDay(1)->toDateString(),
+            'frequency' => Frequency::Yearly->value,
         ]);
     }
 }

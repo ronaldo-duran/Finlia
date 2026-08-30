@@ -51,6 +51,8 @@ class StoreRecurringExpenseRequest extends FormRequest
                 Rule::exists('accounts', 'id')->where(fn ($q) => $q->where('household_id', $householdId)),
             ],
             'is_active' => ['boolean'],
+            // Épica 9 (ADR-0018): opt-in por obligación al pago automático.
+            'auto_generate' => ['boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }
@@ -75,7 +77,10 @@ class StoreRecurringExpenseRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $data = ['is_active' => $this->boolean('is_active')];
+        $data = [
+            'is_active' => $this->boolean('is_active'),
+            'auto_generate' => $this->boolean('auto_generate'),
+        ];
 
         if ($this->input('frequency') !== Frequency::Custom->value) {
             $data['frequency_interval'] = null;
