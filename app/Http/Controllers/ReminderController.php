@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ReminderStatus;
 use App\Http\Requests\Reminder\StoreReminderRequest;
+use App\Http\Requests\Reminder\UpdateReminderEmailRequest;
 use App\Http\Requests\Reminder\UpdateReminderRequest;
 use App\Http\Requests\Reminder\UpdateReminderSettingsRequest;
 use App\Models\Reminder;
@@ -55,6 +56,11 @@ class ReminderController extends Controller
             'enabled' => $enabled,
             // El interruptor del hogar solo lo mueve el administrador.
             'canManageSettings' => $request->user()->can('update', $household),
+            // Preferencia personal de digest (ADR-0028): opt-in por miembro.
+            'emailEnabled' => (bool) $household->members
+                ->firstWhere('id', $request->user()->id)
+                ?->pivot->reminders_email,
+            'userEmail' => $request->user()->email,
         ]);
     }
 
@@ -130,6 +136,34 @@ class ReminderController extends Controller
         $status = $data['reminders_enabled']
             ? __('Recordatorios activados.')
             : __('Recordatorios desactivados.');
+
+        return redirect()->route('reminders.index')->with('status', $status);
+    }
+
+    /**
+     * Preferencia personal de digest por correo (ADR-0028): opt-in por
+     * miembro del hogar activo, nunca global ni de hogar.
+     */
+    public function email(UpdateReminderEmailRequest $request): RedirectResponse
+    {
+        $household = active_household();
+
+        if ($household === null) {
+            return redirect()->route('households.create');
+        }
+
+        $this->authorize('manageEmailPreferences', Reminder::class);
+
+        $enabled = $request->validatedData()['reminders_email'];
+
+        $household->members()->updateExistingPivot(
+            $request->user()->id,
+            ['reminders_email' => $enabled],
+        );
+
+        $status = $enabled
+            ? __('Resumen por correo activado: máximo un correo al día si tienes urgentes.')
+            : __('Resumen por correo desactivado.');
 
         return redirect()->route('reminders.index')->with('status', $status);
     }

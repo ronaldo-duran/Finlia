@@ -230,6 +230,32 @@
             </div>
         </div>
 
+        {{-- Preferencia personal: digest por correo (ADR-0028) --}}
+        <div class="card border-0 mt-3">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="min-w-0">
+                    <div class="fw-semibold">
+                        <i class="bi bi-envelope me-1"></i> Resumen por correo
+                        @if ($emailEnabled)
+                            <span class="badge rounded-pill text-bg-success ms-1">Activado</span>
+                        @endif
+                    </div>
+                    <div class="small text-muted">
+                        Un correo al día (6:30 a.m.) a <strong>{{ $userEmail }}</strong>, solo si tienes
+                        obligaciones vencidas o próximas. Nada de propaganda, y se apaga aquí mismo.
+                    </div>
+                </div>
+                <form method="POST" action="{{ route('reminders.email') }}" class="flex-shrink-0">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="reminders_email" value="{{ $emailEnabled ? '0' : '1' }}">
+                    <button type="submit" class="btn btn-sm {{ $emailEnabled ? 'btn-outline-secondary' : 'btn-finlia' }}">
+                        {{ $emailEnabled ? 'Desactivar' : 'Activar' }}
+                    </button>
+                </form>
+            </div>
+        </div>
+
         {{-- Historial de avisos sueltos atendidos --}}
         @if ($completed->isNotEmpty())
             <details class="card border-0 mt-3">

@@ -42,9 +42,17 @@ reciente de este archivo.
   cualquier cambio en recurrentes, deudas/pagos, metas/aportes, avisos o el hogar borra
   la clave de ese hogar; el TTL de 10 min solo cubre el paso de medianoche). La página
   `/recordatorios` sigue leyendo el estado fresco (`list()` no se cachea).
-- 30 tests nuevos (estados derivados, cuota de deuda pagada/impaga, resumen, atender,
-  aislamiento multi-hogar, comando del scheduler, invalidación de caché) — suite total:
-  **391 en verde**.
+- **Digest diario opcional por correo** ([ADR-0028](docs/DECISIONS.md#adr-0028)): quien lo
+  activa en `/recordatorios` ("Resumen por correo") recibe **un correo al día (06:30)**
+  con sus obligaciones urgentes — solo si las hay, opt-in por miembro y hogar, jamás
+  marketing. Comando del Scheduler `finlia:send-reminder-digests`, envío síncrono por
+  SMTP (Brevo free en producción, ver `docs/DEPLOYMENT.md` §4) e idempotente
+  (`last_reminder_digest_at`: reintentos del cron no duplican). El Mailable `ReminderDigest`
+  trae HTML autocontenido en español + texto plano y **no marca nada como leído**: el
+  aviso se apaga pagando.
+- 41 tests nuevos (estados derivados, cuota de deuda pagada/impaga, resumen, atender,
+  aislamiento multi-hogar, comando del scheduler, invalidación de caché, digest por
+  correo) — suite total: **402 en verde**.
 
 ### Cambiado
 - El seeder de demo incluye tres avisos sueltos (uno vencido, uno próximo, uno anual

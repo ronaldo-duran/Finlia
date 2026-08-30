@@ -24,3 +24,10 @@ Artisan::command('inspire', function () {
 Schedule::command('finlia:generate-recurring-payments')
     ->name('recurrentes-auto-generacion')
     ->dailyAt('06:00');
+
+// Épica 9 (ADR-0028): digest de recordatorios urgentes por correo. Después
+// de la generación de recurrentes, para que refleje los pagos de la mañana.
+// Síncrono a propósito: el Mailable no implementa ShouldQueue (Fase 1).
+Schedule::command('finlia:send-reminder-digests')
+    ->name('recordatorios-digest')
+    ->dailyAt('06:30');

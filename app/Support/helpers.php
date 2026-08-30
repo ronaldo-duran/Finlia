@@ -82,3 +82,24 @@ if (! function_exists('active_household_id')) {
         return active_household()?->id;
     }
 }
+
+if (! function_exists('mail_is_deliverable')) {
+    /**
+     * ¿El mailer configurado entrega a una bandeja real? Con `log`/`array`
+     * (desarrollo y tests) se responde `false` para no prometer correos que
+     * nadie va a recibir (ADR-0015). Lo usan las invitaciones y el digest
+     * de recordatorios (ADR-0028): una sola regla para todo el correo.
+     */
+    function mail_is_deliverable(): bool
+    {
+        if (! config('finlia.mail.enabled', true)) {
+            return false;
+        }
+
+        return ! in_array(
+            config('mail.default'),
+            (array) config('finlia.mail.fake_transports', []),
+            true,
+        );
+    }
+}

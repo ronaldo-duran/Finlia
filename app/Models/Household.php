@@ -42,7 +42,7 @@ class Household extends Model
     {
         return $this->belongsToMany(User::class, 'household_user')
             ->using(HouseholdMember::class)
-            ->withPivot(['role', 'joined_at'])
+            ->withPivot(['role', 'joined_at', 'reminders_email', 'last_reminder_digest_at'])
             ->withTimestamps()
             ->orderByPivot('joined_at');
     }

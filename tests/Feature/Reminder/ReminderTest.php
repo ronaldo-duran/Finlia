@@ -199,6 +199,66 @@ class ReminderTest extends TestCase
         ]);
     }
 
+    // ===== Preferencia de digest por correo (ADR-0028) =====
+
+    public function test_miembro_puede_activar_y_desactivar_su_resumen_por_correo(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+
+        // Opt-in: nace desactivado, cada quien lo prende.
+        $this->actingAs($owner)->put(route('reminders.email'), [
+            'reminders_email' => '1',
+        ])->assertRedirect(route('reminders.index'));
+
+        $this->assertDatabaseHas('household_user', [
+            'household_id' => $household->id,
+            'user_id' => $owner->id,
+            'reminders_email' => true,
+        ]);
+
+        $this->actingAs($owner)->put(route('reminders.email'), [
+            'reminders_email' => '0',
+        ])->assertRedirect(route('reminders.index'));
+
+        $this->assertDatabaseHas('household_user', [
+            'household_id' => $household->id,
+            'user_id' => $owner->id,
+            'reminders_email' => false,
+        ]);
+    }
+
+    public function test_la_preferencia_es_personal_y_no_toca_la_de_otros(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+        $member = User::factory()->create();
+        $household->members()->attach($member, ['role' => 'member', 'joined_at' => now()]);
+
+        $this->actingAs($owner)->put(route('reminders.email'), [
+            'reminders_email' => '1',
+        ])->assertRedirect(route('reminders.index'));
+
+        $this->assertDatabaseHas('household_user', [
+            'user_id' => $owner->id,
+            'reminders_email' => true,
+        ]);
+        $this->assertDatabaseHas('household_user', [
+            'user_id' => $member->id,
+            'reminders_email' => false,
+        ]);
+    }
+
+    public function test_usuario_sin_hogar_es_llevado_a_crear_uno(): void
+    {
+        // Sin hogar no hay preferencia que tocar: mismo patrón que el
+        // interruptor (redirect, no 403). La escritura siempre usa el pivote
+        // del propio usuario en su hogar activo: no hay vector cruzado.
+        $sinHogar = User::factory()->create();
+
+        $this->actingAs($sinHogar)
+            ->put(route('reminders.email'), ['reminders_email' => '1'])
+            ->assertRedirect(route('households.create'));
+    }
+
     // ===== Aislamiento multi-hogar =====
 
     public function test_usuario_de_otro_hogar_no_puede_operar_un_recordatorio_ajeno(): void

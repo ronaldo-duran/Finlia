@@ -16,5 +16,8 @@ class HouseholdMember extends Pivot
     protected $casts = [
         'role' => HouseholdRole::class,
         'joined_at' => 'datetime',
+        // Preferencias de recordatorios por miembro (Épica 9, ADR-0028).
+        'reminders_email' => 'boolean',
+        'last_reminder_digest_at' => 'datetime',
     ];
 }

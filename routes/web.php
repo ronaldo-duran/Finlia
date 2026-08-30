@@ -265,6 +265,9 @@ Route::middleware('auth')->group(function () {
     // Antes de {reminder}: la URI fija debe ganarle al parámetro.
     Route::put('recordatorios/configuracion', [ReminderController::class, 'settings'])
         ->name('reminders.settings');
+    // Preferencia personal de digest por correo (ADR-0028), misma regla de orden.
+    Route::put('recordatorios/correo', [ReminderController::class, 'email'])
+        ->name('reminders.email');
     Route::put('recordatorios/{reminder}', [ReminderController::class, 'update'])
         ->name('reminders.update');
     Route::delete('recordatorios/{reminder}', [ReminderController::class, 'destroy'])

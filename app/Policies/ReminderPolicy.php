@@ -49,4 +49,13 @@ class ReminderPolicy
     {
         return $this->canAccessHousehold($user, $reminder->household_id);
     }
+
+    /**
+     * Preferencia personal de digest por correo: cualquier miembro del
+     * hogar activo decide sobre la suya (ADR-0028).
+     */
+    public function manageEmailPreferences(User $user): bool
+    {
+        return $this->canAccessActiveHousehold($user);
+    }
 }

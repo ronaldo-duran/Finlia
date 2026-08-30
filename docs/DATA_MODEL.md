@@ -53,9 +53,12 @@
 | user_id | FK | |
 | role | string | enum: `owner`, `member` (→ `App\Enums\HouseholdRole`) |
 | joined_at | timestamp | |
+| reminders_email | boolean, `false` | Épica 9: opt-in del digest diario ([ADR-0028](DECISIONS.md#adr-0028)) |
+| last_reminder_digest_at | timestamp, null | idempotencia: "ya recibió el correo de hoy" |
 | timestamps | | |
 
 - Un usuario puede pertenecer a varios hogares (la spec lo permite si no complica). El hogar **activo** se guarda en sesión.
+- Las preferencias de correo son **por miembro y por hogar** (viven en el pivote): cada quien decide en qué hogar quiere el digest.
 
 ### `household_invitations`
 | Campo | Tipo | Notas |
@@ -420,15 +423,22 @@ Lógica de dominio (sin HTTP, ADR-0010); es también el **seam de canales futuro
   frecuencia y sigue pendiente; si no, queda completado. **No genera gasto** (ADR-0027).
 
 ### Scheduler (compatible con cron de Hostinger)
-`finlia:generate-recurring-payments` (diario 06:00): por cada recurrente con
-`auto_generate` + activo y `next_date` vencida, **una** ocurrencia por corrida vía
-`markAsPaid()` — gasto con la **fecha real** de la ocurrencia (un atraso de N meses se
-recupera en N corridas, sin ráfaga fechada hoy) — atribuido al propietario del hogar.
+- `finlia:generate-recurring-payments` (diario 06:00): por cada recurrente con
+  `auto_generate` + activo y `next_date` vencida, **una** ocurrencia por corrida vía
+  `markAsPaid()` — gasto con la **fecha real** de la ocurrencia (un atraso de N meses se
+  recupera en N corridas, sin ráfaga fechada hoy) — atribuido al propietario del hogar.
+- `finlia:send-reminder-digests` (diario 06:30, [ADR-0028](DECISIONS.md#adr-0028)): digest
+  de urgentes por correo. Solo hogares con recordatorios activos, solo miembros con
+  `reminders_email` y sin digest ya enviado hoy (`last_reminder_digest_at`), y solo si
+  `attention > 0`. Envío síncrono (`Mail::to()->send()` con `try/catch` por destinatario);
+  el seam de cola es `ShouldQueue` en `ReminderDigest`. Transporta título/fecha/monto de
+  las urgentes, nunca saldos ni cuentas.
 
 ### Rutas
-`/recordatorios` (`reminders.index/store/update/destroy/complete`) y
-`PUT /recordatorios/configuracion` (`reminders.settings`; declarada **antes** de
-`{reminder}` para que la URI fija gane al parámetro).
+`/recordatorios` (`reminders.index/store/update/destroy/complete`),
+`PUT /recordatorios/configuracion` (`reminders.settings`) y
+`PUT /recordatorios/correo` (`reminders.email`: preferencia personal de digest). Las dos
+URI fijas van declaradas **antes** de `{reminder}` para que ganen al parámetro.
 
 ---
 

@@ -75,7 +75,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Household::class, 'household_user')
             ->using(HouseholdMember::class)
-            ->withPivot(['role', 'joined_at'])
+            ->withPivot(['role', 'joined_at', 'reminders_email', 'last_reminder_digest_at'])
             ->withTimestamps()
             ->orderByPivot('joined_at');
     }
