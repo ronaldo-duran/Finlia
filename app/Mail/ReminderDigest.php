@@ -20,9 +20,10 @@ use Illuminate\Support\Collection;
  * aviso con dedo que trae de vuelta, jamás sustituye a /recordatorios ni
  * "apaga" nada al leerlo (ADR-0027).
  *
- * No implementa ShouldQueue todavía: en hosting compartido se envía
- * síncrono dentro del comando de madrugada. Activarlo después es añadir
- * `implements ShouldQueue` — el seam ya está (cola database, ADR-0008).
+ * No se encola todavía: en hosting compartido se envía síncrono dentro
+ * del comando de madrugada (Fase 1). La Fase 2 es un Job propio que envía
+ * y marca el pivote tras enviar de verdad — encolar este Mailable directo
+ * marcaría "enviado" al despachar, sin correo detrás (ADR-0028 §4).
  */
 class ReminderDigest extends Mailable
 {

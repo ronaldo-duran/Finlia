@@ -47,7 +47,8 @@ reciente de este archivo.
   con sus obligaciones urgentes — solo si las hay, opt-in por miembro y hogar, jamás
   marketing. Comando del Scheduler `finlia:send-reminder-digests`, envío síncrono por
   SMTP (Brevo free en producción, ver `docs/DEPLOYMENT.md` §4) e idempotente
-  (`last_reminder_digest_at`: reintentos del cron no duplican). El Mailable `ReminderDigest`
+  (`last_reminder_digest_at`: reintentos del cron no duplican); las tareas del Scheduler
+  llevan `withoutOverlapping()`. El Mailable `ReminderDigest`
   trae HTML autocontenido en español + texto plano y **no marca nada como leído**: el
   aviso se apaga pagando.
 - 41 tests nuevos (estados derivados, cuota de deuda pagada/impaga, resumen, atender,

@@ -27,9 +27,13 @@ use Throwable;
  *    última fecha de envío y la corrida la respeta (idempotente).
  *
  * El envío es síncrono a propósito (Fase 1): con Brevo free (300 correos
- * al día) y una base de usuarios pequeña sobra. Si el volumen crece, el
- * seam es `implements ShouldQueue` en el Mailable + cola `database`
- * (ADR-0008) — este comando no cambia.
+ * al día) y una base pequeña sobra, y corre en el proceso del cron de
+ * madrugada — jamás añade latencia al camino HTTP. Cuando los opt-in con
+ * urgentes rocen ~200-250 al día, la Fase 2 es despachar un Job
+ * SendReminderDigest por destinatario (que envía y marca el pivote DESPUÉS
+ * de enviar de verdad) y procesarlo con `queue:work --stop-when-empty`
+ * (cola database, ADR-0008). Encolar el Mailable directo no vale: marcaría
+ * "enviado" al despachar y un worker caído dejaría el día sin correo.
  */
 class SendReminderDigests extends Command
 {

@@ -129,7 +129,7 @@ Para **colas** (si se usan) sin worker persistente, procesar dentro del schedule
 >
 > El correo transaccional (invitaciones, recuperación de contraseña) se envía **de forma síncrona** y **no depende del cron** (ADR-0015). Son dos correos puntuales disparados por una acción del usuario; encolarlos sin este cron activo los perdería en silencio.
 >
-> El **digest de recordatorios** (`finlia:send-reminder-digests`, 06:30) sí vive en el Scheduler y es el único correo en lote (ADR-0028): síncrono dentro de la corrida, con `try/catch` por destinatario para que un buzón que rebota no frene al resto. Si el volumen creciera hasta hacer larga la corrida, el seam es `ShouldQueue` en el Mailable + el `queue:work --stop-when-empty` de arriba.
+> El **digest de recordatorios** (`finlia:send-reminder-digests`, 06:30) sí vive en el Scheduler y es el único correo en lote (ADR-0028): síncrono dentro de la corrida — corre en el proceso del cron, nunca añade latencia a la app — con `try/catch` por destinatario y `withoutOverlapping()` para que una corrida larga no se solape con la del minuto siguiente. Si el volumen creciera hasta hacer larga la corrida (umbral: ~200–250 digest diarios, donde también se cruza la cuota free de Brevo), la Fase 2 de ADR-0028 es un Job `SendReminderDigest` por destinatario despachado desde el comando y procesado por el `queue:work --stop-when-empty` de arriba; el Job marca el pivote tras enviar de verdad, y el comando pasa de enviar a despachar.
 
 ## 7. Permisos
 
