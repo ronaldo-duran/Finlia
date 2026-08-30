@@ -131,12 +131,12 @@ Cubrir `index`, `show`, `store` (con `household_id` forzado), `update`, `destroy
 
 ## 6. Autenticación y sesiones
 
-- Rate limiting: `throttle:5,1` (o similar) en `/login`, `/register`, recuperación de contraseña.
+- Rate limiting: `throttle:5,1` (o similar) en `/login`, `/register`, recuperación de contraseña; reenvío de verificación 3/min por usuario (ADR-0029).
 - Lockout / notificación de intentos sospechosos (opcional, futuro).
 - Sesiones: driver `database` (compatible Hostinger); `SESSION_LIFETIME` razonalbe; `SESSION_ENCRYPT` según necesidad.
 - Logout invalida la sesión; `regenerate()` tras login para prevenir fixation.
-- Verificación de email (Épica 1, si se habilita).
-- **Correo transaccional mínimo (ADR-0015)**: Finlia solo envía correo cuando el destinatario **no puede ver el mensaje dentro de la app** — invitación a un hogar y recuperación de contraseña. Recordatorios, resúmenes y comunicaciones de producto van **in-app**. Menos correos = menos superficie de exposición de datos familiares. Añadir un correo nuevo exige un ADR.
+- **Verificación de correo obligatoria** en el registro ([ADR-0029](DECISIONS.md#adr-0029)): sin confirmar, el middleware `verified` bloquea toda la app (solo logout, aviso y reenvío) — un usuario sin verificar **no puede crear ningún dato**. El enlace es público + firmado (60 min); el reclaim anti-squatting borra registros nunca verificados en cuanto el dueño real del correo se registra (un `unique` que solo cuenta correos verificados). El digest y la recuperación jamás salen a correos sin confirmar.
+- **Correo transaccional mínimo (ADR-0015)**: Finlia solo envía correo cuando el destinatario **no puede ver el mensaje dentro de la app** — invitación a un hogar, recuperación de contraseña y verificación del registro. Recordatorios, resúmenes y comunicaciones de producto van **in-app**. Menos correos = menos superficie de exposición de datos familiares. Añadir un correo nuevo exige un ADR.
 - El envío de correo **nunca bloquea la operación**: si el SMTP falla se registra un `Log::warning` (sin token ni enlace) y el flujo continúa con el enlace manual.
 - Recuperación de contraseña y creación de invitación devuelven **el mismo mensaje exista o no la dirección**, para no permitir enumeración de usuarios.
 - Cookies: `secure` (HTTPS en prod), `httponly`, `samesite=lax|strict`.
