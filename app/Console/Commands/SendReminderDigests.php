@@ -55,11 +55,14 @@ class SendReminderDigests extends Command
         $today = Carbon::now(config('app.timezone'))->startOfDay();
 
         // Hogares con recordatorios activos + miembros opt-in que aún no
-        // recibieron su digest de hoy (idempotencia por pivote).
+        // recibieron su digest de hoy (idempotencia por pivote). Nunca a
+        // correos sin verificar: cinturón y suspenderes del Plan 01 — una
+        // dirección no confirmada puede ser de otra persona.
         $households = Household::query()
             ->where('reminders_enabled', true)
             ->with(['members' => function ($query) use ($today) {
                 $query->wherePivot('reminders_email', true)
+                    ->whereNotNull('users.email_verified_at')
                     ->where(function ($query) use ($today) {
                         $query->whereNull('household_user.last_reminder_digest_at')
                             ->orWhereDate('household_user.last_reminder_digest_at', '<', $today->toDateString());

@@ -12,6 +12,37 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.15.0] - 2026-08-30 — Verificación de correo en el registro (Plan 01)
+
+### Añadido
+- **Verificación de correo obligatoria** al registrarse: la cuenta se crea completa
+  (usuario + hogar) pero la app queda bloqueada hasta confirmar el correo — el
+  middleware `verified` cubre todo lo privado; sin confirmar solo son alcanzables
+  cerrar sesión, el aviso "Revisa tu correo" y el reenvío
+  ([ADR-0029](docs/DECISIONS.md#adr-0029)). Corolario: un usuario sin verificar no
+  puede crear ningún dato.
+- **Correo de verificación propio** en español (estilo de marca, HTML + texto plano,
+  patrón de la invitación y el digest) con **enlace firmado a 60 min**, público: el
+  click funciona desde el buzón con o sin sesión. Reenvío desde el aviso con
+  **throttle de 3/min por usuario** y pista de "revisa spam".
+- **Anti-squatting**: si alguien registró tu correo y nunca lo verificó, ese registro
+  no te bloquea — al registrarte de nuevo, el fantasma y su hogar vacío se borran y
+  tu cuenta se crea limpia. Un correo solo cuenta como tomado si está verificado.
+  "Olvidé mi contraseña" queda como vía de recuperación universal.
+
+### Cambiado
+- El digest de recordatorios **excluye correos sin verificar** (cinturón y
+  suspenderes: nunca correos periódicos a direcciones sin confirmar, que pueden ser
+  de otra persona).
+- La política de correo pasa a **4 correos** (invitación, contraseña, digest,
+  verificación — tabla de [ARCHITECTURE §7](docs/ARCHITECTURE.md)).
+
+### Notas
+- Migración de datos: los usuarios ya registrados quedan verificados de oficio
+  (base de desarrollo; nadie "verificó de verdad" porque el flujo no existía).
+- Sin cambios en `.env` ni en el cron: usa el SMTP ya configurado y no añade
+  comandos.
+
 ## [0.14.0] - 2026-08-29 — Recordatorios y notificaciones (Épica 9)
 
 ### Añadido

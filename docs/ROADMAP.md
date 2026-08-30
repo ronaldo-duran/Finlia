@@ -21,6 +21,12 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 13 | Portafolio profesional | 🔴 | 11 |
 | 14 | API REST para app móvil (futura) | 🔴 | 3, 11 |
 
+> 🔧 **Serie de blindaje de cuentas** (`planes/`, 2026-08): seis planes acordados con el
+> producto **antes** de la Épica 10 — verificación de correo, perfil (contraseña y
+> cambio de correo), términos versionados, datos personales, eliminación/suspensión y
+> política de datos con export. Estado: **01 ✅ verificación de correo
+> ([ADR-0029](DECISIONS.md#adr-0029))** · 02–06 pendientes.
+
 ## Resumen por épica
 
 ### Épica 1 — Fundación y configuración

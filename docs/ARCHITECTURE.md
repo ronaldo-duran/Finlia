@@ -123,7 +123,7 @@ Ver [docs/CONVENTIONS.md](CONVENTIONS.md#dinero).
 - Sesiones en `database` (compatible con Hostinger).
 - Login, registro, logout, recuperación de contraseña (Épica 1).
 - Rate limiting en login/registro.
-- Rutas privadas bajo middleware `auth` (y opcional `verified`).
+- Rutas privadas bajo middleware `auth` + `verified`: el correo se **verifica obligatoriamente** en el registro (Plan 01, [ADR-0029](DECISIONS.md#adr-0029)) — sin confirmar solo son alcanzables logout, el aviso y el reenvío.
 
 ## 7. Notificaciones y scheduler (Épica 9)
 
@@ -139,7 +139,8 @@ Finlia **sí** envía correo, pero muy poco y con reglas: lo imprescindible (don
 |---|---|---|
 | **Invitar a alguien al hogar** | ✅ Sí | El invitado puede no tener cuenta todavía: no hay bandeja in-app donde avisarle. |
 | **Recuperar contraseña** | ✅ Sí | El usuario está fuera de la sesión por definición. |
-| **Digest diario de recordatorios** (Épica 9, [ADR-0028](DECISIONS.md#adr-0028)) | ✅ Solo opt-in | La app avisa cuando el usuario la abre; una obligación vencida que nadie vio es el caso donde el correo aporta valor real. Máx. 1 por hogar y miembro al día, solo con urgentes. |
+| **Verificar el correo del registro** (Plan 01, [ADR-0029](DECISIONS.md#adr-0029)) | ✅ Sí | Sin confirmar, el usuario no puede entrar a la app: no hay bandeja in-app donde avisarle. Enlace firmado a 60 min; reenvío con throttle. |
+| **Digest diario de recordatorios** (Épica 9, [ADR-0028](DECISIONS.md#adr-0028)) | ✅ Solo opt-in y **solo a correos verificados** | La app avisa cuando el usuario la abre; una obligación vencida que nadie vio es el caso donde el correo aporta valor real. Máx. 1 por hogar y miembro al día, solo con urgentes. |
 | Correos por evento ("pagaste X", "vence Y mañana") | ❌ No | Ruido: para eso está el digest y la app. |
 | Resúmenes periódicos, informes, novedades, marketing | ❌ Nunca | No son imprescindibles y convierten la app en una fuente de ruido. |
 
@@ -148,7 +149,7 @@ Reglas que acompañan a la política:
 - **Los correos llevan lo mínimo**: la invitación solo nombre del hogar y quién invita; el digest solo título, fecha y monto de las urgentes — **nunca** saldos, movimientos ni nombres de cuentas.
 - **El correo es opcional**: si no hay SMTP configurado la app funciona igual. La invitación siempre deja un **enlace manual** que el administrador puede compartir; el digest con transport falso (`log`/`array`) ni siquiera corre (`mail_is_deliverable()`), para no gastar el envío del día.
 - Interruptor global en `config/finlia.php` → `finlia.mail.enabled`. Apaga invitaciones **y** digest.
-- Añadir un correo nuevo **exige un ADR**: así entró el digest (ADR-0028).
+- Añadir un correo nuevo **exige un ADR**: así entraron el digest (ADR-0028) y la verificación (ADR-0029).
 - Envío **síncrono** por ahora (invitaciones: acción del usuario; digest: corrida del cron de madrugada con `try/catch` por destinatario). Si el volumen crece, se encola con `ShouldQueue` + driver `database` y el cron ya documentado; no hace falta cambiar nada más.
 
 ## 8. Frontend

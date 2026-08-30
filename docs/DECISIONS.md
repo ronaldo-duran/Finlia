@@ -884,6 +884,38 @@ Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar 
 
 **Estado.** ACEPTADA — 2026-08-30, a petición del usuario (Brevo free; push diferido a la Épica 10). Implementada en `SendReminderDigests`, `ReminderDigest` + `emails/reminders/digest*`, preferencias en `household_user`, `UpdateReminderEmailRequest`, `ReminderController::email()/unsubscribe()`, la vista `reminders/unsubscribe`, el bloque "Resumen por correo" de `/recordatorios`, la ruta firmada `recordatorios/correo/baja` y el schedule 06:30 de `routes/console.php`.
 
+---
+
+## ADR-0029
+### Verificación de correo obligatoria en el registro con reclaim anti-squatting — **ACEPTADA**
+
+**Contexto.** El registro creaba la cuenta y entraba de inmediato sin verificar correo alguno. Con la Épica 9 esto dejó de ser teórico: **enviamos correos diarios** (digest, [ADR-0028](#adr-0028)) a la dirección que el usuario tecleó — que puede ser de otra persona. Lo mismo la recuperación de contraseña: cualquiera puede registrar `correo@ajeno.com` y hacer que esa persona reciba correo de Finlia (reputación del dominio + Ley 1581). Decisión del producto: **registrar todo y validar el correo después**, bloqueando la app hasta la confirmación.
+
+**Decisión.**
+
+1. **Flujo nativo `MustVerifyEmail`**: el registro crea usuario + hogar (como siempre) pero no entra al dashboard; redirige a un aviso "Revisa tu correo" con el enlace ya enviado. El middleware `verified` cubre **todo** el grupo privado — sin confirmar solo son alcanzables logout, el aviso y el reenvío. Corolario estructural: **un usuario sin verificar no puede crear ningún dato** (la única fila suya es el hogar vacío auto-creado).
+2. **Correo propio en español** (`VerifyEmailMail`, HTML+texto, patrón ADR-0015) con enlace **firmado a 60 min** (`auth.verification.expire`). El enlace es **público + firmado** (patrón de la baja del digest): la firma es la autorización y el click llega desde el buzón, con o sin sesión. El hash (sha1 del correo) es la otra mitad de la prueba, verificada en controlador.
+3. **Reenvío con throttle por usuario** (`RateLimiter::for('verification')`, 3/min por id de usuario, no por IP) desde el aviso, con la pista de "revisa spam". Es correo transaccional imprescindible bajo ADR-0015: el destinatario no puede ver el aviso dentro de la app porque **no puede entrar**.
+4. **Anti-squatting (reclaim en el registro)**: si el correo existe con `email_verified_at` NULL, el registro **borra el fantasma** (usuario + hogar vacío, en transacción, FKs en cascada) y crea la cuenta nueva. El dueño real del correo nunca ve "ya está registrado": `Rule::unique` solo cuenta correos **verificados**. Por construcción el fantasma es inerte (punto 1) y el squatting jamás completa (el enlace siempre cae en la bandeja del dueño real). "Olvidé mi contraseña" queda como vía de recuperación universal; una cuenta **verificada** con ese correo prueba control de la bandeja y queda fuera del reclaim.
+5. **Digest defensivo**: `finlia:send-reminder-digests` excluye miembros con correo sin verificar (cinturón y suspenderes junto al opt-in de ADR-0028).
+6. **Usuarios existentes** quedan verificados de oficio por migración de datos (base de desarrollo; nadie "verificó de verdad" porque el flujo no existía). Esa migración fija la invariante del punto 4: a partir de ella, todo `email_verified_at` NULL es un registro posterior sin datos. Irreversible a propósito.
+7. **Enmienda puntual a la tabla de correos de [ADR-0015](#adr-0015)/[ADR-0028](#adr-0028)**: pasa a **4 correos** (invitación, contraseña, digest, verificación). La verificación es tan transaccional e imprescindible como la recuperación: sin ella la cuenta no existe operativamente. El correo no lleva datos financieros: solo nombre y enlace. Falla en silencio con `Log::warning` sin PII (un SMTP caído no rompe el registro; el reenvío es la recuperación), y con transport falso no se envía (`mail_is_deliverable()`).
+
+**Alternativas (descartadas).**
+- **Verificar antes de crear** (correo → luego contraseña/datos): dos pasos con estado intermedio y peor UX móvil; el flujo nativo "crear y confirmar" es el estándar del mercado.
+- **Notificación markdown nativa de Laravel**: en inglés y fuera del estilo de marca; el Mailable propio ya era el patrón (invitación, digest).
+- **Solo avisar sin bloquear** (banner en vez de middleware): no cierra el problema — el digest y la recuperación seguirían saliendo a correos sin confirmar.
+- **Purgar fantasmas solo por cron (14 días, plan 05)** como mecanismo de desbloqueo: deja al dueño real bloqueado hasta la corrida; el reclaim en el registro reduce la ventana a cero. La purga queda como higiene de fondo, no como dependencia.
+
+**Consecuencias y mitigaciones.**
+- El registro envía el correo **después** del commit de la transacción: un SMTP lento no sostiene locks, y si falla el registro ya quedó bien (el botón de reenvío es la vía).
+- La sesión se regenera al confirmar dentro de sesión (fijación de sesión) y el redirect distingue "confirmado con sesión" (dashboard) de "confirmado desde otro dispositivo" (login).
+- Race menor aceptada: dos registros simultáneos sobre el mismo correo fantasma chocan en el `unique` de DB para el segundo — indistinguible de un correo tomado y ya cubierto por el throttle del registro.
+- Los correos existentes de invitación a un fantasma no se tocan: quien acepta debe tener sesión verificada, y el fantasma no puede tenerla.
+- Cambio de correo (re-verificación del correo nuevo) queda fuera de este ADR: es el plan 02 de la serie de cuentas, junto al perfil.
+
+**Estado.** ACEPTADA — 2026-08-30 (Plan 01 de `planes/`). Implementada en `User` (implements `MustVerifyEmail` + envío propio), `VerifyEmailMail` + `emails/auth/verify-email*`, `EmailVerificationController`, la vista `auth/verify-email`, el grupo `verified` de `routes/web.php`, el reclaim de `RegisteredUserController` + `StoreRegistrationRequest`, la exclusión del digest en `SendReminderDigests`, el `RateLimiter` de `AppServiceProvider`, `config/auth.php` (`verification.expire`) y la migración `2026_09_03_000001`.
+
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.
 3. Incluye: contexto, decisión, alternativas, consecuencias.

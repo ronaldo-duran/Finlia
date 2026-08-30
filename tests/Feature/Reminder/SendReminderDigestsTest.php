@@ -70,6 +70,27 @@ class SendReminderDigestsTest extends TestCase
         Mail::assertNotSent(ReminderDigest::class, fn ($mail) => $mail->hasTo($silencioso->email));
     }
 
+    public function test_no_envia_a_miembros_sin_correo_verificado(): void
+    {
+        // Plan 01: nunca correos periódicos a direcciones sin confirmar —
+        // pueden ser de otra persona (anti-squatting).
+        Mail::fake();
+
+        $sinVerificar = User::factory()->unverified()->create();
+        $this->household->members()->attach($sinVerificar->id, [
+            'role' => 'member',
+            'joined_at' => now(),
+        ]);
+        $this->optIn($this->owner);
+        $this->optIn($sinVerificar);
+
+        $this->artisan('finlia:send-reminder-digests')->assertSuccessful();
+
+        Mail::assertSent(ReminderDigest::class, 1);
+        Mail::assertSent(ReminderDigest::class, fn ($mail) => $mail->hasTo($this->owner->email));
+        Mail::assertNotSent(ReminderDigest::class, fn ($mail) => $mail->hasTo($sinVerificar->email));
+    }
+
     public function test_marca_la_fecha_de_envio_en_el_pivote(): void
     {
         Mail::fake();

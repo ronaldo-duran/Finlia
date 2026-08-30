@@ -11,7 +11,10 @@ use App\Models\SavingsGoal;
 use App\Models\SavingsGoalContribution;
 use App\Observers\ReminderSummaryCacheObserver;
 use App\Services\ReminderService;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\View as ViewContract;
@@ -31,6 +34,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(ReminderService $reminders): void
     {
+        // Reenvío del correo de verificación (Plan 01): ~3/minuto POR
+        // USUARIO, no por IP (mismo usuario, otro navegador). El enlace
+        // firmado público usa el throttle numérico estándar en la ruta.
+        RateLimiter::for('verification', function (Request $request): Limit {
+            return Limit::perMinute(3)->by($request->user()?->id ?: $request->ip());
+        });
+
         // Directiva @money($monto): formato COP centralizado (ADR-0006).
         Blade::directive('money', function (string $expression): string {
             return "<?php echo money($expression); ?>";
