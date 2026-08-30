@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AcknowledgementController;
 use App\Http\Controllers\ActiveHouseholdController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -81,11 +82,32 @@ Route::get('recordatorios/correo/baja', [ReminderController::class, 'unsubscribe
 Route::post('recordatorios/correo/baja', [ReminderController::class, 'unsubscribe'])
     ->middleware('signed');
 
-// ---- Rutas privadas (requieren sesión) ----
+// ---- Enlace de verificación del correo (Plan 01) ----
+// Público + firmado: la firma es la autorización (patrón de la baja del
+// digest). El click llega desde el buzón, con o sin sesión abierta — por
+// eso no está tras 'auth'. El hash (sha1 del correo) es la otra mitad de
+// la prueba; lo comprueba el controlador.
+Route::get('verificar-correo/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->name('verification.verify')
+    ->middleware(['signed', 'throttle:6,1']);
+
+// ---- Rutas privadas ----
+// Nivel 1 (solo sesión): cerrar sesión y el flujo de verificación son lo
+// ÚNICO alcanzable sin correo confirmado. Nivel 2 (sesión + verified):
+// el resto de la app (Plan 01: bloqueo total hasta confirmar).
 Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 
+    // Aviso "revisa tu correo" + reenvío con throttle por usuario.
+    Route::get('verificar-correo', [EmailVerificationController::class, 'notice'])
+        ->name('verification.notice');
+    Route::post('verificar-correo/reenviar', [EmailVerificationController::class, 'resend'])
+        ->name('verification.send')
+        ->middleware('throttle:verification');
+});
+
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)
         ->name('dashboard');
 

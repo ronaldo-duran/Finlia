@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\AcknowledgementKey;
+use App\Mail\VerifyEmailMail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,10 +13,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
+use Throwable;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -66,6 +71,44 @@ class User extends Authenticatable
         );
 
         $this->unsetRelation('acknowledgements');
+    }
+
+    /**
+     * Envía el correo de verificación de correo (Plan 01, ADR-0029).
+     *
+     * Sustituye la notificación nativa (markdown en inglés) por un Mailable
+     * con el estilo de Finlia, patrón de la invitación y el digest (ADR-0015).
+     * Enlace firmado con expiración estándar de Laravel (60 min).
+     *
+     * Falla en silencio (log sin PII): un SMTP caído no debe romper el
+     * registro — la pantalla de aviso tiene botón de reenvío como recuperación.
+     * La base ya trae hasVerifiedEmail()/markEmailAsVerified() del trait
+     * Illuminate\Auth\MustVerifyEmail del Authenticatable.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        if (! mail_is_deliverable()) {
+            return;
+        }
+
+        $expiresAt = now()->addMinutes((int) config('auth.verification.expire', 60));
+
+        try {
+            Mail::to($this->email)->send(new VerifyEmailMail(
+                $this,
+                URL::temporarySignedRoute(
+                    'verification.verify',
+                    $expiresAt,
+                    ['id' => $this->getKey(), 'hash' => sha1($this->getEmailForVerification())],
+                ),
+                $expiresAt,
+            ));
+        } catch (Throwable $e) {
+            Log::warning('No se pudo enviar el correo de verificación.', [
+                'user_id' => $this->getKey(),
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
