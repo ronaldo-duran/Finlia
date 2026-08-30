@@ -51,9 +51,14 @@ reciente de este archivo.
   llevan `withoutOverlapping()`. El Mailable `ReminderDigest`
   trae HTML autocontenido en español + texto plano y **no marca nada como leído**: el
   aviso se apaga pagando.
-- 41 tests nuevos (estados derivados, cuota de deuda pagada/impaga, resumen, atender,
+- **Baja de un click desde el correo** (RFC 8058): el digest trae "Ya no quiero recibir
+  este resumen" con **URL firmada por usuario y hogar** (60 días, sin sesión); las
+  cabeceras `List-Unsubscribe`/`List-Unsubscribe-Post` hacen que Gmail/Yahoo ofrezcan su
+  botón nativo de cancelación, que ejecuta la baja con un POST (respuesta 204). Bajar del
+  digest de un hogar no toca el de otro; la firma inválida da 403.
+- 46 tests nuevos (estados derivados, cuota de deuda pagada/impaga, resumen, atender,
   aislamiento multi-hogar, comando del scheduler, invalidación de caché, digest por
-  correo) — suite total: **402 en verde**.
+  correo y baja desde el correo) — suite total: **407 en verde**.
 
 ### Cambiado
 - El seeder de demo incluye tres avisos sueltos (uno vencido, uno próximo, uno anual

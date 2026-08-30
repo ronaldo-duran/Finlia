@@ -9,10 +9,14 @@ use App\Http\Requests\Reminder\StoreReminderRequest;
 use App\Http\Requests\Reminder\UpdateReminderEmailRequest;
 use App\Http\Requests\Reminder\UpdateReminderRequest;
 use App\Http\Requests\Reminder\UpdateReminderSettingsRequest;
+use App\Models\Household;
 use App\Models\Reminder;
+use App\Models\User;
 use App\Services\ReminderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 /**
@@ -166,5 +170,44 @@ class ReminderController extends Controller
             : __('Resumen por correo desactivado.');
 
         return redirect()->route('reminders.index')->with('status', $status);
+    }
+
+    /**
+     * Baja del digest desde el propio correo (ADR-0028): URL firmada por
+     * usuario+hogar, válida con o sin sesión (el click llega desde el
+     * buzón). GET muestra la confirmación; POST es el one-click de
+     * RFC 8058 (Gmail/Yahoo) y solo necesita un 204. La firma es la
+     * autorización: los parámetros no se pueden manipular.
+     */
+    public function unsubscribe(Request $request): View|Response
+    {
+        $user = User::find($request->integer('user'));
+        $household = Household::find($request->integer('household'));
+
+        // Firma válida de entidades que ya no existen (cuenta borrada):
+        // no hay suscripción que apagar, pero tampoco hay nada que ocultar.
+        if ($user === null || $household === null) {
+            abort(404);
+        }
+
+        // Idempotente y silencioso: si ya estaba en false, o la membresía
+        // ya no existe (UPDATE de 0 filas), el resultado es el mismo.
+        $household->members()->updateExistingPivot($user->id, [
+            'reminders_email' => false,
+        ]);
+
+        Log::info('Baja del digest de recordatorios', [
+            'household_id' => $household->id,
+            'user_id' => $user->id,
+        ]);
+
+        if ($request->isMethod('POST')) {
+            return response()->noContent();
+        }
+
+        return view('reminders.unsubscribe', [
+            'householdName' => $household->name,
+            'appName' => config('app.name'),
+        ]);
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
+use Symfony\Component\Mime\Email;
 
 /**
  * Digest diario de recordatorios (Épica 9, ADR-0028).
@@ -33,11 +34,13 @@ class ReminderDigest extends Mailable
     /**
      * @param  array{overdue: int, upcoming: int, attention: int, total: int}  $summary
      * @param  Collection<int, array<string, mixed>>  $urgent  ítems con status overdue/upcoming
+     * @param  string  $unsubscribeUrl  URL firmada de baja (usuario+hogar), 60 días
      */
     public function __construct(
         public readonly string $householdName,
         public readonly array $summary,
         public readonly Collection $urgent,
+        public readonly string $unsubscribeUrl,
     ) {}
 
     public function envelope(): Envelope
@@ -51,6 +54,16 @@ class ReminderDigest extends Mailable
                 'household' => $this->householdName,
                 'app' => config('app.name'),
             ]),
+            // Baja de un click (RFC 8058): con estas cabeceras Gmail/Yahoo
+            // ofrecen su botón nativo "Cancelar suscripción". La válvula de
+            // escape barata: una baja en vez de un "reportar spam".
+            using: [
+                function (Email $message) {
+                    $message->getHeaders()
+                        ->addTextHeader('List-Unsubscribe', '<'.$this->unsubscribeUrl.'>')
+                        ->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
+                },
+            ],
         );
     }
 
@@ -64,6 +77,7 @@ class ReminderDigest extends Mailable
                 'summary' => $this->summary,
                 'urgent' => $this->urgent,
                 'url' => route('reminders.index'),
+                'unsubscribeUrl' => $this->unsubscribeUrl,
                 'appName' => config('app.name'),
             ],
         );

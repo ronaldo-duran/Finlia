@@ -9,6 +9,7 @@ use App\Services\HouseholdService;
 use App\Services\ReminderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 /**
@@ -162,14 +163,23 @@ class SendReminderDigestsTest extends TestCase
         // Renderiza HTML y texto de verdad: caza errores de Blade que un
         // assertSent no toca (interpolaciones rotas, variables faltantes).
         $reminders = app(ReminderService::class);
+        $baja = URL::temporarySignedRoute('reminders.unsubscribe', now()->addDays(60), [
+            'user' => $this->owner->id,
+            'household' => $this->household->id,
+        ]);
+
         $html = (new ReminderDigest(
             $this->household->name,
             $reminders->summary($this->household->id),
             $reminders->list($this->household->id),
+            $baja,
         ))->render();
 
         $this->assertStringContainsString('Tecnomecánica', $html);
         $this->assertStringContainsString('Vencida hace 2 días', $html);
         $this->assertStringContainsString(route('reminders.index'), $html);
+        // La baja queda a un click, firmada por usuario+hogar. Blade escapa
+        // los & de la query a &amp;: se compara la versión escapada.
+        $this->assertStringContainsString(e($baja), $html);
     }
 }

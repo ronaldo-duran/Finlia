@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Throwable;
 
 /**
@@ -94,9 +95,16 @@ class SendReminderDigests extends Command
 
             foreach ($household->members as $member) {
                 try {
-                    Mail::to($member)->send(
-                        new ReminderDigest($household->name, $summary, $urgent),
-                    );
+                    Mail::to($member)->send(new ReminderDigest(
+                        $household->name,
+                        $summary,
+                        $urgent,
+                        URL::temporarySignedRoute(
+                            'reminders.unsubscribe',
+                            now()->addDays(60),
+                            ['user' => $member->id, 'household' => $household->id],
+                        ),
+                    ));
                 } catch (Throwable $e) {
                     // Un buzón que rebota no puede frenar el resto de la
                     // corrida. Sin pivot actualizado, mañana reintenta.

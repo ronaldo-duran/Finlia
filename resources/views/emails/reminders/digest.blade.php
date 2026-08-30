@@ -90,8 +90,9 @@
                     <tr>
                         <td style="padding:18px 28px; background-color:#f6f9fc; border-top:1px solid rgba(15,23,42,0.08);">
                             <p style="margin:0; font-size:12px; line-height:1.6; color:#5b6776;">
-                                Como máximo un correo al día por hogar, y solo cuando tengas urgentes. Puedes
-                                desactivarlo cuando quieras en Recordatorios → Resumen por correo dentro de {{ $appName }}.
+                                Como máximo un correo al día por hogar, y solo cuando tengas urgentes.
+                                <a href="{{ $unsubscribeUrl }}" style="color:#5b6776; text-decoration:underline;">Ya no quiero recibir este resumen</a>
+                                — o en Recordatorios → Resumen por correo dentro de {{ $appName }}.
                             </p>
                         </td>
                     </tr>

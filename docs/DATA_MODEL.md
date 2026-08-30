@@ -440,6 +440,12 @@ Lógica de dominio (sin HTTP, ADR-0010); es también el **seam de canales futuro
 `PUT /recordatorios/correo` (`reminders.email`: preferencia personal de digest). Las dos
 URI fijas van declaradas **antes** de `{reminder}` para que ganen al parámetro.
 
+Además, **pública y firmada** (fuera del grupo `auth`): `GET|POST /recordatorios/correo/baja`
+(`reminders.unsubscribe`, middleware `signed`) — baja del digest desde el propio correo,
+por URL firmada de usuario+hogar (60 días). GET confirma en página propia
+(`reminders/unsubscribe`, sin sesión); POST es el one-click de RFC 8058 que disparan
+Gmail/Yahoo (devuelve 204). Idempotente y por hogar.
+
 ---
 
 ## Épica 12 — Monetización (SaaS)

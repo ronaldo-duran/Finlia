@@ -69,6 +69,18 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:5,1');
 });
 
+// ---- Baja del digest desde el correo (Épica 9, ADR-0028) ----
+// URL firmada por usuario+hogar: funciona con o sin sesión (el click llega
+// desde el buzón, no desde la app). La firma es la autorización: nadie puede
+// forjar la baja de otro. GET = confirmación visible; POST = one-click
+// RFC 8058 (Gmail/Yahoo). No lleva 'guest' a propósito: un usuario con
+// sesión abierta también debe poder darse de baja desde su correo.
+Route::get('recordatorios/correo/baja', [ReminderController::class, 'unsubscribe'])
+    ->name('reminders.unsubscribe')
+    ->middleware('signed');
+Route::post('recordatorios/correo/baja', [ReminderController::class, 'unsubscribe'])
+    ->middleware('signed');
+
 // ---- Rutas privadas (requieren sesión) ----
 Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])

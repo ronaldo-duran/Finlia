@@ -34,5 +34,6 @@ Un aviso se apaga pagando, no leyendo este correo: aquí no se marca nada
 como leído ni cambia ningún dato.
 
 Como máximo un correo al día por hogar, y solo cuando tengas urgentes.
-Puedes desactivarlo cuando quieras en Recordatorios → Resumen por
-correo dentro de {{ $appName }}.
+
+Darte de baja: {{ $unsubscribeUrl }}
+(o en Recordatorios → Resumen por correo dentro de {{ $appName }})
