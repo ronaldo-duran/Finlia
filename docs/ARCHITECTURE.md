@@ -125,6 +125,7 @@ Ver [docs/CONVENTIONS.md](CONVENTIONS.md#dinero).
 - Rate limiting en login/registro.
 - Rutas privadas bajo middleware `auth` + `verified`: el correo se **verifica obligatoriamente** en el registro (Plan 01, [ADR-0029](DECISIONS.md#adr-0029)) — sin confirmar solo son alcanzables logout, el aviso y el reenvío.
 - **Perfil propio** (`/perfil`, Plan 02, [ADR-0030](DECISIONS.md#adr-0030)): contraseña con re-autenticación y revocación de otras sesiones (`AuthenticateSession` en el grupo `web`), y cambio de correo con **doble confirmación** (el nuevo queda `pending_*` hasta que su bandeja confirma el enlace). Sin `{user}` en la URL: solo existe el autenticado.
+- **Términos versionados con re-aceptación obligatoria** (Plan 03, [ADR-0031](DECISIONS.md#adr-0031)): las rutas privadas suben a tres niveles — `auth` → `verified` → `terms.current`. Sin aceptación de la versión vigente, todo redirige a `/terminos/aceptar`; publicar versión nueva re-expone a todos los usuarios. Las versiones son **filas inmutables** (`terms_versions`) y la prueba de consentimiento vive en `user_terms_acceptances` (versión + fecha + IP, borrado impedido por FK RESTRICT). Lectura pública en `/terminos` (vigente) y `/terminos/{version}` (histórico). Sin versión publicada no hay obligación (fail-open).
 
 ## 7. Notificaciones y scheduler (Épica 9)
 

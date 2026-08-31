@@ -11,7 +11,7 @@ antes de crecer.
 |---|---|---|---|---|
 | 01 | [Verificación de correo en el registro](01-verificacion-de-correo-en-registro.md) | — | M | ✅ 2026-08-30 ([ADR-0029](../docs/DECISIONS.md#adr-0029)) |
 | 02 | [Perfil: contraseña y cambio de correo](02-perfil-contrasena-y-correo.md) | 01 (reusa sus correos de verificación) | M | ✅ 2026-08-30 ([ADR-0030](../docs/DECISIONS.md#adr-0030)) |
-| 03 | [Términos y condiciones versionados](03-terminos-y-condiciones-versionados.md) | — (paralelizable) | M | ⬜ |
+| 03 | [Términos y condiciones versionados](03-terminos-y-condiciones-versionados.md) | — (paralelizable) | M | ✅ 2026-08-30 ([ADR-0031](../docs/DECISIONS.md#adr-0031)) |
 | 04 | [Datos personales y perfil](04-datos-personales-y-perfil.md) | 02 (misma pantalla /perfil) | S–M | ⬜ |
 | 05 | [Eliminación: suspensión 30 días y purga](05-eliminacion-suspension-y-purga.md) | 03 (rechazo de términos → eliminar), 04 (qué se purga) | L | ⬜ |
 | 06 | [Política de retiro, migración y datos](06-politica-retiro-migracion-y-datos.md) | 05 (eliminación), 04 (perfil) | M | ⬜ |

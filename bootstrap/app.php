@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureTermsAccepted;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,6 +20,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // contraseña no revocaría las sesiones de otros dispositivos.
         $middleware->web(append: [
             AuthenticateSession::class,
+        ]);
+
+        // Re-aceptación obligatoria de términos (Plan 03, ADR-0031). Se
+        // aplica al grupo de rutas privadas con sesión + correo verificado.
+        $middleware->alias([
+            'terms.current' => EnsureTermsAccepted::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

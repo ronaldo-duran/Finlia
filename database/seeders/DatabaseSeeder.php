@@ -16,6 +16,7 @@ use App\Models\Expense;
 use App\Models\Household;
 use App\Models\HouseholdInvitation;
 use App\Models\Income;
+use App\Models\TermsVersion;
 use App\Models\User;
 use App\Services\AccountBalanceService;
 use App\Services\DebtService;
@@ -38,6 +39,10 @@ class DatabaseSeeder extends Seeder
     {
         // Categorías globales (catálogo, no datos financieros).
         $this->call(CategorySeeder::class);
+
+        // Versión inicial de los términos (Plan 03). Se publica aquí para
+        // que el flujo de aceptación exista desde el primer arranque.
+        $this->call(TermsVersionSeeder::class);
 
         // Usuario de demostración para desarrollo local.
         $demo = User::factory()->create([
@@ -62,6 +67,15 @@ class DatabaseSeeder extends Seeder
             'role' => HouseholdRole::Member->value,
             'joined_at' => now()->subDays(3),
         ]);
+
+        // Los usuarios demo ya "aceptaron" la versión inicial de los
+        // términos: consentimientos de demostración, para que el login
+        // local (y los e2e) no caiga en la pantalla de aceptación.
+        $terminos = TermsVersion::current();
+        if ($terminos !== null) {
+            $demo->acceptTerms($terminos, '127.0.0.1');
+            $miembro->acceptTerms($terminos, '127.0.0.1');
+        }
 
         // Una invitación pendiente de ejemplo (token hasheado).
         HouseholdInvitation::factory()->create([

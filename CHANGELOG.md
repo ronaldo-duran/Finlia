@@ -12,6 +12,37 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.17.0] - 2026-08-30 — Términos y condiciones versionados (Plan 03)
+
+### Añadido
+- **Re-aceptación obligatoria de términos**: sin aceptar la versión vigente, el
+  middleware `terms.current` redirige **toda** la app a la pantalla de aceptación —
+  un solo mecanismo cubre el registro nuevo y el cambio de términos
+  ([ADR-0031](docs/DECISIONS.md#adr-0031)). Orden de puertas: primero correo
+  verificado, luego términos.
+- **Prueba de consentimiento inmutable**: cada aceptación registra **versión exacta,
+  fecha e IP** en `user_terms_acceptances`; una versión aceptada **no se puede borrar**
+  de la base de datos (FK RESTRICT). Las versiones son filas que nunca se editan:
+  cambiar los términos = publicar una nueva (prueba ante un reclamo, Ley 1581).
+- **Pantalla de aceptación sin trampas oscuras**: texto completo en scroll, resumen
+  de "qué cambió" cuando ya había una aceptada, y dos salidas — **Aceptar y
+  continuar**, o **No aceptar**, que lleva a una pantalla honesta que **no destruye
+  nada** (rechazar jamás borra datos; exportar/eliminar llegarán con los planes
+  05/06 y enlazarán allí).
+- **Lectura pública** de la vigente en `/terminos` y del histórico en
+  `/terminos/{version}` (la referencia externa de qué aceptó cada usuario); enlace
+  "Términos" en el footer.
+- **Seeder de la versión inicial** `2026-09-v1` como **BORRADOR** con marcadores: la
+  redacción legal definitiva es del dueño del producto; al existir, se publica como
+  versión nueva — la actual jamás se edita.
+
+### Notas
+- Sin versión publicada la app se usa normal (fail-open): el mecanismo solo obliga
+  cuando hay texto que consentir. Los usuarios demo del seeder ya traen la
+  aceptación registrada.
+- Sin cambios en `.env`, correos ni cron. Migraciones: las tablas nuevas
+  `terms_versions` y `user_terms_acceptances`.
+
 ## [0.16.0] - 2026-08-30 — Perfil: contraseña y cambio de correo (Plan 02)
 
 ### Añadido

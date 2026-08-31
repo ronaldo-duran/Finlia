@@ -113,6 +113,38 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Términos y condiciones que el usuario ha aceptado (Plan 03, ADR-0031).
+     */
+    public function acceptedTerms(): HasMany
+    {
+        return $this->hasMany(UserTermsAcceptance::class);
+    }
+
+    /**
+     * ¿Ya aceptó la versión vigente? Sin versión publicada no hay
+     * obligación: la app se usa normal (fail-open, ADR-0031).
+     */
+    public function hasAcceptedCurrentTerms(): bool
+    {
+        $current = TermsVersion::current();
+
+        return $current === null
+            || $this->acceptedTerms()->where('terms_version_id', $current->getKey())->exists();
+    }
+
+    /**
+     * Registra la aceptación de una versión. Idempotente: re-aceptar no crea
+     * una fila nueva ni mueve la fecha original (patrón de acknowledge()).
+     */
+    public function acceptTerms(TermsVersion $version, ?string $ipAddress = null): UserTermsAcceptance
+    {
+        return $this->acceptedTerms()->firstOrCreate(
+            ['terms_version_id' => $version->getKey()],
+            ['accepted_at' => now(), 'ip_address' => $ipAddress],
+        );
+    }
+
+    /**
      * Hogares a los que pertenece el usuario (multi-hogar permitido).
      */
     public function households(): BelongsToMany

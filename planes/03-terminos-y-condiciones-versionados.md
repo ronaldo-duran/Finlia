@@ -72,20 +72,28 @@ ejemplo con marcador claro "BORRADOR — reemplazar por texto legal".
 
 ## Alcance
 
-- [ ] Migraciones (2 tablas) + modelos + relaciones + casts.
-- [ ] Middleware `terms.current` + registro en el grupo auth.
-- [ ] Rutas: GET `/terminos` (pública), GET `/terminos/{version}` (pública),
+> ✅ **Implementado el 2026-08-30** — [ADR-0031](../docs/DECISIONS.md#adr-0031),
+> CHANGELOG 0.17.0, 458 tests en verde. La ⚠ DECISIÓN de la IP quedó
+> resuelta como recomendaba el plan: **sí guardar**, nullable, con
+> finalidad exclusiva de prueba de aceptamiento (a documentar en la
+> política de datos del plan 06). Lo que sigue es el alcance original
+> (cumplido) tal como se planeó.
+
+- [x] Migraciones (2 tablas) + modelos + relaciones + casts.
+- [x] Middleware `terms.current` + registro en el grupo auth.
+- [x] Rutas: GET `/terminos` (pública), GET `/terminos/{version}` (pública),
       GET `/terminos/aceptar`, POST `/terminos/aceptar` (registrar),
       POST `/terminos/rechazar` (landing de salida, sin destruir nada).
-- [ ] Vistas: aceptación (con texto + botones), salida, pública de términos.
-- [ ] Seeder de la versión inicial (BORRADOR).
-- [ ] Tests: sin aceptar → redirect desde cualquier página privada;
+- [x] Vistas: aceptación (con texto + botones), salida, pública de términos.
+- [x] Seeder de la versión inicial (BORRADOR).
+- [x] Tests: sin aceptar → redirect desde cualquier página privada;
       aceptar registra (versión correcta + idempotencia); publicar nueva
       versión re-exige; rechazar no toca datos; histórico accesible.
 
 ## Docs al implementar
 
-- ADR nuevo: "Términos versionados con re-aceptación obligatoria".
-- SECURITY (consentimiento y valor probatorio), ARCHITECTURE, CHANGELOG.
+- [x] ADR nuevo: "Términos versionados con re-aceptación obligatoria"
+      ([ADR-0031](../docs/DECISIONS.md#adr-0031)).
+- [x] SECURITY (consentimiento y valor probatorio), ARCHITECTURE, CHANGELOG.
 
 Tamaño: **M**. Paralelizable con 01/02.
