@@ -30,6 +30,11 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0024 — Avisos que el usuario da por leídos, por clave y en servidor](#adr-0024) — **ACEPTADA**
 - [ADR-0025 — Metas de ahorro: ahorrado derivado, aportes que no mueven cuentas y aporte mensual programado](#adr-0025) — **ACEPTADA**
 - [ADR-0026 — Reportes: panel ligero + pantalla dedicada, comparaciones honestas y CSV como único formato](#adr-0026) — **ACEPTADA**
+- [ADR-0027 — Recordatorios derivados de su fuente + tabla solo para avisos sueltos](#adr-0027) — **ACEPTADA**
+- [ADR-0028 — Digest de recordatorios por correo: opt-in, síncrono por cron y SMTP gratis (Brevo)](#adr-0028) — **ACEPTADA**
+- [ADR-0029 — Verificación de correo obligatoria en el registro con reclaim anti-squatting](#adr-0029) — **ACEPTADA**
+- [ADR-0030 — Perfil propio: cambio de contraseña con revocación de sesiones y cambio de correo con doble confirmación](#adr-0030) — **ACEPTADA**
+- [ADR-0031 — Términos y condiciones versionados con re-aceptación obligatoria](#adr-0031) — **ACEPTADA**
 
 ---
 
@@ -947,6 +952,39 @@ Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar 
 - El test de revocación simula "la otra sesión" sembrando `password_hash_web` con el hash anterior — exactamente el estado en que ese middleware deja toda sesión viva.
 
 **Estado.** ACEPTADA — 2026-08-30 (Plan 02 de `planes/`). Implementada en `ProfileController` + `ProfileService`, `UserPolicy`, los Requests de `App\Http\Requests\Profile`, `PasswordChangedMail`/`ConfirmEmailChangeMail`/`EmailChangedNoticeMail` + `emails/profile/*`, las vistas `profile/edit` y `profile/email-error`, las rutas `perfil*` y `confirmar-correo/{token}` de `routes/web.php`, `AuthenticateSession` en `bootstrap/app.php`, `User` (cast + `pending_email_token` oculto) y la migración `2026_09_04_000001`.
+
+---
+
+## ADR-0031
+### Términos y condiciones versionados con re-aceptación obligatoria — **ACEPTADA**
+
+**Contexto.** Finlia maneja **datos financieros familiares** y no existía nada de términos. Requisitos del dueño: aceptación de entrada, re-aceptación obligatoria cuando cambien, y salida honesta para quien no quiera aceptar. Además, con la Ley 1581 de 2012 el registro de consentimiento con **versión exacta, fecha e IP** es la prueba ante un reclamo o auditoría — no basta un booleano `accepted_terms` que se sobreescribe.
+
+**Decisión.**
+
+1. **Versiones inmutables**: tabla `terms_versions` (`version` única legible tipo `2026-09-v1`, `title`, `content` longText, `change_summary` opcional, `published_at`). Una fila nunca se edita ni se borra: **cambiar los términos es publicar una versión nueva**. La vigente es la `published_at` más reciente (`TermsVersion::current()`); `/terminos` la muestra públicamente y `/terminos/{version}` el histórico — la referencia externa de qué aceptó cada usuario.
+2. **Consentimiento versionado**: `user_terms_acceptances` (`user_id`, `terms_version_id`, `accepted_at`, `ip_address` nullable) con `unique (user_id, terms_version_id)` — idempotente, patrón de [ADR-0024](#adr-0024), pero **tabla aparte**: los avisos UX son por clave de enum y mutables; los términos exigen contenido histórico inmutable y valor probatorio. El `restrictOnDelete` de la FK **impide en base de datos** borrar una versión aceptada: el historial de consentimiento es intocable por diseño (hay test que lo verifica).
+3. **IP guardada** (⚠ decisión del plan resuelta afirmativamente): es dato personal, pero es la prueba estándar del consentimiento ("quién, qué versión, cuándo, desde dónde"). Nullable, finalidad exclusiva de prueba de aceptación; la política de datos (plan 06) debe documentarla.
+4. **Middleware `terms.current`** en el grupo nivel 3 (`auth` → `verified` → términos): sin aceptación de la vigente, **toda** la app redirige a `/terminos/aceptar`. Un solo mecanismo cubre el registro nuevo y el cambio de términos. **Fail-open**: sin versión publicada no hay obligación y la app se usa normal — así el mecanismo no rompe entornos sin seeder (tests, instalaciones limpias).
+5. **Orden de puertas**: primero correo verificado ([ADR-0029](#adr-0029)), después términos. El flujo de aceptación vive en su propio grupo `auth`+`verified` **sin** `terms.current` (si no, bucle de redirección).
+6. **Sin trampas oscuras**: pantalla de aceptación con el texto completo en scroll (no un enlace externo) y dos salidas equivalentes en visibilidad — **Aceptar y continuar** registra (versión, fecha, IP) y sigue; **No aceptar** lleva a una pantalla honesta que **no destruye nada** (ni cuenta, ni datos, ni sesión: rechazar jamás borra por sí solo). Las acciones de exportar/eliminar (planes 05/06) enlazarán desde esa pantalla cuando existan.
+7. **El texto legal no lo redacta el agente**: el seeder publica `2026-09-v1` como **BORRADOR** con marcadores; la redacción definitiva es del dueño (idealmente con abogado) y se publica como versión nueva, nunca editando la existente.
+
+**Alternativas (descartadas).**
+- **Columna `terms_accepted_at` en `users`** — no registra qué versión, se sobreescribe con cada aceptación y destruye la prueba anterior; insuficiente para Ley 1581.
+- **Reutilizar `user_acknowledgements`** ([ADR-0024](#adr-0024)) — por clave de enum sin contenido histórico: no puede referenciar "el texto exacto que aceptaste" ni impedir su borrado.
+- **Checkbox de términos en el registro** — no resuelve el cambio de términos (el requisito 2 del dueño) y duplica mecanismo; el middleware obligatorio cubre ambos casos en uno.
+- **Cerrar sesión automáticamente al rechazar** — acción implícita sobre la cuenta del usuario; el plan exige que rechazar no tenga efectos destructivos.
+- **Exigir aceptación también sin versión publicada** (fail-closed) — rompería toda instalación/entorno sin seeder y no aporta: sin texto publicado no hay nada que consentir.
+
+**Consecuencias y mitigaciones.**
+- El middleware añade 2 queries indexadas por request privada (`current()` + `exists`); despreciable frente a la garantía de bloqueo total.
+- Publicar una versión "por error" deja a todos los usuarios fuera de la app hasta re-aceptar — es exactamente el requisito del dueño ("full importante"), pero hace de la publicación una acción deliberada: pre-MVP se hace por seeder/registro manual documentado, sin panel.
+- La URL pública de la histórica usa el slug `version` (no el id): estable y compartible; el patrón `YYYY-MM-vN` con `where()` impide colisiones con las URIs fijas.
+- `user_id` no es fillable en `UserTermsAcceptance` (viene del autenticado); `terms_version_id` sí lo es porque viene de `TermsVersion::current()` en servidor — nunca de la petición.
+- Los usuarios demo del seeder traen aceptación prefabricada (consentimiento falso, como el resto de sus datos) para que el login local y los e2e no caigan en la pantalla de aceptación.
+
+**Estado.** ACEPTADA — 2026-08-30 (Plan 03 de `planes/`). Implementada en las migraciones `2026_09_04_000002/3`, `TermsVersion` + `UserTermsAcceptance`, `User::acceptTerms()/hasAcceptedCurrentTerms()`, `EnsureTermsAccepted` (alias `terms.current`) en `bootstrap/app.php`, `TermsController`, las vistas `terms/{accept,show,exit}`, las rutas `terminos*` de `routes/web.php`, `TermsVersionSeeder` (+ aceptaciones demo en `DatabaseSeeder`) y `TermsTest` (14 pruebas).
 
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.

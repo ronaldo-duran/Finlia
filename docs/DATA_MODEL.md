@@ -261,6 +261,33 @@ No es tabla. Lógica de dominio de la épica (sin dependencias HTTP, ADR-0010):
 
 `unique(user_id, key)`: un acuse por usuario y aviso. Tabla por clave en lugar de una columna por aviso, para que las épicas 7 y 8 reutilicen el mecanismo sin tocar `users`.
 
+## Transversal — Términos y condiciones (Plan 03, ADR-0031)
+
+### `terms_versions`
+| Campo | Tipo | Notas |
+|---|---|---|
+| id | | |
+| version | string(30), unique | slug legible y estable (`2026-09-v1`); clave de ruta pública |
+| title | string(150) | |
+| content | longText | texto completo de ESA versión — **nunca se edita** |
+| change_summary | text, null | resumen de "qué cambió" para la re-aceptación |
+| published_at | timestamp | la más reciente es la vigente (`TermsVersion::current()`) |
+| timestamps | | sin soft deletes: borrar rompería la prueba de consentimiento |
+
+Filas **inmutables**: cambiar los términos = publicar versión nueva. Sin `household_id`: los términos son del usuario, no del hogar.
+
+### `user_terms_acceptances`
+| Campo | Tipo | Notas |
+|---|---|---|
+| id | | |
+| user_id | FK users (cascade) | el consentimiento muere con el usuario (purga del plan 05) |
+| terms_version_id | FK terms_versions (**restrict**) | RESTRICT: una versión aceptada no se puede borrar |
+| accepted_at | timestamp | no se mueve al re-aceptar (idempotente) |
+| ip_address | string(45), null | prueba de consentimiento (Ley 1581); finalidad exclusiva |
+| timestamps | | |
+
+`unique(user_id, terms_version_id)`: idempotente, patrón de `user_acknowledgements` pero con versión inmutable — no comparte tabla porque los avisos UX son mutables y sin valor probatorio.
+
 ---
 
 ## Épica 6 — Deudas y tarjetas de crédito
