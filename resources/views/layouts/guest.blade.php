@@ -24,7 +24,9 @@
     </button>
 
     <main class="d-flex flex-grow-1 align-items-center justify-content-center py-5 px-3">
-        <div class="w-100" style="max-width: 460px;">
+        {{-- Ancho por defecto de formulario; las vistas de lectura (términos)
+             pasan uno más holgado para texto largo. --}}
+        <div class="w-100" style="max-width: {{ $width ?? 460 }}px;">
 
             {{-- Marca --}}
             <div class="text-center mb-4">
@@ -48,7 +50,8 @@
 
     <footer class="app-footer py-3 text-center small">
         Finlia · Finanzas familiares &middot;
-        <span class="text-finlia fw-semibold">COP</span>
+        <span class="text-finlia fw-semibold">COP</span> &middot;
+        <a href="{{ route('terms.show') }}" class="text-decoration-none">Términos y condiciones</a>
     </footer>
 
     @stack('scripts')

@@ -28,6 +28,7 @@ use App\Http\Controllers\RecurringExpenseController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SavingsGoalController;
+use App\Http\Controllers\TermsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -101,10 +102,21 @@ Route::get('confirmar-correo/{token}', [ProfileController::class, 'confirmEmail'
     ->name('profile.email.confirm')
     ->middleware('throttle:6,1');
 
+// ---- Términos y condiciones (Plan 03) ----
+// Lectura pública de la vigente y del histórico por versión: es la
+// referencia externa de qué aceptó cada usuario. El patrón de {version}
+// ("YYYY-MM-vN") hace imposible que colisione con las URIs fijas de
+// abajo, vengan en el orden que vengan.
+Route::get('terminos', [TermsController::class, 'show'])->name('terms.show');
+Route::get('terminos/{termsVersion}', [TermsController::class, 'version'])
+    ->name('terms.version')
+    ->where('termsVersion', '[0-9]{4}-[0-9]{2}-v[0-9]+');
+
 // ---- Rutas privadas ----
 // Nivel 1 (solo sesión): cerrar sesión y el flujo de verificación son lo
-// ÚNICO alcanzable sin correo confirmado. Nivel 2 (sesión + verified):
-// el resto de la app (Plan 01: bloqueo total hasta confirmar).
+// ÚNICO alcanzable sin correo confirmado (Plan 01: bloqueo total hasta
+// confirmar). Nivel 2½: aceptación de términos. Nivel 3: el resto de la
+// app, ya con los términos vigentes aceptados (Plan 03).
 Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
@@ -117,7 +129,25 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:verification');
 });
 
+// Nivel 2½ (sesión + correo confirmado, PERO sin terms.current): aquí vive
+// justamente el flujo de aceptación — con el middleware puesto sería un
+// bucle de redirección. Aceptar y rechazar son del propio autenticado;
+// no hay IDs en las URLs.
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('terminos/aceptar', [TermsController::class, 'acceptForm'])
+        ->name('terms.accept');
+    Route::post('terminos/aceptar', [TermsController::class, 'accept'])
+        ->name('terms.accept.store')
+        ->middleware('throttle:10,1');
+    // Landing de salida: no destruye nada por sí sola (Plan 03).
+    Route::post('terminos/rechazar', [TermsController::class, 'reject'])
+        ->name('terms.reject');
+});
+
+// Nivel 3 (sesión + verificado + términos vigentes aceptados): el resto de
+// la app. Publicar una versión nueva devuelve a todos aquí — a la pantalla
+// de aceptación — hasta que re-acepten.
+Route::middleware(['auth', 'verified', 'terms.current'])->group(function () {
     Route::get('dashboard', DashboardController::class)
         ->name('dashboard');
 
