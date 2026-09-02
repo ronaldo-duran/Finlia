@@ -38,10 +38,18 @@ class ReminderServiceTest extends TestCase
     {
         parent::setUp();
 
+        $this->today = Carbon::parse('2026-09-15');
+        Carbon::setTestNow($this->today);
+
         $owner = User::factory()->create();
         $this->household = app(HouseholdService::class)->createHousehold($owner->id, 'Hogar A');
         $this->service = app(ReminderService::class);
-        $this->today = Carbon::parse('2026-09-15');
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
     }
 
     private function reminder(array $attributes = []): Reminder
