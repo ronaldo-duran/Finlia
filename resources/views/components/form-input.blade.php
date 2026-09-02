@@ -10,6 +10,8 @@
     'help' => null,
     'placeholder' => '',
     'step' => null,
+    'min' => null,
+    'max' => null,
 ])
 
 @php
@@ -33,6 +35,8 @@
         @if ($placeholder) placeholder="{{ $placeholder }}" @endif
         @if ($autocomplete) autocomplete="{{ $autocomplete }}" @endif
         @if ($step) step="{{ $step }}" @endif
+        @if ($min) min="{{ $min }}" @endif
+        @if ($max) max="{{ $max }}" @endif
         @if ($autofocus) autofocus @endif
         @if ($required) required @endif
         aria-describedby="@error($name){{ $inputId }}-error @endif"

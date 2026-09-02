@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Throwable;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'birth_date', 'region', 'gender'])]
 #[Hidden(['password', 'remember_token', 'pending_email_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -36,6 +36,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'pending_email_requested_at' => 'datetime',
             'password' => 'hashed',
+            'birth_date' => 'date:Y-m-d',
         ];
     }
 
@@ -142,6 +143,17 @@ class User extends Authenticatable implements MustVerifyEmail
             ['terms_version_id' => $version->getKey()],
             ['accepted_at' => now(), 'ip_address' => $ipAddress],
         );
+    }
+
+    /**
+     * Edad en años, calculada desde birth_date (Plan 04, ADR-0032). Nunca
+     * se almacena: lo derivable no ocupa columna. NULL sin birth_date
+     * (usuarios heredados).
+     */
+    public function age(): ?int
+    {
+        // Propiedad ->age (getter de Carbon 3: el método ->age() ya no existe).
+        return $this->birth_date?->age;
     }
 
     /**

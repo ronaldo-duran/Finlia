@@ -51,6 +51,8 @@ class RegisteredUserController extends Controller
                 'email' => $email,
                 // El cast 'hashed' del modelo cifra el valor.
                 'password' => $request->string('password')->toString(),
+                // Fecha de nacimiento validada como 18+ (Plan 04, ADR-0032).
+                'birth_date' => $request->date('birth_date')->toDateString(),
             ]);
 
             // Todo usuario arranca con un hogar personal propio (Épica 2),

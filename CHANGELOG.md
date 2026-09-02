@@ -12,6 +12,33 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.18.0] - 2026-08-30 — Datos personales: nacimiento, región y género (Plan 04)
+
+### Añadido
+- **Fecha de nacimiento en el registro (18+)**: obligatoria y solo para mayores de
+  edad — regla compartida `AdultBirthDate` (fecha real del pasado, no anterior a
+  1900, no futura) con el corte inclusivo de "quien cumple 18 hoy entra". Finlia
+  maneja las finanzas de un hogar: nada de consentimiento parental
+  ([ADR-0032](docs/DECISIONS.md#adr-0032)).
+- **Sección "Datos personales" en `/perfil`**: nacimiento + región y género
+  **opcionales**. Región = los 32 departamentos y Bogotá D.C. (enum fijo
+  `ColombianRegion`, no tabla); género en lista cerrada (`Gender`) donde
+  **"Prefiero no decirlo" no almacena nada** (NULL). La pantalla declara la
+  finalidad: mayoría de edad y estadísticas agregadas, nunca decisiones
+  financieras ni compartirlos (minimización, Ley 1581).
+- **`User::age()`**: la edad se calcula desde `birth_date`, nunca se guarda — lo
+  derivable no ocupa columna (listo para la analítica de la Épica 12).
+
+### Notas
+- Región y género **no** se piden en el registro (menos fricción de entrada); el
+  perfil los completa. Hobbies e intereses quedan fuera por diseño: cada dato
+  futuro necesitará caso de uso escrito y su eliminatoria en la purga (plan 05).
+- Usuarios heredados: `birth_date` es nullable en DB; su primera edición del
+  perfil la completa. La purga (plan 05) pondrá los tres campos en NULL y el
+  export (plan 06) los incluirá.
+- Sin cambios en `.env`, correos ni rutas. Migración: `users` gana
+  `birth_date`/`region`/`gender`.
+
 ## [0.17.0] - 2026-08-30 — Términos y condiciones versionados (Plan 03)
 
 ### Añadido
