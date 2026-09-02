@@ -55,18 +55,26 @@ restrictivo) duplica el trabajo legal para un público marginal.
 
 ## Alcance
 
-- [ ] Migración + casts + `User::age()`.
-- [ ] Validación en registro (según decisión 18+) y en perfil.
-- [ ] Sección "Datos personales" en `/perfil` (selects con lista de
+> ✅ **Implementado el 2026-08-30** — [ADR-0032](../docs/DECISIONS.md#adr-0032),
+> CHANGELOG 0.18.0. La ⚠ DECISIÓN de la mayoría de edad quedó resuelta como
+> recomendaba el plan: **18+** (regla compartida `AdultBirthDate`, corte
+> inclusivo). Nota: la lista de regiones son 32 departamentos **+ Bogotá
+> D.C.** (33; el plan decía "32" — omitir el distrito capital dejaría fuera
+> a gran parte del mercado). Lo que sigue es el alcance original (cumplido)
+> tal como se planeó.
+
+- [x] Migración + casts + `User::age()`.
+- [x] Validación en registro (según decisión 18+) y en perfil.
+- [x] Sección "Datos personales" en `/perfil` (selects con lista de
       departamentos — constante/enum propio, no tabla).
-- [ ] Tests: validaciones (fecha futura, menor de edad si aplica, región
+- [x] Tests: validaciones (fecha futura, menor de edad si aplica, región
       inválida, género fuera de lista), actualización de perfil,
       aislamiento (nadie edita el perfil de otro).
 
 ## Docs al implementar
 
-- ADR nuevo: "Datos demográficos mínimos: qué recogemos y por qué"
-  (la tabla de este plan, con fecha).
-- DATA_MODEL (`users`), SECURITY (minimización), CHANGELOG.
+- [x] ADR nuevo: "Datos demográficos mínimos: qué recogemos y por qué"
+      (la tabla de este plan, con fecha) — [ADR-0032](../docs/DECISIONS.md#adr-0032).
+- [x] DATA_MODEL (`users`), SECURITY (minimización), CHANGELOG.
 
 Tamaño: **S–M**. Se implementa con el plan 02 (misma pantalla).

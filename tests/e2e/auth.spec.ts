@@ -38,6 +38,7 @@ test.describe('Autenticación', () => {
 
     await page.goto('/registro');
     await page.fill('input[name="name"]', 'Prueba Playwright');
+    await page.fill('input[name="birth_date"]', '1990-05-12');
     await page.fill('input[name="email"]', email);
     await page.fill('input[name="password"]', 'ClavePlaywright1');
     await page.fill('input[name="password_confirmation"]', 'ClavePlaywright1');

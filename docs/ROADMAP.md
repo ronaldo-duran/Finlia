@@ -27,7 +27,8 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 > política de datos con export. Estado: **01 ✅ verificación de correo
 > ([ADR-0029](DECISIONS.md#adr-0029)) · 02 ✅ perfil: contraseña y cambio de correo
 > ([ADR-0030](DECISIONS.md#adr-0030)) · 03 ✅ términos versionados
-> ([ADR-0031](DECISIONS.md#adr-0031))** · 04–06 pendientes.
+> ([ADR-0031](DECISIONS.md#adr-0031)) · 04 ✅ datos personales 18+
+> ([ADR-0032](DECISIONS.md#adr-0032))** · 05–06 pendientes.
 
 ## Resumen por épica
 

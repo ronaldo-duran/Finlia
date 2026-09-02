@@ -28,6 +28,9 @@
 | pending_email | string, null | correo nuevo esperando confirmación (Plan 02, ADR-0030) |
 | pending_email_token | string(64), null, index | **sha256** del token público — nunca el token en claro |
 | pending_email_requested_at | timestamp, null | expiración del enlace: 60 min |
+| birth_date | date, null | obligatoria en registro/perfil (18+), null = usuario heredado (Plan 04, ADR-0032). La edad se calcula (`User::age()`), nunca se guarda |
+| region | string(40), null | slug del enum `ColombianRegion` (32 departamentos + Bogotá D.C.), opcional |
+| gender | string(20), null | valor del enum `Gender`; null = "prefiero no decirlo" |
 | preferred_currency | string, null | default COP; multi-moneda futuro |
 | locale | string, null | default 'es' |
 | timezone | string, null | default 'America/Bogota' |

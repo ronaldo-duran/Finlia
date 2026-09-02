@@ -27,6 +27,17 @@
         />
 
         <x-form-input
+            label="Fecha de nacimiento"
+            name="birth_date"
+            type="date"
+            :value="old('birth_date')"
+            :min="\Carbon\Carbon::create(1900, 1, 1)->toDateString()"
+            :max="now()->subYears(18)->toDateString()"
+            required
+            help="Debes ser mayor de edad (18 años) para usar Finlia."
+        />
+
+        <x-form-input
             label="Contraseña"
             name="password"
             type="password"

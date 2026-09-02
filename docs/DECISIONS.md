@@ -35,6 +35,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0029 — Verificación de correo obligatoria en el registro con reclaim anti-squatting](#adr-0029) — **ACEPTADA**
 - [ADR-0030 — Perfil propio: cambio de contraseña con revocación de sesiones y cambio de correo con doble confirmación](#adr-0030) — **ACEPTADA**
 - [ADR-0031 — Términos y condiciones versionados con re-aceptación obligatoria](#adr-0031) — **ACEPTADA**
+- [ADR-0032 — Datos demográficos mínimos: nacimiento (18+), región y género opcional](#adr-0032) — **ACEPTADA**
 
 ---
 
@@ -985,6 +986,42 @@ Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar 
 - Los usuarios demo del seeder traen aceptación prefabricada (consentimiento falso, como el resto de sus datos) para que el login local y los e2e no caigan en la pantalla de aceptación.
 
 **Estado.** ACEPTADA — 2026-08-30 (Plan 03 de `planes/`). Implementada en las migraciones `2026_09_04_000002/3`, `TermsVersion` + `UserTermsAcceptance`, `User::acceptTerms()/hasAcceptedCurrentTerms()`, `EnsureTermsAccepted` (alias `terms.current`) en `bootstrap/app.php`, `TermsController`, las vistas `terms/{accept,show,exit}`, las rutas `terminos*` de `routes/web.php`, `TermsVersionSeeder` (+ aceptaciones demo en `DatabaseSeeder`) y `TermsTest` (14 pruebas).
+
+---
+
+## ADR-0032
+### Datos demográficos mínimos: nacimiento (18+), región y género opcional — **ACEPTADA**
+
+**Contexto.** `users` solo tenía `name`/`email`/`password`. El dueño pidió fecha de nacimiento ("muy útil para análisis") y abrió la pregunta "¿qué más? ¿género? ¿región? ¿hobbies?". Cada dato extra es superficie de PII bajo la Ley 1581 (minimización): se recoge solo lo que tiene un uso concreto, nunca "por si acaso". Decisión guiada por la relación valor/coste para analítica de producto (futuro SaaS, Épica 12) y segmentación del mercado colombiano.
+
+**Decisión.**
+
+1. **Qué recogemos** (la tabla del plan 04, con fecha):
+   - **`birth_date` (date, obligatoria en registro y perfil)** — la pide el dueño; permite cohortes de edad y fija la mayoría de edad. Validación semántica en una sola fuente: regla `AdultBirthDate` (fecha real: no anterior a 1900, no futura; y **18 años cumplidos hoy o antes**, corte inclusivo).
+   - **`region` (opcional, select)** — los 32 departamentos + Bogotá D.C. (subdivisión propia en ISO 3166-2:CO; el plan decía "32" contando la lista oficial, pero omitir Bogotá dejaría fuera a gran parte del mercado) como **enum fijo `ColombianRegion`**, no tabla: catálogo estable, una sola fuente para select y validación. Valor = slug (`cundinamarca`), etiqueta = nombre.
+   - **`gender` (opcional, select)** — enum `Gender` (Mujer/Hombre/No binario); **"Prefiero no decirlo" es NULL, no un valor**: no decirlo no almacena nada (ronda los datos sensibles de la Ley 1581 → opcional SIEMPRE, finalidad declarada en la propia pantalla, sin inferencias automáticas).
+   - **Fuera de este corte**: ocupación (valor medio; reconsiderar con Épica 12) y hobbies/intereses (**no**: casi nulo valor analítico financiero y pura superficie de PII).
+   - **Principio permanente**: cada dato futuro necesita caso de uso escrito y su eliminatoria en la purga (plan 05).
+2. **18+ sí** (⚠ decisión del plan resuelta como recomendaba): Finlia maneja finanzas y datos de un hogar completo; 18+ evita el consentimiento parental de la Ley 1581 y el público real (jefes de hogar) lo cumple. La alternativa 14+ duplicaba el trabajo legal para un público marginal.
+3. **Registro pide solo nacimiento** (región y género NO): menos fricción de entrada; el perfil completa el resto. La columna `birth_date` es **nullable en DB** pese a ser obligatoria en los formularios: los usuarios heredados no la tienen y el perfil se la exige en su primera edición (auto-sanado).
+4. **Nada derivado en columna**: la edad se calcula (`User::age()`, Carbon), nunca se almacena — lo derivable no ocupa columna ni se desincroniza.
+5. **Finalidad visible**: la pantalla declara para qué son los datos (mayoría de edad + estadísticas agregadas, nunca decisiones financieras ni compartirlos) — la transparencia de tratamiento que exige la Ley 1581.
+
+**Alternativas (descartadas).**
+- **Tabla `regions`** — un catálogo fijo de 33 filas no necesita CRUD ni FK: el enum es la lista de dominio y `Rule::enum` la validación, sin tabla que mantener.
+- **Regla 18+ duplicada en cada Form Request** — dos cortes distintos tarde o temprano divergen; una regla compartida (`app/Rules/AdultBirthDate`) es la fuente única.
+- **Guardar "prefiero no decirlo" como valor de género** — almacenar un dato que no dice nada es lo contrario de minimizar; NULL ya lo representa.
+- **14+ con tratamiento restrictivo** — doble régimen legal para un público marginal que el producto ni apunta.
+- **Pedir región/género en el registro** — fricción de entrada sin necesidad: el perfil basta (plan 04 explícito).
+
+**Consecuencias y mitigaciones.**
+- El registro hereda un campo más (y sus tests y el e2e se actualizan con él); los payloads que no lo lleven fallan con mensaje claro ("Debes ser mayor de edad…").
+- Usuarios creados antes del plan quedan con `birth_date` NULL: la primera edición del perfil la completa; nada más la exige (los factory ya generan adultos).
+- La fecha usa el input `date` nativo con `min`/`max` HTML (1900-01-01 → hoy−18a) como UX, pero **el servidor es quien manda** (`AdultBirthDate`).
+- La purga (plan 05) pondrá `birth_date`/`region`/`gender` en NULL y el export (plan 06) los incluirá — quedó anotado en esos planes.
+- `age()` calcula contra `today()` (timezone `America/Bogota`), igual que el corte 18+: no hay ventanillas de zona horaria entre "puedes registrarte" y "tu edad".
+
+**Estado.** ACEPTADA — 2026-08-30 (Plan 04 de `planes/`). Implementada en la migración `2026_09_04_000100`, `ColombianRegion` + `Gender` + `AdultBirthDate`, `User` (fillable/casts/`age()`), `StoreRegistrationRequest` + `UpdateProfileRequest`, `RegisteredUserController`, la sección "Datos personales" de `profile/edit` + campo en `auth/register` (+ `min`/`max` en `x-form-input`), el factory (adultos), el seeder demo y `PersonalDataTest` (+ casos de registro en `RegistrationTest`).
 
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.

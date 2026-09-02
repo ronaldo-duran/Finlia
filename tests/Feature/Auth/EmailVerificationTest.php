@@ -48,6 +48,7 @@ class EmailVerificationTest extends TestCase
             'email' => 'maria@ejemplo.com',
             'password' => 'secreto123',
             'password_confirmation' => 'secreto123',
+            'birth_date' => '1990-05-12',
         ]);
 
         $response->assertRedirect(route('verification.notice'));

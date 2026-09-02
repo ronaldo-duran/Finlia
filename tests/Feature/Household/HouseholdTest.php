@@ -141,6 +141,7 @@ class HouseholdTest extends TestCase
             'email' => 'ana@finlia.test',
             'password' => 'secreto123',
             'password_confirmation' => 'secreto123',
+            'birth_date' => '1990-05-12',
         ]);
 
         $user = User::where('email', 'ana@finlia.test')->firstOrFail();

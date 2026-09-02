@@ -58,9 +58,14 @@ class ProfileTest extends TestCase
     {
         $user = User::factory()->create(['name' => 'Nombre Viejo']);
 
+        // El formulario trae también la fecha (obligatoria desde el plan 04);
+        // el resto de datos personales tiene su propio archivo (PersonalDataTest).
         $this->actingAs($user)
             ->from(route('profile.edit'))
-            ->put(route('profile.update'), ['name' => 'Nombre Nuevo'])
+            ->put(route('profile.update'), [
+                'name' => 'Nombre Nuevo',
+                'birth_date' => $user->birth_date->toDateString(),
+            ])
             ->assertRedirect(route('profile.edit'));
 
         $this->assertSame('Nombre Nuevo', $user->fresh()->name);

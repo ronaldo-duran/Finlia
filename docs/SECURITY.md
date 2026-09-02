@@ -112,6 +112,7 @@ Cubrir `index`, `show`, `store` (con `household_id` forzado), `update`, `destroy
 | Número de tarjeta | **No almacenar completo.** Implementado en Épica 6: la tabla `credit_cards` **no tiene** columna para el número (ni siquiera para los últimos 4 dígitos: `name` e `institution` bastan para identificarla). |
 | CVV / PIN / fecha vencimiento completa | **No almacenar nunca.** Esas columnas no existen; el Form Request tampoco las acepta, así que un campo así en la petición se descarta. Verificado contra el esquema real en `DebtTest::test_nunca_se_almacenan_datos_sensibles_de_la_tarjeta`. |
 | Montos | Permitidos; evitar loguear junto a PII innecesaria. |
+| Datos demográficos (`users`) | **Minimización** (Ley 1581, [ADR-0032](DECISIONS.md#adr-0032)): solo `birth_date` (mayoría de edad, obligatoria 18+) y `region`/`gender` opcionales en listas cerradas (enums) — nada de hobbies u ocupación "por si acaso". "Prefiero no decirlo" de género es **NULL** (no almacenar). La edad se calcula (`User::age()`), nunca se guarda. Finalidad declarada en la pantalla; la purga (plan 05) los pone en NULL y el export (plan 06) los incluye. |
 | Logs | Nunca contraseñas, tokens, números de tarjeta, datos personales sensibles. Usar canales y niveles adecuados. |
 
 ---

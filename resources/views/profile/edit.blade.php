@@ -7,7 +7,7 @@
         <h1 class="h3 mb-0"><i class="bi bi-person-circle me-2"></i>Mi perfil</h1>
     </div>
     <p class="text-muted mb-4">
-        Tu cuenta de Finlia: nombre, contraseña y correo. Estos datos son tuyos y no se
+        Tu cuenta de Finlia: datos personales, contraseña y correo. Estos datos son tuyos y no se
         comparten con los hogares a los que perteneces — la configuración de cada hogar
         vive en <a href="{{ route('households.index') }}">Hogares</a>.
     </p>
@@ -15,10 +15,10 @@
     <div class="row g-3">
         <div class="col-12 col-lg-6 d-flex flex-column gap-3">
 
-            {{-- ===================== Datos ===================== --}}
+            {{-- ===================== Datos personales (Plan 04) ===================== --}}
             <div class="card border-0">
                 <div class="card-header border-0 bg-transparent fw-semibold">
-                    <i class="bi bi-person me-1"></i> Mis datos
+                    <i class="bi bi-person me-1"></i> Datos personales
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ route('profile.update') }}">
@@ -28,10 +28,31 @@
                         <x-form-input label="Nombre" name="name" :value="$user->name" required
                             autocomplete="name" />
 
+                        <x-form-input label="Fecha de nacimiento" name="birth_date" type="date"
+                            :value="old('birth_date', $user->birth_date?->toDateString())"
+                            :min="\Carbon\Carbon::create(1900, 1, 1)->toDateString()"
+                            :max="now()->subYears(18)->toDateString()" required />
+
+                        <x-form-select label="Región" name="region"
+                            :options="\App\Enums\ColombianRegion::options()"
+                            :selected="$user->region" placeholder="Sin definir"
+                            help="Departamento donde vives." />
+
+                        <x-form-select label="Género" name="gender"
+                            :options="\App\Enums\Gender::options()"
+                            :selected="$user->gender" placeholder="Prefiero no decirlo" />
+
                         <button type="submit" class="btn btn-finlia">
                             <i class="bi bi-check-lg me-1"></i> Guardar cambios
                         </button>
                     </form>
+
+                    <div class="form-text mt-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Tu fecha de nacimiento confirma que eres mayor de edad; región y género
+                        (opcionales) solo alimentan estadísticas agregadas del producto. Nunca se
+                        usan para decisiones financieras ni se comparten.
+                    </div>
                 </div>
             </div>
 

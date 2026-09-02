@@ -26,6 +26,7 @@ class RegistrationTest extends TestCase
             'email' => 'maria@ejemplo.com',
             'password' => 'secreto123',
             'password_confirmation' => 'secreto123',
+            'birth_date' => '1990-05-12',
         ]);
 
         $this->assertAuthenticated();
@@ -36,6 +37,7 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'maria@ejemplo.com',
             'name' => 'María González',
+            'birth_date' => '1990-05-12',
             'email_verified_at' => null,
         ]);
 
@@ -56,6 +58,7 @@ class RegistrationTest extends TestCase
             'email' => 'repetido@ejemplo.com',
             'password' => 'secreto123',
             'password_confirmation' => 'secreto123',
+            'birth_date' => '1990-05-12',
         ]);
 
         $response->assertSessionHasErrors('email');
@@ -75,6 +78,7 @@ class RegistrationTest extends TestCase
             'email' => 'fantasma@ejemplo.com',
             'password' => 'secreto123',
             'password_confirmation' => 'secreto123',
+            'birth_date' => '1990-05-12',
         ]);
 
         // El dueño real no ve ningún error: flujo normal de registro.
@@ -115,6 +119,84 @@ class RegistrationTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('password');
+    }
+
+    // ---- Fecha de nacimiento (Plan 04: obligatoria y 18+) ----
+
+    public function test_la_fecha_de_nacimiento_es_obligatoria(): void
+    {
+        $this->post(route('register'), [
+            'name' => 'Usuario Prueba',
+            'email' => 'sin-fecha@ejemplo.com',
+            'password' => 'secreto123',
+            'password_confirmation' => 'secreto123',
+            'birth_date' => '',
+        ])->assertSessionHasErrors('birth_date');
+
+        $this->assertGuest();
+    }
+
+    public function test_un_menor_de_edad_no_puede_registrarse(): void
+    {
+        // 17 años cumplidos: la recomendación del plan 04 es 18+ (ADR-0032).
+        // El mensaje debe decir POR QUÉ, no un "valor inválido" genérico.
+        $this->post(route('register'), [
+            'name' => 'Menor de Edad',
+            'email' => 'menor@ejemplo.com',
+            'password' => 'secreto123',
+            'password_confirmation' => 'secreto123',
+            'birth_date' => today()->subYears(17)->toDateString(),
+        ])->assertInvalid(['birth_date' => 'mayor de edad']);
+
+        $this->assertDatabaseMissing('users', ['email' => 'menor@ejemplo.com']);
+    }
+
+    public function test_quien_cumple_18_hoy_puede_registrarse(): void
+    {
+        // Corte inclusivo: la mayoría de edad se alcanza el día del cumpleaños.
+        $this->post(route('register'), [
+            'name' => 'Justo Mayor',
+            'email' => 'justo18@ejemplo.com',
+            'password' => 'secreto123',
+            'password_confirmation' => 'secreto123',
+            'birth_date' => today()->subYears(18)->toDateString(),
+        ])->assertRedirect(route('verification.notice'));
+
+        $this->assertDatabaseHas('users', ['email' => 'justo18@ejemplo.com']);
+    }
+
+    public function test_una_fecha_futura_se_rechaza(): void
+    {
+        $this->post(route('register'), [
+            'name' => 'Viajero del Tiempo',
+            'email' => 'futuro@ejemplo.com',
+            'password' => 'secreto123',
+            'password_confirmation' => 'secreto123',
+            'birth_date' => today()->addYear()->toDateString(),
+        ])->assertSessionHasErrors('birth_date');
+
+        $this->assertDatabaseMissing('users', ['email' => 'futuro@ejemplo.com']);
+    }
+
+    public function test_una_fecha_anterior_a_1900_se_rechaza(): void
+    {
+        $this->post(route('register'), [
+            'name' => 'Matusalén',
+            'email' => 'matusalen@ejemplo.com',
+            'password' => 'secreto123',
+            'password_confirmation' => 'secreto123',
+            'birth_date' => '1850-01-01',
+        ])->assertSessionHasErrors('birth_date');
+    }
+
+    public function test_el_registro_no_pide_region_ni_genero(): void
+    {
+        // Menos fricción de entrada (Plan 04): esos campos viven en /perfil.
+        $this->get(route('register'))
+            ->assertOk()
+            ->assertSee('Fecha de nacimiento')
+            ->assertDontSee('Región')
+            ->assertDontSee('Género');
     }
 
     public function test_usuario_autenticado_es_redirigido_del_registro(): void

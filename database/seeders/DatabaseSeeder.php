@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\AccountType;
 use App\Enums\BudgetPeriod;
+use App\Enums\ColombianRegion;
 use App\Enums\DebtPaymentType;
 use App\Enums\DebtType;
 use App\Enums\Frequency;
@@ -49,6 +50,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Usuario Demo Finlia',
             'email' => 'demo@finlia.test',
             'password' => 'finlia123',
+            'birth_date' => '1990-05-12',
+            'region' => ColombianRegion::BogotaDc->value,
         ]);
 
         // Hogar principal del usuario demo.
@@ -62,6 +65,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Miembro Demo',
             'email' => 'miembro@finlia.test',
             'password' => 'finlia123',
+            'birth_date' => '1995-09-20',
+            'region' => ColombianRegion::Antioquia->value,
         ]);
         $household->members()->attach($miembro->id, [
             'role' => HouseholdRole::Member->value,
