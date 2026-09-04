@@ -93,6 +93,7 @@
         <div class="col-12 col-lg-6 d-flex flex-column gap-3">
 
             {{-- ===================== Correo ===================== --}}
+
             <div class="card border-0">
                 <div class="card-header border-0 bg-transparent fw-semibold">
                     <i class="bi bi-envelope me-1"></i> Correo
@@ -137,6 +138,44 @@
                     </div>
                 </div>
             </div>
+            {{-- ===================== Zona de peligro — eliminar cuenta ===================== --}}
+            <div class="card border-0 border-danger-subtle">
+                <div class="card-header border-0 bg-transparent fw-semibold text-danger-emphasis">
+                    <i class="bi bi-exclamation-triangle me-1"></i> Zona de peligro
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3" style="font-size:.93rem;">
+                        Al solicitar la eliminación tu cuenta queda <strong>suspendida 30 días</strong>.
+                        Durante ese tiempo puedes cambiar de opinión e iniciar sesión para reactivarla.
+                        Transcurrido el plazo, todos tus datos se eliminan de forma permanente.
+                    </p>
+
+                    <button class="btn btn-outline-danger btn-sm"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#formEliminarCuenta"
+                        aria-expanded="false"
+                        aria-controls="formEliminarCuenta">
+                        <i class="bi bi-trash me-1"></i> Solicitar eliminación de cuenta
+                    </button>
+
+                    <div class="collapse mt-3" id="formEliminarCuenta">
+                        <form method="POST" action="{{ route('profile.deletion.store') }}"
+                              onsubmit="return confirm('¿Seguro/a? Tu cuenta se suspenderá y se eliminará en 30 días si no la reactivás.')">
+                            @csrf
+                            @method('DELETE')
+
+                            <x-form-input label="Confirma tu contraseña" name="current_password"
+                                type="password" required autocomplete="current-password"
+                                help="Necesitamos verificar que eres tú." />
+
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="bi bi-trash me-1"></i> Sí, quiero eliminar mi cuenta
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 @endsection

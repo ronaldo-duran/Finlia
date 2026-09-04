@@ -1,4 +1,4 @@
-# Plan 05 — Eliminación de cuenta: suspensión 30 días y purga
+# Plan 05 — Eliminación de cuenta: suspensión 30 días y purga ✅ COMPLETADO
 
 > Responde al punto 4 del dueño: eliminación = **modo suspensión** (sin
 > correos ni interacciones, reactivable) durante **30 días**, y después

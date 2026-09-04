@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AccountSuspensionController;
 use App\Http\Controllers\AcknowledgementController;
 use App\Http\Controllers\ActiveHouseholdController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -127,6 +128,15 @@ Route::middleware('auth')->group(function () {
     Route::post('verificar-correo/reenviar', [EmailVerificationController::class, 'resend'])
         ->name('verification.send')
         ->middleware('throttle:verification');
+
+    // ---- Cuenta suspendida (Plan 05, ADR-0033) ----
+    // Solo en el grupo 'auth' (sin verified, terms ni account.active) para
+    // que el usuario suspendido pueda ver la página y reactivar su cuenta.
+    Route::get('cuenta/suspendida', [AccountSuspensionController::class, 'show'])
+        ->name('account.suspended');
+    Route::post('cuenta/reactivar', [AccountSuspensionController::class, 'reactivate'])
+        ->name('account.reactivate')
+        ->middleware('throttle:5,1');
 });
 
 // Nivel 2½ (sesión + correo confirmado, PERO sin terms.current): aquí vive
@@ -144,10 +154,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('terms.reject');
 });
 
-// Nivel 3 (sesión + verificado + términos vigentes aceptados): el resto de
-// la app. Publicar una versión nueva devuelve a todos aquí — a la pantalla
-// de aceptación — hasta que re-acepten.
-Route::middleware(['auth', 'verified', 'terms.current'])->group(function () {
+// Nivel 3 (sesión + verificado + términos aceptados + cuenta activa): el
+// resto de la app. Una cuenta suspendida queda aquí bloqueada y se redirige
+// a /cuenta/suspendida (account.active, Plan 05, ADR-0033).
+Route::middleware(['auth', 'verified', 'terms.current', 'account.active'])->group(function () {
     Route::get('dashboard', DashboardController::class)
         ->name('dashboard');
 
@@ -165,6 +175,11 @@ Route::middleware(['auth', 'verified', 'terms.current'])->group(function () {
     Route::put('perfil/correo', [ProfileController::class, 'updateEmail'])
         ->name('profile.email.update')
         ->middleware('throttle:verification');
+    // Solicitud de eliminación de cuenta (Plan 05, ADR-0033). Requiere
+    // contraseña y cierra la sesión del usuario.
+    Route::delete('perfil/cuenta', [ProfileController::class, 'requestDeletion'])
+        ->name('profile.deletion.store')
+        ->middleware('throttle:3,1');
 
     // ---- Hogares (Épica 2) ----
     Route::get('hogares', [HouseholdController::class, 'index'])->name('households.index');

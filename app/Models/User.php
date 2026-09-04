@@ -35,9 +35,27 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'pending_email_requested_at' => 'datetime',
+            'deletion_requested_at' => 'datetime',
             'password' => 'hashed',
             'birth_date' => 'date:Y-m-d',
         ];
+    }
+
+    /**
+     * La cuenta está en proceso de eliminación (Plan 05, ADR-0033).
+     * Null = cuenta activa; timestamp = suspendida, purga a los 30 días.
+     */
+    public function isSuspended(): bool
+    {
+        return $this->deletion_requested_at !== null;
+    }
+
+    /**
+     * Fecha límite de purga (30 días desde la solicitud), o null si activa.
+     */
+    public function deletionDeadline(): ?\Carbon\Carbon
+    {
+        return $this->deletion_requested_at?->copy()->addDays(30);
     }
 
     /**

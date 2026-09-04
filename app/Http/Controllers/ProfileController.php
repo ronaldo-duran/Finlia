@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Profile\DeleteAccountRequest;
 use App\Http\Requests\Profile\UpdateEmailRequest;
 use App\Http\Requests\Profile\UpdatePasswordRequest;
 use App\Http\Requests\Profile\UpdateProfileRequest;
 use App\Models\User;
+use App\Services\AccountDeletionService;
 use App\Services\ProfileService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +25,10 @@ use Illuminate\View\View;
  */
 class ProfileController extends Controller
 {
-    public function __construct(private readonly ProfileService $service) {}
+    public function __construct(
+        private readonly ProfileService $service,
+        private readonly AccountDeletionService $deletionService,
+    ) {}
 
     /**
      * Pantalla /perfil: datos, contraseña y correo (con su pendiente).
@@ -85,6 +90,26 @@ class ProfileController extends Controller
         $this->service->requestEmailChange($user, (string) $request->validated('email'));
 
         return back()->with('status', __('Enviamos un enlace de confirmación a tu correo nuevo. Tienes una hora para confirmarlo desde esa bandeja.'));
+    }
+
+    /**
+     * Solicita la eliminación de la cuenta (Plan 05, ADR-0033).
+     * Verifica la contraseña actual, marca la suspensión y cierra sesión.
+     */
+    public function requestDeletion(DeleteAccountRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        $this->authorize('update', $user);
+
+        $this->deletionService->requestDeletion($user);
+
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login')
+            ->with('status', __('Tu cuenta se suspendió. Tienes 30 días para reactivarla iniciando sesión.'));
     }
 
     /**
