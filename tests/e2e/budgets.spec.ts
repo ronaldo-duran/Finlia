@@ -59,12 +59,15 @@ test.describe('Presupuestos y dinero disponible (Épica 4)', () => {
     await expect(page.getByText('Presupuesto total del mes')).toBeVisible();
 
     // Limpieza: el seeder no crea presupuestos del próximo mes.
-    page.once('dialog', (dialog) => dialog.accept());
+    // El formulario de eliminación usa data-confirm → modal Bootstrap (no browser dialog).
     await page
       .locator('form[action*="/presupuestos/"]')
       .last()
       .getByRole('button', { name: 'Eliminar' })
       .click();
+
+    // Confirmar en el modal genérico de la app.
+    await page.getByRole('button', { name: 'Sí, continuar' }).click();
 
     await expect(page.getByText('Presupuesto eliminado.')).toBeVisible();
   });

@@ -199,7 +199,8 @@
                     <div class="fw-bold {{ $c->type->value === 'deposit' ? 'text-success' : 'text-danger' }}">
                         {{ $c->type->value === 'deposit' ? '+' : '−' }}@money($c->amount)
                     </div>
-                    <form action="{{ route('savings-goals.contributions.destroy', [$goal, $c]) }}" method="POST">
+                    <form action="{{ route('savings-goals.contributions.destroy', [$goal, $c]) }}" method="POST"
+                          data-confirm="¿Eliminar este movimiento de @money($c->amount)? El saldo de la meta se recalculará.">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-icon btn-sm" aria-label="Eliminar movimiento">

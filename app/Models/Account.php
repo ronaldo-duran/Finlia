@@ -63,4 +63,20 @@ class Account extends Model
     {
         return $this->hasMany(Debt::class);
     }
+
+    /**
+     * Transferencias donde esta cuenta es la de origen (pierde saldo).
+     */
+    public function outgoingTransfers(): HasMany
+    {
+        return $this->hasMany(Transfer::class, 'from_account_id');
+    }
+
+    /**
+     * Transferencias donde esta cuenta es la de destino (gana saldo).
+     */
+    public function incomingTransfers(): HasMany
+    {
+        return $this->hasMany(Transfer::class, 'to_account_id');
+    }
 }

@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Expense;
 use App\Models\Income;
+use App\Models\Transfer;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -153,7 +154,10 @@ class MovementSummaryService
     }
 
     /**
-     * Lista combinada y filtrada de movimientos.
+     * Lista combinada y filtrada de movimientos (ingresos, gastos y transferencias).
+     *
+     * Las transferencias se incluyen cuando el tipo es null (todos) o 'transfer'.
+     * Si se filtra por category_id, las transferencias se excluyen (no tienen categoría).
      *
      * @param  array{type?: ?string, category_id?: ?int, account_id?: ?int, user_id?: ?int, from?: ?string, to?: ?string}  $filters
      * @return Collection<int, array<string, mixed>>
@@ -191,6 +195,22 @@ class MovementSummaryService
                 ->take($fetch)
                 ->get()
                 ->each(fn (Expense $e) => $movements->push($this->normalize($e, 'expense')));
+        }
+
+        // Las transferencias no tienen categoría: solo se muestran cuando no
+        // hay filtro de categoría y el tipo es null o 'transfer'.
+        $includeTransfers = ($type === null || $type === 'transfer')
+            && empty($filters['category_id']);
+
+        if ($includeTransfers) {
+            $this->applyTransferFilters(Transfer::where('household_id', $householdId), $filters)
+                ->with(['fromAccount', 'toAccount', 'user'])
+                ->orderByDesc('date')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->take($fetch)
+                ->get()
+                ->each(fn (Transfer $t) => $movements->push($this->normalizeTransfer($t)));
         }
 
         // Se trae $fetch de cada tabla: al mezclarlas hay que reordenar con el
@@ -281,6 +301,26 @@ class MovementSummaryService
     }
 
     /**
+     * Filtros aplicables a transferencias.
+     * Las transferencias no tienen category_id; account_id filtra por ambos extremos.
+     *
+     * @param  array{type?: ?string, category_id?: ?int, account_id?: ?int, user_id?: ?int, from?: ?string, to?: ?string}  $filters
+     */
+    private function applyTransferFilters(Builder $query, array $filters): Builder
+    {
+        return $query
+            ->when(
+                $filters['account_id'] ?? null,
+                fn ($q, $id) => $q->where(fn ($q2) => $q2
+                    ->where('from_account_id', $id)
+                    ->orWhere('to_account_id', $id))
+            )
+            ->when($filters['user_id'] ?? null, fn ($q, $id) => $q->where('user_id', $id))
+            ->when($filters['from'] ?? null, fn ($q, $d) => $q->where('date', '>=', $d))
+            ->when($filters['to'] ?? null, fn ($q, $d) => $q->where('date', '<=', $d));
+    }
+
+    /**
      * Clave de orden de un movimiento: día, luego hora de registro, luego id.
      *
      * Se compone como cadena de ancho fijo para que la comparación sea
@@ -311,6 +351,31 @@ class MovementSummaryService
             'account_name' => $m->account?->name,
             'user_name' => $m->user?->name,
             'payment_method' => $type === 'expense' && $m instanceof Expense ? $m->payment_method?->label() : null,
+        ];
+    }
+
+    /**
+     * Normaliza una transferencia al formato unificado del listado.
+     *
+     * @return array<string, mixed>
+     */
+    private function normalizeTransfer(Transfer $t): array
+    {
+        $fromName = $t->fromAccount?->name ?? '—';
+        $toName = $t->toAccount?->name ?? '—';
+
+        return [
+            'type' => 'transfer',
+            'id' => $t->id,
+            'amount' => (float) $t->amount,
+            'date' => $t->date,
+            'registered_at' => $t->created_at,
+            'description' => $t->description ?: 'Transferencia',
+            'category_name' => null,
+            'category_color' => null,
+            'account_name' => "{$fromName} → {$toName}",
+            'user_name' => $t->user?->name,
+            'payment_method' => null,
         ];
     }
 

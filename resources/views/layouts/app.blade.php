@@ -4,11 +4,26 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @auth
+        {{-- household-id: usado por los selects inteligentes (Épica 10) para
+             aislar las preferencias de selección por hogar. --}}
+        <meta name="household-id" content="{{ active_household_id() ?? '' }}">
+    @endauth
 
     <title>{{ $title ?? 'Panel' }} · Finlia</title>
 
     {{-- Identidad de marca (docs/BRAND.md): símbolo de puntos, sin cambios entre temas. --}}
     @include('layouts.partials.favicon')
+
+    {{-- PWA (Épica 10): manifest e icono de instalación. --}}
+    <link rel="manifest" href="/manifest.webmanifest">
+    {{-- theme-color dinámico: se actualiza por JS al cambiar el tema (app.js). --}}
+    <meta name="theme-color" content="#eef3f8" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0e1419" media="(prefers-color-scheme: dark)">
+    {{-- iOS: pantalla completa al agregar a inicio. --}}
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Finlia">
 
     {{-- Anti-FOUC: fija el tema antes del primer paint --}}
     @include('layouts.partials.theme-head')
@@ -180,6 +195,7 @@
             Finlia · Finanzas familiares &middot;
             <span class="text-finlia fw-semibold">COP</span> &middot;
             <a href="{{ route('terms.show') }}" class="text-decoration-none">Términos</a> &middot;
+            <a href="{{ route('data.policy') }}" class="text-decoration-none">Tus datos</a> &middot;
             v{{ config('finlia.version') }} &middot;
             &copy; {{ date('Y') }}
         </div>
@@ -188,6 +204,88 @@
     @auth
         @include('layouts.partials.mobile-bottom-nav')
     @endauth
+
+    {{-- ======= Modal de confirmación genérico =======
+         Usos: <form data-confirm="¿Estás seguro?">...</form>
+               <button data-confirm="¿Eliminar?" data-form="#miFormId">Eliminar</button>
+         El JS intercepta el submit y muestra este modal antes de dejarlo pasar. --}}
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0 pb-1">
+                    <h5 class="modal-title fw-semibold" id="confirmModalLabel">
+                        <i class="bi bi-exclamation-circle me-1 text-warning"></i>
+                        Confirmar acción
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" id="confirmModalBody">
+                    ¿Estás seguro?
+                </div>
+                <div class="modal-footer border-0 pt-1">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" id="confirmModalOk">
+                        Sí, continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Intercepta formularios con data-confirm y los pasa por el modal antes de enviar.
+    (function () {
+        var modalEl     = document.getElementById('confirmModal');
+        var bodyEl      = document.getElementById('confirmModalBody');
+        var okEl        = document.getElementById('confirmModalOk');
+        var modal       = null;
+        var pendingForm = null;
+
+        function getModal() {
+            if (!modal) modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+            return modal;
+        }
+
+        // Envía saltándose el evento `submit`: HTMLFormElement.submit() no lo
+        // dispara, así que no vuelve a caer en este mismo interceptor.
+        function reallySubmit(form) {
+            HTMLFormElement.prototype.submit.call(form);
+        }
+
+        document.addEventListener('submit', function (e) {
+            var form = e.target.closest && e.target.closest('form[data-confirm]');
+            if (!form) return;
+
+            var msg = form.getAttribute('data-confirm') || '¿Estás seguro?';
+
+            // Si Bootstrap no cargó, nunca dejamos el botón muerto: se degrada
+            // al diálogo nativo en lugar de bloquear la acción en silencio.
+            if (!window.bootstrap) {
+                if (!window.confirm(msg)) e.preventDefault();
+                return;
+            }
+
+            e.preventDefault();
+            bodyEl.textContent = msg;   // textContent: el mensaje es dato, nunca HTML.
+            pendingForm = form;
+            getModal().show();
+        }, true);
+
+        okEl.addEventListener('click', function () {
+            var form = pendingForm;
+            pendingForm = null;
+            getModal().hide();
+            if (form) reallySubmit(form);
+        });
+
+        // Si se cierra sin confirmar, la acción queda descartada.
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            pendingForm = null;
+        });
+    })();
+    </script>
 
     @stack('scripts')
 </body>

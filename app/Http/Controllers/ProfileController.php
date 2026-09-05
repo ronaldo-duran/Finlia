@@ -113,6 +113,30 @@ class ProfileController extends Controller
     }
 
     /**
+     * Solicita la exportación de datos del hogar activo (Plan 06, ADR-0034).
+     * La exportación es asíncrona: el cron `finlia:process-export-requests`
+     * genera el ZIP en hora valle y lo envía por correo.
+     * Solo se permite una solicitud activa a la vez (mientras está pendiente
+     * el botón se desactiva y no se puede volver a solicitar).
+     */
+    public function requestExport(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $this->authorize('update', $user);
+
+        if ($user->hasPendingExport()) {
+            return back()->with('status', __('Ya tienes una exportación en proceso. Te la enviaremos por correo en hasta 3 días.'));
+        }
+
+        abort_if(active_household() === null, 404, __('No tienes un hogar activo para exportar.'));
+
+        $user->data_export_requested_at = now();
+        $user->save();
+
+        return back()->with('status', __('Exportación solicitada. Recibirás el archivo en tu correo (:email) en un plazo de hasta 3 días hábiles.', ['email' => $user->email]));
+    }
+
+    /**
      * Confirma el cambio desde el enlace del correo nuevo (ruta pública:
      * el click llega desde la bandeja, sin sesión).
      *

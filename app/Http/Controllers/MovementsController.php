@@ -68,7 +68,7 @@ class MovementsController extends Controller
     private function filters(Request $request): array
     {
         $type = $request->input('type');
-        if (! in_array($type, ['income', 'expense'], true)) {
+        if (! in_array($type, ['income', 'expense', 'transfer'], true)) {
             $type = null;
         }
 

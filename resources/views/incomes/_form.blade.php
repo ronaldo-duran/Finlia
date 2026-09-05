@@ -50,7 +50,8 @@
     <div class="col-md-6">
         <x-form-select label="Cuenta" name="account_id" :options="$accounts"
                        valueKey="id" labelKey="name" :selected="$income?->account_id"
-                       placeholder="Selecciona una cuenta" required />
+                       placeholder="Selecciona una cuenta" required
+                       smartSelect="income_account" />
     </div>
     {{-- 4. Fecha --}}
     <div class="col-md-6">

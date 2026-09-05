@@ -12,6 +12,99 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.22.0] - 2026-09-05 — Mejoras de UX: modales, toasts, FAB y exportación asíncrona
+
+### Añadido
+- **Modal de confirmación genérico** (`#confirmModal`): reemplaza todos los `confirm()` del navegador por un modal Bootstrap 5 que se activa con `data-confirm="mensaje"` en cualquier `<form>`. El JS en `layouts/app.blade.php` intercepta el `submit`, muestra el modal y, al confirmar, clona el formulario sin el atributo y lo envía.
+- **FAB flotante bottom-right**: el botón "+" ya no ocupa el centro de la barra de navegación inferior (que generaba ruido visual). Ahora es un botón circular fijo en la esquina inferior derecha, siempre visible, igual al botón de componer de X (Twitter). El speed-dial se abre/cierra con animación CSS; backdrop semitransparente al abrirlo; cierre con Escape. La barra inferior queda con cuatro ítems planos: Panel, Movimientos, Presupuesto, Más.
+- **Toasts Bootstrap 5**: los mensajes flash ya no persisten hasta recarga. `components/flash-messages.blade.php` los renderiza como toasts con auto-dismiss a los 4,5 s y botón de cierre manual. Posición fija top-right, debajo de la navbar.
+- **Exportación de datos asíncrona por correo** (`finlia:process-export-requests`): en lugar de generar y descargar el ZIP en la misma petición HTTP (riesgo de sobrecarga), la solicitud ahora es un `POST` que almacena una marca de tiempo en `users.data_export_requested_at`. Un comando cron ejecuta a las 02:00, genera el ZIP por hogar, lo envía adjunto al correo del usuario con `DataExportReadyMail` y limpia la marca. Solo se puede tener una solicitud pendiente a la vez. El perfil muestra el estado pendiente mientras espera. Aviso en el modal de confirmación de hasta 3 días hábiles.
+- **Migración** `add_data_export_requested_at_to_users_table`: columna nullable `data_export_requested_at timestamp` en `users`.
+- **`DataExportReadyMail`**: mailable con plantilla en `emails/data-export-ready.blade.php` y el ZIP como adjunto.
+
+### Modificado
+- `profile/edit.blade.php`: formulario de exportación cambiado a `POST` con estado pendiente; formulario de eliminación usa `data-confirm` en lugar de `onsubmit`.
+- `routes/web.php`: ruta de exportación cambiada de `GET` a `POST` (`profile.export`).
+- `ProfileController`: reemplaza `export()` por `requestExport()` (sin descarga directa).
+- `routes/console.php`: registra el comando de exportación en el scheduler (02:00 diario, sin solapamiento).
+- `User::hasPendingExport()`: helper para saber si hay exportación en cola.
+- `resources/css/app.css`: estilos del nuevo FAB (`.fab-container`, `.fab-btn`, `.fab-menu`, `.fab-action`, `.fab-backdrop`); eliminados estilos del FAB centrado anterior.
+- `DataExportTest`: reescrito para reflejar el flujo asíncrono (POST, flag, cron, correo); eliminados tests de descarga directa y throttle obsoleto; añadidos tests del comando cron.
+
+### Correcciones
+- Comando `finlia:process-export-requests`: eliminada la cláusula `wherePivotNull('left_at')` (la columna no existe en `household_user`); ahora usa `orderByPivot('joined_at')->first()`.
+- **`window.bootstrap` no estaba expuesto**: `resources/js/app.js` hacía `import 'bootstrap'` (solo efectos secundarios), por lo que `bootstrap.Modal` y `bootstrap.Toast` quedaban indefinidos en los scripts inline de las vistas. Ahora se importa como namespace y se asigna a `window.bootstrap`. Sin esto, el modal de confirmación lanzaba `ReferenceError` tras haber llamado a `preventDefault()`, dejando los botones de eliminar sin efecto.
+- **Doble manejador de `data-confirm`**: `app.js` conservaba un manejador con `window.confirm()` que competía con el modal de la app — el usuario seguía viendo el diálogo del navegador. Eliminado; la confirmación es ahora exclusivamente el modal propio.
+- El modal de confirmación ya no clona el formulario: envía con `HTMLFormElement.prototype.submit.call(form)` (no redispara el evento `submit`). Si Bootstrap no cargara, degrada a `window.confirm()` en lugar de dejar el botón muerto; al cerrar el modal sin confirmar, la acción se descarta.
+- Confirmación añadida a dos formularios destructivos que no la tenían: eliminar un aporte/retiro de una meta de ahorro (`savings/show.blade.php`) y eliminar un recordatorio ya completado (`reminders/index.blade.php`).
+- Los toasts se renderizan con la clase `show` desde el servidor (visibles sin JS) y su auto-cierre se engancha en `DOMContentLoaded`, ya que `app.js` es un módulo diferido.
+- `tests/e2e/budgets.spec.ts`: el borrado de presupuesto pasa por el modal de la app, no por un diálogo del navegador — se sustituye `page.once('dialog')` por el clic en «Sí, continuar». `tests/e2e/auth.spec.ts`: selector `.alert-danger` → `.toast.text-bg-danger`.
+
+### Modificado (UX)
+- **Duración de los toasts proporcional al texto**: 60 ms por carácter, acotado entre 4 y 7 segundos, en lugar de 4,5 s fijos. Un aviso corto deja de estorbar antes y uno largo da tiempo a leerse.
+
+## [0.21.0] - 2026-09-05 — UX mobile y PWA (Épica 10)
+
+### Añadido
+- **Transferencias entre cuentas** (`transfers`): tabla propia con `household_id`, `from_account_id`, `to_account_id`, `amount DECIMAL(15,2)`, `date`, `description` y `notes`. CRUD completo con `TransferController`, `StoreTransferRequest`/`UpdateTransferRequest` y `TransferPolicy`. Aislamiento por hogar: las cuentas se validan contra el hogar activo; `household_id` nunca se acepta del cliente (ADR-0035).
+- **Recomputo de saldo de cuentas con transferencias** (`AccountBalanceService`): extiende la fórmula de ADR-0012 a `initial_balance + Σincomes − Σexpenses + Σincoming_transfers − Σoutgoing_transfers`. Ambas cuentas se recomputan en cada escritura dentro de una transacción.
+- **Transferencias en la lista unificada de movimientos** (`MovementSummaryService`): tipo `'transfer'` disponible como filtro; se normaliza con `account_name = "origen → destino"`, sin categoría ni método de pago. La inclusión solo ocurre cuando no hay filtro por `category_id`.
+- **FAB speed-dial** (botón flotante "+"): reemplaza el enlace simple del bottom nav por un menú de cinco opciones — Gasto, Ingreso, Transferencia, Pago de deuda, Aporte a meta. CSS/JS vanilla, sin dependencias extra; backdrop para cerrar al clicar fuera; foco accesible por teclado (Escape cierra).
+- **PWA**: `manifest.webmanifest` servido mediante ruta PHP con `Content-Type: application/manifest+json` (campos: `name`, `short_name`, `start_url`, `display: standalone`, `theme_color`, `background_color`, icons SVG/192/512). Service worker mínimo en `public/sw.js` (network-first implícito, sin caché inicial). Metas Apple PWA y `theme-color` en los layouts `app.blade.php` y `guest.blade.php`.
+- **Smart selects** (`data-smart-select`): el último valor de selects de cuenta en gastos, ingresos y transferencias se persiste en `localStorage` con clave `finlia_{householdId}_{key}`, pre-seleccionando la opción en el siguiente formulario. Scope por `household-id` meta para evitar contaminación entre hogares.
+- **Vistas de transferencias**: `transfers/create.blade.php`, `transfers/edit.blade.php` y `transfers/_form.blade.php` con el sistema de diseño glass/hero-card; selects de cuenta con balance actual, `data-smart-select` y `data-money-input` en el importe.
+- **Filtro "Transferencias"** en `/movimientos`: chip y opción en el dropdown de tipo.
+- **`TransferFactory`** con datos Faker (nunca reales) para tests y seeders.
+- **15 tests**: 11 en `TransferTest` (CRUD, recomputo de saldos, validaciones, aislamiento IDOR entre hogares, esquema sin columnas sensibles de tarjeta) + 4 en `PwaTest` (manifest accesible, campos obligatorios, link en layout autenticado, `sw.js` existe en `public/`).
+
+### Modificado
+- `AccountBalanceService::recompute()`: incluye `incomingTransfers` y `outgoingTransfers` en la fórmula.
+- `MovementSummaryService`: añade `filtered()` para transfers y `applyTransferFilters()`/`normalizeTransfer()`.
+- `MovementsController::filters()`: acepta `'transfer'` como tipo válido.
+- `movements/_item.blade.php`: renderiza transferencias con icono `bi-arrow-left-right` y monto neutro (sin signo).
+- `movements/index.blade.php`: chip "Transferencias" y opción en dropdown.
+- `layouts/partials/mobile-bottom-nav.blade.php`: FAB speed-dial (cinco opciones).
+- `layouts/app.blade.php` y `guest.blade.php`: manifest link, `theme-color` y metas Apple PWA.
+- `resources/js/app.js`: registro del service worker y módulo de smart selects.
+- `resources/css/app.css`: estilos del FAB speed-dial y `display: none` del footer en modo standalone.
+- `expenses/_form.blade.php` e `incomes/_form.blade.php`: `data-smart-select` en selects de cuenta.
+- `components/form-select.blade.php`: prop `smartSelect` para emitir `data-smart-select`.
+
+### Notas
+- ADR-0035 registrado en `docs/DECISIONS.md`.
+- `MovementService::createTransfer/updateTransfer/deleteTransfer` no dependen de HTTP (ADR-0010): reciben datos explícitos; listos para la futura API REST (Épica 14).
+
+## [0.20.0] - 2026-09-05 — Política de datos y exportación ZIP (Plan 06)
+
+### Añadido
+- **`DataExportService`**: genera un ZIP con 12 CSVs (cuentas, ingresos, gastos, presupuestos,
+  gastos recurrentes, deudas, pagos de deuda, refinanciaciones, metas de ahorro, aportes,
+  recordatorios, perfil del usuario) + `finlia.json` (todos los datos en JSON para migración)
+  + `README.txt` explicativo del formato. Reglas de privacidad: nunca exporta la contraseña
+  ni datos personales de otros miembros del hogar. `collect()` separado de `buildZip()` para
+  testabilidad sin disco.
+- **CSV con BOM UTF-8 y separador `;`**: abre directamente en Excel Colombia sin configuración.
+  Montos con coma decimal (ej. `1500000,00`). Fechas en DD/MM/AAAA.
+- **Ruta `GET /perfil/exportar` → `profile.export`** con throttle de 3 descargas por día
+  (`throttle:3,1440`). Responde ZIP descargable; 404 si el usuario no tiene hogar activo.
+- **Página pública `GET /datos` → `data.policy`** (`DataPolicyController`): accesible sin
+  cuenta. Explica qué datos guarda Finlia, portabilidad, eliminación de cuenta, política de
+  retiro del software y cómo migrar a otra herramienta.
+- **"Mis datos" en `/perfil`**: tarjeta con descripción y botón "Exportar mis datos" (enlaza
+  a `profile.export`). Máximo 3 descargas al día.
+- **Footer actualizado** en `app.blade.php` y `guest.blade.php`: incluye enlace "Tus datos"
+  junto a "Términos".
+- **18 tests** cubren: redirect de invitado, ZIP descargable, nombre con ID + fecha, 404 sin
+  hogar, throttle 3/día, perfil sin contraseña, gastos con montos, deudas, metas, JSON
+  maestro sin contraseña, BOM UTF-8, separador `;`, aislamiento entre hogares, privacidad
+  de otros miembros, y página `/datos` accesible y con secciones de portabilidad/eliminación.
+
+### Notas
+- `DataExportService` no depende de HTTP (ADR-0010): recibe `Household` + `User` explícitos,
+  no usa `request()` ni `Auth::`. Listo para futura API REST (Épica 14).
+- Los campos enum se serializan con `->value` (no como objeto PHP) para compatibilidad CSV/JSON.
+- ADR-0034 registrado en `docs/DECISIONS.md`.
+
 ## [0.19.0] - 2026-09-04 — Eliminación de cuenta: suspensión 30 días y purga (Plan 05)
 
 ### Añadido

@@ -272,7 +272,8 @@
                                 </div>
                                 <div class="small text-muted">Vencía el {{ $done->due_date->format('d/m/Y') }}</div>
                             </div>
-                            <form method="POST" action="{{ route('reminders.destroy', $done) }}">
+                            <form method="POST" action="{{ route('reminders.destroy', $done) }}"
+                                  data-confirm="¿Eliminar el recordatorio «{{ $done->title }}»?">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-icon text-danger" aria-label="Eliminar">

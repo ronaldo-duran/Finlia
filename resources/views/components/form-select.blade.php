@@ -9,6 +9,7 @@
     'required' => false,
     'help' => null,
     'placeholder' => null,
+    'smartSelect' => null,
 ])
 
 @php
@@ -29,6 +30,7 @@
         name="{{ $name }}"
         class="form-select @error($name) is-invalid @enderror"
         @if ($required) required @endif
+        @if ($smartSelect) data-smart-select="{{ $smartSelect }}" @endif
         aria-describedby="@error($name){{ $selectId }}-error @endif"
     >
         @if ($placeholder)

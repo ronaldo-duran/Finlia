@@ -36,6 +36,9 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0030 — Perfil propio: cambio de contraseña con revocación de sesiones y cambio de correo con doble confirmación](#adr-0030) — **ACEPTADA**
 - [ADR-0031 — Términos y condiciones versionados con re-aceptación obligatoria](#adr-0031) — **ACEPTADA**
 - [ADR-0032 — Datos demográficos mínimos: nacimiento (18+), región y género opcional](#adr-0032) — **ACEPTADA**
+- [ADR-0033 — Eliminación/suspensión de cuenta: ventana de 30 días y tres reglas de propiedad](#adr-0033) — **ACEPTADA**
+- [ADR-0034 — Exportación de datos: ZIP con CSVs + JSON, throttle 3/día](#adr-0034) — **ACEPTADA**
+- [ADR-0035 — Transferencias entre cuentas del mismo hogar](#adr-0035) — **ACEPTADA**
 
 ---
 
@@ -1022,6 +1025,70 @@ Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar 
 - `age()` calcula contra `today()` (timezone `America/Bogota`), igual que el corte 18+: no hay ventanillas de zona horaria entre "puedes registrarte" y "tu edad".
 
 **Estado.** ACEPTADA — 2026-08-30 (Plan 04 de `planes/`). Implementada en la migración `2026_09_04_000100`, `ColombianRegion` + `Gender` + `AdultBirthDate`, `User` (fillable/casts/`age()`), `StoreRegistrationRequest` + `UpdateProfileRequest`, `RegisteredUserController`, la sección "Datos personales" de `profile/edit` + campo en `auth/register` (+ `min`/`max` en `x-form-input`), el factory (adultos), el seeder demo y `PersonalDataTest` (+ casos de registro en `RegistrationTest`).
+
+---
+
+## ADR-0033
+### Eliminación/suspensión de cuenta: ventana de 30 días y tres reglas de propiedad — **ACEPTADA**
+
+**Contexto.** Plan 05: un usuario puede solicitar la eliminación de su cuenta. Se eligió suspensión 30 días (reversible) antes de purga irreversible. Tres casos para el hogar del dueño: (1) dueño único → cascade, (2) hay otros miembros → transferir al más antiguo, (3) miembro sin hogar propio → anonimizar.
+
+**Decisión.** `users.deletion_requested_at` timestamp nullable. `AccountDeletionService` con los tres casos. `EnsureAccountActive` middleware. Comando `finlia:purge-pending-deletions` diario. Correos antifraude y de transferencia.
+
+**Estado.** ACEPTADA — 2026-09-04 (Plan 05).
+
+---
+
+## ADR-0034
+### Exportación de datos: ZIP con CSVs + JSON, throttle 3/día — **ACEPTADA**
+
+**Contexto.** Plan 06 (portabilidad y política de retiro): la Ley 1581 (Colombia) y el estándar GDPR-inspired de "derecho a la portabilidad" exigen que el usuario pueda obtener sus datos en formato reutilizable. El reto es: ¿qué exportar, en qué formato, con qué privacidad, y cuándo limitar el uso?
+
+**Decisión.**
+
+1. **Formato dual**: CSV (BOM UTF-8 + separador `;`) para Excel Colombia + JSON para migración técnica, empaquetados en un ZIP descargable. README.txt interno documenta el formato.
+2. **Aislamiento estricto**: solo se exportan datos del **hogar activo** del solicitante. `usuario.csv` contiene solo el perfil del solicitante (nunca nombres/correos de otros miembros). La contraseña nunca se incluye.
+3. **Throttle 3/día** (`throttle:3,1440`): previene abuso/scraping de la funcionalidad.
+4. **`DataExportService::collect()`** separado de `buildZip()`: `collect()` devuelve arrays puros, testables sin disco; `buildZip()` empaqueta. Sin dependencia HTTP (ADR-0010): recibe `Household` + `User` explícitos.
+5. **Página pública `/datos`** (`data.policy`): accesible sin cuenta. Declara qué datos se guardan, portabilidad, eliminación, retiro del software y cómo migrar.
+
+**Alternativas descartadas.**
+- **Solo CSV**: el JSON es necesario para migración programática (IDs relacionales preservados).
+- **Sin throttle**: cualquier usuario podría hacer polling continuo del servicio de exportación.
+- **Incluir contraseña**: un hash bcrypt no es portable (es específico del sistema); nunca debe aparecer en una exportación.
+
+**Consecuencias.** `DataExportService` queda listo para reutilización en la futura API REST (Épica 14) sin modificaciones. El throttle por `user_id` (Laravel cache) se resetea a medianoche.
+
+**Estado.** ACEPTADA — 2026-09-05 (Plan 06).
+
+---
+
+## ADR-0035
+### Transferencias entre cuentas del mismo hogar — **ACEPTADA**
+
+**Contexto.** La Épica 7 dejó pendiente que los aportes a metas de ahorro no movieran cuentas, y la Épica 10 llega a cerrar ese hueco además de añadir el caso de uso genérico de traslado de dinero entre cuentas (p. ej. de cuenta corriente a cuenta de ahorros). Se necesita modelar un movimiento que afecte el saldo de dos cuentas simultáneamente sin ser ingreso ni gasto para el P&L del hogar.
+
+**Decisión.**
+
+1. **Tabla `transfers` independiente** (no polimórfica, no reutilizar `incomes`/`expenses`): `household_id`, `user_id`, `from_account_id`, `to_account_id`, `amount DECIMAL(15,2)`, `date DATE`, `description VARCHAR(200)` nullable, `notes TEXT` nullable. Índice en `(household_id, date)`.
+2. **Neutral para el P&L**: una transferencia no afecta los totales de ingresos ni de gastos del hogar — solo redistribuye saldo entre cuentas. El `MovementSummaryService::rangeTotals()` no la incluye en los cálculos de balance.
+3. **Recomputo de saldo**: `AccountBalanceService::recompute()` ya recalculaba `initial_balance + Σincomes − Σexpenses`; se extiende a `+ Σincoming_transfers − Σoutgoing_transfers` (ADR-0012). Se recomputan ambas cuentas afectadas en cada escritura (create/update/delete) dentro de una transacción de base de datos.
+4. **Aislamiento por hogar**: `StoreTransferRequest` y `UpdateTransferRequest` validan que `from_account_id` y `to_account_id` pertenezcan al hogar activo del usuario (`household_id = active_household_id()`). `TransferPolicy` usa el trait `ChecksHouseholdAccess`. El `household_id` nunca se acepta del cliente.
+5. **`MovementSummaryService::filtered()`** incluye transferencias en la lista unificada cuando el tipo es `null` o `'transfer'` y no hay filtro por categoría. Se normalizan con `type = 'transfer'`, `account_name = "origen → destino"` y sin `category_name`/`payment_method`.
+6. **FAB speed-dial** (cinco opciones): Gasto, Ingreso, Transferencia, Pago de deuda, Aporte a meta. CSS/JS puro sin dependencias adicionales. Backdrop para cerrar al clicar fuera.
+7. **PWA**: `manifest.webmanifest` servido como ruta PHP (Content-Type correcto), service worker mínimo (`sw.js` en `public/`) con estrategia network-first implícita (sin caché inicial). Metas Apple PWA en el layout.
+8. **Smart selects**: el último `from_account`, `to_account`, `account` e `income_account` se persisten en `localStorage` con clave `finlia_{householdId}_{key}` para evitar contaminación entre hogares.
+
+**Alternativas descartadas.**
+- Reutilizar `expenses`/`incomes` con tipo especial: rompe el invariante de que ambas tablas siempre son P&L positivo/negativo; complica las queries de totales.
+- No recomputar en tiempo real y diferir a un job: introduce inconsistencia de saldo visible al usuario; el volumen personal no justifica la complejidad asíncrona (ADR-0012).
+- Caching del saldo sin recomputo: mismo riesgo de inconsistencia que el punto anterior.
+
+**Consecuencias.** `MovementService::createTransfer/updateTransfer/deleteTransfer` respetan el seam de ADR-0010 (no usan `request()` ni `Auth::`). `TransferController` es delgado: valida → autoriza → delega al service. La futura API REST (Épica 14) reutiliza los mismos methods sin modificación. Un test de schema verifica que la tabla `transfers` no tenga columnas de datos sensibles de tarjeta (ADR-0002).
+
+**Estado.** ACEPTADA — 2026-09-05 (Épica 10).
+
+---
 
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.
