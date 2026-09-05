@@ -5,6 +5,7 @@
         'Todos' => null,
         'Gastos' => 'expense',
         'Ingresos' => 'income',
+        'Transferencias' => 'transfer',
     ];
     // El balance es de todo el filtro, no de la página visible (viene del
     // Service en `filterTotals`): cargar más páginas no lo cambia.
@@ -24,6 +25,7 @@
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="{{ route('expenses.create') }}"><i class="bi bi-dash-circle text-danger me-2"></i>Gasto</a></li>
                 <li><a class="dropdown-item" href="{{ route('incomes.create') }}"><i class="bi bi-plus-circle text-success me-2"></i>Ingreso</a></li>
+                <li><a class="dropdown-item" href="{{ route('transfers.create') }}"><i class="bi bi-arrow-left-right text-finlia me-2"></i>Transferencia</a></li>
             </ul>
         </div>
     </div>

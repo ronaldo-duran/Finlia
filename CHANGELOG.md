@@ -12,6 +12,37 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.21.0] - 2026-09-05 — UX mobile y PWA (Épica 10)
+
+### Añadido
+- **Transferencias entre cuentas** (`transfers`): tabla propia con `household_id`, `from_account_id`, `to_account_id`, `amount DECIMAL(15,2)`, `date`, `description` y `notes`. CRUD completo con `TransferController`, `StoreTransferRequest`/`UpdateTransferRequest` y `TransferPolicy`. Aislamiento por hogar: las cuentas se validan contra el hogar activo; `household_id` nunca se acepta del cliente (ADR-0035).
+- **Recomputo de saldo de cuentas con transferencias** (`AccountBalanceService`): extiende la fórmula de ADR-0012 a `initial_balance + Σincomes − Σexpenses + Σincoming_transfers − Σoutgoing_transfers`. Ambas cuentas se recomputan en cada escritura dentro de una transacción.
+- **Transferencias en la lista unificada de movimientos** (`MovementSummaryService`): tipo `'transfer'` disponible como filtro; se normaliza con `account_name = "origen → destino"`, sin categoría ni método de pago. La inclusión solo ocurre cuando no hay filtro por `category_id`.
+- **FAB speed-dial** (botón flotante "+"): reemplaza el enlace simple del bottom nav por un menú de cinco opciones — Gasto, Ingreso, Transferencia, Pago de deuda, Aporte a meta. CSS/JS vanilla, sin dependencias extra; backdrop para cerrar al clicar fuera; foco accesible por teclado (Escape cierra).
+- **PWA**: `manifest.webmanifest` servido mediante ruta PHP con `Content-Type: application/manifest+json` (campos: `name`, `short_name`, `start_url`, `display: standalone`, `theme_color`, `background_color`, icons SVG/192/512). Service worker mínimo en `public/sw.js` (network-first implícito, sin caché inicial). Metas Apple PWA y `theme-color` en los layouts `app.blade.php` y `guest.blade.php`.
+- **Smart selects** (`data-smart-select`): el último valor de selects de cuenta en gastos, ingresos y transferencias se persiste en `localStorage` con clave `finlia_{householdId}_{key}`, pre-seleccionando la opción en el siguiente formulario. Scope por `household-id` meta para evitar contaminación entre hogares.
+- **Vistas de transferencias**: `transfers/create.blade.php`, `transfers/edit.blade.php` y `transfers/_form.blade.php` con el sistema de diseño glass/hero-card; selects de cuenta con balance actual, `data-smart-select` y `data-money-input` en el importe.
+- **Filtro "Transferencias"** en `/movimientos`: chip y opción en el dropdown de tipo.
+- **`TransferFactory`** con datos Faker (nunca reales) para tests y seeders.
+- **15 tests**: 11 en `TransferTest` (CRUD, recomputo de saldos, validaciones, aislamiento IDOR entre hogares, esquema sin columnas sensibles de tarjeta) + 4 en `PwaTest` (manifest accesible, campos obligatorios, link en layout autenticado, `sw.js` existe en `public/`).
+
+### Modificado
+- `AccountBalanceService::recompute()`: incluye `incomingTransfers` y `outgoingTransfers` en la fórmula.
+- `MovementSummaryService`: añade `filtered()` para transfers y `applyTransferFilters()`/`normalizeTransfer()`.
+- `MovementsController::filters()`: acepta `'transfer'` como tipo válido.
+- `movements/_item.blade.php`: renderiza transferencias con icono `bi-arrow-left-right` y monto neutro (sin signo).
+- `movements/index.blade.php`: chip "Transferencias" y opción en dropdown.
+- `layouts/partials/mobile-bottom-nav.blade.php`: FAB speed-dial (cinco opciones).
+- `layouts/app.blade.php` y `guest.blade.php`: manifest link, `theme-color` y metas Apple PWA.
+- `resources/js/app.js`: registro del service worker y módulo de smart selects.
+- `resources/css/app.css`: estilos del FAB speed-dial y `display: none` del footer en modo standalone.
+- `expenses/_form.blade.php` e `incomes/_form.blade.php`: `data-smart-select` en selects de cuenta.
+- `components/form-select.blade.php`: prop `smartSelect` para emitir `data-smart-select`.
+
+### Notas
+- ADR-0035 registrado en `docs/DECISIONS.md`.
+- `MovementService::createTransfer/updateTransfer/deleteTransfer` no dependen de HTTP (ADR-0010): reciben datos explícitos; listos para la futura API REST (Épica 14).
+
 ## [0.20.0] - 2026-09-05 — Política de datos y exportación ZIP (Plan 06)
 
 ### Añadido

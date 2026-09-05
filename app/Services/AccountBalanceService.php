@@ -27,7 +27,11 @@ class AccountBalanceService
         $expenses = (float) $account->expenses()->sum('amount');
         $initial = (float) $account->initial_balance;
 
-        $account->current_balance = $initial + $incomes - $expenses;
+        // Transferencias: las entrantes suman, las salientes restan (ADR-0035).
+        $incoming = (float) $account->incomingTransfers()->sum('amount');
+        $outgoing = (float) $account->outgoingTransfers()->sum('amount');
+
+        $account->current_balance = $initial + $incomes - $expenses + $incoming - $outgoing;
         $account->save();
     }
 

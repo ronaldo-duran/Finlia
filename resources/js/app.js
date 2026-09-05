@@ -131,6 +131,63 @@ document.addEventListener('submit', function (e) {
 
 /*
 |----------------------------------------------------------------------
+| PWA — Service Worker (Épica 10).
+|----------------------------------------------------------------------
+| Registra el SW mínimo que permite la instalación en pantalla de inicio.
+| Solo se registra en HTTPS (o localhost) — el navegador lo ignora
+| silenciosamente en http de red local, sin lanzar errores.
+*/
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () {
+            // Silencioso: la app funciona igual sin SW.
+        });
+    });
+}
+
+/*
+|----------------------------------------------------------------------
+| Selects inteligentes (Épica 10): recuerdan la última selección.
+|----------------------------------------------------------------------
+| Cualquier <select data-smart-select="CLAVE"> persiste en localStorage
+| el último valor elegido y lo pre-selecciona la próxima vez que aparece
+| en pantalla. La clave es libre (p.ej. "expense_account",
+| "expense_category") y es por hogar (household_id en el meta) para que
+| las preferencias de un hogar no contaminen a otro.
+|
+| El control real (el <select>) sigue siendo el que envía el formulario
+| y mantiene `required` intacto; esto solo es comodidad, no lógica.
+*/
+(function () {
+    // Prefijo de la clave incluye el household_id para aislamiento.
+    var householdMeta = document.querySelector('meta[name="household-id"]');
+    var householdId = householdMeta ? householdMeta.getAttribute('content') : 'default';
+    var prefix = 'finlia-smart-' + householdId + '-';
+
+    document.querySelectorAll('[data-smart-select]').forEach(function (select) {
+        var key = prefix + select.getAttribute('data-smart-select');
+
+        // Aplica la última selección guardada (solo si aún hay opción equivalente).
+        var saved = null;
+        try { saved = localStorage.getItem(key); } catch (e) {}
+        if (saved && select.querySelector('option[value="' + saved + '"]')) {
+            // Solo si el usuario no lo ha cambiado ya (old() de Blade).
+            if (!select.value || select.value === '' || select.value === '0') {
+                select.value = saved;
+            }
+        }
+
+        // Persiste la nueva selección en cada cambio.
+        select.addEventListener('change', function () {
+            if (select.value) {
+                try { localStorage.setItem(key, select.value); } catch (e) {}
+            }
+        });
+    });
+})();
+
+/*
+|----------------------------------------------------------------------
 | Simulador de deuda (ADR-0023).
 |----------------------------------------------------------------------
 | Replica en el navegador la matemática de App\Services\DebtCalculator para

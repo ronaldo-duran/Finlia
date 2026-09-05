@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Expense;
 use App\Models\Household;
 use App\Models\Income;
+use App\Models\Transfer;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -114,6 +115,63 @@ class MovementService
             $expense->delete();
 
             $this->balances->recompute($account);
+        });
+    }
+
+    // ---------------- Transferencias (ADR-0035) ----------------
+
+    /**
+     * @param  array<string, mixed>  $data  datos validados (sin household_id/user_id)
+     */
+    public function createTransfer(array $data, Household $household, User $user): Transfer
+    {
+        return DB::transaction(function () use ($data, $household, $user): Transfer {
+            $transfer = $household->transfers()->create([
+                ...$data,
+                'user_id' => $user->id,
+            ]);
+
+            $transfer->load(['fromAccount', 'toAccount']);
+            $this->balances->recompute($transfer->fromAccount);
+            $this->balances->recompute($transfer->toAccount);
+
+            return $transfer;
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateTransfer(Transfer $transfer, array $data): Transfer
+    {
+        return DB::transaction(function () use ($transfer, $data): Transfer {
+            // Cuentas afectadas: las nuevas y las anteriores.
+            $affected = array_unique([
+                $transfer->from_account_id,
+                $transfer->to_account_id,
+                (int) ($data['from_account_id'] ?? $transfer->from_account_id),
+                (int) ($data['to_account_id'] ?? $transfer->to_account_id),
+            ]);
+
+            $transfer->update($data);
+            $transfer->refresh();
+
+            $this->balances->recomputeMany($affected);
+
+            return $transfer;
+        });
+    }
+
+    public function deleteTransfer(Transfer $transfer): void
+    {
+        DB::transaction(function () use ($transfer): void {
+            $fromAccount = $transfer->fromAccount;
+            $toAccount = $transfer->toAccount;
+
+            $transfer->delete();
+
+            $this->balances->recompute($fromAccount);
+            $this->balances->recompute($toAccount);
         });
     }
 }

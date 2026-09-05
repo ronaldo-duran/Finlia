@@ -731,3 +731,122 @@ a { color: var(--finlia-primary); }
     text-transform: uppercase;
     color: var(--finlia-text-muted);
 }
+
+/* =============================================================
+   FAB speed-dial (Épica 10) — menú vertical de acciones rápidas.
+   El FAB (.bottom-nav-fab) ya existía; aquí se añade el contenedor
+   y el menú desplegable. En escritorio el FAB y el menú no se
+   renderizan (d-lg-none en el partial).
+   ============================================================= */
+
+/* Contenedor del speed-dial: posiciona el FAB + el menú. */
+.fab-speed-dial {
+    position: fixed;
+    left: 50%;
+    bottom: calc(38px + var(--finlia-safe-bottom));
+    transform: translateX(-50%);
+    z-index: 1041;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+/* El menú de opciones: oculto por defecto, animado hacia arriba. */
+.fab-speed-dial-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(16px) scale(0.92);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.fab-speed-dial.is-open .fab-speed-dial-menu {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* Cada opción: icono circular + etiqueta de texto. */
+.fab-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--finlia-text);
+}
+
+.fab-option-label {
+    background-color: var(--finlia-surface-solid);
+    color: var(--finlia-text);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--finlia-border);
+    box-shadow: var(--finlia-shadow-sm);
+    white-space: nowrap;
+}
+
+.fab-option-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    color: #fff;
+    box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.4);
+    flex-shrink: 0;
+}
+
+/* Fondo oscuro (backdrop) al abrir el FAB. */
+.fab-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background-color: rgba(0, 0, 0, 0);
+    pointer-events: none;
+    transition: background-color 0.2s ease;
+}
+
+.fab-backdrop.is-visible {
+    background-color: rgba(0, 0, 0, 0.45);
+    pointer-events: auto;
+}
+
+/* El botón FAB dentro del contenedor speed-dial ya no es `fixed`:
+   hereda la posición del padre. Se elimina `left/bottom/transform`. */
+.fab-speed-dial .bottom-nav-fab {
+    position: static;
+    transform: none;
+    transition: transform 0.12s ease, background-color 0.12s ease;
+}
+
+.fab-speed-dial.is-open .bottom-nav-fab {
+    background-image: linear-gradient(160deg, var(--finlia-primary-hover), var(--finlia-primary));
+}
+
+.fab-speed-dial .bottom-nav-fab:active {
+    transform: scale(0.94);
+}
+
+/* =============================================================
+   PWA (Épica 10) — meta de tema dinámica.
+   El service worker y el manifest van en /public; aquí solo los
+   estilos de soporte (instalación, standalone).
+   ============================================================= */
+
+/* En modo standalone (instalada como app) ocultar el footer de
+   "Términos · COP · v…" que satura la pantalla sin barra de navegación. */
+@media (display-mode: standalone) {
+    .app-footer {
+        display: none !important;
+    }
+    /* En standalone el notch ya está cubierto por el safe-area-inset
+       del body; la barra inferior no necesita ajuste adicional. */
+}

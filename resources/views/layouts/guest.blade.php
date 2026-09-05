@@ -10,6 +10,11 @@
     {{-- Identidad de marca (docs/BRAND.md): símbolo de puntos, sin cambios entre temas. --}}
     @include('layouts.partials.favicon')
 
+    {{-- PWA (Épica 10): manifest para que la pantalla de login sea instalable. --}}
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#eef3f8" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0e1419" media="(prefers-color-scheme: dark)">
+
     {{-- Anti-FOUC: fija el tema antes del primer paint --}}
     @include('layouts.partials.theme-head')
 

@@ -13,6 +13,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CreditCardController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataPolicyController;
 use App\Http\Controllers\DebtController;
 use App\Http\Controllers\DebtPaymentController;
 use App\Http\Controllers\DebtRefinancingController;
@@ -27,10 +28,10 @@ use App\Http\Controllers\MovementsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecurringExpenseController;
 use App\Http\Controllers\ReminderController;
-use App\Http\Controllers\DataPolicyController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SavingsGoalController;
 use App\Http\Controllers\TermsController;
+use App\Http\Controllers\TransferController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -114,6 +115,15 @@ Route::get('terminos', [TermsController::class, 'show'])->name('terms.show');
 // ---- Política de datos (Plan 06, ADR-0034) ----
 // Pública: visible sin cuenta, para quienes evalúen antes de registrarse.
 Route::get('datos', [DataPolicyController::class, 'show'])->name('data.policy');
+
+// ---- PWA (Épica 10): manifest con cabecera correcta ----
+// Algunos hosting o proxies no reconocen .webmanifest como JSON y
+// omiten el Content-Type. Servir vía PHP garantiza la cabecera.
+Route::get('manifest.webmanifest', function () {
+    return response()->file(public_path('manifest.webmanifest'), [
+        'Content-Type' => 'application/manifest+json',
+    ]);
+})->name('pwa.manifest');
 Route::get('terminos/{termsVersion}', [TermsController::class, 'version'])
     ->name('terms.version')
     ->where('termsVersion', '[0-9]{4}-[0-9]{2}-v[0-9]+');
@@ -253,8 +263,15 @@ Route::middleware(['auth', 'verified', 'terms.current', 'account.active'])->grou
     Route::put('ingresos/{income}', [IncomeController::class, 'update'])->name('incomes.update');
     Route::delete('ingresos/{income}', [IncomeController::class, 'destroy'])->name('incomes.destroy');
 
-    // Vista unificada con filtros (ingresos + gastos).
+    // Vista unificada con filtros (ingresos + gastos + transferencias).
     Route::get('movimientos', [MovementsController::class, 'index'])->name('movements.index');
+
+    // ---- Épica 10: transferencias entre cuentas (ADR-0035) ----
+    Route::get('transferencias/crear', [TransferController::class, 'create'])->name('transfers.create');
+    Route::post('transferencias', [TransferController::class, 'store'])->name('transfers.store');
+    Route::get('transferencias/{transfer}/editar', [TransferController::class, 'edit'])->name('transfers.edit');
+    Route::put('transferencias/{transfer}', [TransferController::class, 'update'])->name('transfers.update');
+    Route::delete('transferencias/{transfer}', [TransferController::class, 'destroy'])->name('transfers.destroy');
 
     // ---- Épica 4: presupuestos y dinero disponible ----
     // URI en español ('presupuestos'), nombres de ruta 'budgets.*'.

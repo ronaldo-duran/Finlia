@@ -4,11 +4,26 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @auth
+        {{-- household-id: usado por los selects inteligentes (Épica 10) para
+             aislar las preferencias de selección por hogar. --}}
+        <meta name="household-id" content="{{ active_household_id() ?? '' }}">
+    @endauth
 
     <title>{{ $title ?? 'Panel' }} · Finlia</title>
 
     {{-- Identidad de marca (docs/BRAND.md): símbolo de puntos, sin cambios entre temas. --}}
     @include('layouts.partials.favicon')
+
+    {{-- PWA (Épica 10): manifest e icono de instalación. --}}
+    <link rel="manifest" href="/manifest.webmanifest">
+    {{-- theme-color dinámico: se actualiza por JS al cambiar el tema (app.js). --}}
+    <meta name="theme-color" content="#eef3f8" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0e1419" media="(prefers-color-scheme: dark)">
+    {{-- iOS: pantalla completa al agregar a inicio. --}}
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Finlia">
 
     {{-- Anti-FOUC: fija el tema antes del primer paint --}}
     @include('layouts.partials.theme-head')
