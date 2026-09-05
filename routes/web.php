@@ -214,9 +214,13 @@ Route::middleware(['auth', 'verified', 'terms.current', 'account.active'])->grou
     Route::delete('hogares/{household}/miembros/{user}', [HouseholdMemberController::class, 'destroy'])
         ->name('households.members.destroy');
 
-    // Invitaciones: enviar / revocar
+    // Invitaciones: enviar / revocar.
+    // El envío va limitado porque es la única acción autenticada que despacha
+    // correo a una dirección arbitraria: sin tope, una cuenta puede quemar la
+    // cuota del proveedor y arrastrar la reputación del dominio.
     Route::post('hogares/{household}/invitaciones', [HouseholdInvitationController::class, 'store'])
-        ->name('households.invitations.store');
+        ->name('households.invitations.store')
+        ->middleware('throttle:10,1');
     Route::delete('hogares/{household}/invitaciones/{invitation}', [HouseholdInvitationController::class, 'destroy'])
         ->name('households.invitations.destroy');
 
