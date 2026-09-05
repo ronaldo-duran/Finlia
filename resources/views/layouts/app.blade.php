@@ -237,34 +237,52 @@
     <script>
     // Intercepta formularios con data-confirm y los pasa por el modal antes de enviar.
     (function () {
-        var modal = null;
+        var modalEl     = document.getElementById('confirmModal');
+        var bodyEl      = document.getElementById('confirmModalBody');
+        var okEl        = document.getElementById('confirmModalOk');
+        var modal       = null;
         var pendingForm = null;
 
         function getModal() {
-            if (!modal) modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            if (!modal) modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
             return modal;
         }
 
+        // Envía saltándose el evento `submit`: HTMLFormElement.submit() no lo
+        // dispara, así que no vuelve a caer en este mismo interceptor.
+        function reallySubmit(form) {
+            HTMLFormElement.prototype.submit.call(form);
+        }
+
         document.addEventListener('submit', function (e) {
-            var form = e.target.closest('form[data-confirm]');
+            var form = e.target.closest && e.target.closest('form[data-confirm]');
             if (!form) return;
-            e.preventDefault();
+
             var msg = form.getAttribute('data-confirm') || '¿Estás seguro?';
-            document.getElementById('confirmModalBody').textContent = msg;
+
+            // Si Bootstrap no cargó, nunca dejamos el botón muerto: se degrada
+            // al diálogo nativo en lugar de bloquear la acción en silencio.
+            if (!window.bootstrap) {
+                if (!window.confirm(msg)) e.preventDefault();
+                return;
+            }
+
+            e.preventDefault();
+            bodyEl.textContent = msg;   // textContent: el mensaje es dato, nunca HTML.
             pendingForm = form;
             getModal().show();
         }, true);
 
-        document.getElementById('confirmModalOk').addEventListener('click', function () {
+        okEl.addEventListener('click', function () {
+            var form = pendingForm;
+            pendingForm = null;
             getModal().hide();
-            if (pendingForm) {
-                var clone = pendingForm.cloneNode(true);
-                clone.removeAttribute('data-confirm');
-                clone.style.display = 'none';
-                document.body.appendChild(clone);
-                clone.submit();
-                pendingForm = null;
-            }
+            if (form) reallySubmit(form);
+        });
+
+        // Si se cierra sin confirmar, la acción queda descartada.
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            pendingForm = null;
         });
     })();
     </script>

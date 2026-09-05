@@ -33,6 +33,15 @@ reciente de este archivo.
 
 ### Correcciones
 - Comando `finlia:process-export-requests`: eliminada la cláusula `wherePivotNull('left_at')` (la columna no existe en `household_user`); ahora usa `orderByPivot('joined_at')->first()`.
+- **`window.bootstrap` no estaba expuesto**: `resources/js/app.js` hacía `import 'bootstrap'` (solo efectos secundarios), por lo que `bootstrap.Modal` y `bootstrap.Toast` quedaban indefinidos en los scripts inline de las vistas. Ahora se importa como namespace y se asigna a `window.bootstrap`. Sin esto, el modal de confirmación lanzaba `ReferenceError` tras haber llamado a `preventDefault()`, dejando los botones de eliminar sin efecto.
+- **Doble manejador de `data-confirm`**: `app.js` conservaba un manejador con `window.confirm()` que competía con el modal de la app — el usuario seguía viendo el diálogo del navegador. Eliminado; la confirmación es ahora exclusivamente el modal propio.
+- El modal de confirmación ya no clona el formulario: envía con `HTMLFormElement.prototype.submit.call(form)` (no redispara el evento `submit`). Si Bootstrap no cargara, degrada a `window.confirm()` en lugar de dejar el botón muerto; al cerrar el modal sin confirmar, la acción se descarta.
+- Confirmación añadida a dos formularios destructivos que no la tenían: eliminar un aporte/retiro de una meta de ahorro (`savings/show.blade.php`) y eliminar un recordatorio ya completado (`reminders/index.blade.php`).
+- Los toasts se renderizan con la clase `show` desde el servidor (visibles sin JS) y su auto-cierre se engancha en `DOMContentLoaded`, ya que `app.js` es un módulo diferido.
+- `tests/e2e/budgets.spec.ts`: el borrado de presupuesto pasa por el modal de la app, no por un diálogo del navegador — se sustituye `page.once('dialog')` por el clic en «Sí, continuar». `tests/e2e/auth.spec.ts`: selector `.alert-danger` → `.toast.text-bg-danger`.
+
+### Modificado (UX)
+- **Duración de los toasts proporcional al texto**: 60 ms por carácter, acotado entre 4 y 7 segundos, en lugar de 4,5 s fijos. Un aviso corto deja de estorbar antes y uno largo da tiempo a leerse.
 
 ## [0.21.0] - 2026-09-05 — UX mobile y PWA (Épica 10)
 

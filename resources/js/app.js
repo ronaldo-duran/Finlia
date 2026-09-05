@@ -9,7 +9,13 @@
 | vía la directiva @csrf de Blade.
 */
 
-import 'bootstrap';
+// Se expone en `window` porque las vistas Blade instancian componentes a mano
+// (bootstrap.Modal para el modal de confirmación, bootstrap.Toast para los
+// mensajes flash). Un `import 'bootstrap'` a secas solo registra la data-api
+// (data-bs-toggle) y dejaría `bootstrap` indefinido en los scripts inline.
+import * as bootstrap from 'bootstrap';
+
+window.bootstrap = bootstrap;
 
 // Toggle de tema (claro/oscuro). El icono lo controla el CSS según
 // el atributo data-bs-theme del <html>; aquí solo se conmuta y persiste.
@@ -117,17 +123,12 @@ window.FinliaMoney = (function () {
 |----------------------------------------------------------------------
 | Confirmación de envío para formularios marcados con data-confirm.
 |----------------------------------------------------------------------
-| Evita interpolar input del usuario dentro de JS inline (onsubmit="..."),
-| lo que sería un vector de XSS en contexto de string JS. El texto del
-| confirm se lee del atributo (ya escapado por Blade para el contexto
-| HTML) y se pasa a window.confirm() como dato, nunca como código.
+| La confirmación NO usa window.confirm(): el modal propio de la app
+| (#confirmModal en layouts/app.blade.php) intercepta el submit y muestra
+| el mensaje con el diseño de Finlia. El texto se lee del atributo (ya
+| escapado por Blade para el contexto HTML) y se inserta con textContent,
+| nunca como HTML ni como código.
 */
-document.addEventListener('submit', function (e) {
-    var form = e.target.closest && e.target.closest('[data-confirm]');
-    if (form && !window.confirm(form.getAttribute('data-confirm'))) {
-        e.preventDefault();
-    }
-});
 
 /*
 |----------------------------------------------------------------------

@@ -1,6 +1,12 @@
 {{--
     Componente: mensajes flash como toasts Bootstrap 5.
-    Se auto-descartan a los 4,5 s; el usuario puede cerrarlos antes.
+    Se auto-descartan solos; el usuario puede cerrarlos antes.
+
+    La duración se ajusta a la longitud del texto (~16 caracteres/segundo,
+    velocidad de lectura cómoda) acotada entre 4 y 7 segundos: un
+    "Gasto registrado." no se queda estorbando, y un mensaje largo da
+    tiempo a leerse entero.
+
     Uso: <x-flash-messages />
 --}}
 @php
@@ -13,6 +19,10 @@
             $toasts[] = ['type' => 'danger', 'msg' => $message];
         }
     }
+
+    // 60 ms por carácter, con suelo de 4 s y techo de 7 s.
+    $toastDelay = static fn (string $msg): int
+        => max(4000, min(7000, mb_strlen($msg) * 60));
 @endphp
 
 @if (! empty($toasts))
@@ -30,7 +40,7 @@
                 role="alert"
                 aria-atomic="true"
                 data-bs-autohide="true"
-                data-bs-delay="4500"
+                data-bs-delay="{{ $toastDelay($toast['msg']) }}"
             >
                 <div class="d-flex">
                     <div class="toast-body d-flex align-items-center gap-2">
@@ -50,12 +60,16 @@
 
     @push('scripts')
     <script>
-    (function () {
+    // El toast ya se renderiza con la clase `show` (visible sin JS). Aquí solo
+    // se engancha el auto-cierre. Se espera a DOMContentLoaded porque app.js es
+    // un módulo diferido: antes de ese evento `window.bootstrap` aún no existe.
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!window.bootstrap) return; // Sin JS de Bootstrap el aviso queda fijo: mejor eso que perderlo.
+
         document.querySelectorAll('.toast').forEach(function (el) {
-            var t = bootstrap.Toast.getOrCreateInstance(el);
-            t.show();
+            window.bootstrap.Toast.getOrCreateInstance(el).show();
         });
-    })();
+    });
     </script>
     @endpush
 @endif
