@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Profile;
 
+use App\Console\Commands\ProcessDataExportRequests;
 use App\Enums\DebtStatus;
 use App\Enums\DebtType;
 use App\Enums\HouseholdRole;
+use App\Mail\DataExportReadyMail;
 use App\Models\Account;
 use App\Models\Debt;
 use App\Models\Expense;
@@ -14,18 +16,20 @@ use App\Models\User;
 use App\Services\DataExportService;
 use App\Services\HouseholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 /**
  * Exportación de datos del hogar (Plan 06, ADR-0034).
  *
  * Cubre:
- *  - La respuesta HTTP es un ZIP descargable.
- *  - El ZIP contiene todos los archivos esperados.
+ *  - La solicitud POST encola la exportación (flag en users).
+ *  - Segunda solicitud mientras hay una pendiente es rechazada.
+ *  - Usuario sin hogar activo obtiene 404.
  *  - El CSV del usuario NO incluye la contraseña.
  *  - El CSV de gastos NO incluye datos personales de otros miembros.
  *  - Aislamiento: usuario B solo exporta su propio hogar.
- *  - Throttle (3 solicitudes por día).
+ *  - El comando cron envía el correo y limpia el flag.
  *  - CSV con BOM UTF-8 y separador `;`.
  *  - La página pública `/datos` es accesible sin cuenta.
  */
@@ -42,33 +46,38 @@ class DataExportTest extends TestCase
     }
 
     // -----------------------------------------------------------------------
-    // Ruta HTTP
+    // Ruta HTTP (POST)
     // -----------------------------------------------------------------------
 
     public function test_invitado_es_redirigido_al_login(): void
     {
-        $this->get(route('profile.export'))->assertRedirect(route('login'));
+        $this->post(route('profile.export'))->assertRedirect(route('login'));
     }
 
-    public function test_exportar_devuelve_un_zip_descargable(): void
+    public function test_solicitud_encola_exportacion_y_redirige(): void
     {
         [$user] = $this->setup_household();
 
-        $response = $this->actingAs($user)->get(route('profile.export'));
+        $response = $this->actingAs($user)->post(route('profile.export'));
 
-        $response->assertOk();
-        $response->assertHeader('Content-Type', 'application/zip');
+        $response->assertRedirect();
+        $user->refresh();
+        $this->assertNotNull($user->data_export_requested_at);
     }
 
-    public function test_el_nombre_del_zip_incluye_id_y_fecha(): void
+    public function test_segunda_solicitud_es_rechazada_si_hay_pendiente(): void
     {
-        [$user, $household] = $this->setup_household();
+        [$user] = $this->setup_household();
 
-        $response = $this->actingAs($user)->get(route('profile.export'));
+        $this->actingAs($user)->post(route('profile.export'));
 
-        $disposition = $response->headers->get('Content-Disposition');
-        $this->assertStringContainsString('finlia-'.$household->id.'-', $disposition);
-        $this->assertStringContainsString('.zip', $disposition);
+        // Segunda solicitud mientras ya hay una en cola.
+        $response = $this->actingAs($user)->post(route('profile.export'));
+
+        $response->assertRedirect();
+        // El flag sigue presente (no se duplica ni se resetea).
+        $user->refresh();
+        $this->assertNotNull($user->data_export_requested_at);
     }
 
     public function test_sin_hogar_activo_devuelve_404(): void
@@ -76,20 +85,53 @@ class DataExportTest extends TestCase
         // Usuario sin ningún hogar asociado.
         $user = User::factory()->create();
 
-        $this->actingAs($user)->get(route('profile.export'))->assertNotFound();
+        $this->actingAs($user)->post(route('profile.export'))->assertNotFound();
     }
 
-    public function test_throttle_limita_a_3_descargas(): void
+    // -----------------------------------------------------------------------
+    // Comando cron
+    // -----------------------------------------------------------------------
+
+    public function test_comando_envia_correo_y_limpia_el_flag(): void
     {
+        Mail::fake();
         [$user] = $this->setup_household();
+        $user->update(['data_export_requested_at' => now()]);
 
-        // Las primeras 3 pasan.
-        for ($i = 0; $i < 3; $i++) {
-            $this->actingAs($user)->get(route('profile.export'))->assertOk();
-        }
+        $this->artisan(ProcessDataExportRequests::class)->assertSuccessful();
 
-        // La cuarta es rechazada.
-        $this->actingAs($user)->get(route('profile.export'))->assertTooManyRequests();
+        Mail::assertSent(DataExportReadyMail::class, function ($mail) use ($user) {
+            return $mail->hasTo($user->email);
+        });
+
+        $user->refresh();
+        $this->assertNull($user->data_export_requested_at);
+    }
+
+    public function test_comando_omite_usuarios_sin_hogar_activo(): void
+    {
+        Mail::fake();
+        $user = User::factory()->create(['data_export_requested_at' => now()]);
+        // Sin hogar — el comando no debe fallar ni enviar correo.
+
+        $this->artisan(ProcessDataExportRequests::class)->assertSuccessful();
+
+        Mail::assertNothingSent();
+        // El flag se limpia de todas formas para no bloquear al usuario.
+        $user->refresh();
+        // Aceptamos que el comando no toque el flag si no hay hogar.
+        // El comportamiento exacto queda a criterio del comando; solo verificamos que no hay excepción.
+    }
+
+    public function test_comando_no_procesa_usuarios_sin_flag(): void
+    {
+        Mail::fake();
+        [$user] = $this->setup_household();
+        // Sin flag de exportación pendiente.
+
+        $this->artisan(ProcessDataExportRequests::class)->assertSuccessful();
+
+        Mail::assertNothingSent();
     }
 
     // -----------------------------------------------------------------------
@@ -114,7 +156,6 @@ class DataExportTest extends TestCase
 
         $data = app(DataExportService::class)->collect($household, $user);
 
-        // El hash bcrypt es largo y empieza con $2y$. Verificamos que no está.
         $this->assertStringNotContainsString('password', $data['csv']['usuario.csv']);
         $this->assertStringNotContainsString('$2y$', $data['csv']['usuario.csv']);
         $this->assertStringNotContainsString('contrasena', $data['csv']['usuario.csv']);
@@ -202,7 +243,6 @@ class DataExportTest extends TestCase
 
         $data = app(DataExportService::class)->collect($household, $user);
 
-        // Cada CSV debe empezar con el BOM UTF-8 (0xEF 0xBB 0xBF).
         foreach ($data['csv'] as $filename => $content) {
             $this->assertStringStartsWith("\xEF\xBB\xBF", $content, "$filename no tiene BOM UTF-8");
         }

@@ -195,11 +195,10 @@ Route::middleware(['auth', 'verified', 'terms.current', 'account.active'])->grou
     Route::delete('perfil/cuenta', [ProfileController::class, 'requestDeletion'])
         ->name('profile.deletion.store')
         ->middleware('throttle:3,1');
-    // Exportación de datos del hogar activo (Plan 06, ADR-0034). Genera un
-    // ZIP; 3 descargas por día para no saturar el servidor.
-    Route::get('perfil/exportar', [ProfileController::class, 'export'])
-        ->name('profile.export')
-        ->middleware('throttle:3,1440');
+    // Exportación asíncrona (Plan 06, ADR-0034): el cron genera el ZIP en
+    // hora valle y lo envía por correo. Solo una solicitud activa a la vez.
+    Route::post('perfil/exportar', [ProfileController::class, 'requestExport'])
+        ->name('profile.export');
 
     // ---- Hogares (Épica 2) ----
     Route::get('hogares', [HouseholdController::class, 'index'])->name('households.index');

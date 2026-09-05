@@ -12,6 +12,28 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.22.0] - 2026-09-05 — Mejoras de UX: modales, toasts, FAB y exportación asíncrona
+
+### Añadido
+- **Modal de confirmación genérico** (`#confirmModal`): reemplaza todos los `confirm()` del navegador por un modal Bootstrap 5 que se activa con `data-confirm="mensaje"` en cualquier `<form>`. El JS en `layouts/app.blade.php` intercepta el `submit`, muestra el modal y, al confirmar, clona el formulario sin el atributo y lo envía.
+- **FAB flotante bottom-right**: el botón "+" ya no ocupa el centro de la barra de navegación inferior (que generaba ruido visual). Ahora es un botón circular fijo en la esquina inferior derecha, siempre visible, igual al botón de componer de X (Twitter). El speed-dial se abre/cierra con animación CSS; backdrop semitransparente al abrirlo; cierre con Escape. La barra inferior queda con cuatro ítems planos: Panel, Movimientos, Presupuesto, Más.
+- **Toasts Bootstrap 5**: los mensajes flash ya no persisten hasta recarga. `components/flash-messages.blade.php` los renderiza como toasts con auto-dismiss a los 4,5 s y botón de cierre manual. Posición fija top-right, debajo de la navbar.
+- **Exportación de datos asíncrona por correo** (`finlia:process-export-requests`): en lugar de generar y descargar el ZIP en la misma petición HTTP (riesgo de sobrecarga), la solicitud ahora es un `POST` que almacena una marca de tiempo en `users.data_export_requested_at`. Un comando cron ejecuta a las 02:00, genera el ZIP por hogar, lo envía adjunto al correo del usuario con `DataExportReadyMail` y limpia la marca. Solo se puede tener una solicitud pendiente a la vez. El perfil muestra el estado pendiente mientras espera. Aviso en el modal de confirmación de hasta 3 días hábiles.
+- **Migración** `add_data_export_requested_at_to_users_table`: columna nullable `data_export_requested_at timestamp` en `users`.
+- **`DataExportReadyMail`**: mailable con plantilla en `emails/data-export-ready.blade.php` y el ZIP como adjunto.
+
+### Modificado
+- `profile/edit.blade.php`: formulario de exportación cambiado a `POST` con estado pendiente; formulario de eliminación usa `data-confirm` en lugar de `onsubmit`.
+- `routes/web.php`: ruta de exportación cambiada de `GET` a `POST` (`profile.export`).
+- `ProfileController`: reemplaza `export()` por `requestExport()` (sin descarga directa).
+- `routes/console.php`: registra el comando de exportación en el scheduler (02:00 diario, sin solapamiento).
+- `User::hasPendingExport()`: helper para saber si hay exportación en cola.
+- `resources/css/app.css`: estilos del nuevo FAB (`.fab-container`, `.fab-btn`, `.fab-menu`, `.fab-action`, `.fab-backdrop`); eliminados estilos del FAB centrado anterior.
+- `DataExportTest`: reescrito para reflejar el flujo asíncrono (POST, flag, cron, correo); eliminados tests de descarga directa y throttle obsoleto; añadidos tests del comando cron.
+
+### Correcciones
+- Comando `finlia:process-export-requests`: eliminada la cláusula `wherePivotNull('left_at')` (la columna no existe en `household_user`); ahora usa `orderByPivot('joined_at')->first()`.
+
 ## [0.21.0] - 2026-09-05 — UX mobile y PWA (Épica 10)
 
 ### Añadido

@@ -205,6 +205,70 @@
         @include('layouts.partials.mobile-bottom-nav')
     @endauth
 
+    {{-- ======= Modal de confirmación genérico =======
+         Usos: <form data-confirm="¿Estás seguro?">...</form>
+               <button data-confirm="¿Eliminar?" data-form="#miFormId">Eliminar</button>
+         El JS intercepta el submit y muestra este modal antes de dejarlo pasar. --}}
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0 pb-1">
+                    <h5 class="modal-title fw-semibold" id="confirmModalLabel">
+                        <i class="bi bi-exclamation-circle me-1 text-warning"></i>
+                        Confirmar acción
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" id="confirmModalBody">
+                    ¿Estás seguro?
+                </div>
+                <div class="modal-footer border-0 pt-1">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" id="confirmModalOk">
+                        Sí, continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Intercepta formularios con data-confirm y los pasa por el modal antes de enviar.
+    (function () {
+        var modal = null;
+        var pendingForm = null;
+
+        function getModal() {
+            if (!modal) modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            return modal;
+        }
+
+        document.addEventListener('submit', function (e) {
+            var form = e.target.closest('form[data-confirm]');
+            if (!form) return;
+            e.preventDefault();
+            var msg = form.getAttribute('data-confirm') || '¿Estás seguro?';
+            document.getElementById('confirmModalBody').textContent = msg;
+            pendingForm = form;
+            getModal().show();
+        }, true);
+
+        document.getElementById('confirmModalOk').addEventListener('click', function () {
+            getModal().hide();
+            if (pendingForm) {
+                var clone = pendingForm.cloneNode(true);
+                clone.removeAttribute('data-confirm');
+                clone.style.display = 'none';
+                document.body.appendChild(clone);
+                clone.submit();
+                pendingForm = null;
+            }
+        });
+    })();
+    </script>
+
     @stack('scripts')
 </body>
 </html>

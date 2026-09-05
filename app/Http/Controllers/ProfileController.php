@@ -10,14 +10,12 @@ use App\Http\Requests\Profile\UpdatePasswordRequest;
 use App\Http\Requests\Profile\UpdateProfileRequest;
 use App\Models\User;
 use App\Services\AccountDeletionService;
-use App\Services\DataExportService;
 use App\Services\ProfileService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Perfil del usuario autenticado (Plan 02, ADR-0030): nombre, contraseña
@@ -30,7 +28,6 @@ class ProfileController extends Controller
     public function __construct(
         private readonly ProfileService $service,
         private readonly AccountDeletionService $deletionService,
-        private readonly DataExportService $exportService,
     ) {}
 
     /**
@@ -116,27 +113,27 @@ class ProfileController extends Controller
     }
 
     /**
-     * Exporta todos los datos del hogar activo en un ZIP (Plan 06, ADR-0034).
-     * Acotado al hogar activo; nunca datos de otro hogar ni de otros miembros.
+     * Solicita la exportación de datos del hogar activo (Plan 06, ADR-0034).
+     * La exportación es asíncrona: el cron `finlia:process-export-requests`
+     * genera el ZIP en hora valle y lo envía por correo.
+     * Solo se permite una solicitud activa a la vez (mientras está pendiente
+     * el botón se desactiva y no se puede volver a solicitar).
      */
-    public function export(Request $request): BinaryFileResponse
+    public function requestExport(Request $request): RedirectResponse
     {
         $user = $request->user();
         $this->authorize('update', $user);
 
-        $household = active_household();
+        if ($user->hasPendingExport()) {
+            return back()->with('status', __('Ya tienes una exportación en proceso. Te la enviaremos por correo en hasta 3 días.'));
+        }
 
-        abort_if($household === null, 404, __('No tienes un hogar activo para exportar.'));
+        abort_if(active_household() === null, 404, __('No tienes un hogar activo para exportar.'));
 
-        $zipPath = $this->exportService->buildZip($household, $user);
+        $user->data_export_requested_at = now();
+        $user->save();
 
-        $filename = 'finlia-'.$household->id.'-'.now()->format('Ymd').'.zip';
-
-        $response = response()->download($zipPath, $filename, [
-            'Content-Type' => 'application/zip',
-        ])->deleteFileAfterSend();
-
-        return $response;
+        return back()->with('status', __('Exportación solicitada. Recibirás el archivo en tu correo (:email) en un plazo de hasta 3 días hábiles.', ['email' => $user->email]));
     }
 
     /**
