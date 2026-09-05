@@ -54,7 +54,7 @@
                             </div>
                             <div class="small text-muted mt-1">
                                 Llevas @money($summary['total_paid']) pagados
-                                ({{ str_replace('.', ',', (string) $summary['progress_percent']) }} %)
+                                (@percent($summary['progress_percent']))
                             </div>
                         @endif
                     </div></div>
@@ -106,7 +106,7 @@
                                 {{ $debt->type->label() }}
                                 @if ($debt->institution) · {{ $debt->institution }} @endif
                                 @if ($debt->interest_rate !== null)
-                                    · {{ str_replace('.', ',', rtrim(rtrim(number_format((float) $debt->interest_rate, 3, '.', ''), '0'), '.')) }} % anual
+                                    · @percent($debt->interest_rate, 3) anual
                                 @endif
                                 @if ($debt->due_day) · paga el día {{ $debt->due_day }} @endif
                             </div>

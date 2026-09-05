@@ -61,7 +61,9 @@ class AppServiceProvider extends ServiceProvider
             $model::observe(ReminderSummaryCacheObserver::class);
         }
 
-        // Directiva @percent($valor): "80 %", "332,4 %" (coma decimal, Épica 4).
+        // Directiva @percent($valor[, $decimales]): "80 %", "332,4 %" (coma
+        // decimal, Épica 4). Con decimales explícitos sirve también para tasas
+        // de interés — "12,75 %" — recortando los ceros finales.
         Blade::directive('percent', function (string $expression): string {
             return "<?php echo percent($expression); ?>";
         });

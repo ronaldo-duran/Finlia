@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\ReportPeriod;
+use App\Models\SavingsGoal;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -42,10 +43,17 @@ class ReportService
      * Deuda y ahorro son punto en el tiempo: no dependen del período, pero
      * la épica los quiere en el mismo resumen.
      *
+     * @param  Collection<int, SavingsGoal>|null  $savingsGoals  metas vigentes
+     *                                                           ya cargadas por el llamador, para no repetir la consulta (Reportes
+     *                                                           ya las lista aparte).
      * @return array<string, mixed>
      */
-    public function overview(int $householdId, ReportPeriod $period, ?CarbonInterface $reference = null): array
-    {
+    public function overview(
+        int $householdId,
+        ReportPeriod $period,
+        ?CarbonInterface $reference = null,
+        ?Collection $savingsGoals = null,
+    ): array {
         $window = $period->resolve($reference ?? Carbon::now(config('app.timezone')));
 
         $current = $this->movements->rangeTotals($householdId, $window['from'], $window['to']);
@@ -67,7 +75,7 @@ class ReportService
                 'balance' => $this->delta($current['balance'], $previous['balance']),
             ],
             'debt' => $this->debts->summary($householdId),
-            'savings' => $this->savingsGoals->summary($householdId),
+            'savings' => $this->savingsGoals->summary($householdId, $savingsGoals),
         ];
     }
 
@@ -84,14 +92,24 @@ class ReportService
         $cursor = Carbon::parse($from)->startOfMonth();
         $end = Carbon::parse($to);
 
+        // Mes completo aunque `$to` caiga a mitad, para conservar el
+        // comportamiento del bucle anterior (que pedía totales por mes natural).
+        $totals = $this->movements->monthlyTotals(
+            $householdId,
+            $cursor->copy(),
+            $end->copy()->endOfMonth(),
+        );
+
         while ($cursor->lte($end) && count($series) < 12) {
-            $totals = $this->movements->monthTotals($householdId, $cursor->year, $cursor->month);
+            $key = $cursor->format('Y-m');
+            $incomes = $totals[$key]['incomes'] ?? 0.0;
+            $expenses = $totals[$key]['expenses'] ?? 0.0;
 
             $series[] = [
                 'label' => $cursor->locale('es')->isoFormat('MMM YY'),
-                'incomes' => $totals['incomes'],
-                'expenses' => $totals['expenses'],
-                'balance' => round($totals['incomes'] - $totals['expenses'], 2),
+                'incomes' => $incomes,
+                'expenses' => $expenses,
+                'balance' => round($incomes - $expenses, 2),
             ];
 
             $cursor->addMonthNoOverflow();

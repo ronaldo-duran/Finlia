@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['household_id', 'user_id', 'account_id', 'category_id', 'amount', 'date', 'description', 'notes', 'payment_method'])]
+#[Fillable(['user_id', 'account_id', 'category_id', 'amount', 'date', 'description', 'notes', 'payment_method'])]
 class Expense extends Model
 {
     /** @use HasFactory<ExpenseFactory> */

@@ -55,12 +55,10 @@ class DashboardController extends Controller
         $totalBalance = (float) $household->accounts()->sum('current_balance');
 
         // Datos serializables para Chart.js (se inyectan como JSON en la vista).
+        $savingsGoals = $this->savingsGoals->outstandingGoals($householdId);
+
         $chartData = [
-            'expensesByCategory' => [
-                'labels' => $byCategory->pluck('name')->all(),
-                'amounts' => $byCategory->pluck('total')->all(),
-                'colors' => $byCategory->map(fn ($c) => $c['color'] ?? '#0b3f44')->all(),
-            ],
+            'expensesByCategory' => MovementSummaryService::categoryChartData($byCategory),
             'trend' => [
                 'labels' => array_column($trend, 'label'),
                 'incomes' => array_column($trend, 'incomes'),
@@ -77,10 +75,12 @@ class DashboardController extends Controller
             // Épica 5: avisos de obligaciones vencidas o próximas a vencer.
             'recurringAlerts' => $this->recurring->alerts($householdId),
             // Épica 7: progreso de las metas de ahorro vigentes.
-            'savingsGoals' => $this->savingsGoals->outstandingGoals($householdId),
+            'savingsGoals' => $savingsGoals,
             // Épica 8: deuda total y ahorro acumulado completan el resumen.
             'debtSummary' => $this->debts->summary($householdId),
-            'savingsSummary' => $this->savingsGoals->summary($householdId),
+            // Reutiliza las metas ya cargadas: antes eran tres consultas a
+            // `savings_goals` (listado + resumen + compromiso mensual).
+            'savingsSummary' => $this->savingsGoals->summary($householdId, $savingsGoals),
             // Épica 9: campanita del panel (null si el hogar los desactivó).
             'reminderSummary' => $household->reminders_enabled
                 ? $this->reminders->cachedSummary($householdId)

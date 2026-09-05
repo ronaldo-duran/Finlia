@@ -51,7 +51,7 @@
             <div class="progress-bar bg-success" style="width: {{ $goal->progressPercent() }}%"></div>
         </div>
         <div class="small text-muted mt-1">
-            {{ str_replace('.', ',', (string) $goal->progressPercent()) }} % de la meta
+            @percent($goal->progressPercent()) de la meta
         </div>
     </div></div>
 

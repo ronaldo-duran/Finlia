@@ -380,8 +380,13 @@ class DebtService
 
         $committed = 0.0;
 
+        // `with('payments')`: sin esto `hasPaymentForMonth` lanzaba un
+        // `exists()` por deuda y vencimiento (N queries diminutas en cada
+        // carga de Panel/presupuestos/reportes). Mismo patrón que
+        // `balanceEvolution`.
         Debt::where('household_id', $householdId)
             ->outstanding()
+            ->with('payments')
             ->get()
             ->each(function (Debt $debt) use (&$committed, $from, $to): void {
                 $installment = $debt->monthlyCommitment();
@@ -518,11 +523,17 @@ class DebtService
     /**
      * ¿Ya hay un pago registrado para el mes de esta fecha de vencimiento?
      */
+    /**
+     * Requiere `payments` ya cargada (ver `committedInRange`): resuelve
+     * sobre la colección en memoria, sin tocar la base de datos.
+     */
     private function hasPaymentForMonth(Debt $debt, Carbon $dueDate): bool
     {
-        return $debt->payments()
-            ->whereDate('date', '>=', $dueDate->copy()->startOfMonth()->toDateString())
-            ->whereDate('date', '<=', $dueDate->copy()->endOfMonth()->toDateString())
-            ->exists();
+        $start = $dueDate->copy()->startOfMonth();
+        $end = $dueDate->copy()->endOfMonth();
+
+        return $debt->payments->contains(
+            fn (DebtPayment $payment): bool => $payment->date->betweenIncluded($start, $end)
+        );
     }
 }
