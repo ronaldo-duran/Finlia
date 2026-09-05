@@ -203,6 +203,7 @@
 
     @auth
         @include('layouts.partials.mobile-bottom-nav')
+        @include('layouts.partials.fab')
     @endauth
 
     {{-- ======= Modal de confirmación genérico =======

@@ -568,14 +568,27 @@ a { color: var(--finlia-primary); }
    presupuesto. Puramente visual/UX, sin lógica de negocio nueva.
    ============================================================= */
 
-/* Deja sitio para la barra inferior flotante en móvil. */
+/* Reserva bajo el contenido para que nada quede atrapado debajo de la barra
+   ni del FAB. Sin esto, en una página corta (sin scroll) los botones de acción
+   del final quedan tapados por el FAB y son literalmente inalcanzables. */
+/* `!important` es obligatorio: main lleva las utilidades `p-3 p-md-4` de
+   Bootstrap, que ya son `!important` y si no ganarían siempre. */
 @media (max-width: 991.98px) {
+    /* barra (76) + hueco (12) + FAB (58) + respiro (14) */
     body.has-bottom-nav main {
-        padding-bottom: calc(92px + var(--finlia-safe-bottom));
+        padding-bottom: calc(160px + var(--finlia-safe-bottom)) !important;
     }
 }
 
-/* Barra de navegación inferior (solo móvil). */
+@media (min-width: 992px) {
+    /* Sin barra inferior: solo hay que despejar el FAB. */
+    body.has-bottom-nav main {
+        padding-bottom: 104px !important;
+    }
+}
+
+/* Barra de navegación inferior (solo móvil). Cuatro destinos = cuatro
+   columnas: el FAB ya no ocupa la celda central. */
 .bottom-nav {
     position: fixed;
     left: 0;
@@ -589,7 +602,7 @@ a { color: var(--finlia-primary); }
     backdrop-filter: blur(20px) saturate(150%);
     border-top: 1px solid var(--finlia-glass-border);
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
 }
 
 .bottom-nav-item {
@@ -708,19 +721,46 @@ a { color: var(--finlia-primary); }
 /* =============================================================
    FAB flotante — botón de acción principal fijo bottom-right
    (estilo Twitter/X). Abre un speed-dial con 5 acciones rápidas.
-   Solo visible en móvil (d-lg-none en el partial).
+   Visible en todos los tamaños; en escritorio no hay barra inferior
+   bajo la que apoyarse, así que baja hasta la esquina.
    ============================================================= */
 
-/* Contenedor: fijo bottom-right, apilado sobre la bottom-nav. */
+/* Contenedor: fijo bottom-right, apoyado sobre la bottom-nav en móvil. */
 .fab-container {
     position: fixed;
     right: 20px;
-    bottom: calc(76px + var(--finlia-safe-bottom) + 16px);
+    bottom: calc(76px + var(--finlia-safe-bottom) + 12px);
     z-index: 1041;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 10px;
+}
+
+@media (min-width: 992px) {
+    .fab-container {
+        right: 24px;
+        bottom: 24px;
+    }
+}
+
+/* Al bajar, el FAB se aparta; al subir vuelve. Es lo que evita que se quede
+   tapando un botón de la página: basta un gesto mínimo para descubrirlo.
+   La reserva de `padding-bottom` cubre el otro caso (contenido al final). */
+.fab-container {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.fab-container.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(120px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fab-container {
+        transition: none;
+    }
 }
 
 /* Botón principal "+". */

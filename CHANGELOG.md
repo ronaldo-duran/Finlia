@@ -42,6 +42,14 @@ reciente de este archivo.
 
 ### Modificado (UX)
 - **Duración de los toasts proporcional al texto**: 60 ms por carácter, acotado entre 4 y 7 segundos, en lugar de 4,5 s fijos. Un aviso corto deja de estorbar antes y uno largo da tiempo a leerse.
+- **Barra inferior sin hueco**: seguía en `grid-template-columns: repeat(5, 1fr)` con solo cuatro destinos desde que el FAB salió de la barra, dejando una quinta columna vacía a la derecha. Ahora `repeat(4, 1fr)`.
+- **FAB disponible también en escritorio**: antes llevaba `d-lg-none` y no existía por encima de `lg`. Se extrae a `layouts/partials/fab.blade.php` (la barra inferior vuelve a ser solo la barra) y se muestra en todos los tamaños; en escritorio se ancla a `bottom/right: 24px`, sin barra inferior bajo la que apoyarse.
+
+### Corregido (solapamiento del FAB)
+El FAB tapaba botones de la página (los «Cancelar» de los formularios, el «Ingreso» del panel). Se ataca por tres vías complementarias:
+- **La reserva de espacio bajo el contenido nunca se aplicó**: la regla `body.has-bottom-nav main { padding-bottom: … }` competía contra las utilidades `p-3 p-md-4` de Bootstrap, que son `!important` y ganaban siempre — el `padding-bottom` real era de 16 px, no de los 92 px previstos. Añadido `!important`; ahora reserva 160 px en móvil (barra + FAB + respiro) y 104 px en escritorio. Esto es lo que evita que en una página corta, sin scroll, los botones del final queden bajo el FAB y sean inalcanzables.
+- **Auto-ocultado al hacer scroll**: el FAB se aparta al bajar y vuelve al subir (patrón Material). Si llega a tapar algo, un gesto mínimo lo descubre. Con el menú abierto no se mueve, y respeta `prefers-reduced-motion`.
+- **Oculto en pantallas de formulario** (`*.create` / `*.edit`): ahí es redundante — ya estás registrando algo — y era justo donde chocaba con Guardar/Cancelar.
 
 ## [0.21.0] - 2026-09-05 — UX mobile y PWA (Épica 10)
 
