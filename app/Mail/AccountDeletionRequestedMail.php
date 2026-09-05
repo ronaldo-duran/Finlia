@@ -16,8 +16,11 @@ use Illuminate\Mail\Mailables\Envelope;
 class AccountDeletionRequestedMail extends Mailable
 {
     public readonly string $userName;
+
     public readonly string $deadline;
+
     public readonly string $reactivateUrl;
+
     public readonly string $appName;
 
     public function __construct(User $user)

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AcknowledgementKey;
 use App\Mail\VerifyEmailMail;
+use Carbon\Carbon;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -53,7 +54,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Fecha límite de purga (30 días desde la solicitud), o null si activa.
      */
-    public function deletionDeadline(): ?\Carbon\Carbon
+    public function deletionDeadline(): ?Carbon
     {
         return $this->deletion_requested_at?->copy()->addDays(30);
     }

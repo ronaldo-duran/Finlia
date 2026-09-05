@@ -16,7 +16,9 @@ use Illuminate\Mail\Mailables\Envelope;
 class OwnershipTransferredMail extends Mailable
 {
     public readonly string $newOwnerName;
+
     public readonly string $householdName;
+
     public readonly string $appName;
 
     public function __construct(User $newOwner, Household $household)

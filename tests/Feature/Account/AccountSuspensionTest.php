@@ -189,7 +189,7 @@ class AccountSuspensionTest extends TestCase
 
         app(AccountDeletionService::class)->purge($owner);
 
-        $this->assertNull(\App\Models\Household::withTrashed()->find($household->id));
+        $this->assertNull(Household::withTrashed()->find($household->id));
     }
 
     public function test_purga_transfiere_ownership_al_miembro_mas_antiguo(): void
@@ -209,7 +209,7 @@ class AccountSuspensionTest extends TestCase
 
         $this->assertEquals($member->id, $household->fresh()->owner_id);
         // El hogar persiste.
-        $this->assertNotNull(\App\Models\Household::find($household->id));
+        $this->assertNotNull(Household::find($household->id));
     }
 
     public function test_purgar_cuenta_no_verificada(): void

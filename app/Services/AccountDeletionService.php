@@ -44,7 +44,7 @@ class AccountDeletionService
             $user->ownedHouseholds()
                 ->with('invitations')
                 ->get()
-                ->each(function (Household $household) use ($user): void {
+                ->each(function (Household $household): void {
                     $household->invitations()
                         ->where('status', InvitationStatus::Pending->value)
                         ->update(['status' => InvitationStatus::Revoked->value]);
@@ -127,7 +127,7 @@ class AccountDeletionService
 
             $user->forceFill([
                 'name' => 'Usuario eliminado',
-                'email' => 'deleted+' . $user->id . '@finlia.invalid',
+                'email' => 'deleted+'.$user->id.'@finlia.invalid',
                 'password' => bcrypt(str()->random(64)),
                 'birth_date' => null,
                 'region' => null,

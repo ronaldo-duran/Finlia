@@ -28,7 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Bloqueo de cuentas en suspensión (Plan 05, ADR-0033). Se aplica al
         // mismo grupo para que los rutas de suspensión/reactivación queden fuera.
         $middleware->alias([
-            'terms.current'  => EnsureTermsAccepted::class,
+            'terms.current' => EnsureTermsAccepted::class,
             'account.active' => EnsureAccountActive::class,
         ]);
     })
