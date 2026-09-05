@@ -26,7 +26,7 @@
     >
         @foreach ($toasts as $toast)
             <div
-                class="toast align-items-center border-0 text-bg-{{ $toast['type'] }} shadow"
+                class="toast show align-items-center border-0 text-bg-{{ $toast['type'] }} shadow"
                 role="alert"
                 aria-atomic="true"
                 data-bs-autohide="true"
