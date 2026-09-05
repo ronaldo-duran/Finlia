@@ -16,7 +16,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 8 | Dashboard y reportes financieros | 🟢 | 3, 4, 5, 6, 7 |
 | 9 | Recordatorios y notificaciones | 🟢 | 5, 6, 7 |
 | 10 | UX mobile y PWA | 🟢 | 3 (y resto) |
-| 11 | Hardening, tests y producción | 🔴 | Todas |
+| 11 | Hardening, tests y producción | 🟡 | Todas |
 | 12 | Monetización y modelo SaaS | 🔴 | 2, 11 |
 | 13 | Portafolio profesional | 🔴 | 11 |
 | 14 | API REST para app móvil (futura) | 🔴 | 3, 11 |
@@ -72,8 +72,12 @@ Navbar/botones/forms/tablas/gráficos optimizados móvil. Botón flotante "+" (g
 
 > 🔔 Aquí llega el **push de recordatorios**: Web Push nativo con VAPID (W3C, sin proveedor ni cuota — gratis de verdad, ver [ADR-0028](DECISIONS.md#adr-0028) §7). Requiere el Service Worker del PWA y HTTPS (Hostinger lo trae). Consumirá `ReminderService::list()/summary()` tal cual, sin reescribir lógica.
 
-### Épica 11 — Hardening, tests y producción
+### Épica 11 — Hardening, tests y producción 🟡
 Auditoría de seguridad completa, privacy, DB (índices, FK, DECIMAL), tests de funciones críticas, performance (N+1, paginación), producción (.env, cache, cron). README completo de instalación.
+
+> **Cerrado en la primera pasada (v0.23.0):** los 9 puntos de deuda de performance de abajo; auditoría de seguridad con dos hallazgos corregidos (el formulario de alta de hogar no llevaba `@csrf` — 419 en el navegador, invisible para la suite porque Laravel desactiva CSRF en tests; y el envío de invitaciones no tenía throttle siendo la única acción autenticada que despacha correo a una dirección arbitraria); tres barridos nuevos que fijan invariantes (`PerformanceTest`, `HouseholdIsolationSweepTest`, `CsrfTokenSweepTest`), los tres verificados introduciendo el fallo a propósito; README con seeders, cron y troubleshooting, e instalación desde cero comprobada en un clon limpio.
+>
+> **Pendiente:** sustituir `.env.example` (hoy es el de stock de Laravel: locale en inglés, sin `APP_TIMEZONE`, con Redis/AWS/Memcached que el proyecto no usa y sin las variables `FINLIA_*`). El sandbox del agente bloquea escribir rutas `.env*`, así que queda para aplicar a mano.
 
 > **Deuda de performance/patrón detectada en la revisión de la Épica 8** (2026-08-29, rama `epica-8-dashboard-reportes`; las líneas son de ese momento). Ningún punto nota el usuario hoy — son de patrón, no de latencia — pero conviene cerrarlos aquí:
 >

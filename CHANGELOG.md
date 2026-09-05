@@ -12,6 +12,49 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.23.0] - 2026-09-05 — Hardening: performance, auditoría de seguridad y producción (Épica 11, 1.ª pasada)
+
+### Corregido (seguridad)
+- **El formulario «Crear hogar» no llevaba token CSRF.** El parcial compartido `households/_form` no lo incluye y `create.blade.php` no lo añadía, aunque `edit.blade.php` sí. En el navegador daba **419 Page Expired**: funcionalidad rota además de control de seguridad ausente. Ningún test podía detectarlo porque Laravel desactiva la verificación CSRF durante la suite. *(Al comprobarlo a mano hay una trampa: casi toda página autenticada incluye el formulario de cerrar sesión, que sí lleva token, así que buscar `name="_token"` en el HTML completo da un falso positivo.)*
+- **`POST hogares/{household}/invitaciones` sin rate limiting**, siendo la única acción autenticada que despacha correo a una dirección arbitraria. Sin tope, una cuenta puede quemar la cuota del proveedor y arrastrar la reputación del dominio. Ahora `throttle:10,1`, como el resto del flujo de invitación.
+
+### Rendimiento
+Cerrados los 9 puntos de deuda registrados en el roadmap. Medido en aislamiento (una petición por test, sin cachés calientes de peticiones previas):
+
+| Pantalla | Antes | Después |
+|---|---|---|
+| `/dashboard` | 50 consultas | 34 |
+| `/reportes` | 28 | 22 |
+| `/cuentas/{id}` | 22 | 13 |
+| `monthlyTrend(6 meses)` | 12 | 2 |
+
+- `AccountController::show`: eager loading de `category` (la vista recorre 20 movimientos leyendo `category?->name`).
+- `MovementSummaryService::monthlyTotals()`: totales por mes en 2 consultas con `GROUP BY` en vez de 2 por cada mes; el coste deja de crecer con el rango. La expresión de mes depende del motor **a propósito**: MySQL no tiene `strftime` ni SQLite `DATE_FORMAT` (el roadmap daba por válida `strftime` para ambos, lo cual habría roto en producción).
+- Memoización por hogar+rango: `overview()` e `insights()` pedían los mismos totales, y `expensesByCategory` corría dos veces para el mismo rango.
+- `DebtService::committedInRange`: `with('payments')` y comprobación en memoria en vez de un `exists()` por deuda y vencimiento.
+- `summary()` y `committedMonthly()` aceptan las metas ya cargadas; Panel y Reportes las pasan.
+- `SavingsGoalService::recalculateAmount`: `SUM` en SQL en vez de materializar cada aporte.
+- `MovementSummaryService::categoryChartData()`: la torta de categorías estaba duplicada entre `DashboardController` y `ReportController`, con su color de reserva.
+- `@percent` en las 10 vistas que repetían `str_replace('.', ',', …)`. El helper ahora recorta ceros finales, lo que cubre también las tasas de interés.
+- `household_id` fuera de `#[Fillable]` en `Income` y `Expense`, como ya estaba en el resto de modelos del hogar.
+
+### Añadido (tests)
+Tres barridos que fijan invariantes, **los tres verificados introduciendo el fallo a propósito** para comprobar que fallan cuando deben:
+- `HouseholdIsolationSweepTest`: recorre las 53 rutas con parámetro de modelo contra un usuario de otro hogar. Las lecturas deben dar 403/404; en las escrituras un 302 es la validación del Form Request y no un bypass (comprobado: con cuerpo válido responde 403 y la fila no cambia), así que se exige la propiedad real — ninguna fila ajena se altera ni desaparece. Cubre el hueco que los tests por recurso no pueden cerrar: que una ruta nueva se quede sin autorizar.
+- `CsrfTokenSweepTest`: recorre 19 páginas y exige token en cada formulario POST.
+- `PerformanceTest`: fija un techo de consultas por pantalla, por debajo de la cifra anterior.
+- `FormatHelpersTest`: cubre `money`/`percent`, incluida la equivalencia con el formateo manual que sustituye.
+
+### Documentación
+- README: secciones de **seeders**, **cron** (la tabla lista las 4 tareas reales del Scheduler, verificadas con `schedule:list`) y **troubleshooting**. Instalación desde cero comprobada en un clon limpio: `composer install`, `migrate --seed` y el usuario demo `demo@finlia.test` / `finlia123` documentado en el README existe y su contraseña funciona.
+
+### Sin hallazgos
+Mass assignment (`$fillable` en todos los modelos, ningún `$guarded = []`), SQLi (sin interpolación en `*Raw`), XSS (los dos `{!! !!}` son `json_encode` con `JSON_HEX_TAG` dentro de `<script type="application/json">`), dinero (`DECIMAL` en todas las migraciones), datos de tarjeta (no existen las columnas), `.env` fuera de git y throttle en el resto de rutas sensibles.
+
+### Pendiente de la épica
+- **`.env.example` sigue siendo el de stock de Laravel**: locale en inglés, sin `APP_TIMEZONE`, con Redis/AWS/Memcached que el proyecto no usa y sin las variables `FINLIA_*`. El sandbox del agente bloquea escribir rutas `.env*`, así que queda para aplicar a mano.
+- Revisión de cobertura de tests por módulo y auditoría de índices/constraints (el roadmap ya los daba por verificados en la Épica 8).
+
 ## [0.22.0] - 2026-09-05 — Mejoras de UX: modales, toasts, FAB y exportación asíncrona
 
 ### Añadido

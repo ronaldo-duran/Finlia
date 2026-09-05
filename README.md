@@ -79,6 +79,21 @@ Abre `http://localhost:8000`.
 > 🔑 **Usuario de demostración** (creado por el seeder con datos falsos):
 > correo `demo@finlia.test` · contraseña `finlia123`.
 
+### Seeders
+
+`--seed` ejecuta `DatabaseSeeder`, que deja la app usable de inmediato:
+
+| Seeder | Qué crea |
+|---|---|
+| `CategorySeeder` | Categorías por defecto de ingreso y gasto del hogar |
+| `TermsVersionSeeder` | Versión vigente de los términos (sin ella el login rebota a aceptarlos) |
+| `DatabaseSeeder` | Usuario demo, su hogar y movimientos, deudas y metas de ejemplo |
+
+Todos los datos son **falsos**, generados con Faker (`es_CO`). El repositorio
+nunca contiene datos financieros reales de nadie.
+
+Para rehacer la base desde cero: `php artisan migrate:fresh --seed`.
+
 ## 🧪 Tests
 
 ```bash
@@ -107,7 +122,49 @@ Chromium, sube el reporte como artefacto si falla).
 
 ## 📦 Despliegue
 
-El despliegue se hace en **Hostinger** (hosting compartido). Instrucciones paso a paso, cron y optimizaciones en [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+El despliegue se hace en **Hostinger** (hosting compartido). Instrucciones paso a paso y optimizaciones en [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Resumen de un despliegue posterior:
+
+```bash
+git pull origin main
+composer install --no-dev --optimize-autoloader
+php artisan migrate --force
+npm ci && npm run build          # genera public/build (no está en git)
+php artisan config:cache route:cache view:cache
+```
+
+El *document root* del dominio debe apuntar a `public/`, para que `.env`, `storage/` y `app/` queden fuera de la web.
+
+### ⏱️ Cron
+
+Hosting compartido no admite procesos permanentes: **todo lo periódico entra por el Scheduler**, con una sola entrada de cron (Hostinger → *Advanced → Cron Jobs*):
+
+```cron
+* * * * * cd /home/uXXXX/domains/tudominio/finlia && /usr/local/bin/php artisan schedule:run >> /dev/null 2>&1
+```
+
+Esa única línea dispara todas las tareas programadas (`routes/console.php`):
+
+| Tarea | Cuándo | Para qué |
+|---|---|---|
+| `finlia:process-export-requests` | 02:00 | Genera el ZIP de datos del hogar y lo envía por correo (hora valle) |
+| `finlia:purge-pending-deletions` | 05:30 | Borra definitivamente las cuentas cuyo plazo de 30 días venció |
+| `finlia:generate-recurring-payments` | 06:00 | Materializa los gastos recurrentes que tocan hoy |
+| `finlia:send-reminder-digests` | 06:30 | Resumen diario de obligaciones por correo |
+
+Comprueba que está bien con `php artisan schedule:list`.
+
+## 🛠️ Troubleshooting
+
+| Síntoma | Causa habitual | Solución |
+|---|---|---|
+| `419 Page Expired` al enviar un formulario | Falta `@csrf`, o la sesión caducó | Añade `@csrf` al formulario. `CsrfTokenSweepTest` detecta el caso — la suite no lo pilla sola porque Laravel desactiva CSRF en tests |
+| `500` tras desplegar, con la web en blanco | Caché de config apuntando a valores viejos | `php artisan config:clear` y vuelve a cachear |
+| Los estilos no cargan en producción | Falta `public/build` (está en `.gitignore`) | `npm ci && npm run build` y sube la carpeta |
+| `SQLSTATE[HY000] [1045]` al migrar | Credenciales de BD incorrectas en `.env` | Revisa `DB_USERNAME` / `DB_PASSWORD` |
+| El login rebota siempre a «aceptar términos» | Falta la versión vigente de términos | `php artisan db:seed --class=TermsVersionSeeder` |
+| Las invitaciones no llegan por correo | `MAIL_MAILER=log` (no entrega a bandejas) | Configura SMTP; mientras tanto la app ofrece el enlace manual |
+| Las tareas programadas no corren | El cron de `schedule:run` no está puesto | Añade la línea de la sección anterior |
+| `Permission denied` en `storage/` | Permisos tras subir por FTP | `chmod -R 775 storage bootstrap/cache` |
 
 ## 🔒 Seguridad
 
