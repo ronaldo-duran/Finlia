@@ -12,6 +12,42 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.19.0] - 2026-09-04 — Eliminación de cuenta: suspensión 30 días y purga (Plan 05)
+
+### Añadido
+- **Columna `users.deletion_requested_at`**: timestamp nullable. `null` = cuenta activa;
+  timestamp = suspendida. Migración `2026_09_04_000200_add_deletion_requested_at_to_users_table`.
+- **`User::isSuspended()` / `User::deletionDeadline()`**: helpers limpios sin lógica de fechas
+  en controladores ([ADR-0033](docs/DECISIONS.md#adr-0033)).
+- **`AccountDeletionService`**: tres reglas de purga (cascade para dueño único, transferencia
+  al miembro más antiguo con notificación por correo, anonimización para el resto). Separado
+  de HTTP: recibe el `User`, devuelve resultado — listo para el futuro endpoint de API.
+- **`EnsureAccountActive` middleware** alias `account.active`: bloquea el acceso al nivel-3 de
+  rutas si la cuenta está suspendida y redirige a `/cuenta/suspendida`.
+- **`AccountSuspensionController`**: muestra la pantalla de suspensión con fecha límite y
+  ofrece reactivación en un clic (limpia `deletion_requested_at`, redirige al dashboard).
+- **Zona de peligro en `/perfil`**: sección colapsable con confirmación de contraseña
+  (`DeleteAccountRequest`) → marca suspensión, cierra todas las sesiones y redirige al login.
+- **`AccountDeletionRequestedMail`** + vista HTML/texto: correo antifraude con fecha límite y
+  enlace de reactivación, enviado fuera de la transacción (un SMTP caído no revierte la
+  suspensión).
+- **`OwnershipTransferredMail`** + vista HTML/texto: avisa al nuevo propietario del hogar.
+- **`PurgePendingDeletions` command** (`finlia:purge-pending-deletions`): purga diaria de
+  cuentas con ventana expirada (>30 días) y cuentas fantasma sin verificar (>14 días).
+  Programado a las 05:30 (antes de recurrentes y digest).
+- **`SendReminderDigests` actualizado**: excluye miembros con `deletion_requested_at` no nulo.
+- **15 tests** cubren: bloqueo de navegación, reactivación, solicitud con contraseña errónea,
+  correo antifraude, tres reglas de purga, purga de fantasmas y exclusión del digest.
+
+### Notas
+- La reactivación es deliberadamente fácil: iniciar sesión + un botón (no hace falta un
+  "código de arrepentimiento"). El correo antifraude cumple la doble función de aviso y
+  enlace de regreso.
+- `deletion_requested_at` no está en `$fillable` (campo interno, no expuesto en forms de
+  usuario); el servicio usa asignación directa (`$user->deletion_requested_at = …; save()`).
+- `purge()` usa `forceFill` para sobrescribir en un solo paso y captura el email original
+  antes de anonimizarlo (limpia `password_reset_tokens` con la dirección real).
+
 ## [0.18.0] - 2026-08-30 — Datos personales: nacimiento, región y género (Plan 04)
 
 ### Añadido

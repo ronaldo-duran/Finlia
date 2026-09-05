@@ -35,3 +35,11 @@ Schedule::command('finlia:send-reminder-digests')
     ->name('recordatorios-digest')
     ->withoutOverlapping()
     ->dailyAt('06:30');
+
+// Plan 05 (ADR-0033): purga cuentas suspendidas con ventana expirada (> 30 días)
+// y cuentas fantasma sin verificar (> 14 días). Antes que los recurrentes para
+// que un usuario purgado no genere pagos de la mañana.
+Schedule::command('finlia:purge-pending-deletions')
+    ->name('purga-cuentas')
+    ->withoutOverlapping()
+    ->dailyAt('05:30');

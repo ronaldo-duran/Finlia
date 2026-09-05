@@ -63,6 +63,7 @@ class SendReminderDigests extends Command
             ->with(['members' => function ($query) use ($today) {
                 $query->wherePivot('reminders_email', true)
                     ->whereNotNull('users.email_verified_at')
+                    ->whereNull('users.deletion_requested_at') // excluir cuentas suspendidas (Plan 05)
                     ->where(function ($query) use ($today) {
                         $query->whereNull('household_user.last_reminder_digest_at')
                             ->orWhereDate('household_user.last_reminder_digest_at', '<', $today->toDateString());
