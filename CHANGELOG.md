@@ -12,6 +12,37 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.20.0] - 2026-09-05 — Política de datos y exportación ZIP (Plan 06)
+
+### Añadido
+- **`DataExportService`**: genera un ZIP con 12 CSVs (cuentas, ingresos, gastos, presupuestos,
+  gastos recurrentes, deudas, pagos de deuda, refinanciaciones, metas de ahorro, aportes,
+  recordatorios, perfil del usuario) + `finlia.json` (todos los datos en JSON para migración)
+  + `README.txt` explicativo del formato. Reglas de privacidad: nunca exporta la contraseña
+  ni datos personales de otros miembros del hogar. `collect()` separado de `buildZip()` para
+  testabilidad sin disco.
+- **CSV con BOM UTF-8 y separador `;`**: abre directamente en Excel Colombia sin configuración.
+  Montos con coma decimal (ej. `1500000,00`). Fechas en DD/MM/AAAA.
+- **Ruta `GET /perfil/exportar` → `profile.export`** con throttle de 3 descargas por día
+  (`throttle:3,1440`). Responde ZIP descargable; 404 si el usuario no tiene hogar activo.
+- **Página pública `GET /datos` → `data.policy`** (`DataPolicyController`): accesible sin
+  cuenta. Explica qué datos guarda Finlia, portabilidad, eliminación de cuenta, política de
+  retiro del software y cómo migrar a otra herramienta.
+- **"Mis datos" en `/perfil`**: tarjeta con descripción y botón "Exportar mis datos" (enlaza
+  a `profile.export`). Máximo 3 descargas al día.
+- **Footer actualizado** en `app.blade.php` y `guest.blade.php`: incluye enlace "Tus datos"
+  junto a "Términos".
+- **18 tests** cubren: redirect de invitado, ZIP descargable, nombre con ID + fecha, 404 sin
+  hogar, throttle 3/día, perfil sin contraseña, gastos con montos, deudas, metas, JSON
+  maestro sin contraseña, BOM UTF-8, separador `;`, aislamiento entre hogares, privacidad
+  de otros miembros, y página `/datos` accesible y con secciones de portabilidad/eliminación.
+
+### Notas
+- `DataExportService` no depende de HTTP (ADR-0010): recibe `Household` + `User` explícitos,
+  no usa `request()` ni `Auth::`. Listo para futura API REST (Épica 14).
+- Los campos enum se serializan con `->value` (no como objeto PHP) para compatibilidad CSV/JSON.
+- ADR-0034 registrado en `docs/DECISIONS.md`.
+
 ## [0.19.0] - 2026-09-04 — Eliminación de cuenta: suspensión 30 días y purga (Plan 05)
 
 ### Añadido

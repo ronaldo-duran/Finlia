@@ -10,12 +10,14 @@ use App\Http\Requests\Profile\UpdatePasswordRequest;
 use App\Http\Requests\Profile\UpdateProfileRequest;
 use App\Models\User;
 use App\Services\AccountDeletionService;
+use App\Services\DataExportService;
 use App\Services\ProfileService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Perfil del usuario autenticado (Plan 02, ADR-0030): nombre, contraseña
@@ -28,6 +30,7 @@ class ProfileController extends Controller
     public function __construct(
         private readonly ProfileService $service,
         private readonly AccountDeletionService $deletionService,
+        private readonly DataExportService $exportService,
     ) {}
 
     /**
@@ -110,6 +113,30 @@ class ProfileController extends Controller
 
         return redirect()->route('login')
             ->with('status', __('Tu cuenta se suspendió. Tienes 30 días para reactivarla iniciando sesión.'));
+    }
+
+    /**
+     * Exporta todos los datos del hogar activo en un ZIP (Plan 06, ADR-0034).
+     * Acotado al hogar activo; nunca datos de otro hogar ni de otros miembros.
+     */
+    public function export(Request $request): BinaryFileResponse
+    {
+        $user = $request->user();
+        $this->authorize('update', $user);
+
+        $household = active_household();
+
+        abort_if($household === null, 404, __('No tienes un hogar activo para exportar.'));
+
+        $zipPath = $this->exportService->buildZip($household, $user);
+
+        $filename = 'finlia-'.$household->id.'-'.now()->format('Ymd').'.zip';
+
+        $response = response()->download($zipPath, $filename, [
+            'Content-Type' => 'application/zip',
+        ])->deleteFileAfterSend();
+
+        return $response;
     }
 
     /**

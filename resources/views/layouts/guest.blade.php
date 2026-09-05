@@ -51,7 +51,8 @@
     <footer class="app-footer py-3 text-center small">
         Finlia · Finanzas familiares &middot;
         <span class="text-finlia fw-semibold">COP</span> &middot;
-        <a href="{{ route('terms.show') }}" class="text-decoration-none">Términos y condiciones</a>
+        <a href="{{ route('terms.show') }}" class="text-decoration-none">Términos y condiciones</a> &middot;
+        <a href="{{ route('data.policy') }}" class="text-decoration-none">Tus datos</a>
     </footer>
 
     @stack('scripts')

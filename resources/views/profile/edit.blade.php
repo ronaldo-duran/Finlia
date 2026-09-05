@@ -213,6 +213,25 @@
                 </div>
             </div>
 
+            {{-- ===================== Portabilidad — exportar datos ===================== --}}
+            <div class="card border-0">
+                <div class="card-header border-0 bg-transparent fw-semibold">
+                    <i class="bi bi-download me-1"></i> Mis datos
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        Descarga un ZIP con todos los datos de tu hogar activo: cuentas, movimientos,
+                        deudas, metas, presupuestos y más — en CSV (Excel) y JSON.
+                        Solo incluye tus datos personales, nunca los de otros miembros.
+                        <a href="{{ route('data.policy') }}" class="text-decoration-none">Más información</a>.
+                    </p>
+                    <a href="{{ route('profile.export') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-file-zip me-1"></i> Exportar mis datos
+                    </a>
+                    <div class="form-text mt-2">Máximo 3 descargas por día.</div>
+                </div>
+            </div>
+
             {{-- ===================== Zona de peligro — eliminar cuenta ===================== --}}
             <div class="card border-0 border-danger-subtle">
                 <div class="card-header border-0 bg-transparent fw-semibold text-danger-emphasis">

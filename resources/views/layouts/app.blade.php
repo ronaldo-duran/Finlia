@@ -180,6 +180,7 @@
             Finlia · Finanzas familiares &middot;
             <span class="text-finlia fw-semibold">COP</span> &middot;
             <a href="{{ route('terms.show') }}" class="text-decoration-none">Términos</a> &middot;
+            <a href="{{ route('data.policy') }}" class="text-decoration-none">Tus datos</a> &middot;
             v{{ config('finlia.version') }} &middot;
             &copy; {{ date('Y') }}
         </div>

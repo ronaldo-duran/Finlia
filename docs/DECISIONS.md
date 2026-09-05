@@ -1023,6 +1023,43 @@ Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar 
 
 **Estado.** ACEPTADA — 2026-08-30 (Plan 04 de `planes/`). Implementada en la migración `2026_09_04_000100`, `ColombianRegion` + `Gender` + `AdultBirthDate`, `User` (fillable/casts/`age()`), `StoreRegistrationRequest` + `UpdateProfileRequest`, `RegisteredUserController`, la sección "Datos personales" de `profile/edit` + campo en `auth/register` (+ `min`/`max` en `x-form-input`), el factory (adultos), el seeder demo y `PersonalDataTest` (+ casos de registro en `RegistrationTest`).
 
+---
+
+## ADR-0033
+### Eliminación/suspensión de cuenta: ventana de 30 días y tres reglas de propiedad — **ACEPTADA**
+
+**Contexto.** Plan 05: un usuario puede solicitar la eliminación de su cuenta. Se eligió suspensión 30 días (reversible) antes de purga irreversible. Tres casos para el hogar del dueño: (1) dueño único → cascade, (2) hay otros miembros → transferir al más antiguo, (3) miembro sin hogar propio → anonimizar.
+
+**Decisión.** `users.deletion_requested_at` timestamp nullable. `AccountDeletionService` con los tres casos. `EnsureAccountActive` middleware. Comando `finlia:purge-pending-deletions` diario. Correos antifraude y de transferencia.
+
+**Estado.** ACEPTADA — 2026-09-04 (Plan 05).
+
+---
+
+## ADR-0034
+### Exportación de datos: ZIP con CSVs + JSON, throttle 3/día — **ACEPTADA**
+
+**Contexto.** Plan 06 (portabilidad y política de retiro): la Ley 1581 (Colombia) y el estándar GDPR-inspired de "derecho a la portabilidad" exigen que el usuario pueda obtener sus datos en formato reutilizable. El reto es: ¿qué exportar, en qué formato, con qué privacidad, y cuándo limitar el uso?
+
+**Decisión.**
+
+1. **Formato dual**: CSV (BOM UTF-8 + separador `;`) para Excel Colombia + JSON para migración técnica, empaquetados en un ZIP descargable. README.txt interno documenta el formato.
+2. **Aislamiento estricto**: solo se exportan datos del **hogar activo** del solicitante. `usuario.csv` contiene solo el perfil del solicitante (nunca nombres/correos de otros miembros). La contraseña nunca se incluye.
+3. **Throttle 3/día** (`throttle:3,1440`): previene abuso/scraping de la funcionalidad.
+4. **`DataExportService::collect()`** separado de `buildZip()`: `collect()` devuelve arrays puros, testables sin disco; `buildZip()` empaqueta. Sin dependencia HTTP (ADR-0010): recibe `Household` + `User` explícitos.
+5. **Página pública `/datos`** (`data.policy`): accesible sin cuenta. Declara qué datos se guardan, portabilidad, eliminación, retiro del software y cómo migrar.
+
+**Alternativas descartadas.**
+- **Solo CSV**: el JSON es necesario para migración programática (IDs relacionales preservados).
+- **Sin throttle**: cualquier usuario podría hacer polling continuo del servicio de exportación.
+- **Incluir contraseña**: un hash bcrypt no es portable (es específico del sistema); nunca debe aparecer en una exportación.
+
+**Consecuencias.** `DataExportService` queda listo para reutilización en la futura API REST (Épica 14) sin modificaciones. El throttle por `user_id` (Laravel cache) se resetea a medianoche.
+
+**Estado.** ACEPTADA — 2026-09-05 (Plan 06).
+
+---
+
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.
 3. Incluye: contexto, decisión, alternativas, consecuencias.

@@ -27,6 +27,7 @@ use App\Http\Controllers\MovementsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecurringExpenseController;
 use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\DataPolicyController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SavingsGoalController;
 use App\Http\Controllers\TermsController;
@@ -109,6 +110,10 @@ Route::get('confirmar-correo/{token}', [ProfileController::class, 'confirmEmail'
 // ("YYYY-MM-vN") hace imposible que colisione con las URIs fijas de
 // abajo, vengan en el orden que vengan.
 Route::get('terminos', [TermsController::class, 'show'])->name('terms.show');
+
+// ---- Política de datos (Plan 06, ADR-0034) ----
+// Pública: visible sin cuenta, para quienes evalúen antes de registrarse.
+Route::get('datos', [DataPolicyController::class, 'show'])->name('data.policy');
 Route::get('terminos/{termsVersion}', [TermsController::class, 'version'])
     ->name('terms.version')
     ->where('termsVersion', '[0-9]{4}-[0-9]{2}-v[0-9]+');
@@ -180,6 +185,11 @@ Route::middleware(['auth', 'verified', 'terms.current', 'account.active'])->grou
     Route::delete('perfil/cuenta', [ProfileController::class, 'requestDeletion'])
         ->name('profile.deletion.store')
         ->middleware('throttle:3,1');
+    // Exportación de datos del hogar activo (Plan 06, ADR-0034). Genera un
+    // ZIP; 3 descargas por día para no saturar el servidor.
+    Route::get('perfil/exportar', [ProfileController::class, 'export'])
+        ->name('profile.export')
+        ->middleware('throttle:3,1440');
 
     // ---- Hogares (Épica 2) ----
     Route::get('hogares', [HouseholdController::class, 'index'])->name('households.index');
