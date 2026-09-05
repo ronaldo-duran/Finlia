@@ -15,7 +15,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 7 | Metas de ahorro | 🟢 | 3 |
 | 8 | Dashboard y reportes financieros | 🟢 | 3, 4, 5, 6, 7 |
 | 9 | Recordatorios y notificaciones | 🟢 | 5, 6, 7 |
-| 10 | UX mobile y PWA | 🟡 | 3 (y resto) |
+| 10 | UX mobile y PWA | 🟢 | 3 (y resto) |
 | 11 | Hardening, tests y producción | 🔴 | Todas |
 | 12 | Monetización y modelo SaaS | 🔴 | 2, 11 |
 | 13 | Portafolio profesional | 🔴 | 11 |
@@ -28,7 +28,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 > ([ADR-0029](DECISIONS.md#adr-0029)) · 02 ✅ perfil: contraseña y cambio de correo
 > ([ADR-0030](DECISIONS.md#adr-0030)) · 03 ✅ términos versionados
 > ([ADR-0031](DECISIONS.md#adr-0031)) · 04 ✅ datos personales 18+
-> ([ADR-0032](DECISIONS.md#adr-0032))** · 05–06 pendientes.
+> ([ADR-0032](DECISIONS.md#adr-0032)) · **05 ✅ eliminación/suspensión ([ADR-0033](DECISIONS.md#adr-0033)) · 06 ✅ política de datos + export ZIP ([ADR-0034](DECISIONS.md#adr-0034))**.
 
 ## Resumen por épica
 

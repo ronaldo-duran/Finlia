@@ -43,3 +43,10 @@ Schedule::command('finlia:purge-pending-deletions')
     ->name('purga-cuentas')
     ->withoutOverlapping()
     ->dailyAt('05:30');
+
+// Plan 06 (ADR-0034): exportaciones de datos en hora valle para no saturar el
+// servidor durante el tráfico del día. Genera el ZIP y lo adjunta al correo.
+Schedule::command('finlia:process-export-requests')
+    ->name('exportaciones-datos')
+    ->withoutOverlapping()
+    ->dailyAt('02:00');

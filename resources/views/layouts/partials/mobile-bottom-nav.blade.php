@@ -1,8 +1,7 @@
 {{--
-    Barra inferior móvil (Épica 10, adelantado): Panel, Movimientos, botón
-    central de registro, Presupuesto y Más (abre el sidebar completo desde
-    la derecha, con las secciones que no caben en estas 4 pestañas). Solo
-    visible por debajo de lg (el sidebar de escritorio cubre lo mismo).
+    Barra inferior móvil: Panel, Movimientos, Presupuesto, Más.
+    Cuatro destinos, cuatro columnas (el FAB vive fuera de la barra, en
+    partials/fab.blade.php). Solo visible por debajo de lg.
 --}}
 <nav class="bottom-nav d-lg-none" aria-label="Navegación principal">
     <a href="{{ route('dashboard') }}"
@@ -15,7 +14,6 @@
         <i class="bi bi-arrow-left-right"></i>
         <span>Movimientos</span>
     </a>
-    <div></div>
     <a href="{{ route('budgets.index') }}"
        class="bottom-nav-item {{ request()->routeIs('budgets.*') ? 'active' : '' }}">
         <i class="bi bi-cash-stack"></i>
@@ -27,7 +25,3 @@
         <span>Más</span>
     </button>
 </nav>
-
-<a href="{{ route('expenses.create') }}" class="bottom-nav-fab d-lg-none" aria-label="Registrar gasto">
-    <i class="bi bi-plus-lg"></i>
-</a>

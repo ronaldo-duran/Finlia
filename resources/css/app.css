@@ -568,14 +568,27 @@ a { color: var(--finlia-primary); }
    presupuesto. Puramente visual/UX, sin lógica de negocio nueva.
    ============================================================= */
 
-/* Deja sitio para la barra inferior flotante en móvil. */
+/* Reserva bajo el contenido para que nada quede atrapado debajo de la barra
+   ni del FAB. Sin esto, en una página corta (sin scroll) los botones de acción
+   del final quedan tapados por el FAB y son literalmente inalcanzables. */
+/* `!important` es obligatorio: main lleva las utilidades `p-3 p-md-4` de
+   Bootstrap, que ya son `!important` y si no ganarían siempre. */
 @media (max-width: 991.98px) {
+    /* barra (76) + hueco (12) + FAB (58) + respiro (14) */
     body.has-bottom-nav main {
-        padding-bottom: calc(92px + var(--finlia-safe-bottom));
+        padding-bottom: calc(160px + var(--finlia-safe-bottom)) !important;
     }
 }
 
-/* Barra de navegación inferior (solo móvil). */
+@media (min-width: 992px) {
+    /* Sin barra inferior: solo hay que despejar el FAB. */
+    body.has-bottom-nav main {
+        padding-bottom: 104px !important;
+    }
+}
+
+/* Barra de navegación inferior (solo móvil). Cuatro destinos = cuatro
+   columnas: el FAB ya no ocupa la celda central. */
 .bottom-nav {
     position: fixed;
     left: 0;
@@ -589,7 +602,7 @@ a { color: var(--finlia-primary); }
     backdrop-filter: blur(20px) saturate(150%);
     border-top: 1px solid var(--finlia-glass-border);
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
 }
 
 .bottom-nav-item {
@@ -614,33 +627,6 @@ a { color: var(--finlia-primary); }
     font-weight: 600;
 }
 
-.bottom-nav-fab {
-    position: fixed;
-    left: 50%;
-    bottom: calc(38px + var(--finlia-safe-bottom));
-    transform: translateX(-50%);
-    z-index: 1041;
-    width: 58px;
-    height: 58px;
-    border-radius: 999px;
-    border: 4px solid var(--finlia-bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: #fff;
-    background-color: var(--finlia-primary);
-    background-image: linear-gradient(160deg, var(--finlia-primary), var(--finlia-primary-hover));
-    box-shadow: 0 14px 26px -12px rgba(var(--finlia-primary-rgb), 0.85);
-    transition: transform 0.12s ease;
-}
-
-.bottom-nav-fab:hover,
-.bottom-nav-fab:focus-visible {
-    color: #fff;
-}
-
-.bottom-nav-fab:active { transform: translateX(-50%) scale(0.94); }
 
 /* Chips (selección rápida de categoría, filtros de movimientos). */
 .chip-row {
@@ -730,4 +716,158 @@ a { color: var(--finlia-primary); }
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--finlia-text-muted);
+}
+
+/* =============================================================
+   FAB flotante — botón de acción principal fijo bottom-right
+   (estilo Twitter/X). Abre un speed-dial con 5 acciones rápidas.
+   Visible en todos los tamaños; en escritorio no hay barra inferior
+   bajo la que apoyarse, así que baja hasta la esquina.
+   ============================================================= */
+
+/* Contenedor: fijo bottom-right, apoyado sobre la bottom-nav en móvil. */
+.fab-container {
+    position: fixed;
+    right: 20px;
+    bottom: calc(76px + var(--finlia-safe-bottom) + 12px);
+    z-index: 1041;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+@media (min-width: 992px) {
+    .fab-container {
+        right: 24px;
+        bottom: 24px;
+    }
+}
+
+/* Al bajar, el FAB se aparta; al subir vuelve. Es lo que evita que se quede
+   tapando un botón de la página: basta un gesto mínimo para descubrirlo.
+   La reserva de `padding-bottom` cubre el otro caso (contenido al final). */
+.fab-container {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.fab-container.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(120px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fab-container {
+        transition: none;
+    }
+}
+
+/* Botón principal "+". */
+.fab-btn {
+    width: 58px;
+    height: 58px;
+    border-radius: 999px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #fff;
+    background-color: var(--finlia-primary);
+    background-image: linear-gradient(160deg, var(--finlia-primary), var(--finlia-primary-hover));
+    box-shadow: 0 6px 20px -6px rgba(var(--finlia-primary-rgb), 0.8);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    flex-shrink: 0;
+}
+
+.fab-btn:hover,
+.fab-btn:focus-visible { color: #fff; box-shadow: 0 8px 24px -6px rgba(var(--finlia-primary-rgb), 0.9); }
+.fab-btn:active { transform: scale(0.93); }
+
+.fab-container.is-open .fab-btn {
+    background-image: linear-gradient(160deg, var(--finlia-primary-hover), var(--finlia-primary));
+}
+
+/* Menú de acciones: se despliega hacia arriba-izquierda. */
+.fab-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(12px) scale(0.94);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.fab-container.is-open .fab-menu {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* Cada acción: etiqueta + icono circular. */
+.fab-action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--finlia-text);
+}
+
+.fab-action-label {
+    background-color: var(--finlia-surface-solid);
+    color: var(--finlia-text);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--finlia-border);
+    box-shadow: var(--finlia-shadow-sm);
+    white-space: nowrap;
+}
+
+.fab-action-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    color: #fff;
+    box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.4);
+    flex-shrink: 0;
+}
+
+/* Fondo semitransparente al abrir el FAB. */
+.fab-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background-color: rgba(0, 0, 0, 0);
+    pointer-events: none;
+    transition: background-color 0.2s ease;
+}
+
+.fab-backdrop.is-visible {
+    background-color: rgba(0, 0, 0, 0.45);
+    pointer-events: auto;
+}
+
+/* =============================================================
+   PWA (Épica 10) — meta de tema dinámica.
+   El service worker y el manifest van en /public; aquí solo los
+   estilos de soporte (instalación, standalone).
+   ============================================================= */
+
+/* En modo standalone (instalada como app) ocultar el footer de
+   "Términos · COP · v…" que satura la pantalla sin barra de navegación. */
+@media (display-mode: standalone) {
+    .app-footer {
+        display: none !important;
+    }
+    /* En standalone el notch ya está cubierto por el safe-area-inset
+       del body; la barra inferior no necesita ajuste adicional. */
 }

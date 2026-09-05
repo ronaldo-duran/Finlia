@@ -10,6 +10,11 @@
     {{-- Identidad de marca (docs/BRAND.md): símbolo de puntos, sin cambios entre temas. --}}
     @include('layouts.partials.favicon')
 
+    {{-- PWA (Épica 10): manifest para que la pantalla de login sea instalable. --}}
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#eef3f8" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0e1419" media="(prefers-color-scheme: dark)">
+
     {{-- Anti-FOUC: fija el tema antes del primer paint --}}
     @include('layouts.partials.theme-head')
 
@@ -51,7 +56,8 @@
     <footer class="app-footer py-3 text-center small">
         Finlia · Finanzas familiares &middot;
         <span class="text-finlia fw-semibold">COP</span> &middot;
-        <a href="{{ route('terms.show') }}" class="text-decoration-none">Términos y condiciones</a>
+        <a href="{{ route('terms.show') }}" class="text-decoration-none">Términos y condiciones</a> &middot;
+        <a href="{{ route('data.policy') }}" class="text-decoration-none">Tus datos</a>
     </footer>
 
     @stack('scripts')

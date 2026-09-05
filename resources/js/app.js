@@ -9,7 +9,13 @@
 | vía la directiva @csrf de Blade.
 */
 
-import 'bootstrap';
+// Se expone en `window` porque las vistas Blade instancian componentes a mano
+// (bootstrap.Modal para el modal de confirmación, bootstrap.Toast para los
+// mensajes flash). Un `import 'bootstrap'` a secas solo registra la data-api
+// (data-bs-toggle) y dejaría `bootstrap` indefinido en los scripts inline.
+import * as bootstrap from 'bootstrap';
+
+window.bootstrap = bootstrap;
 
 // Toggle de tema (claro/oscuro). El icono lo controla el CSS según
 // el atributo data-bs-theme del <html>; aquí solo se conmuta y persiste.
@@ -117,17 +123,69 @@ window.FinliaMoney = (function () {
 |----------------------------------------------------------------------
 | Confirmación de envío para formularios marcados con data-confirm.
 |----------------------------------------------------------------------
-| Evita interpolar input del usuario dentro de JS inline (onsubmit="..."),
-| lo que sería un vector de XSS en contexto de string JS. El texto del
-| confirm se lee del atributo (ya escapado por Blade para el contexto
-| HTML) y se pasa a window.confirm() como dato, nunca como código.
+| La confirmación NO usa window.confirm(): el modal propio de la app
+| (#confirmModal en layouts/app.blade.php) intercepta el submit y muestra
+| el mensaje con el diseño de Finlia. El texto se lee del atributo (ya
+| escapado por Blade para el contexto HTML) y se inserta con textContent,
+| nunca como HTML ni como código.
 */
-document.addEventListener('submit', function (e) {
-    var form = e.target.closest && e.target.closest('[data-confirm]');
-    if (form && !window.confirm(form.getAttribute('data-confirm'))) {
-        e.preventDefault();
-    }
-});
+
+/*
+|----------------------------------------------------------------------
+| PWA — Service Worker (Épica 10).
+|----------------------------------------------------------------------
+| Registra el SW mínimo que permite la instalación en pantalla de inicio.
+| Solo se registra en HTTPS (o localhost) — el navegador lo ignora
+| silenciosamente en http de red local, sin lanzar errores.
+*/
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () {
+            // Silencioso: la app funciona igual sin SW.
+        });
+    });
+}
+
+/*
+|----------------------------------------------------------------------
+| Selects inteligentes (Épica 10): recuerdan la última selección.
+|----------------------------------------------------------------------
+| Cualquier <select data-smart-select="CLAVE"> persiste en localStorage
+| el último valor elegido y lo pre-selecciona la próxima vez que aparece
+| en pantalla. La clave es libre (p.ej. "expense_account",
+| "expense_category") y es por hogar (household_id en el meta) para que
+| las preferencias de un hogar no contaminen a otro.
+|
+| El control real (el <select>) sigue siendo el que envía el formulario
+| y mantiene `required` intacto; esto solo es comodidad, no lógica.
+*/
+(function () {
+    // Prefijo de la clave incluye el household_id para aislamiento.
+    var householdMeta = document.querySelector('meta[name="household-id"]');
+    var householdId = householdMeta ? householdMeta.getAttribute('content') : 'default';
+    var prefix = 'finlia-smart-' + householdId + '-';
+
+    document.querySelectorAll('[data-smart-select]').forEach(function (select) {
+        var key = prefix + select.getAttribute('data-smart-select');
+
+        // Aplica la última selección guardada (solo si aún hay opción equivalente).
+        var saved = null;
+        try { saved = localStorage.getItem(key); } catch (e) {}
+        if (saved && select.querySelector('option[value="' + saved + '"]')) {
+            // Solo si el usuario no lo ha cambiado ya (old() de Blade).
+            if (!select.value || select.value === '' || select.value === '0') {
+                select.value = saved;
+            }
+        }
+
+        // Persiste la nueva selección en cada cambio.
+        select.addEventListener('change', function () {
+            if (select.value) {
+                try { localStorage.setItem(key, select.value); } catch (e) {}
+            }
+        });
+    });
+})();
 
 /*
 |----------------------------------------------------------------------

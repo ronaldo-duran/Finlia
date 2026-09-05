@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Throwable;
 
-#[Fillable(['name', 'email', 'password', 'birth_date', 'region', 'gender'])]
+#[Fillable(['name', 'email', 'password', 'birth_date', 'region', 'gender', 'data_export_requested_at'])]
 #[Hidden(['password', 'remember_token', 'pending_email_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -37,6 +37,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'pending_email_requested_at' => 'datetime',
             'deletion_requested_at' => 'datetime',
+            'data_export_requested_at' => 'datetime',
             'password' => 'hashed',
             'birth_date' => 'date:Y-m-d',
         ];
@@ -49,6 +50,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isSuspended(): bool
     {
         return $this->deletion_requested_at !== null;
+    }
+
+    /**
+     * Hay una exportación de datos pendiente de procesar (Plan 06, ADR-0034).
+     */
+    public function hasPendingExport(): bool
+    {
+        return $this->data_export_requested_at !== null;
     }
 
     /**

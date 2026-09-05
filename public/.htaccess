@@ -1,3 +1,12 @@
+# PWA: el manifiesto existe como fichero físico, así que Apache/LiteSpeed lo
+# sirve directo y la petición NUNCA llega a la ruta `pwa.manifest` de Laravel
+# (la regla de más abajo solo reescribe lo que no es un fichero real). Por eso
+# la cabecera hay que declararla aquí: sin esto algunos servidores lo entregan
+# como texto plano y el navegador descarta el manifiesto.
+<IfModule mod_mime.c>
+    AddType application/manifest+json .webmanifest
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

@@ -213,6 +213,42 @@
                 </div>
             </div>
 
+            {{-- ===================== Portabilidad — exportar datos ===================== --}}
+            <div class="card border-0">
+                <div class="card-header border-0 bg-transparent fw-semibold">
+                    <i class="bi bi-download me-1"></i> Mis datos
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        Recibe por correo un ZIP con todos los datos de tu hogar activo: cuentas,
+                        movimientos, deudas, metas, presupuestos y más — en CSV (Excel) y JSON.
+                        Solo incluye tus datos personales, nunca los de otros miembros.
+                        <a href="{{ route('data.policy') }}" class="text-decoration-none">Más información</a>.
+                    </p>
+
+                    @if ($user->hasPendingExport())
+                        <div class="alert alert-info d-flex align-items-start gap-2 py-2 px-3 small mb-0" role="alert">
+                            <i class="bi bi-hourglass-split mt-1 flex-shrink-0"></i>
+                            <span>
+                                Tu exportación está en cola. La recibirás en
+                                <strong>{{ $user->email }}</strong> en un plazo de hasta 3 días hábiles.
+                            </span>
+                        </div>
+                    @else
+                        <form method="POST" action="{{ route('profile.export') }}"
+                              data-confirm="Te enviaremos el archivo ZIP a tu correo ({{ $user->email }}). Puede tardar hasta 3 días hábiles. ¿Continuar?">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-envelope-arrow-down me-1"></i> Solicitar exportación
+                            </button>
+                        </form>
+                        <div class="form-text mt-2">
+                            El archivo llega por correo; puedes solicitar una nueva exportación una vez recibida la anterior.
+                        </div>
+                    @endif
+                </div>
+            </div>
+
             {{-- ===================== Zona de peligro — eliminar cuenta ===================== --}}
             <div class="card border-0 border-danger-subtle">
                 <div class="card-header border-0 bg-transparent fw-semibold text-danger-emphasis">
@@ -235,7 +271,7 @@
 
                     <div class="collapse {{ $openDeletion ? 'show' : '' }} mt-3" id="formEliminarCuenta">
                         <form method="POST" action="{{ route('profile.deletion.store') }}"
-                              onsubmit="return confirm('¿Seguro/a? Tu cuenta se suspenderá y se eliminará en 30 días si no la reactivás.')">
+                              data-confirm="¿Seguro/a? Tu cuenta se suspenderá y se eliminará en 30 días si no la reactivás.">
                             @csrf
                             @method('DELETE')
                             <input type="hidden" name="_section" value="deletion">

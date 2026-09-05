@@ -19,7 +19,7 @@ test.describe('Autenticación', () => {
     await page.fill('input[name="password"]', 'contrasena-equivocada');
     await page.getByRole('button', { name: 'Iniciar sesión' }).click();
 
-    await expect(page.locator('.alert-danger').first()).toBeVisible();
+    await expect(page.locator('.toast.text-bg-danger').first()).toBeVisible();
     await expect(page).toHaveURL(/\/login$/);
   });
 

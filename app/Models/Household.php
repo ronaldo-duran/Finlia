@@ -129,6 +129,13 @@ class Household extends Model
         return $this->hasMany(Reminder::class);
     }
 
+    // ---- Épica 10: transferencias entre cuentas (ADR-0035) ----
+
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(Transfer::class);
+    }
+
     /**
      * Indica si un usuario es miembro del hogar.
      */
