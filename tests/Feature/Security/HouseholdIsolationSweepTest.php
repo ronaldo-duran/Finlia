@@ -38,9 +38,15 @@ use Tests\TestCase;
  * modo que una ruta nueva sin `authorize()` se detecta aquí aunque nadie
  * escriba su test de aislamiento.
  *
- * Se acepta 403 (Policy) y 404 (binding acotado al hogar): ambos niegan sin
- * filtrar si el recurso existe. Un 200/302 significa que la acción se
- * ejecutó, y un 422 que la validación corrió antes que la autorización.
+ * Las **lecturas** (GET) deben responder 403 (Policy) o 404 (binding acotado
+ * al hogar): ambos niegan sin filtrar si el recurso existe.
+ *
+ * En las **escrituras** un 302 no implica bypass: con el cuerpo vacío salta
+ * primero la validación del Form Request y Laravel redirige con los errores.
+ * Se comprobó enviando un cuerpo válido a `PUT /cuentas/{id}` de otro hogar:
+ * responde 403 y la fila no cambia. Por eso ahí no se exige un código
+ * concreto sino la propiedad que de verdad importa — que ninguna fila ajena
+ * se altere ni desaparezca — además de que nunca respondan 200.
  */
 class HouseholdIsolationSweepTest extends TestCase
 {
