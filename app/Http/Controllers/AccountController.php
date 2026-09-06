@@ -53,7 +53,12 @@ class AccountController extends Controller
     {
         $this->authorize('view', $account);
 
-        $account->load(['incomes' => fn ($q) => $q->latest('date')->take(10), 'expenses' => fn ($q) => $q->latest('date')->take(10)]);
+        // `with('category')`: la vista lee `->category?->name` en ambos bucles;
+        // sin esto son hasta 20 lookups por PK (N+1).
+        $account->load([
+            'incomes' => fn ($q) => $q->with('category')->latest('date')->take(10),
+            'expenses' => fn ($q) => $q->with('category')->latest('date')->take(10),
+        ]);
 
         return view('accounts.show', ['account' => $account]);
     }

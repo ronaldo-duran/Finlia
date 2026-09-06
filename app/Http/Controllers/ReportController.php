@@ -45,22 +45,22 @@ class ReportController extends Controller
         $period = $request->period();
         $householdId = $household->id;
 
-        $overview = $this->reports->overview($householdId, $period);
+        // Las metas vigentes se cargan una sola vez: alimentan el gráfico de
+        // progreso y también el resumen que arma `overview()`.
+        $outstandingGoals = $this->savingsGoals->outstandingGoals($householdId);
+
+        $overview = $this->reports->overview($householdId, $period, savingsGoals: $outstandingGoals);
         $insights = $this->reports->insights($householdId, $period);
 
         // Top 5 + "Otras": una torta con muchas porciones no se lee en móvil.
         $byCategory = $this->movements->expensesByCategory($householdId, $overview['from'], $overview['to'], top: 5);
         $series = $this->reports->monthlySeries($householdId, $overview['from'], $overview['to']);
         $debtEvolution = $this->debts->balanceEvolution($householdId, months: 6);
-        $goals = $this->savingsGoals->outstandingGoals($householdId)->take(6);
+        $goals = $outstandingGoals->take(6);
 
         // Datos serializables para Chart.js (se inyectan como JSON en la vista).
         $chartData = [
-            'reportCategory' => [
-                'labels' => $byCategory->pluck('name')->all(),
-                'amounts' => $byCategory->pluck('total')->all(),
-                'colors' => $byCategory->map(fn ($c) => $c['color'] ?? '#0b3f44')->all(),
-            ],
+            'reportCategory' => MovementSummaryService::categoryChartData($byCategory),
             'reportTrend' => [
                 'labels' => array_column($series, 'label'),
                 'incomes' => array_column($series, 'incomes'),

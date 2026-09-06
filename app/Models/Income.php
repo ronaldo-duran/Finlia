@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['household_id', 'user_id', 'account_id', 'category_id', 'amount', 'date', 'description', 'notes', 'source'])]
+#[Fillable(['user_id', 'account_id', 'category_id', 'amount', 'date', 'description', 'notes', 'source'])]
 class Income extends Model
 {
     /** @use HasFactory<IncomeFactory> */

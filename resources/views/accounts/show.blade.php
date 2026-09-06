@@ -91,7 +91,7 @@
                         <div class="progress-bar {{ $uso > 30 ? 'bg-warning' : 'bg-success' }}" style="width: {{ $uso }}%"></div>
                     </div>
                     <div class="small text-muted mt-1">
-                        Has usado {{ str_replace('.', ',', (string) $uso) }} % del cupo.
+                        Has usado @percent($uso) del cupo.
                         @if ($uso > 30) Por encima del 30 % suele penalizar tu historial crediticio. @endif
                     </div>
                 @endif

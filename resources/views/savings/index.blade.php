@@ -40,7 +40,7 @@
                     <div class="fs-4 fw-bold">@money($summary['total_saved'])</div>
                     <div class="small text-muted mt-1">
                         de @money($summary['total_target'])
-                        ({{ str_replace('.', ',', (string) $summary['progress_percent']) }} %)
+                        (@percent($summary['progress_percent']))
                     </div>
                     @if ($summary['total_target'] > 0)
                         <div class="progress mt-2" style="height:.5rem" role="progressbar"

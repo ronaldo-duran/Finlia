@@ -63,7 +63,7 @@
                         @if ($metric['delta']['percent'] !== null && ($up || $down))
                             <span class="small d-block mt-1 {{ $good ? 'text-success' : ($bad ? 'text-danger' : 'text-muted') }}">
                                 <i class="bi {{ $up ? 'bi-arrow-up-right' : 'bi-arrow-down-right' }} me-1"></i>
-                                {{ str_replace('.', ',', (string) abs($metric['delta']['percent'])) }} %
+                                @percent(abs($metric['delta']['percent']))
                                 vs {{ $overview['previous_label'] }}
                             </span>
                         @endif

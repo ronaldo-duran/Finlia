@@ -25,13 +25,25 @@ if (! function_exists('percent')) {
      * Formatea un porcentaje con la convención colombiana: "332,4 %".
      * Los enteros se muestran sin decimales ("80 %"), como @money, para que
      * Blade y un futuro JSON usen el mismo formateo (ADR-0010).
+     *
+     * Los ceros finales se recortan, de modo que una tasa de interés admite
+     * más precisión sin ensuciar los casos normales: `percent(12.5, 3)` da
+     * "12,5 %" y `percent(12.75, 3)` da "12,75 %".
      */
     function percent(int|float|null $value, int $decimals = 1): string
     {
         $value = (float) ($value ?? 0);
         $decimals = fmod($value, 1.0) === 0.0 ? 0 : $decimals;
 
-        return number_format($value, $decimals, ',', '.').' %';
+        $formatted = number_format($value, $decimals, ',', '.');
+
+        // Solo con decimales: con `$decimals === 0` el separador de miles es
+        // un punto y recortar ceros rompería "1.200" → "1.2".
+        if ($decimals > 0) {
+            $formatted = rtrim(rtrim($formatted, '0'), ',');
+        }
+
+        return $formatted.' %';
     }
 }
 

@@ -24,6 +24,41 @@ use Illuminate\Support\Facades\DB;
  */
 class MovementSummaryService
 {
+    /** Color de la marca para categorías sin color propio. */
+    private const FALLBACK_COLOR = '#0b3f44';
+
+    /**
+     * Memoria de agregaciones ya calculadas dentro de **esta** petición.
+     *
+     * `/reportes` pedía los mismos números varias veces: `overview()` e
+     * `insights()` calculaban cada uno los totales del período y del anterior
+     * (4 sumas, 2 redundantes), y `expensesByCategory` corría dos veces para
+     * el mismo rango (lista completa + top 5).
+     *
+     * El servicio no es singleton: la instancia muere con la petición, así que
+     * no hay riesgo de servir datos rancios entre peticiones. Dentro de una
+     * misma petición estas agregaciones son de solo lectura.
+     *
+     * @var array<string, mixed>
+     */
+    private array $memo = [];
+
+    /**
+     * @template T
+     *
+     * @param  callable(): T  $compute
+     * @return T
+     */
+    private function remember(string $key, callable $compute): mixed
+    {
+        return $this->memo[$key] ??= $compute();
+    }
+
+    private function rangeKey(string $prefix, int $householdId, CarbonInterface $from, CarbonInterface $to): string
+    {
+        return $prefix.'|'.$householdId.'|'.$from->toDateTimeString().'|'.$to->toDateTimeString();
+    }
+
     /**
      * Totales (ingresos, gastos, balance) de un mes concreto.
      *
@@ -45,19 +80,21 @@ class MovementSummaryService
      */
     public function rangeTotals(int $householdId, CarbonInterface $from, CarbonInterface $to): array
     {
-        $incomes = (float) Income::where('household_id', $householdId)
-            ->whereBetween('date', [$from, $to])
-            ->sum('amount');
+        return $this->remember($this->rangeKey('totals', $householdId, $from, $to), function () use ($householdId, $from, $to): array {
+            $incomes = (float) Income::where('household_id', $householdId)
+                ->whereBetween('date', [$from, $to])
+                ->sum('amount');
 
-        $expenses = (float) Expense::where('household_id', $householdId)
-            ->whereBetween('date', [$from, $to])
-            ->sum('amount');
+            $expenses = (float) Expense::where('household_id', $householdId)
+                ->whereBetween('date', [$from, $to])
+                ->sum('amount');
 
-        return [
-            'incomes' => $incomes,
-            'expenses' => $expenses,
-            'balance' => $incomes - $expenses,
-        ];
+            return [
+                'incomes' => $incomes,
+                'expenses' => $expenses,
+                'balance' => $incomes - $expenses,
+            ];
+        });
     }
 
     /**
@@ -72,21 +109,26 @@ class MovementSummaryService
      */
     public function expensesByCategory(int $householdId, CarbonInterface $from, CarbonInterface $to, ?int $top = null): Collection
     {
-        $rows = DB::table('expenses')
-            ->leftJoin('categories', 'categories.id', '=', 'expenses.category_id')
-            ->selectRaw('categories.id as category_id, categories.name as name, categories.color as color, SUM(expenses.amount) as total')
-            ->where('expenses.household_id', $householdId)
-            ->whereNull('expenses.deleted_at') // soft-deleted fuera del cálculo
-            ->whereBetween('expenses.date', [$from, $to])
-            ->groupBy('categories.id', 'categories.name', 'categories.color')
-            ->orderByDesc('total')
-            ->get()
-            ->map(fn ($row) => [
-                'category_id' => $row->category_id,
-                'name' => $row->name ?? 'Sin categoría',
-                'color' => $row->color,
-                'total' => (float) $row->total,
-            ]);
+        // Se memoiza la lista completa; el plegado en "Otros" es sobre memoria,
+        // así que pedir el top-N no repite la consulta.
+        $rows = $this->remember(
+            $this->rangeKey('by-category', $householdId, $from, $to),
+            fn (): Collection => DB::table('expenses')
+                ->leftJoin('categories', 'categories.id', '=', 'expenses.category_id')
+                ->selectRaw('categories.id as category_id, categories.name as name, categories.color as color, SUM(expenses.amount) as total')
+                ->where('expenses.household_id', $householdId)
+                ->whereNull('expenses.deleted_at') // soft-deleted fuera del cálculo
+                ->whereBetween('expenses.date', [$from, $to])
+                ->groupBy('categories.id', 'categories.name', 'categories.color')
+                ->orderByDesc('total')
+                ->get()
+                ->map(fn ($row) => [
+                    'category_id' => $row->category_id,
+                    'name' => $row->name ?? 'Sin categoría',
+                    'color' => $row->color,
+                    'total' => (float) $row->total,
+                ]),
+        );
 
         return $top !== null ? $this->foldIntoOthers($rows, $top) : $rows;
     }
@@ -124,23 +166,92 @@ class MovementSummaryService
      */
     public function monthlyTrend(int $householdId, int $months = 6): array
     {
-        $cursor = Carbon::now(config('app.timezone'))->startOfMonth();
+        $end = Carbon::now(config('app.timezone'))->startOfMonth();
+        $start = $end->copy()->subMonthsNoOverflow($months - 1);
+
+        $totals = $this->monthlyTotals($householdId, $start, $end->copy()->endOfMonth());
+
         $trend = [];
+        $cursor = $start->copy();
 
         for ($i = 0; $i < $months; $i++) {
-            $point = $cursor->copy();
-            $totals = $this->monthTotals($householdId, $point->year, $point->month);
+            $key = $cursor->format('Y-m');
 
-            array_unshift($trend, [
-                'label' => $point->locale('es')->isoFormat('MMM YY'),
-                'incomes' => $totals['incomes'],
-                'expenses' => $totals['expenses'],
-            ]);
+            $trend[] = [
+                'label' => $cursor->locale('es')->isoFormat('MMM YY'),
+                'incomes' => $totals[$key]['incomes'] ?? 0.0,
+                'expenses' => $totals[$key]['expenses'] ?? 0.0,
+            ];
 
-            $cursor->subMonth();
+            $cursor->addMonthNoOverflow();
         }
 
         return $trend;
+    }
+
+    /**
+     * Forma que espera Chart.js para la torta de gastos por categoría.
+     *
+     * Vive aquí (y no en cada controlador) porque Panel y Reportes pintan la
+     * misma torta: tenerlo duplicado hacía que el color de reserva pudiera
+     * divergir entre pantallas.
+     *
+     * @param  Collection<int, array{name: string, total: float, color: ?string}>  $byCategory
+     * @return array{labels: list<string>, amounts: list<float>, colors: list<string>}
+     */
+    public static function categoryChartData(Collection $byCategory): array
+    {
+        return [
+            'labels' => $byCategory->pluck('name')->all(),
+            'amounts' => $byCategory->pluck('total')->all(),
+            'colors' => $byCategory->map(fn (array $c): string => $c['color'] ?? self::FALLBACK_COLOR)->all(),
+        ];
+    }
+
+    /**
+     * Totales de ingresos y gastos agrupados por mes natural, en **2 queries**
+     * (una por tabla) en lugar de dos por cada mes del rango.
+     *
+     * @return array<string, array{incomes: float, expenses: float}> mapa 'YYYY-MM' => totales
+     */
+    public function monthlyTotals(int $householdId, CarbonInterface $from, CarbonInterface $to): array
+    {
+        $monthKey = $this->monthKeyExpression();
+
+        $sumByMonth = fn (string $model): array => $model::where('household_id', $householdId)
+            ->whereBetween('date', [$from, $to])
+            ->selectRaw("{$monthKey} as ym, COALESCE(SUM(amount), 0) as total")
+            ->groupBy(DB::raw($monthKey))
+            ->pluck('total', 'ym')
+            ->map(fn ($total): float => (float) $total)
+            ->all();
+
+        $incomes = $sumByMonth(Income::class);
+        $expenses = $sumByMonth(Expense::class);
+
+        $totals = [];
+
+        foreach (array_unique([...array_keys($incomes), ...array_keys($expenses)]) as $ym) {
+            $totals[$ym] = [
+                'incomes' => $incomes[$ym] ?? 0.0,
+                'expenses' => $expenses[$ym] ?? 0.0,
+            ];
+        }
+
+        return $totals;
+    }
+
+    /**
+     * Expresión SQL que reduce una fecha a 'YYYY-MM'.
+     *
+     * Depende del motor a propósito: MySQL no tiene `strftime` y SQLite no
+     * tiene `DATE_FORMAT`. Producción usa MySQL/MariaDB y los tests SQLite.
+     */
+    private function monthKeyExpression(): string
+    {
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', `date`)"
+            : "DATE_FORMAT(`date`, '%Y-%m')";
     }
 
     /**

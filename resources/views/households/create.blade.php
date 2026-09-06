@@ -15,6 +15,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-3 p-md-4">
                     <form method="POST" action="{{ route('households.store') }}">
+                        @csrf
                         @include('households._form', ['household' => null])
 
                         <div class="d-flex gap-2 mt-2">

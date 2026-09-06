@@ -3,6 +3,7 @@
 namespace Tests\Feature\Account;
 
 use App\Models\Account;
+use App\Models\Expense;
 use App\Models\User;
 use App\Services\HouseholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -85,8 +86,9 @@ class AccountTest extends TestCase
     {
         [$owner, $household] = $this->setupHousehold();
         $account = Account::factory()->create(['household_id' => $household->id]);
-        $account->expenses()->create([
+        Expense::factory()->create([
             'household_id' => $household->id,
+            'account_id' => $account->id,
             'user_id' => $owner->id,
             'amount' => 1000,
             'date' => now()->format('Y-m-d'),

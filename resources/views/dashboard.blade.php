@@ -190,7 +190,7 @@
                             </div>
                             <div class="small text-muted mt-1">
                                 @money($goal->current_amount) de @money($goal->target_amount)
-                                ({{ str_replace('.', ',', (string) $goal->progressPercent()) }} %)
+                                (@percent($goal->progressPercent()))
                             </div>
                         </div>
                     @endforeach

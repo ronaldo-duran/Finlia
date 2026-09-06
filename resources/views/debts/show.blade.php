@@ -58,7 +58,7 @@
                 <div class="text-muted small text-uppercase">Tasa anual</div>
                 <div class="fs-5 fw-bold">
                     @if ($debt->interest_rate !== null)
-                        {{ str_replace('.', ',', rtrim(rtrim(number_format((float) $debt->interest_rate, 3, '.', ''), '0'), '.')) }} %
+                        @percent($debt->interest_rate, 3)
                     @else
                         —
                     @endif
@@ -73,7 +73,7 @@
     <div class="card border-0 mb-4"><div class="card-body">
         <div class="d-flex justify-content-between small mb-1">
             <span class="text-muted">Progreso</span>
-            <span class="fw-semibold">{{ str_replace('.', ',', (string) $debt->progressPercent()) }} %</span>
+            <span class="fw-semibold">@percent($debt->progressPercent())</span>
         </div>
         <div class="progress" style="height:.6rem" role="progressbar"
              aria-label="Progreso de pago" aria-valuenow="{{ $debt->progressPercent() }}"
@@ -166,7 +166,7 @@
                                 </div>
                                 <div class="small text-muted">
                                     @if ($refinancing->interest_rate !== null)
-                                        {{ str_replace('.', ',', rtrim(rtrim(number_format((float) $refinancing->interest_rate, 3, '.', ''), '0'), '.')) }} % anual
+                                        @percent($refinancing->interest_rate, 3) anual
                                     @endif
                                     @if ($refinancing->term_months) · {{ $refinancing->term_months }} meses @endif
                                     @if ($refinancing->installment) · cuota @money($refinancing->installment) @endif

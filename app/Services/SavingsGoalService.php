@@ -114,10 +114,11 @@ class SavingsGoalService
      */
     public function recalculateAmount(SavingsGoal $goal): SavingsGoal
     {
+        // La suma se hace en SQL: antes se materializaba una fila por aporte
+        // solo para sumarlas en PHP.
         $saved = (float) $goal->contributions()
-            ->selectRaw("CASE type WHEN 'deposit' THEN amount ELSE -amount END as signed_amount")
-            ->get()
-            ->sum('signed_amount');
+            ->selectRaw("COALESCE(SUM(CASE type WHEN 'deposit' THEN amount ELSE -amount END), 0) as signed_total")
+            ->value('signed_total');
 
         $goal->current_amount = round(max(0.0, $saved), 2);
 
@@ -236,10 +237,15 @@ class SavingsGoalService
      *
      * @return array<string, mixed>
      */
-    public function summary(int $householdId): array
+    /**
+     * @param  Collection<int, SavingsGoal>|null  $goals  metas vigentes ya
+     *                                                    cargadas (p. ej. por `outstandingGoals()`); evita repetir
+     *                                                    la consulta en Panel y Reportes, que ya las tienen en mano.
+     */
+    public function summary(int $householdId, ?Collection $goals = null): array
     {
         /** @var Collection<int, SavingsGoal> $goals */
-        $goals = SavingsGoal::where('household_id', $householdId)->outstanding()->get();
+        $goals ??= SavingsGoal::where('household_id', $householdId)->outstanding()->get();
 
         $totalTarget = round((float) $goals->sum(fn (SavingsGoal $g) => (float) $g->target_amount), 2);
         $totalSaved = round((float) $goals->sum(fn (SavingsGoal $g) => (float) $g->current_amount), 2);
@@ -249,7 +255,7 @@ class SavingsGoalService
             'total_target' => $totalTarget,
             'total_saved' => $totalSaved,
             'total_remaining' => round(max(0.0, $totalTarget - $totalSaved), 2),
-            'monthly_commitment' => $this->committedMonthly($householdId),
+            'monthly_commitment' => $this->committedMonthly($householdId, $goals),
             'progress_percent' => $totalTarget > 0.0
                 ? round(min(100.0, $totalSaved / $totalTarget * 100), 1)
                 : 0.0,
@@ -265,12 +271,20 @@ class SavingsGoalService
      * ese dinero. Cada meta cuenta lo que le falte, no más (la última cuota
      * nunca supera el faltante). Pausada, lograda y archivada no cuentan.
      */
-    public function committedMonthly(int $householdId): float
+    /**
+     * @param  Collection<int, SavingsGoal>|null  $goals  metas **vigentes** ya
+     *                                                    cargadas. `outstanding` es activa + pausada, así que contiene
+     *                                                    a las activas: filtrarla da el mismo conjunto que la consulta.
+     */
+    public function committedMonthly(int $householdId, ?Collection $goals = null): float
     {
-        $committed = SavingsGoal::where('household_id', $householdId)
-            ->where('status', SavingsGoalStatus::Active->value)
-            ->whereNotNull('monthly_commitment')
-            ->get()
+        $goals ??= SavingsGoal::where('household_id', $householdId)
+            ->outstanding()
+            ->get();
+
+        $committed = $goals
+            ->filter(fn (SavingsGoal $g): bool => $g->status === SavingsGoalStatus::Active
+                && $g->monthly_commitment !== null)
             ->sum(fn (SavingsGoal $g) => min(
                 (float) $g->monthly_commitment,
                 $g->remainingAmount(),
