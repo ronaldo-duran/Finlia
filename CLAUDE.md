@@ -24,7 +24,7 @@ Mercado inicial: **Colombia** (COP, español, DD/MM/AAAA, timezone `America/Bogo
 | Capa | Tecnología |
 |---|---|
 | Backend | **Laravel 13.8** · **PHP 8.3** |
-| DB | **MySQL/MariaDB** (local y producción) · SQLite solo para tests |
+| DB | **MySQL/MariaDB o PostgreSQL** (local y producción) · SQLite solo para tests |
 | ORM | **Eloquent** + Migrations + Seeders + Factories |
 | Frontend | **Blade** · **Bootstrap 5** · **JavaScript vanilla** · **Chart.js** |
 | Auth | Laravel nativo (sesiones, no Sanctum/API) |
@@ -32,6 +32,13 @@ Mercado inicial: **Colombia** (COP, español, DD/MM/AAAA, timezone `America/Bogo
 | Build | Vite (solo para assets; **Bootstrap reemplaza a Tailwind**) |
 
 **Prohibido** salvo necesidad técnica explícita y justificada: React, Vue, Angular, Next, Node, Redis, Docker, WebSockets, microservicios. El despliegue es **hosting compartido (Hostinger)** → nada que requiera procesos persistentes.
+
+> 🗄️ **Dos motores soportados: MySQL/MariaDB y PostgreSQL** ([ADR-0036](docs/DECISIONS.md#adr-0036)). No es un detalle de despliegue, es una restricción al escribir código:
+>
+> - **Nada de SQL específico de un motor sin cubrir los dos.** `DATE_FORMAT` no existe en PostgreSQL; `strftime` no existe en MySQL. Si hace falta una función propia del motor, se resuelve con un `match` sobre `getDriverName()` que enumere **todos** los motores y falle ruidosamente ante uno desconocido — nunca con un `else` que convierta a uno en el predeterminado (ver `MovementSummaryService::monthKeyFor()`).
+> - **Nunca escribas un identificador citado a mano.** Los acentos graves valen en MySQL y SQLite pero rompen en PostgreSQL. Usa `getQueryGrammar()->wrap()`, o deja que lo haga el Query Builder.
+> - **`enum` de motor, no**: columnas string validadas con Enums PHP (ya en [docs/DATA_MODEL.md](docs/DATA_MODEL.md)).
+> - **La suite en SQLite no basta como prueba.** SQLite perdona cosas que los motores de producción no. El job `db-engines` del CI corre la misma suite contra MySQL y PostgreSQL; si tocas SQL crudo, es ahí donde se verifica.
 
 > ⚠️ **Conflicto conocido**: el proyecto viene con Tailwind 4 instalado. La spec exige Bootstrap 5. El reemplazo (quitar Tailwind, añadir Bootstrap 5) se hace en la **Épica 1**. Mientras tanto, no añadir dependencias de Tailwind.
 
@@ -136,7 +143,7 @@ Detalle en [docs/CONVENTIONS.md](docs/CONVENTIONS.md).
 composer install
 cp .env.example .env
 php artisan key:generate
-# Configurar DB MySQL en .env  (ver docs/DEPLOYMENT.md)
+# Configurar la DB en .env — MySQL/MariaDB o PostgreSQL (ver docs/DEPLOYMENT.md)
 php artisan migrate --seed
 npm install
 npm run build      # o npm run dev para desarrollo

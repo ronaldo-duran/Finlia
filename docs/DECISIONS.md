@@ -39,6 +39,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0033 — Eliminación/suspensión de cuenta: ventana de 30 días y tres reglas de propiedad](#adr-0033) — **ACEPTADA**
 - [ADR-0034 — Exportación de datos: ZIP con CSVs + JSON, throttle 3/día](#adr-0034) — **ACEPTADA**
 - [ADR-0035 — Transferencias entre cuentas del mismo hogar](#adr-0035) — **ACEPTADA**
+- [ADR-0036 — Soporte de dos motores: MySQL/MariaDB y PostgreSQL](#adr-0036) — **ACEPTADA**
 
 ---
 
@@ -1087,6 +1088,33 @@ Se plantearon tres caminos: descartarlo en el navegador (localStorage), aceptar 
 **Consecuencias.** `MovementService::createTransfer/updateTransfer/deleteTransfer` respetan el seam de ADR-0010 (no usan `request()` ni `Auth::`). `TransferController` es delgado: valida → autoriza → delega al service. La futura API REST (Épica 14) reutiliza los mismos methods sin modificación. Un test de schema verifica que la tabla `transfers` no tenga columnas de datos sensibles de tarjeta (ADR-0002).
 
 **Estado.** ACEPTADA — 2026-09-05 (Épica 10).
+
+---
+
+## ADR-0036
+### Soporte de dos motores: MySQL/MariaDB y PostgreSQL — **ACEPTADA**
+
+**Contexto.** El stack declaraba MySQL/MariaDB como único motor, pero el entorno real de desarrollo pasó a PostgreSQL. La contradicción no era teórica: la Épica 11 introdujo `DATE_FORMAT(\`date\`, '%Y-%m')` para agrupar por mes, con un `else` que hacía de MySQL el motor por omisión. PostgreSQL no tiene esa función ni acepta acentos graves como delimitador, así que el panel devolvía `SQLSTATE[42601]` nada más entrar.
+
+Lo relevante es **por qué no se detectó**: la suite corre sobre SQLite en memoria, que aceptaba la expresión. Ningún test podía fallar, y el error apareció en el navegador. Mantener un único motor "oficial" mientras se desarrolla en otro deja el mismo hueco abierto para el siguiente caso.
+
+**Decisión.**
+
+1. **Ambos motores son de primera clase**: MySQL/MariaDB **y** PostgreSQL están soportados en desarrollo y producción. SQLite sigue siendo exclusivo de la suite.
+2. **El SQL específico de motor se resuelve con un `match` exhaustivo** sobre `getDriverName()` que enumere todos los motores soportados y lance `RuntimeException` ante uno desconocido. Prohibido el `else` que convierte a un motor en el predeterminado: es exactamente lo que produjo el fallo. Referencia: `MovementSummaryService::monthKeyFor()`.
+3. **Los identificadores nunca se citan a mano**: se delega en `getQueryGrammar()->wrap()` o en el Query Builder, porque cada motor usa un delimitador distinto (`\`x\`` en MySQL, `"x"` en PostgreSQL y SQLite, `[x]` en SQL Server).
+4. **CI ejecuta la suite completa contra los dos motores** (job `db-engines`, matriz MySQL 8 + PostgreSQL 16, `fail-fast: false`). Es el único control que impide la regresión; la suite en SQLite se conserva porque es rápida y da el primer aviso.
+5. **Sin `enum` de motor** en migraciones: columnas string validadas con Enums PHP, como ya recogía [docs/DATA_MODEL.md](DATA_MODEL.md).
+
+**Alternativas descartadas.**
+- *Fijar solo PostgreSQL y migrar*: descarta el despliegue en Hostinger, donde MySQL es lo que viene por defecto en hosting compartido.
+- *Fijar solo MySQL y cambiar el entorno de desarrollo*: obligaría a rehacer el entorno ya montado y no aporta nada al producto.
+- *Una capa de abstracción propia sobre las funciones de fecha*: sobreingeniería para un puñado de expresiones. El `match` explícito es más corto y falla antes.
+- *Añadir Postgres solo al CI sin declararlo soportado*: la documentación seguiría contradiciendo la realidad, que es la causa raíz.
+
+**Consecuencias.** Todo SQL crudo nuevo debe cubrir ambos motores, y el CI tarda algo más (dos jobs adicionales con servicios). A cambio, un fallo específico de motor se detecta en el PR y no en producción. Verificado antes de adoptarlo: los 559 tests pasan contra PostgreSQL 16 y MariaDB 10.11, además de SQLite.
+
+**Estado.** ACEPTADA — 2026-09-06 (Épica 11).
 
 ---
 

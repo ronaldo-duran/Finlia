@@ -12,6 +12,30 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.24.0] - 2026-09-06 — Soporte de dos motores: MySQL/MariaDB y PostgreSQL
+
+### Contexto
+El stack declaraba MySQL/MariaDB como único motor mientras el entorno real de desarrollo corría PostgreSQL. La contradicción no era teórica: rompió el panel en producción. Se resuelve declarando **ambos motores de primera clase** ([ADR-0036](docs/DECISIONS.md#adr-0036)).
+
+### Corregido
+- **La agrupación por mes rompía en PostgreSQL** (`SQLSTATE[42601]` al abrir el panel). `monthKeyExpression()` distinguía "o SQLite, o MySQL", así que a PostgreSQL le mandaba `DATE_FORMAT` —función que no existe allí— con acentos graves, que tampoco acepta como delimitador. Dos errores en una línea: un `else` que hacía de MySQL el motor por omisión, y un identificador escrito a mano. Ahora los motores se enumeran y el identificador lo cita el grammar de la conexión. La parte que decide se extrajo a `monthKeyFor()`, pura y testeable, con `MonthKeyExpressionTest` cubriendo los cinco motores y el caso desconocido. *(Corregido en PR #22, que se publicó sin versión propia; queda registrado aquí.)*
+
+### Añadido
+- **Job `db-engines` en CI**: la suite completa contra **MySQL 8** y **PostgreSQL 16** en matriz, con `fail-fast: false` para que un motor rojo no oculte el estado del otro. Es el único control que impide que vuelva a colarse SQL específico de un motor: el job `php` seguirá corriendo en SQLite porque es rápido, pero SQLite acepta cosas que los motores de producción rechazan.
+- **[ADR-0036](docs/DECISIONS.md#adr-0036)**, con las reglas que se derivan de soportar dos motores: `match` exhaustivo sobre el driver (nunca un `else` que convierta a uno en predeterminado), identificadores citados por el grammar y nunca a mano, y sin `enum` de motor en migraciones.
+
+### Modificado
+- `CLAUDE.md`: la tabla de stack admite ambos motores, y se añaden las cuatro reglas operativas que hay que respetar al escribir SQL.
+- `README.md`: stack, bloque de configuración con las dos variantes, descripción del CI (cuatro jobs) y dos filas nuevas de troubleshooting — el error de autenticación en cada motor y el `42601` de una función de fecha mal portada.
+- `docs/DEPLOYMENT.md`, `docs/ARCHITECTURE.md`: ambos motores.
+- `docs/DATA_MODEL.md`: la nota sobre NULL distintos en índices únicos aplica igual a MySQL y a PostgreSQL; se generaliza el texto.
+
+### Verificación
+Los **559 tests pasan en los tres motores**: SQLite (en memoria), PostgreSQL 16 y MariaDB 10.11, ejecutados de verdad, no inferidos. CI cubrirá MySQL 8, que es la variante que no había disponible en el entorno de desarrollo.
+
+### Sin cambios de código
+No hizo falta tocar la aplicación: el arreglo de `monthKeyFor()` (PR #22, sin publicar versión propia) ya era el único punto que dependía del motor. Lo que faltaba era garantizarlo.
+
 ## [0.23.0] - 2026-09-05 — Hardening: performance, auditoría de seguridad y producción (Épica 11, 1.ª pasada)
 
 ### Corregido (seguridad)

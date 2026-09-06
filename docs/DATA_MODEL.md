@@ -162,7 +162,7 @@
 | month | tinyint unsigned (1-12) | |
 | timestamps | | |
 
-- Unique `(household_id, category_id, period, year, month)`. Como MySQL trata los NULL como distintos, la unicidad del presupuesto **total** se refuerza en `StoreBudgetRequest`.
+- Unique `(household_id, category_id, period, year, month)`. Como MySQL y PostgreSQL tratan los NULL como distintos en índices únicos, la unicidad del presupuesto **total** se refuerza en `StoreBudgetRequest`.
 - Índice `(household_id, year, month)`.
 - En edición **solo el monto es mutable**; cambiar categoría o mes = otro presupuesto.
 
