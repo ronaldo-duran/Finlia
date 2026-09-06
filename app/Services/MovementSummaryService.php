@@ -12,6 +12,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 /**
  * Agregaciones que combinan ingresos y gastos (ADR-0001).
@@ -244,14 +245,51 @@ class MovementSummaryService
     /**
      * Expresión SQL que reduce una fecha a 'YYYY-MM'.
      *
-     * Depende del motor a propósito: MySQL no tiene `strftime` y SQLite no
-     * tiene `DATE_FORMAT`. Producción usa MySQL/MariaDB y los tests SQLite.
+     * No hay forma portable de hacerlo: cada motor trae su propia función
+     * (MySQL no tiene `strftime`, SQLite no tiene `DATE_FORMAT`, PostgreSQL
+     * no tiene ninguna de las dos). Por eso se enumeran **todos** los motores
+     * soportados y los desconocidos fallan de inmediato con un mensaje claro,
+     * en vez de caer en el `else` de otro motor y reventar como un error de
+     * sintaxis a mitad de una consulta.
+     *
+     * El nombre de la columna lo cita el grammar de la conexión: escribirlo a
+     * mano con acentos graves funcionaba en MySQL y SQLite pero rompía en
+     * PostgreSQL, que delimita con comillas dobles.
      */
     private function monthKeyExpression(): string
     {
-        return DB::connection()->getDriverName() === 'sqlite'
-            ? "strftime('%Y-%m', `date`)"
-            : "DATE_FORMAT(`date`, '%Y-%m')";
+        $connection = DB::connection();
+
+        return self::monthKeyFor(
+            $connection->getDriverName(),
+            // Lo cita el grammar de la conexión: cada motor delimita distinto.
+            $connection->getQueryGrammar()->wrap('date'),
+        );
+    }
+
+    /**
+     * Parte pura de `monthKeyExpression()`, separada para poder probarla.
+     *
+     * La suite corre en SQLite, así que un error específico de otro motor
+     * pasaba desapercibido hasta llegar a producción — que es justo como
+     * apareció el `DATE_FORMAT` contra PostgreSQL. Aislada así, se puede
+     * verificar cada motor sin levantar cuatro servidores.
+     *
+     * @param  string  $driver  nombre del driver de la conexión
+     * @param  string  $columna  identificador de la columna, ya citado
+     */
+    public static function monthKeyFor(string $driver, string $columna): string
+    {
+        return match ($driver) {
+            'sqlite' => "strftime('%Y-%m', {$columna})",
+            'mysql', 'mariadb' => "DATE_FORMAT({$columna}, '%Y-%m')",
+            'pgsql' => "to_char({$columna}, 'YYYY-MM')",
+            'sqlsrv' => "FORMAT({$columna}, 'yyyy-MM')",
+            default => throw new RuntimeException(
+                "MovementSummaryService no sabe agrupar por mes en «{$driver}». ".
+                'Añade su expresión en monthKeyFor().'
+            ),
+        };
     }
 
     /**
