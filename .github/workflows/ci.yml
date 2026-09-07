@@ -81,15 +81,19 @@ jobs:
             user: postgres
 
     services:
+      # Sin contraseña a propósito: son contenedores efímeros, aislados en la
+      # red del job y destruidos al terminar. Poner una la haría parecer un
+      # secreto sin proteger nada — y un literal así lo marca el escáner de
+      # secretos, con razón: no se distingue de una credencial de verdad.
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: finlia
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
           MYSQL_DATABASE: finlia_test
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pfinlia --silent"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=15
@@ -97,7 +101,7 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_PASSWORD: finlia
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: finlia_test
         ports:
           - 5432:5432
@@ -137,7 +141,7 @@ jobs:
           DB_PORT: ${{ matrix.engine.port }}
           DB_DATABASE: finlia_test
           DB_USERNAME: ${{ matrix.engine.user }}
-          DB_PASSWORD: finlia
+          DB_PASSWORD: ''
         run: php artisan test
 
   # ---- Frontend: los assets de Vite compilan en producción ----
