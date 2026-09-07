@@ -36,7 +36,7 @@ Service (App\Services)             ← LÓGICA DE DOMINIO (cálculos financieros
 Model (App\Models) + Eloquent      ← datos, relaciones, scopes
    │
    ▼
-Database (MySQL)
+Database (MySQL/MariaDB o PostgreSQL)
 ```
 
 ### Regla de ubicación

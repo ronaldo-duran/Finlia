@@ -32,7 +32,7 @@ El estado detallado de cada funcionalidad está en [docs/ROADMAP.md](docs/ROADMA
 ## 🧱 Stack
 
 - **Laravel 13.8** · **PHP 8.3**
-- **MySQL/MariaDB** (SQLite para tests)
+- **MySQL/MariaDB o PostgreSQL** (SQLite para tests) — ambos soportados, [ADR-0036](docs/DECISIONS.md#adr-0036)
 - **Blade** · **Bootstrap 5** · **JavaScript vanilla** · **Chart.js**
 - **Eloquent** · Migrations · Seeders · Factories
 - **PHPUnit**
@@ -49,7 +49,7 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-Configura la base de datos MySQL en `.env` (ver [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) para los valores exactos y la configuración de Colombia):
+Configura la base de datos en `.env`. Finlia soporta **MySQL/MariaDB y PostgreSQL** ([ADR-0036](docs/DECISIONS.md#adr-0036)); elige uno (ver [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) para los valores exactos y la configuración de Colombia):
 
 ```env
 APP_NAME=Finlia
@@ -57,12 +57,17 @@ APP_TIMEZONE=America/Bogota
 APP_LOCALE=es
 APP_FAKER_LOCALE=es_CO
 
+# MySQL / MariaDB
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=finlia
 DB_USERNAME=tu_usuario
 DB_PASSWORD=tu_password
+
+# …o PostgreSQL: basta cambiar el driver y el puerto
+# DB_CONNECTION=pgsql
+# DB_PORT=5432
 ```
 
 Luego:
@@ -116,9 +121,14 @@ primera vez.
 
 ### CI (GitHub Actions)
 
-En cada push/PR corre [.github/workflows/ci.yml](.github/workflows/ci.yml) con tres
-jobs: **PHP** (Pint + PHPUnit), **Assets** (build de Vite) y **E2E** (Playwright con
+En cada push/PR corre [.github/workflows/ci.yml](.github/workflows/ci.yml) con cuatro
+jobs: **PHP** (Pint + PHPUnit sobre SQLite), **BD** (la misma suite contra MySQL 8 y
+PostgreSQL 16, en matriz), **Assets** (build de Vite) y **E2E** (Playwright con
 Chromium, sube el reporte como artefacto si falla).
+
+El job de **BD** existe porque SQLite perdona SQL que los motores de producción
+rechazan: es lo que impide que una función específica de un motor llegue a
+producción sin que ningún test se entere.
 
 ## 📦 Despliegue
 
@@ -160,7 +170,8 @@ Comprueba que está bien con `php artisan schedule:list`.
 | `419 Page Expired` al enviar un formulario | Falta `@csrf`, o la sesión caducó | Añade `@csrf` al formulario. `CsrfTokenSweepTest` detecta el caso — la suite no lo pilla sola porque Laravel desactiva CSRF en tests |
 | `500` tras desplegar, con la web en blanco | Caché de config apuntando a valores viejos | `php artisan config:clear` y vuelve a cachear |
 | Los estilos no cargan en producción | Falta `public/build` (está en `.gitignore`) | `npm ci && npm run build` y sube la carpeta |
-| `SQLSTATE[HY000] [1045]` al migrar | Credenciales de BD incorrectas en `.env` | Revisa `DB_USERNAME` / `DB_PASSWORD` |
+| `SQLSTATE[HY000] [1045]` (MySQL) o `password authentication failed` (PostgreSQL) al migrar | Credenciales de BD incorrectas en `.env` | Revisa `DB_USERNAME` / `DB_PASSWORD` |
+| `SQLSTATE[42601] syntax error` con una función de fecha | SQL específico de un motor usado contra otro | Toda función propia del motor va en un `match` sobre el driver ([ADR-0036](docs/DECISIONS.md#adr-0036)); el job **BD** del CI lo detecta |
 | El login rebota siempre a «aceptar términos» | Falta la versión vigente de términos | `php artisan db:seed --class=TermsVersionSeeder` |
 | Las invitaciones no llegan por correo | `MAIL_MAILER=log` (no entrega a bandejas) | Configura SMTP; mientras tanto la app ofrece el enlace manual |
 | Las tareas programadas no corren | El cron de `schedule:run` no está puesto | Añade la línea de la sección anterior |

@@ -6,7 +6,7 @@
 
 - PHP **8.3** (verificar en el panel de Hostinger → Advanced → PHP Configuration).
 - Extensiones: `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath`, `gd`/`imagick` (si hay imágenes), `fileinfo`.
-- MySQL/MariaDB con `utf8mb4`.
+- **MySQL/MariaDB** (con `utf8mb4`) **o PostgreSQL** — ambos soportados ([ADR-0036](DECISIONS.md#adr-0036)). En hosting compartido lo habitual es MySQL.
 - Acceso **SSH** (recomendado) o File Manager + terminal.
 - Cron disponible (Hostinger lo permite).
 
