@@ -899,7 +899,13 @@ a { color: var(--finlia-primary); }
     display: flex;
     flex-direction: column;
     line-height: 1.25;
-    min-width: 0; /* deja que el texto se recorte en vez de desbordar */
+    /* `flex: 1` absorbe el espacio sobrante y empuja el botón y la equis al
+       borde derecho. Sin esto los elementos se apelmazan a la izquierda y
+       queda un hueco muerto a la derecha que parece un banner recortado —
+       tanto más cuanto más corto sea el texto.
+       `min-width: 0` permite que el texto se recorte en vez de desbordar. */
+    flex: 1;
+    min-width: 0;
 }
 
 .ios-install-banner-text strong {

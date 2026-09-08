@@ -12,6 +12,19 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.25.1] - 2026-09-08 — El banner de instalación se veía recortado
+
+### Corregido
+- **El aviso de instalación en iOS dejaba casi un cuarto de pantalla vacío a la derecha**, y en un iPhone real parecía un banner cortado. La fila es un flex y ningún hijo crecía, así que todo se apelmazaba a la izquierda. El fallo me lo llevé yo mismo: con el texto de ayuda largo la fila se llenaba por accidente, y al acortarlo para arreglar un truncamiento quedó el hueco al descubierto — que no se notara antes fue casualidad, y no verlo después fue por revisar solo el modal. `flex: 1` en `.ios-install-banner-text` absorbe el sobrante y empuja el botón y la equis al borde.
+
+### Añadido
+- **3 tests E2E** (390, 402 y 430 px, los anchos de iPhone en uso) que no comprueban "que se vea bien" sino la propiedad medible: la equis termina pegada al borde derecho, sea cual sea el ancho y la longitud del texto. Contra el CSS anterior los tres fallan (`Recibido: 76.078125` frente a un máximo de 20).
+
+### Verificación
+- `php artisan test`: **559/559** en verde.
+- `npm run test:e2e`: **28/28** en verde (25 antes de esta corrección).
+- `vendor/bin/pint --test`: sin cambios pendientes.
+
 ## [0.25.0] - 2026-09-07 — Instalación del PWA en iPhone
 
 ### Contexto

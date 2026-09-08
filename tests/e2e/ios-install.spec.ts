@@ -112,6 +112,42 @@ test.describe('Instalación en iOS (PWA)', () => {
     await context.close();
   });
 
+  /**
+   * El banner es una fila flex: si ningún hijo crece, todo se apelmaza a la
+   * izquierda y queda un hueco muerto a la derecha que parece un recorte.
+   * Pasó de verdad — y sin que se notara — al acortar el texto de ayuda: con
+   * el texto largo la fila se llenaba por accidente, y al acortarlo apareció
+   * casi un cuarto de pantalla vacío en un iPhone real.
+   *
+   * Por eso no se comprueba "que se vea bien" sino la propiedad medible: la
+   * equis termina pegada al borde derecho, sea cual sea el ancho y la
+   * longitud del texto.
+   */
+  for (const ancho of [390, 402, 430]) {
+    test(`ocupa todo el ancho disponible a ${ancho}px`, async ({ browser }) => {
+      const context = await browser.newContext({
+        userAgent: UA.iphoneSafari,
+        storageState: 'playwright/.auth/demo.json',
+        viewport: { width: ancho, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+      });
+      const page = await context.newPage();
+      await page.goto('/dashboard');
+
+      const banner = await page.locator('#iosInstallBanner').boundingBox();
+      const equis = await page.locator('#iosInstallDismiss').boundingBox();
+
+      const margenDerecho = banner!.x + banner!.width - (equis!.x + equis!.width);
+
+      // 12px es el padding del banner; se admite algo de holgura por el
+      // redondeo del layout, pero no un hueco estructural.
+      expect(margenDerecho).toBeLessThanOrEqual(20);
+
+      await context.close();
+    });
+  }
+
   test('descartarlo lo quita y lo recuerda tras recargar', async ({ browser }) => {
     const { context, page } = await panelCon(browser, UA.iphoneSafari);
 
