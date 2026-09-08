@@ -946,3 +946,21 @@ a { color: var(--finlia-primary); }
     align-items: center;
     justify-content: center;
 }
+
+/* Icono de Compartir mostrado en grande dentro de los pasos de iOS.
+   El botón de Safari no lleva etiqueta: quien no lo conoce lo busca por la
+   forma, no por el nombre. */
+.ios-install-icon-demo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin-left: 4px;
+    vertical-align: middle;
+    border-radius: 9px;
+    background-color: rgba(var(--finlia-primary-rgb), 0.12);
+    border: 1px solid rgba(var(--finlia-primary-rgb), 0.28);
+    color: var(--finlia-primary);
+    font-size: 1.15rem;
+}

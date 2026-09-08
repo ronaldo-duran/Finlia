@@ -60,12 +60,25 @@
                     </p>
 
                     <ol class="ios-install-steps">
+                        {{-- El botón Compartir es un icono sin etiqueta, así que
+                             mucha gente no lo identifica por el nombre. Se muestra
+                             en grande para que lo reconozca por la forma.
+
+                             Su posición NO es fija: abajo en iPhone con la barra
+                             de direcciones abajo (lo normal desde iOS 15), arriba
+                             en iPad y en iPhone si el usuario movió la barra. Por
+                             eso el texto no promete una sola ubicación. --}}
                         <li>
                             <span class="ios-install-step-n">1</span>
                             <span>
-                                Toca <strong>Compartir</strong>
-                                <i class="bi bi-box-arrow-up mx-1" aria-hidden="true"></i>
-                                en la barra de abajo.
+                                Toca este botón en la barra de Safari:
+                                <span class="ios-install-icon-demo">
+                                    <i class="bi bi-box-arrow-up" aria-hidden="true"></i>
+                                </span>
+                                <small class="d-block text-muted mt-1">
+                                    Es <strong>Compartir</strong>. Suele estar abajo; en iPad
+                                    —o si tienes la barra arriba— está en la parte superior.
+                                </small>
                             </span>
                         </li>
                         <li>
