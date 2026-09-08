@@ -12,6 +12,22 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.25.0] - 2026-09-07 — Instalación del PWA en iPhone
+
+### Contexto
+Safari nunca implementó `beforeinstallprompt`, así que en iOS **no existe** el aviso nativo de instalación que Android y escritorio muestran solos. Un usuario de iPhone no tenía forma de descubrir que Finlia se puede instalar: la app cumplía todos los criterios de instalabilidad y aun así el acceso quedaba escondido en el menú Compartir.
+
+### Añadido
+- **Aviso de instalación para iOS** (`layouts/partials/ios-install-banner`): banda discreta sobre la barra de navegación con un modal de pasos numerados (Compartir → Añadir a pantalla de inicio → Añadir). Usa los tokens del sistema de diseño, así que funciona en claro y oscuro sin colores fijos.
+- **Distingue Safari del resto de navegadores iOS.** Es el detalle que evita mandar al usuario a un callejón sin salida: en iPhone solo Safari instala de verdad — Chrome, Firefox y Edge son WebKit por obligación, pero su "Añadir a pantalla de inicio" crea un marcador que sigue abriéndose dentro del navegador. A esos se les pide abrir la app en Safari en vez de darles unos pasos que no van a funcionar.
+- **7 tests E2E** (`ios-install.spec.ts`) que fijan a quién se le muestra, que es lo que de verdad importa: iPhone+Safari sí; Android y escritorio no (ya tienen el aviso nativo); dentro de la app ya instalada no (`navigator.standalone`); una vez descartado no vuelve; y Chrome de iPhone recibe la variante correcta. Cada caso usa su propio user-agent reutilizando el `storageState` de la suite, porque un login por test agotaría el `throttle:5,1`.
+
+### Detalles de implementación
+- El banner va en el flujo normal del documento, antes de la navbar: la empuja hacia abajo en vez de taparla, y se marcha con el scroll mientras la navbar queda pegada. Evita pelear por z-index y recalcular paddings.
+- La detección cubre iPadOS 13+, que se presenta como Mac y solo se distingue por el soporte táctil.
+- El descarte se guarda en `localStorage` dentro de `try/catch`: en modo privado de Safari escribir lanza excepción, y ahí es preferible que el aviso reaparezca a que la página se rompa.
+- Solo se muestra a usuarios autenticados: instalar antes de tener cuenta no aporta.
+
 ## [0.24.0] - 2026-09-06 — Soporte de dos motores: MySQL/MariaDB y PostgreSQL
 
 ### Contexto
