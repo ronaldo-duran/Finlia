@@ -12,6 +12,36 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.25.1] - 2026-09-08 — El banner de instalación se veía recortado
+
+### Corregido
+- **El aviso de instalación en iOS dejaba casi un cuarto de pantalla vacío a la derecha**, y en un iPhone real parecía un banner cortado. La fila es un flex y ningún hijo crecía, así que todo se apelmazaba a la izquierda. El fallo me lo llevé yo mismo: con el texto de ayuda largo la fila se llenaba por accidente, y al acortarlo para arreglar un truncamiento quedó el hueco al descubierto — que no se notara antes fue casualidad, y no verlo después fue por revisar solo el modal. `flex: 1` en `.ios-install-banner-text` absorbe el sobrante y empuja el botón y la equis al borde.
+
+### Añadido
+- **3 tests E2E** (390, 402 y 430 px, los anchos de iPhone en uso) que no comprueban "que se vea bien" sino la propiedad medible: la equis termina pegada al borde derecho, sea cual sea el ancho y la longitud del texto. Contra el CSS anterior los tres fallan (`Recibido: 76.078125` frente a un máximo de 20).
+
+### Verificación
+- `php artisan test`: **559/559** en verde.
+- `npm run test:e2e`: **28/28** en verde (25 antes de esta corrección).
+- `vendor/bin/pint --test`: sin cambios pendientes.
+
+## [0.25.0] - 2026-09-07 — Instalación del PWA en iPhone
+
+### Contexto
+Safari nunca implementó `beforeinstallprompt`, así que en iOS **no existe** el aviso nativo de instalación que Android y escritorio muestran solos. Un usuario de iPhone no tenía forma de descubrir que Finlia se puede instalar: la app cumplía todos los criterios de instalabilidad y aun así el acceso quedaba escondido en el menú Compartir.
+
+### Añadido
+- **Aviso de instalación para iOS** (`layouts/partials/ios-install-banner`): banda discreta sobre la barra de navegación con un modal de pasos numerados (Compartir → Añadir a pantalla de inicio → Añadir). Usa los tokens del sistema de diseño, así que funciona en claro y oscuro sin colores fijos.
+- **El paso 1 enseña el icono de Compartir en grande.** Es un botón sin etiqueta: quien no lo conoce lo busca por la forma, no por el nombre. Y su posición **no es fija** — abajo en iPhone con la barra de direcciones abajo (lo normal desde iOS 15), arriba en iPad o si el usuario movió la barra —, así que el texto no promete una sola ubicación.
+- **Distingue Safari del resto de navegadores iOS.** Es el detalle que evita mandar al usuario a un callejón sin salida: en iPhone solo Safari instala de verdad — Chrome, Firefox y Edge son WebKit por obligación, pero su "Añadir a pantalla de inicio" crea un marcador que sigue abriéndose dentro del navegador. A esos se les pide abrir la app en Safari en vez de darles unos pasos que no van a funcionar.
+- **7 tests E2E** (`ios-install.spec.ts`) que fijan a quién se le muestra, que es lo que de verdad importa: iPhone+Safari sí; Android y escritorio no (ya tienen el aviso nativo); dentro de la app ya instalada no (`navigator.standalone`); una vez descartado no vuelve; y Chrome de iPhone recibe la variante correcta. Cada caso usa su propio user-agent reutilizando el `storageState` de la suite, porque un login por test agotaría el `throttle:5,1`.
+
+### Detalles de implementación
+- El banner va en el flujo normal del documento, antes de la navbar: la empuja hacia abajo en vez de taparla, y se marcha con el scroll mientras la navbar queda pegada. Evita pelear por z-index y recalcular paddings.
+- La detección cubre iPadOS 13+, que se presenta como Mac y solo se distingue por el soporte táctil.
+- El descarte se guarda en `localStorage` dentro de `try/catch`: en modo privado de Safari escribir lanza excepción, y ahí es preferible que el aviso reaparezca a que la página se rompa.
+- Solo se muestra a usuarios autenticados: instalar antes de tener cuenta no aporta.
+
 ## [0.24.0] - 2026-09-06 — Soporte de dos motores: MySQL/MariaDB y PostgreSQL
 
 ### Contexto

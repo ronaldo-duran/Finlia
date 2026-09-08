@@ -32,6 +32,14 @@
 </head>
 <body class="d-flex flex-column min-vh-100 @auth has-bottom-nav @endauth">
 
+    @auth
+        {{-- Aviso de instalación en iOS: va antes de la navbar para que la
+             empuje hacia abajo en vez de taparla. El propio partial decide si
+             se muestra (solo iPhone/iPad, fuera de la app instalada y sin
+             haberlo descartado antes). --}}
+        @include('layouts.partials.ios-install-banner')
+    @endauth
+
     {{-- ===================== Navbar (glass) ===================== --}}
     <nav class="navbar navbar-expand glass-nav sticky-top py-2">
         <div class="container-fluid">

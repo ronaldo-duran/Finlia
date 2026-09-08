@@ -871,3 +871,102 @@ a { color: var(--finlia-primary); }
     /* En standalone el notch ya está cubierto por el safe-area-inset
        del body; la barra inferior no necesita ajuste adicional. */
 }
+
+/* -------------------------------------------------------------
+   Aviso de instalación en iOS.
+
+   Safari no tiene aviso nativo de instalación, así que este banner
+   es la única forma de que un usuario de iPhone descubra que la app
+   se puede instalar. Va en el flujo normal del documento: empuja a la
+   navbar hacia abajo y se marcha con el scroll, sin z-index ni
+   paddings que recalcular.
+   ------------------------------------------------------------- */
+.ios-install-banner {
+    background-color: var(--finlia-surface-solid);
+    border-bottom: 1px solid var(--finlia-border);
+    /* Respeta el notch cuando el banner es lo primero de la pantalla. */
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+.ios-install-banner-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+}
+
+.ios-install-banner-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+    /* `flex: 1` absorbe el espacio sobrante y empuja el botón y la equis al
+       borde derecho. Sin esto los elementos se apelmazan a la izquierda y
+       queda un hueco muerto a la derecha que parece un banner recortado —
+       tanto más cuanto más corto sea el texto.
+       `min-width: 0` permite que el texto se recorte en vez de desbordar. */
+    flex: 1;
+    min-width: 0;
+}
+
+.ios-install-banner-text strong {
+    font-size: 0.875rem;
+    color: var(--finlia-text);
+}
+
+.ios-install-banner-text span {
+    font-size: 0.75rem;
+    color: var(--finlia-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Pasos numerados del modal. */
+.ios-install-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.ios-install-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.9375rem;
+    color: var(--finlia-text);
+}
+
+.ios-install-step-n {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background-color: var(--finlia-primary);
+    color: #fff;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Icono de Compartir mostrado en grande dentro de los pasos de iOS.
+   El botón de Safari no lleva etiqueta: quien no lo conoce lo busca por la
+   forma, no por el nombre. */
+.ios-install-icon-demo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin-left: 4px;
+    vertical-align: middle;
+    border-radius: 9px;
+    background-color: rgba(var(--finlia-primary-rgb), 0.12);
+    border: 1px solid rgba(var(--finlia-primary-rgb), 0.28);
+    color: var(--finlia-primary);
+    font-size: 1.15rem;
+}
