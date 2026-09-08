@@ -21,6 +21,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="d-flex flex-column min-vh-100">
+    @include('layouts.partials.progress-bar')
 
     {{-- Toggle de tema flotante (pantallas sin navbar) --}}
     <button type="button" class="btn-icon glass theme-toggle-floating" data-theme-toggle aria-label="Cambiar tema">

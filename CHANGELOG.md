@@ -12,6 +12,35 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.26.0] - 2026-09-08 — Indicadores de carga
+
+### Contexto
+La app navega con recargas completas: entre el clic y la página nueva no había **ninguna** señal. Con el servidor lento —y en hosting compartido lo es a ratos— el usuario cree que se pegó y vuelve a pulsar. En un GET eso solo molesta; en un POST son dos gastos.
+
+### Añadido
+- **Barra de progreso superior** (`.finlia-progress`): 3 px, degradado petróleo→cobre, avance asintótico que nunca llega al 100 % —ese salto lo da la página nueva al pintarse—. Se enciende en cualquier navegación o envío.
+- **Retardo de 140 ms antes de mostrarla.** Es la diferencia entre una señal y un parpadeo: si la respuesta llega en 80 ms, una barra que aparece y desaparece es ruido. Por debajo del umbral no se ve nada.
+- **Spinner dentro del botón pulsado**, que además lo deja inerte. El contenido se oculta con `visibility` en vez de borrarse, así que el botón conserva su ancho y no desplaza lo que tiene al lado justo al pulsarlo.
+- **Descarte del segundo envío del mismo formulario.** Es la parte que de verdad protege: sin ella, dos toques impacientes sobre "Guardar gasto" son dos gastos.
+- **7 tests E2E** (`loading.spec.ts`), ninguno de los cuales toca datos: cancelan la navegación en vez de simular un servidor lento, registrando el listener *después* del módulo para que este vea el evento intacto.
+
+### Detalles de implementación
+- **El botón no se deshabilita.** Un `disabled` deja su `name`/`value` fuera del payload y rompería cualquier formulario que distinga qué botón lo envió; se bloquea con `pointer-events` y una marca en el formulario.
+- **`aria-label` de respaldo mientras está ocupado.** `visibility: hidden` saca el texto del árbol de accesibilidad: sin esto el botón se quedaba sin nombre justo mientras esperaba, y un lector de pantalla anunciaría "botón, ocupado" y nada más. Lo destapó el test, al dejar de encontrar el botón por su nombre tras pulsarlo.
+- **El modal de confirmación se conecta a mano.** Envía con `HTMLFormElement.prototype.submit()` para no re-disparar su propio interceptor, y eso se salta el evento `submit`, así que el indicador no se encendía solo — justo en el borrado, que es donde más se espera.
+- **Limpieza en `pageshow`.** Volver atrás restaura la página tal como se dejó: con la barra a medias y el botón girando para siempre.
+- **Filtros de enlace**: se ignoran `target="_blank"`, `download`, anclas `#`, `javascript:`/`mailto:`/`tel:`, sitios externos y clics con modificador. En todos ellos esta página se queda donde está, y encender la barra la dejaría girando sobre una pantalla que nunca cambia.
+- Con `prefers-reduced-motion` la barra aparece quieta en un tramo fijo y el spinner gira más despacio: es información, no decoración, así que no se suprime.
+
+### Modificado
+- `docs/UI_DESIGN.md`: sección nueva en §4 con la única regla que afecta a quien escriba una vista —`data-sin-progreso` para acciones que no cambian de página— y un punto más en el checklist.
+
+### Verificación
+- `php artisan test`: **559/559** en verde.
+- `npm run test:e2e`: **35/35** en verde (28 antes).
+- Los 7 tests nuevos fallan con el módulo neutralizado: sin esa comprobación no sabríamos si prueban algo.
+- `vendor/bin/pint --test`: sin cambios pendientes.
+
 ## [0.25.1] - 2026-09-08 — El banner de instalación se veía recortado
 
 ### Corregido
