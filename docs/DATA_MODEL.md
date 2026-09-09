@@ -46,7 +46,7 @@
 | Campo | Tipo | Notas |
 |---|---|---|
 | id | bigint, pk | |
-| name | string | "Ronaldo & Vanessa" |
+| name | string | "Mi hogar", "Casa de la playa" |
 | owner_id | bigint, FK→users | creador/admin |
 | currency | string | default 'COP' |
 | timezone | string | default 'America/Bogota' |

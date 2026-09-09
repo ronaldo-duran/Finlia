@@ -20,7 +20,7 @@
     :value="old('name', $household?->name)"
     required
     autofocus
-    placeholder="Ej: Ronaldo & Vanessa"
+    placeholder="Ej: Mi hogar"
     help="Como quieres llamar a este hogar. Lo verán todos sus miembros."
 />
 
