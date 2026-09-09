@@ -12,6 +12,30 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.28.0] - 2026-09-09 — El repositorio se explica solo
+
+### Contexto
+El código estaba bien documentado para quien ya trabajaba en él, pero quien llega de fuera —un reclutador, un colaborador— no encontraba en ningún sitio qué problema resuelve la aplicación ni por qué está construida así. Faltaba también lo más básico de un portafolio: ver la app.
+
+### Añadido
+- **Seis capturas de la aplicación** en viewport de teléfono (Panel, dinero disponible, registrar gasto, reportes, deudas y metas), con los datos falsos del seeder.
+- **Script de capturas** (`npm run screenshots`): las regenera contra la app corriendo, así que no envejecen a mano ni hay que recordar cómo se hicieron. Vive fuera de `tests/e2e` a propósito — es documentación, no una prueba, y no debe correr en la integración continua.
+- **El README responde a qué problema resuelve la app**: el saldo del banco no sabe que el arriendo sale el día 5 ni que hay una cuota comprometida en la tarjeta, y de ahí sale la fórmula del dinero disponible. Con secciones nuevas de problema, solución y **"Why this project?"**, que explica qué decisión técnica salió de qué necesidad real.
+- **Tabla de tecnologías demostradas** que dice qué se resolvió con cada pieza, no solo cuál se usó.
+- **Dos diagramas Mermaid** en la documentación de arquitectura: el recorrido de una petición por las capas —con el servicio de dominio resaltado, que es el único sitio donde vive el cálculo financiero— y el flujo completo de registrar un gasto como diagrama de secuencia. Sustituyen a los esquemas en ASCII.
+
+### Corregido
+- **La demo abría en ceros.** El seeder repartía los movimientos al azar sobre seis meses, así que al mes en curso le tocaban uno o ninguno: durante los primeros días de cada mes, el Panel mostraba "$ 0,00" en ingresos y en gastos, y el presupuesto al 0 %. Quien arrancaba el proyecto por primera vez veía una aplicación que parecía rota. Ahora el mes actual se siembra con importes fijos —dos salarios y una canasta de nueve gastos que consume el 41 % del presupuesto— y el historial aleatorio se queda para las series de seis meses de los reportes, que es para lo que servía.
+- **El hogar de demostración era insolvente**: los compromisos superaban a los ingresos esperados, así que la pantalla estrella del producto salía en rojo con "te has pasado del plan". Con dos salarios acordes al hogar de dos miembros que el propio seeder crea, la demo enseña lo que la aplicación sabe hacer: **"Puedes gastar hoy $ 81.521"**, dentro de presupuesto.
+- **Saldos iniciales de las cuentas** coherentes con el volumen de movimientos sembrado; antes las cuentas quedaban en negativo.
+- El resumen de decisiones de la documentación de arquitectura declaraba **ADR-0003 como pendiente** desde la épica de hogares, cuando quedó aceptada en ese mismo momento.
+
+### Verificación
+- `phpunit`: **558/559** en local, sin cambios respecto de antes de esta entrega. El fallo restante solo se reproduce en Windows, por cómo NTFS resuelve una ruta con `:`; en Linux la integración continua cierra 559/559.
+- `vendor/bin/pint --test`: sin cambios pendientes.
+- Las capturas se generaron contra la aplicación real y se revisaron una a una: ningún dato es de una persona real, todos salen de Faker con locale `es_CO`.
+- Barrido de secretos sobre los ficheros versionados: sin coincidencias. `.env` no está en el índice.
+
 ## [0.27.1] - 2026-09-09 — Cabeceras de seguridad y HTTPS forzado
 
 ### Contexto

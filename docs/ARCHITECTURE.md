@@ -17,27 +17,23 @@
 
 ## 2. Capas
 
+```mermaid
+flowchart TD
+    REQ["Petición HTTP"] --> RUT["Rutas · routes/web.php<br/><small>nombradas, agrupadas, con middleware</small>"]
+    RUT --> FRQ["Form Request<br/><small>valida la entrada</small>"]
+    FRQ --> POL["Policy<br/><small>autoriza sobre el hogar activo</small>"]
+    POL --> CTR["Controlador<br/><small>FINO: orquesta, sin lógica de negocio</small>"]
+    CTR --> SRV["Servicio de dominio · app/Services<br/><small>cálculos financieros</small>"]
+    SRV --> MOD["Modelo Eloquent<br/><small>datos, relaciones, scopes</small>"]
+    MOD --> BD[("MySQL · MariaDB · PostgreSQL")]
+
+    classDef dominio fill:#0f3d3e,stroke:#0f3d3e,color:#fff
+    class SRV dominio
 ```
-HTTP Request
-   │
-   ▼
-Routes (routes/web.php)            ← rutas nombradas, agrupadas, con middleware
-   │
-   ▼
-Form Request (validation + auth)   ← valida entrada; autoriza recurso
-   │
-   ▼
-Controller (App\Http\Controllers)  ← FINO: orquesta, no tiene lógica de negocio
-   │
-   ▼
-Service (App\Services)             ← LÓGICA DE DOMINIO (cálculos financieros)
-   │
-   ▼
-Model (App\Models) + Eloquent      ← datos, relaciones, scopes
-   │
-   ▼
-Database (MySQL/MariaDB o PostgreSQL)
-```
+
+> El nodo resaltado es el único sitio donde vive la lógica financiera. Esa
+> restricción es lo que hace barata la futura API móvil ([ADR-0010](DECISIONS.md#adr-0010)):
+> cambia la capa HTTP, no el cálculo.
 
 ### Regla de ubicación
 
@@ -172,20 +168,26 @@ Reglas que acompañan a la política:
 
 ## 9. Flujo principal: registrar un gasto
 
-```
-Usuario (celular)
-  → Botón flotante "+" (Épica 10)
-  → Form "Registrar gasto" (mínimos pasos):
-      1. valor
-      2. categoría
-      3. cuenta/medio de pago
-      4. fecha (default: hoy)
-      5. descripción (opcional)
-  → POST /expenses  (StoreExpenseRequest valida)
-  → ExpenseController@store  →  authorize  →  crea el Expense
-  → Eloquent insert (household_id + user_id + account_id)
-  → actualiza current_balance de la cuenta
-  → flash + redirect al dashboard
+```mermaid
+sequenceDiagram
+    actor U as Usuario
+    participant V as Formulario
+    participant RQ as StoreExpenseRequest
+    participant PO as ExpensePolicy
+    participant CT as ExpenseController
+    participant AB as AccountBalanceService
+    participant BD as Base de datos
+
+    U->>V: Pulsa "+" y elige "Gasto"
+    Note over V: valor · categoría · cuenta<br/>fecha "hoy" · descripción opcional
+    V->>RQ: POST /gastos
+    RQ->>RQ: Valida tipos, rangos y pertenencia
+    RQ->>PO: ¿Puede escribir en este hogar?
+    PO-->>CT: Autorizado
+    CT->>BD: Inserta el gasto<br/>household_id · user_id · account_id
+    CT->>AB: Recalcula el saldo de la cuenta
+    AB->>BD: Actualiza current_balance
+    CT-->>U: Mensaje de confirmación y vuelta al Panel
 ```
 
 El objetivo: **< 5 segundos** desde abrir la app hasta confirmar.
@@ -196,4 +198,4 @@ Las decisiones arquitectónicas viven en [docs/DECISIONS.md](DECISIONS.md). Resu
 
 - **ADR-0001 (ACEPTADA)**: ingresos y gastos en tablas separadas (`incomes` + `expenses`).
 - **ADR-0002 (ACEPTADA)**: tarjetas de crédito como `accounts` con `type=credit_card` + tabla `credit_cards` de extensión.
-- **ADR-0003 (PENDIENTE)**: ¿IDs auto-increment o UUID para recursos compartidos por URL (invitaciones)? Se confirma al iniciar la Épica 2.
+- **ADR-0003 (ACEPTADA)**: IDs auto-increment internos, pero las invitaciones se comparten por un **token aleatorio** guardado como hash — nunca por su ID.

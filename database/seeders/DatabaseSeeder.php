@@ -98,9 +98,9 @@ class DatabaseSeeder extends Seeder
     private function seedFinances(object $household, User $demo, User $miembro): void
     {
         $accounts = collect([
-            ['name' => 'Efectivo', 'type' => AccountType::Cash->value, 'initial_balance' => 200000],
-            ['name' => 'Bancolombia', 'type' => AccountType::Bank->value, 'initial_balance' => 1500000],
-            ['name' => 'Nequi', 'type' => AccountType::DigitalWallet->value, 'initial_balance' => 80000],
+            ['name' => 'Efectivo', 'type' => AccountType::Cash->value, 'initial_balance' => 450000],
+            ['name' => 'Bancolombia', 'type' => AccountType::Bank->value, 'initial_balance' => 5800000],
+            ['name' => 'Nequi', 'type' => AccountType::DigitalWallet->value, 'initial_balance' => 620000],
         ])->map(fn (array $a) => Account::create([
             'household_id' => $household->id,
             'name' => $a['name'],
@@ -137,6 +137,13 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
+        // Los movimientos de arriba son historial: alimentan las series de seis
+        // meses de los reportes, y por eso van al azar. El MES EN CURSO no se
+        // deja al azar — con 30 gastos repartidos en seis meses, al mes actual
+        // le tocan uno o ninguno, y el Panel abre en ceros justo para quien
+        // arranca la demo por primera vez.
+        $this->seedCurrentMonth($household, $accounts, $users);
+
         // Saldos coherentes con los movimientos generados.
         $balanceService = app(AccountBalanceService::class);
         $accounts->each(fn (Account $account) => $balanceService->recompute($account));
@@ -149,6 +156,68 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
+     * Movimientos FALSOS del mes en curso, con importes fijos.
+     *
+     * Son los que alimentan el Panel ("gastos del mes", presupuesto consumido)
+     * y los que salen en las capturas del README, así que no pueden depender
+     * del azar ni del día del mes en que se siembre. Los importes se eligen
+     * para consumir ~40 % del presupuesto de seedBudgets(): suficiente para
+     * que las barras y los gráficos digan algo, lejos de la alerta del 80 %.
+     *
+     * @param  array<int, int>  $users
+     */
+    private function seedCurrentMonth(Household $household, Collection $accounts, array $users): void
+    {
+        $now = Carbon::now(config('app.timezone'));
+        $categoryByName = Category::whereNull('household_id')->pluck('id', 'name');
+        $banco = $accounts->firstWhere('name', 'Bancolombia');
+        $efectivo = $accounts->firstWhere('name', 'Efectivo');
+        $nequi = $accounts->firstWhere('name', 'Nequi');
+
+        // Los dos salarios del hogar, ya recibidos. Coinciden con los
+        // ingresos esperados de seedBudgets(): el "puedes gastar" compara
+        // ambos, y descuadrarlos haría que la demo se contradiga a sí misma.
+        foreach ([[4200000, $users[0]], [3100000, $users[1]]] as [$amount, $userId]) {
+            Income::factory()->create([
+                'household_id' => $household->id,
+                'user_id' => $userId,
+                'account_id' => $banco?->id,
+                'category_id' => $categoryByName['Salario'] ?? null,
+                'amount' => $amount,
+                'date' => $now->copy()->startOfMonth()->toDateString(),
+                'description' => 'Salario del mes',
+            ]);
+        }
+
+        // Canasta del mes. El día se recorta a hoy: sembrar un gasto con
+        // fecha futura lo dejaría fuera de "gastos del mes" y descuadraría
+        // el presupuesto consumido.
+        collect([
+            ['Mercado quincenal', 'Alimentación', 385000, 2, $banco],
+            ['Ropa de los niños', 'Compras', 210000, 3, $banco],
+            ['Gasolina', 'Transporte', 120000, 3, $efectivo],
+            ['Almuerzos del trabajo', 'Alimentación', 96000, 4, $efectivo],
+            ['Recibo de luz', 'Servicios', 148000, 5, $banco],
+            ['Comida del perro', 'Mascotas', 89000, 5, $nequi],
+            ['Cine en familia', 'Entretenimiento', 74000, 6, $nequi],
+            ['Farmacia', 'Salud', 52000, 7, $efectivo],
+            ['Transporte público', 'Transporte', 38000, 8, $nequi],
+        ])->each(function (array $gasto) use ($household, $categoryByName, $now, $users): void {
+            [$descripcion, $categoria, $monto, $dia, $cuenta] = $gasto;
+
+            Expense::factory()->create([
+                'household_id' => $household->id,
+                'user_id' => fake()->randomElement($users),
+                'account_id' => $cuenta?->id,
+                'category_id' => $categoryByName[$categoria] ?? null,
+                'amount' => $monto,
+                'date' => $now->copy()->setDay(min($dia, $now->day))->toDateString(),
+                'description' => $descripcion,
+            ]);
+        });
+    }
+
+    /**
      * Presupuestos e ingresos esperados FALSOS del mes en curso (Épica 4),
      * para que el dashboard muestre datos reales de cálculo desde el arranque.
      */
@@ -158,9 +227,13 @@ class DatabaseSeeder extends Seeder
 
         // household_id no es fillable en estos modelos: se asigna por relación.
         // Ingresos mensuales esperados: base del "puedes gastar".
+        // Dos salarios: el hogar demo tiene dos miembros, y los importes
+        // coinciden con los ingresos que seedCurrentMonth() ya registró como
+        // recibidos. Entre los dos cubren los compromisos con holgura — un
+        // hogar insolvente no demuestra nada del "puedes gastar".
         collect([
-            ['name' => 'Salario', 'amount' => 3800000, 'day_of_month' => 30],
-            ['name' => 'Arriendo local', 'amount' => 900000, 'day_of_month' => 5],
+            ['name' => 'Salario titular', 'amount' => 4200000, 'day_of_month' => 1],
+            ['name' => 'Salario del miembro', 'amount' => 3100000, 'day_of_month' => 1],
         ])->each(fn (array $data) => $household->expectedIncomes()->create([
             'category_id' => $incomeCategories->first(),
             ...$data,
