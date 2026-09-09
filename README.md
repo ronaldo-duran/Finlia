@@ -42,9 +42,9 @@ Datos de demostración generados con Faker (`es_CO`). El repositorio nunca conti
 
 | Panel | Dinero disponible | Registrar gasto |
 |---|---|---|
-| ![Panel](docs/img/panel.png) | ![Dinero disponible](docs/img/dinero-disponible.png) | ![Registrar gasto](docs/img/registrar-gasto.png) |
+| ![Panel](public/img/capturas/panel.png) | ![Dinero disponible](public/img/capturas/dinero-disponible.png) | ![Registrar gasto](public/img/capturas/registrar-gasto.png) |
 | **Reportes** | **Deudas** | **Metas de ahorro** |
-| ![Reportes](docs/img/reportes.png) | ![Deudas](docs/img/deudas.png) | ![Metas](docs/img/metas.png) |
+| ![Reportes](public/img/capturas/reportes.png) | ![Deudas](public/img/capturas/deudas.png) | ![Metas](public/img/capturas/metas.png) |
 
 > Se regeneran con `npm run screenshots` (requiere la app corriendo con el seeder).
 

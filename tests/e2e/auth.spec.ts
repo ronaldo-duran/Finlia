@@ -7,8 +7,15 @@ import { DEMO_USER, loginAsDemo } from './helpers';
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('Autenticación', () => {
-  test('la raíz redirige al login cuando no hay sesión', async ({ page }) => {
+  // La raíz dejó de redirigir al login: ahora es la landing pública. En local
+  // no hay dominios configurados, así que sitio y aplicación comparten host.
+  test('la raíz muestra la landing y ofrece entrar', async ({ page }) => {
     await page.goto('/');
+
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('¿Cuánto puedes gastar hoy');
+    await expect(page.getByRole('link', { name: 'Empezar gratis' })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Entrar' }).first().click();
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();
   });

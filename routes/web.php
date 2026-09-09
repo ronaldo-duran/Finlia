@@ -24,6 +24,7 @@ use App\Http\Controllers\HouseholdInvitationController;
 use App\Http\Controllers\HouseholdMemberController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\MovementsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecurringExpenseController;
@@ -42,10 +43,39 @@ use Illuminate\Support\Facades\Route;
 | agrupan bajo middleware 'auth'.
 */
 
-// Raíz: redirige según sesión.
-Route::get('/', function () {
-    return redirect()->route(auth()->check() ? 'dashboard' : 'login');
-})->name('home');
+/*
+|--------------------------------------------------------------------------
+| Sitio público — finlia.online
+|--------------------------------------------------------------------------
+| Va primero a propósito: con FINLIA_MARKETING_DOMAIN configurado, estas
+| rutas solo responden en ese host y la raíz de la app cae en la regla de
+| más abajo. Sin dominios (local), no llevan restricción y la landing es «/».
+|
+| Para añadir precios o testimonios: la ruta va aquí y su nombre en
+| MarketingController::PAGINAS — el sitemap y /llms.txt se enteran solos.
+*/
+Route::group(array_filter(['domain' => config('finlia.domains.marketing')]), function () {
+    Route::get('/', [MarketingController::class, 'home'])->name('home');
+    Route::get('sitemap.xml', [MarketingController::class, 'sitemap'])->name('sitemap');
+    Route::get('llms.txt', [MarketingController::class, 'llms'])->name('llms');
+
+    // Materia prima de la imagen para compartir; no es contenido (lleva noindex).
+    Route::get('og', [MarketingController::class, 'ogPreview'])->name('og-preview');
+});
+
+// robots.txt responde en AMBOS hosts —el controlador decide qué decir según
+// cuál sea—, así que queda fuera del grupo de marketing.
+Route::get('robots.txt', [MarketingController::class, 'robots'])->name('robots');
+
+// Raíz de la aplicación (app.finlia.online): ahí no hay landing que enseñar.
+//
+// Solo se registra si la app tiene host propio. Sin dominios (local) esta
+// ruta chocaría con la landing: Laravel indexa por método+dominio+URI, así
+// que la segunda «/» sustituye a la primera y la landing desaparecería sin
+// avisar — se descubrió justo así.
+if (($dominioApp = config('finlia.domains.app')) !== null) {
+    Route::domain($dominioApp)->get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'));
+}
 
 // ---- Rutas públicas (solo invitados) ----
 Route::middleware('guest')->group(function () {

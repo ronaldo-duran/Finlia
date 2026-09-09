@@ -25,6 +25,22 @@ Hostinger sirve desde `public_html`. Laravel sirve desde `public/`. Dos opciones
 
 > La **Opción A** es más segura. Úsala siempre que sea posible.
 
+### Dos hosts: sitio público y aplicación
+
+Finlia se sirve desde **dos dominios que apuntan al mismo `public/`** ([ADR-0038](DECISIONS.md#adr-0038)):
+
+| Host | Qué sirve |
+|---|---|
+| `finlia.online` | Sitio público: landing y, más adelante, precios y testimonios |
+| `app.finlia.online` | La aplicación. Aquí se instala la PWA — y de aquí **no se mueve nunca** |
+
+En Hostinger: crea el subdominio `app` con el **mismo document root** que el dominio principal. No hace falta un segundo despliegue ni una segunda base de datos: es la misma aplicación Laravel, que reparte por `Host`.
+
+> ⚠️ **`APP_URL` apunta al host de la aplicación**, no a la raíz. La landing genera sus enlaces de «Entrar» y «Crear cuenta» con `route()`, y sin esto mandarían al host equivocado.
+
+> 🔒 La cookie de sesión queda acotada a `app.finlia.online` (con `SESSION_DOMAIN=null`, que es el valor por defecto). **No la abras a `.finlia.online`**: el sitio público no necesita sesión, y compartir la cookie con la raíz solo amplía la superficie sin dar nada.
+
+
 ## 3. Pasos de despliegue (SSH)
 
 ```bash
@@ -53,9 +69,13 @@ APP_NAME=Finlia
 APP_ENV=production
 APP_KEY=            # generada con php artisan key:generate
 APP_DEBUG=false
-APP_URL=https://tudominio.com
+APP_URL=https://app.tudominio.com    # el host de la APLICACIÓN (ver §2)
 
 APP_TIMEZONE=America/Bogota
+
+# Reparto en dos hosts (ADR-0038). Vacíos = un solo host, con la landing en «/».
+FINLIA_MARKETING_DOMAIN=finlia.online
+FINLIA_APP_DOMAIN=app.finlia.online
 APP_LOCALE=es
 APP_FALLBACK_LOCALE=es
 APP_FAKER_LOCALE=es_CO

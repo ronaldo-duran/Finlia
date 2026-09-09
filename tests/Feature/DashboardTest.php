@@ -52,19 +52,28 @@ class DashboardTest extends TestCase
         $response->assertSee('Gastos del mes');
     }
 
-    public function test_raiz_redirige_a_login_si_invitado(): void
+    /**
+     * La raíz dejó de redirigir: ahora es la landing pública.
+     *
+     * Sin dominios configurados —el caso de los tests y del desarrollo local—
+     * sitio y aplicación comparten host, así que «/» es el sitio público para
+     * todo el mundo, con sesión o sin ella. El reparto en dos hosts se
+     * verifica en Tests\Feature\Marketing\DomainRoutingTest.
+     */
+    public function test_la_raiz_muestra_la_landing_publica(): void
     {
-        $response = $this->get(route('home'));
-
-        $response->assertRedirect(route('login'));
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('¿Cuánto puedes gastar hoy', false);
     }
 
-    public function test_raiz_redirige_a_dashboard_si_autenticado(): void
+    public function test_la_landing_tambien_responde_con_sesion_iniciada(): void
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get(route('home'));
-
-        $response->assertRedirect(route('dashboard'));
+        $this->actingAs($user)
+            ->get(route('home'))
+            ->assertOk()
+            ->assertSee('¿Cuánto puedes gastar hoy', false);
     }
 }

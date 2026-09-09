@@ -201,7 +201,7 @@ criterio; no reintroduzcas los verdes/rojos vivos por defecto de Bootstrap.
 
 ## 7. Checklist para una vista nueva
 
-1. ¿Extiende `layouts.app` (autenticado) o `layouts.guest` (público)? No dupliques navbar/footer/tema/favicon —ya están ahí, y el favicon nuevo trae su propio `x-brandmark`/`layouts.partials.favicon`, no un `bi-wallet2` suelto (ver [BRAND.md](BRAND.md)).
+1. ¿Extiende `layouts.app` (autenticado), `layouts.guest` (login/registro/legales) o `marketing.layout` (sitio público: landing, y más adelante precios y testimonios — trae los metadatos para compartir y los datos estructurados, ver [ADR-0038](DECISIONS.md#adr-0038))? No dupliques navbar/footer/tema/favicon —ya están ahí, y el favicon nuevo trae su propio `x-brandmark`/`layouts.partials.favicon`, no un `bi-wallet2` suelto (ver [BRAND.md](BRAND.md)).
 2. ¿El contenedor principal es `.card` (ya viene con vidrio)? No añadas `backdrop-filter` a mano.
 3. ¿Hay una cifra de dinero protagonista? → `.hero-card` + `.hero-figure`, no un `<h1>` gigante suelto.
 4. ¿Hay un filtro o alternancia de pocas opciones? → `.chip-row` o `.segmented`, con el control

@@ -12,6 +12,30 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.30.0] - 2026-09-09 — Sitio público en finlia.online
+
+### Contexto
+La raíz del dominio servía el formulario de login: quien llegaba sin conocer Finlia veía dos campos pidiéndole correo y contraseña, sin una línea que explicara qué es esto. Y no había una sola etiqueta para compartir, así que pegar el enlace en WhatsApp —que es por donde esto se mueve en Colombia— mostraba la URL pelada, sin título ni imagen.
+
+### Añadido
+- **Landing pública** con el problema que resuelve Finlia, cómo funciona en tres pasos, la fórmula del dinero disponible, las funciones, capturas reales de la aplicación y las preguntas frecuentes.
+- **Metadatos para compartir**: título, descripción, canonical, Open Graph y Twitter Card, con una **tarjeta de 1200×630** que se genera desde una página real (`/og`) y se regenera con `npm run screenshots` cuando cambie la marca o el mensaje.
+- **Datos estructurados** (`SoftwareApplication` y `FAQPage`) para buscadores y asistentes de IA, **`sitemap.xml`** que crece solo al registrar una página nueva, y **`/llms.txt`**, un resumen en texto plano que incluye qué hace Finlia y —tan importante como eso— **qué no hace**: no se conecta a bancos y no da asesoría financiera.
+- **Estructura preparada para crecer**: precios o testimonios son una vista más en `resources/views/marketing/`, su ruta y una entrada en el registro de páginas.
+
+### Cambiado
+- **La aplicación pasa a `app.finlia.online` y el sitio público se queda con la raíz** ([ADR-0038](docs/DECISIONS.md#adr-0038)). Un solo repositorio y una sola aplicación Laravel que reparte por host. El motivo no es orden: una PWA instalada queda atada al origen desde el que se instaló, así que mover la aplicación más adelante le rompería el icono de la pantalla de inicio a quien ya la tuviera puesta. Se le da host propio ahora, que es cuando sale gratis.
+- **`robots.txt` pasa a ser una ruta** porque tiene que decir cosas distintas según el host: rastreo libre en el sitio público, `Disallow: /` en la aplicación, donde todo está tras sesión y lo único indexable serían pantallas de login.
+- Las capturas se mudan a `public/img/capturas/`, para servir a la vez al README y a la landing sin duplicarlas.
+
+### Corregido
+- **Desbordamiento horizontal en móvil** en el hero: una fila de Bootstrap con gutter de 3rem dentro de un contenedor a ancho completo saca 12 px por cada lado, porque su margen negativo supera al padding del contenedor. En escritorio no se nota, en teléfono sí.
+
+### Verificación
+- `phpunit`: **570/571**. Los 12 tests nuevos cubren los metadatos, que son lo que rompe en silencio —un `og:image` que desaparece no da error, solo deja el enlace sin vista previa—, la coherencia entre las preguntas visibles y las del esquema, y el reparto en dos hosts. El fallo restante es el conocido de Windows, ajeno a esta entrega.
+- `playwright`: **37/37**, con el test de la raíz actualizado: ya no redirige al login, ahora muestra la landing.
+- Landing revisada en escritorio y en teléfono, y comprobado que la página ya no desborda a lo ancho.
+
 ## [0.29.0] - 2026-09-09 — La licencia pasa a AGPL-3.0
 
 ### Contexto
