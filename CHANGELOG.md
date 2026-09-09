@@ -12,6 +12,77 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.27.0] - 2026-09-09 — El "+" es la única entrada para registrar
+
+### Contexto
+Los botones "Gasto" e "Ingreso" del panel no respondían en el teléfono: había que abrir el "+" y elegir la acción desde ahí. El síntoma que lo delató fue que **sí funcionaban cuando el "+" estaba auto-oculto**.
+
+### Corregido
+- **El contenedor del FAB interceptaba los clics de la página.** `.fab-container` es una columna `fixed` que contiene el menú del "+", y el menú cerrado sigue ocupando sitio en el layout: la caja se estiraba muy por encima del botón y capturaba todo lo que cayera debajo. `document.elementFromPoint()` en el centro de "Ingreso" devolvía `fab-container`, no el enlace. Y por eso funcionaba con el FAB oculto: `.is-hidden` ya traía `pointer-events: none`. Ahora lo trae el contenedor siempre, y solo lo recuperan sus hijos interactivos. Es la causa del mismo síntoma reportado antes sobre botones "Cancelar".
+
+### Modificado
+- **El panel ya no lleva botones "Gasto"/"Ingreso"** ([ADR-0037](docs/DECISIONS.md#adr-0037)). Duplicaban dos de las cinco acciones del "+", y un flotante sobre el contenido siempre acaba encima de algo — además de aparecer y desaparecer con el scroll, así que el usuario veía dos entradas a lo mismo, una intermitente. Registrar un gasto desde el panel pasa de uno a dos toques; a cambio, la entrada única da acceso a las cinco acciones.
+- **El botón ocupado conserva su etiqueta.** Antes se ocultaba su contenido entero y quedaba un botón vacío con una ruedita, que se lee como si algo hubiera fallado. Cuando el botón tiene icono —lo normal en Finlia— el spinner ocupa el sitio del icono y la etiqueta se queda: "⟳ Crear hogar". El ancho no se mueve porque el icono se sustituye, no se suma, y el nombre accesible se conserva de forma natural.
+- **La barra de progreso pasa de 3 a 4 px y arranca en cobre.** El petróleo oscuro del principio se confundía con la navbar.
+
+### Añadido
+- **Test E2E del solape** que mide quién recibe de verdad el clic en la caja del contenedor, no la posición de un botón del panel: dónde cae ese botón depende de cuánto contenido haya ese día, y si hay que hacer scroll para alcanzarlo el FAB se auto-oculta y el fallo se escondería solo. Solo se reproduce con viewport de teléfono.
+- **[ADR-0037](docs/DECISIONS.md#adr-0037)** con las dos reglas que se derivan: un contenedor `fixed` nunca captura clics, y no se duplica la acción de un flotante con un botón fijo en la misma pantalla.
+
+### Verificación
+- `php artisan test`: **559/559** en verde.
+- `npm run test:e2e`: **37/37** en verde.
+- El test del FAB falla sin la corrección, nombrando al culpable (`el contenedor capturó el clic como: fab-container`).
+- `vendor/bin/pint --test`: sin cambios pendientes.
+
+## [0.26.1] - 2026-09-09 — El FAB se tragaba los clics del panel
+
+### Contexto
+Los botones "Gasto" e "Ingreso" del panel no respondían en el teléfono: había que abrir el "+" y elegir la acción desde ahí. No era un enlace roto —la ruta siempre estuvo bien— sino un contenedor invisible por encima.
+
+### Corregido
+- **El contenedor del FAB interceptaba los clics de la página.** `.fab-container` es una columna `fixed` que incluye su menú, y el menú cerrado sigue ocupando sitio en el layout: la caja del contenedor se estiraba muy por encima del "+" y capturaba todo lo que cayera debajo. `document.elementFromPoint()` en el centro de "Ingreso" devolvía `fab-container`, no el enlace. Ahora el contenedor lleva `pointer-events: none` y solo reciben clics sus hijos interactivos: el botón siempre, el menú al abrirse. Es el mismo síntoma que ya se había reportado sobre botones "Cancelar" — esta es la causa.
+- **Test de regresión** que mide un punto concreto del contenedor, no la posición de un botón del panel: dónde cae ese botón depende de cuánto contenido haya ese día, y si hay que hacer scroll para alcanzarlo el FAB se auto-oculta y el fallo se escondería solo. Solo se reproduce con viewport de teléfono; en escritorio el FAB queda lejos.
+
+### Modificado
+- **El botón ocupado conserva su etiqueta.** Antes se ocultaba su contenido entero y quedaba un botón vacío con una ruedita, que se lee como si algo hubiera fallado. Ahora, cuando el botón tiene icono —lo normal en Finlia—, el spinner ocupa el sitio del icono y la etiqueta se queda: "⟳ Crear hogar". El ancho no se mueve porque el icono se sustituye, no se suma, y el nombre accesible se conserva de forma natural. El `aria-label` de respaldo queda solo para botones sin icono, que siguen ocultando el contenido entero.
+- **La barra de progreso pasa de 3 a 4 px y arranca en cobre.** El petróleo oscuro del principio se confundía con la navbar y hacía que la barra pareciera parte del marco.
+
+### Verificación
+- `php artisan test`: **559/559** en verde.
+- `npm run test:e2e`: **37/37** en verde.
+- El test del FAB falla sin la corrección, señalando al culpable por su nombre (`el contenedor capturó el clic como: fab-container`).
+- `vendor/bin/pint --test`: sin cambios pendientes.
+
+## [0.26.0] - 2026-09-08 — Indicadores de carga
+
+### Contexto
+La app navega con recargas completas: entre el clic y la página nueva no había **ninguna** señal. Con el servidor lento —y en hosting compartido lo es a ratos— el usuario cree que se pegó y vuelve a pulsar. En un GET eso solo molesta; en un POST son dos gastos.
+
+### Añadido
+- **Barra de progreso superior** (`.finlia-progress`): 3 px, degradado petróleo→cobre, avance asintótico que nunca llega al 100 % —ese salto lo da la página nueva al pintarse—. Se enciende en cualquier navegación o envío.
+- **Retardo de 140 ms antes de mostrarla.** Es la diferencia entre una señal y un parpadeo: si la respuesta llega en 80 ms, una barra que aparece y desaparece es ruido. Por debajo del umbral no se ve nada.
+- **Spinner dentro del botón pulsado**, que además lo deja inerte. El contenido se oculta con `visibility` en vez de borrarse, así que el botón conserva su ancho y no desplaza lo que tiene al lado justo al pulsarlo.
+- **Descarte del segundo envío del mismo formulario.** Es la parte que de verdad protege: sin ella, dos toques impacientes sobre "Guardar gasto" son dos gastos.
+- **7 tests E2E** (`loading.spec.ts`), ninguno de los cuales toca datos: cancelan la navegación en vez de simular un servidor lento, registrando el listener *después* del módulo para que este vea el evento intacto.
+
+### Detalles de implementación
+- **El botón no se deshabilita.** Un `disabled` deja su `name`/`value` fuera del payload y rompería cualquier formulario que distinga qué botón lo envió; se bloquea con `pointer-events` y una marca en el formulario.
+- **`aria-label` de respaldo mientras está ocupado.** `visibility: hidden` saca el texto del árbol de accesibilidad: sin esto el botón se quedaba sin nombre justo mientras esperaba, y un lector de pantalla anunciaría "botón, ocupado" y nada más. Lo destapó el test, al dejar de encontrar el botón por su nombre tras pulsarlo.
+- **El modal de confirmación se conecta a mano.** Envía con `HTMLFormElement.prototype.submit()` para no re-disparar su propio interceptor, y eso se salta el evento `submit`, así que el indicador no se encendía solo — justo en el borrado, que es donde más se espera.
+- **Limpieza en `pageshow`.** Volver atrás restaura la página tal como se dejó: con la barra a medias y el botón girando para siempre.
+- **Filtros de enlace**: se ignoran `target="_blank"`, `download`, anclas `#`, `javascript:`/`mailto:`/`tel:`, sitios externos y clics con modificador. En todos ellos esta página se queda donde está, y encender la barra la dejaría girando sobre una pantalla que nunca cambia.
+- Con `prefers-reduced-motion` la barra aparece quieta en un tramo fijo y el spinner gira más despacio: es información, no decoración, así que no se suprime.
+
+### Modificado
+- `docs/UI_DESIGN.md`: sección nueva en §4 con la única regla que afecta a quien escriba una vista —`data-sin-progreso` para acciones que no cambian de página— y un punto más en el checklist.
+
+### Verificación
+- `php artisan test`: **559/559** en verde.
+- `npm run test:e2e`: **35/35** en verde (28 antes).
+- Los 7 tests nuevos fallan con el módulo neutralizado: sin esa comprobación no sabríamos si prueban algo.
+- `vendor/bin/pint --test`: sin cambios pendientes.
+
 ## [0.25.1] - 2026-09-08 — El banner de instalación se veía recortado
 
 ### Corregido

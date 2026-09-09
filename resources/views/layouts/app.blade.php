@@ -31,6 +31,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="d-flex flex-column min-vh-100 @auth has-bottom-nav @endauth">
+    @include('layouts.partials.progress-bar')
 
     @auth
         {{-- Aviso de instalación en iOS: va antes de la navbar para que la
@@ -286,7 +287,16 @@
             var form = pendingForm;
             pendingForm = null;
             getModal().hide();
-            if (form) reallySubmit(form);
+            if (!form) return;
+
+            // reallySubmit() se salta el evento `submit`, así que el
+            // indicador de carga no se enciende solo: hay que pedirlo. Sin
+            // esto, borrar algo lento no daría ninguna señal.
+            if (window.Finlia && window.Finlia.cargando) {
+                window.Finlia.cargando.ocuparFormulario(form);
+            }
+
+            reallySubmit(form);
         });
 
         // Si se cierra sin confirmar, la acción queda descartada.

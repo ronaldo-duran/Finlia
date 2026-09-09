@@ -129,6 +129,40 @@ solo cambia el `type`. Si necesitas leer el valor numérico desde otro script en
 `window.FinliaMoney.parse(input.value)`, nunca `parseFloat` directo — el valor en pantalla lleva
 puntos de miles que `parseFloat` interpretaría como decimales.
 
+### Indicadores de carga (`window.Finlia.cargando`, automático)
+Finlia navega con recargas completas: entre el clic y la página nueva no hay ninguna señal, y con
+el servidor lento el usuario cree que se pegó y vuelve a pulsar — en un POST, eso es una acción
+duplicada. El módulo de `resources/js/app.js` lo cubre **solo**, sin que las vistas hagan nada:
+enciende una barra fina arriba (`.finlia-progress`) en cualquier navegación o envío, y pone un
+spinner dentro del botón pulsado dejándolo inerte.
+
+Lo que hay que saber al escribir una vista:
+
+- **No añadas spinners a mano.** Si tu formulario o enlace es normal, ya está cubierto.
+- **Opta por salir con `data-sin-progreso`** en el `<form>` o el `<a>` cuando la acción no cambia
+  de página (algo resuelto por JS en la misma pantalla). Si no, la barra se queda encendida
+  girando sobre una pantalla que nunca cambia.
+- **Los enlaces con `download`, `target="_blank"`, anclas `#` y sitios externos ya se ignoran.**
+- **Si envías un formulario desde JS**, el indicador no se entera cuando usas
+  `HTMLFormElement.prototype.submit()` — ese método no dispara el evento `submit` a propósito.
+  Llama a `window.Finlia.cargando.ocuparFormulario(form)` antes (así lo hace el modal de
+  confirmación en `layouts/app.blade.php`).
+- **El botón no se deshabilita**: un `disabled` deja su `name`/`value` fuera del payload y rompería
+  cualquier formulario que distinga qué botón lo envió. Se bloquea con `pointer-events` y una marca
+  en el formulario que descarta los envíos siguientes.
+
+### Flotantes `fixed`: el contenedor no captura clics ([ADR-0037](DECISIONS.md#adr-0037))
+Si añades un control flotante envuelto en un contenedor `fixed` (como `.fab-container`), el
+contenedor lleva `pointer-events: none` y son sus hijos interactivos los que lo recuperan. La caja
+del contenedor no es lo que el usuario ve: incluye hijos ocultos que siguen ocupando sitio en el
+layout, así que se estira mucho más allá del control y se traga los clics de lo que haya debajo.
+Pasó de verdad — los botones del panel parecían muertos — y el síntoma engaña, porque el botón
+tapado sí funciona cuando el flotante se auto-oculta.
+
+**Y no dupliques la acción de un flotante con un botón fijo en la misma pantalla.** El flotante
+acabará encima de algo, y encima aparece y desaparece con el scroll: el usuario ve dos entradas a
+lo mismo, una de ellas intermitente. Registrar movimientos entra solo por el "+".
+
 ### Chips que fijan un `<select>` — sincronización en los dos sentidos
 Cuando un `.chip-row` es un atajo sobre un `<select>` real (categoría en
 `expenses/incomes/_form.blade.php`), el chip elegido debe iluminarse **y** el `<select>` debe
@@ -179,5 +213,7 @@ criterio; no reintroduzcas los verdes/rojos vivos por defecto de Bootstrap.
 8. ¿Un input de dinero? `data-money-input`, nunca `type="number"` (§4).
 9. ¿Necesita aparecer en la navegación inferior móvil? Edita el partial existente (4 huecos fijos
    + FAB), no crees otra barra — y si algo no cabe, va al sidebar/"Más", no a un quinto hueco.
-10. Corre `npx playwright test` si tocaste Panel/Movimientos/Registrar — son las pantallas con
+10. ¿Alguna acción que **no** cambia de página (se resuelve por JS en la misma pantalla)? →
+    `data-sin-progreso` en ese `<form>`/`<a>`, o la barra de carga se quedará encendida (§4).
+11. Corre `npx playwright test` si tocaste Panel/Movimientos/Registrar — son las pantallas con
     cobertura E2E más estricta sobre el layout.

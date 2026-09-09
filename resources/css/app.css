@@ -735,6 +735,20 @@ a { color: var(--finlia-primary); }
     flex-direction: column;
     align-items: flex-end;
     gap: 10px;
+
+    /* El contenedor es una columna que incluye el menú: aunque el menú esté
+       cerrado sigue ocupando su sitio en el layout, así que la caja del
+       contenedor se estira hacia arriba y tapa lo que haya debajo. Con
+       `pointer-events: none` deja de ser un objetivo de clic y solo reciben
+       clics sus hijos interactivos — el botón siempre, el menú al abrirse.
+       Sin esto, los botones "Gasto"/"Ingreso" del panel quedaban muertos:
+       el clic se lo comía un contenedor invisible. */
+    pointer-events: none;
+}
+
+.fab-btn,
+.fab-container.is-open .fab-menu {
+    pointer-events: auto;
 }
 
 @media (min-width: 992px) {
@@ -969,4 +983,104 @@ a { color: var(--finlia-primary); }
     border: 1px solid rgba(var(--finlia-primary-rgb), 0.28);
     color: var(--finlia-primary);
     font-size: 1.15rem;
+}
+
+/* ============================================================
+   Indicadores de carga
+   ============================================================
+   La app navega con recargas completas: entre el clic y la nueva página no
+   pasa nada visible, y si el servidor tarda el usuario cree que se pegó y
+   vuelve a pulsar. Dos señales, ambas deliberadamente discretas:
+   una barra fina arriba para cualquier navegación, y un spinner dentro del
+   botón que se pulsó. */
+
+/* Barra superior. Va por encima de la navbar (1030–1041) y también del
+   modal (1055), porque la confirmación de borrado navega justo mientras el
+   modal se está cerrando y la barra tiene que verse durante esa transición. */
+.finlia-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 4px;
+    width: 0;
+    z-index: 1060;
+    /* Arranca en cobre: el petróleo oscuro del principio se confundía con la
+       navbar y hacía que la barra pareciera parte del marco. */
+    background: linear-gradient(90deg,
+        var(--finlia-accent) 0%,
+        var(--finlia-accent-hover) 55%,
+        var(--finlia-primary) 100%);
+    box-shadow: 0 0 10px -1px rgba(var(--finlia-accent-rgb), 0.85);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+}
+
+/* El avance es asintótico a propósito: rápido al principio y cada vez más
+   lento, porque no sabemos cuánto tarda el servidor. Nunca llega al 100 %;
+   ese salto lo da la página nueva al pintarse. */
+.finlia-progress.is-activa {
+    opacity: 1;
+    animation: finlia-progress-avance 14s cubic-bezier(0.12, 0.72, 0.24, 1) forwards;
+}
+
+@keyframes finlia-progress-avance {
+    0%   { width: 0; }
+    12%  { width: 28%; }
+    35%  { width: 55%; }
+    65%  { width: 76%; }
+    100% { width: 94%; }
+}
+
+/* Botón ocupado: el contenido original se oculta con `visibility` (conserva
+   el ancho, así que el botón no cambia de tamaño ni desplaza lo de al lado)
+   y encima se centra un spinner que hereda el color del botón. */
+.is-cargando {
+    position: relative;
+    pointer-events: none;
+}
+
+.finlia-btn-spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    vertical-align: -0.125em;
+    animation: finlia-spin 620ms linear infinite;
+}
+
+/* En línea: ocupa el sitio del icono del botón, con su mismo margen. Es la
+   variante preferida — el botón conserva su etiqueta, así que sigue diciendo
+   qué está haciendo en vez de quedarse mudo con una ruedita. */
+.finlia-btn-spinner-inline {
+    margin-right: 0.25rem;
+}
+
+/* Centrada: solo para botones sin icono, donde no hay nada que sustituir y
+   se oculta el contenido entero. */
+.finlia-btn-spinner-centrado {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: -0.5em 0 0 -0.5em;
+}
+
+@keyframes finlia-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Con movimiento reducido el spinner sigue girando —es información, no
+   decoración— pero más despacio, y la barra aparece sin animar el avance:
+   se queda quieta en un tramo que ya comunica "esto va en marcha". */
+@media (prefers-reduced-motion: reduce) {
+    .finlia-progress.is-activa {
+        animation: none;
+        width: 45%;
+    }
+
+    .finlia-btn-spinner {
+        animation-duration: 1.4s;
+    }
 }

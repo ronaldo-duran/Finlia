@@ -347,3 +347,208 @@ if ('serviceWorker' in navigator) {
     bloquearCuota();
     pintar();
 })();
+
+/*
+|----------------------------------------------------------------------
+| Indicadores de carga (barra superior + botón ocupado).
+|----------------------------------------------------------------------
+| Finlia navega con recargas completas: entre el clic y la página nueva no
+| hay ninguna señal, así que con el servidor lento el usuario cree que la
+| app se pegó y vuelve a pulsar — y en un POST eso es una acción duplicada.
+|
+| Dos señales, ambas discretas:
+|   · una barra fina arriba, para cualquier navegación (enlaces y envíos);
+|   · un spinner dentro del botón pulsado, que además lo deja inerte.
+|
+| El botón NO se deshabilita: un `disabled` deja su name/value fuera del
+| payload y rompería cualquier formulario que distinga qué botón lo envió.
+| Se bloquea con `pointer-events: none` y con una marca en el formulario que
+| descarta los envíos siguientes.
+|
+| Se expone en `window.Finlia.cargando` porque hay un envío que no pasa por
+| el evento `submit`: el modal de confirmación usa
+| `HTMLFormElement.prototype.submit()` justamente para no re-disparar su
+| propio interceptor, y ahí hay que encender la barra a mano.
+*/
+window.Finlia = window.Finlia || {};
+window.Finlia.cargando = (function () {
+    // Retardo antes de mostrar nada: por debajo de esto la respuesta ya
+    // llegó y un parpadeo de 80 ms es ruido, no información.
+    var RETARDO_MS = 140;
+
+    var barra = document.getElementById('finliaProgress');
+    var temporizador = null;
+
+    function iniciar() {
+        if (!barra || temporizador || barra.classList.contains('is-activa')) return;
+
+        temporizador = window.setTimeout(function () {
+            temporizador = null;
+            barra.classList.add('is-activa');
+        }, RETARDO_MS);
+    }
+
+    function detener() {
+        if (temporizador) {
+            window.clearTimeout(temporizador);
+            temporizador = null;
+        }
+        if (barra) barra.classList.remove('is-activa');
+    }
+
+    /**
+     * Pone el botón en "enviando" sin cambiar su tamaño ni su payload.
+     *
+     * Cuando el botón tiene icono —que es lo normal en Finlia— el spinner
+     * ocupa el sitio del icono y la etiqueta se queda: "⟳ Crear hogar" dice
+     * qué está pasando, mientras que un botón vacío con una ruedita se lee
+     * como si algo hubiera fallado. Solo cuando no hay icono que sustituir se
+     * recurre a ocultar el contenido entero.
+     */
+    function ocuparBoton(boton) {
+        if (!boton || boton.classList.contains('is-cargando')) return;
+
+        var spinner = document.createElement('span');
+        spinner.className = 'finlia-btn-spinner';
+        spinner.setAttribute('aria-hidden', 'true');
+
+        var icono = boton.querySelector('i');
+
+        if (icono) {
+            // `d-none` en vez de `visibility`: el spinner ocupa exactamente su
+            // hueco, así que el botón no cambia de ancho igualmente.
+            icono.classList.add('d-none');
+            icono.dataset.finliaIconoOculto = '1';
+            spinner.classList.add('finlia-btn-spinner-inline');
+            boton.insertBefore(spinner, icono);
+        } else {
+            // `visibility: hidden` conserva el ancho (nada se mueve alrededor)
+            // pero saca el texto del árbol de accesibilidad: sin el aria-label
+            // de respaldo el botón se quedaría sin nombre justo mientras
+            // espera. Los botones de solo icono ya traen el suyo y no se tocan.
+            var etiqueta = (boton.textContent || '').trim();
+            if (etiqueta && !boton.hasAttribute('aria-label')) {
+                boton.setAttribute('aria-label', etiqueta);
+                boton.dataset.finliaEtiquetaTemp = '1';
+            }
+
+            var envoltorio = document.createElement('span');
+            envoltorio.className = 'invisible';
+            while (boton.firstChild) {
+                envoltorio.appendChild(boton.firstChild);
+            }
+
+            spinner.classList.add('finlia-btn-spinner-centrado');
+            boton.appendChild(envoltorio);
+            boton.appendChild(spinner);
+        }
+
+        boton.classList.add('is-cargando');
+        boton.setAttribute('aria-busy', 'true');
+    }
+
+    /**
+     * Marca el formulario como enviándose. Devuelve false si ya lo estaba,
+     * que es la señal para descartar el envío repetido.
+     */
+    function ocuparFormulario(form, boton) {
+        if (!form) return true;
+        if (form.dataset.finliaEnviando === '1') return false;
+
+        form.dataset.finliaEnviando = '1';
+        ocuparBoton(boton || form.querySelector('button[type="submit"], button:not([type])'));
+        iniciar();
+
+        return true;
+    }
+
+    /* --- Envíos de formulario ------------------------------------------ */
+
+    // Sin capture: corre después de los interceptores del modal de
+    // confirmación y del formato de dinero. Si alguno canceló el envío, no
+    // hay navegación que anunciar.
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        if (e.defaultPrevented) return;
+        if (form.hasAttribute('data-sin-progreso')) return;
+
+        if (!ocuparFormulario(form, e.submitter)) {
+            e.preventDefault();
+        }
+    });
+
+    /* --- Navegación por enlaces ---------------------------------------- */
+
+    document.addEventListener('click', function (e) {
+        // Clic con modificador o con otro botón: el navegador abre en otra
+        // pestaña y esta página no se va a ninguna parte.
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+        var enlace = e.target.closest && e.target.closest('a[href]');
+        if (!enlace) return;
+        if (enlace.hasAttribute('data-sin-progreso')) return;
+        if (enlace.hasAttribute('download')) return;          // descarga: la página no cambia
+        if (enlace.target && enlace.target !== '_self') return;
+        if (enlace.hasAttribute('data-bs-toggle')) return;    // dropdown, modal, collapse…
+
+        var href = enlace.getAttribute('href') || '';
+        if (!href || href.charAt(0) === '#') return;
+        if (/^(javascript|mailto|tel|sms):/i.test(href)) return;
+        if (enlace.origin !== window.location.origin) return; // sitio externo
+
+        // Ancla dentro de la misma página: no hay carga que esperar.
+        if (enlace.pathname === window.location.pathname
+            && enlace.search === window.location.search
+            && enlace.hash) return;
+
+        iniciar();
+    });
+
+    /* --- Reinicios ------------------------------------------------------ */
+
+    // Volver con el botón atrás restaura la página desde la bfcache tal como
+    // se dejó: con la barra a medias y el botón girando eternamente si no se
+    // limpia aquí.
+    window.addEventListener('pageshow', function () {
+        detener();
+        document.querySelectorAll('.is-cargando').forEach(liberarBoton);
+        document.querySelectorAll('form[data-finlia-enviando]').forEach(function (form) {
+            delete form.dataset.finliaEnviando;
+        });
+    });
+
+    function liberarBoton(boton) {
+        var spinner = boton.querySelector(':scope > .finlia-btn-spinner');
+        if (spinner) spinner.remove();
+
+        var icono = boton.querySelector('[data-finlia-icono-oculto]');
+        if (icono) {
+            icono.classList.remove('d-none');
+            delete icono.dataset.finliaIconoOculto;
+        }
+
+        var envoltorio = boton.querySelector(':scope > span.invisible');
+        if (envoltorio) {
+            while (envoltorio.firstChild) {
+                boton.insertBefore(envoltorio.firstChild, envoltorio);
+            }
+            envoltorio.remove();
+        }
+
+        if (boton.dataset.finliaEtiquetaTemp === '1') {
+            boton.removeAttribute('aria-label');
+            delete boton.dataset.finliaEtiquetaTemp;
+        }
+
+        boton.classList.remove('is-cargando');
+        boton.removeAttribute('aria-busy');
+    }
+
+    return {
+        iniciar: iniciar,
+        detener: detener,
+        ocuparBoton: ocuparBoton,
+        ocuparFormulario: ocuparFormulario,
+    };
+})();
