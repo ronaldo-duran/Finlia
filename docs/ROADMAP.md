@@ -68,7 +68,9 @@ Recordatorios **derivados en vivo** de sus fuentes —recurrentes (`next_date`),
 ### Épica 10 — UX mobile y PWA
 Navbar/botones/forms/tablas/gráficos optimizados móvil. Botón flotante "+" (gasto, ingreso, transferencia, aporte, pago deuda). PWA (manifest, iconos, instalación). Selects inteligentes (última categoría/cuenta usada).
 
-> 🟡 **Parcialmente adelantada** (igual que el theming se adelantó a la Épica 1): rediseño mobile-first del Panel, Movimientos y Registrar gasto/ingreso, con barra de navegación inferior + botón flotante "+" y sistema de diseño documentado en [docs/UI_DESIGN.md](UI_DESIGN.md). Puramente visual/UX — **falta** el manifest/instalación PWA, "gasto/ingreso" desde el FAB como hoja unificada (hoy navega a `/gastos/crear` o `/ingresos/crear`), transferencia/aporte/pago de deuda en el FAB (dependen de las épicas 6-7) y selects inteligentes.
+> ✅ **Cerrada.** Rediseño mobile-first con barra de navegación inferior y sistema de diseño en [docs/UI_DESIGN.md](UI_DESIGN.md); PWA completa (`manifest.webmanifest`, `sw.js`, iconos, MIME declarado en `.htaccess`, aviso de instalación para iOS); el botón flotante "+" con sus **cinco** acciones (gasto, ingreso, transferencia, aporte a meta, pago de deuda) como entrada única para registrar ([ADR-0037](DECISIONS.md#adr-0037)); y selects inteligentes (`data-smart-select`, última selección por hogar en `localStorage`).
+>
+> **Queda solo el push de recordatorios**, abajo — no bloquea nada: los recordatorios ya se ven in-app y llegan por correo.
 
 > 🔔 Aquí llega el **push de recordatorios**: Web Push nativo con VAPID (W3C, sin proveedor ni cuota — gratis de verdad, ver [ADR-0028](DECISIONS.md#adr-0028) §7). Requiere el Service Worker del PWA y HTTPS (Hostinger lo trae). Consumirá `ReminderService::list()/summary()` tal cual, sin reescribir lógica.
 
@@ -77,7 +79,9 @@ Auditoría de seguridad completa, privacy, DB (índices, FK, DECIMAL), tests de 
 
 > **Cerrado en la primera pasada (v0.23.0):** los 9 puntos de deuda de performance de abajo; auditoría de seguridad con dos hallazgos corregidos (el formulario de alta de hogar no llevaba `@csrf` — 419 en el navegador, invisible para la suite porque Laravel desactiva CSRF en tests; y el envío de invitaciones no tenía throttle siendo la única acción autenticada que despacha correo a una dirección arbitraria); tres barridos nuevos que fijan invariantes (`PerformanceTest`, `HouseholdIsolationSweepTest`, `CsrfTokenSweepTest`), los tres verificados introduciendo el fallo a propósito; README con seeders, cron y troubleshooting, e instalación desde cero comprobada en un clon limpio.
 >
-> **Pendiente:** sustituir `.env.example` (hoy es el de stock de Laravel: locale en inglés, sin `APP_TIMEZONE`, con Redis/AWS/Memcached que el proyecto no usa y sin las variables `FINLIA_*`). El sandbox del agente bloquea escribir rutas `.env*`, así que queda para aplicar a mano.
+> **Cerrado en la segunda pasada:** cabeceras de seguridad y redirección a HTTPS en `public/.htaccess` (`nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` y HSTS condicionada a TLS), con el desarrollo local excluido de la redirección para no romper XAMPP. Verificadas contra un Apache real, incluida la exclusión de `localhost` y el caso `X-Forwarded-Proto: https`. Se descartó la **CSP** a propósito: una decena de vistas llevan `<script>` en línea y un `script-src 'self'` rompería la app — ver [SECURITY.md §5](SECURITY.md).
+>
+> **Pendiente:** terminar `.env.example`. Ya tiene locale, `APP_TIMEZONE` y `FINLIA_MARKET`/`CURRENCY_*`, pero le falta `FINLIA_MAIL_ENABLED` (que `config/finlia.php` sí lee), sigue con los bloques de Redis/AWS/Memcached que el proyecto no usa y trae `DB_CONNECTION=sqlite` cuando el proyecto exige MySQL o PostgreSQL fuera de los tests. El sandbox del agente bloquea escribir rutas `.env*`, así que queda para aplicar a mano.
 
 > **Deuda de performance/patrón detectada en la revisión de la Épica 8** (2026-08-29, rama `epica-8-dashboard-reportes`; las líneas son de ese momento). Ningún punto nota el usuario hoy — son de patrón, no de latencia — pero conviene cerrarlos aquí:
 >
