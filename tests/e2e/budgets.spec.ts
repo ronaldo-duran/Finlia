@@ -78,10 +78,12 @@ test.describe('Presupuestos y dinero disponible (Épica 4)', () => {
     await expect(page.getByRole('heading', { name: 'Ingresos esperados' })).toBeVisible();
     await expect(page.getByText(/Total mensual:/)).toBeVisible();
 
-    // Acotado al listado: "Salario" también existe como <option> de categoría.
+    // Los nombres salen de DatabaseSeeder::seedBudgets(): si allí cambian,
+    // este test es el que avisa. Acotado al listado porque "Salario" también
+    // existe como <option> de categoría.
     const configurados = page.locator('.list-group-item');
-    await expect(configurados.filter({ hasText: 'Salario' }).first()).toBeVisible();
-    await expect(configurados.filter({ hasText: 'Arriendo local' })).toBeVisible();
+    await expect(configurados.filter({ hasText: 'Salario titular' })).toBeVisible();
+    await expect(configurados.filter({ hasText: 'Salario del miembro' })).toBeVisible();
   });
 
   test('el dashboard enlaza al panel de presupuestos', async ({ page }) => {
