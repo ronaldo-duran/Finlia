@@ -14,6 +14,53 @@ Finlia es una aplicación web que ayuda a personas y familias a registrar ingres
 
 > 🇨🇴 Dirigida inicialmente al mercado colombiano (COP, español). Diseñada para permitir futura expansión a otras monedas y países.
 
+## 🎯 El problema
+
+Las apps de finanzas personales responden bien a *«¿en qué se me fue el dinero?»*. Casi ninguna responde a la pregunta que una familia se hace de verdad el día 12 del mes, con el mercado por hacer y la cuota de la moto pendiente:
+
+> **¿Cuánto puedo gastar hoy sin quedar mal a fin de mes?**
+
+El saldo del banco no lo dice. Ese número no sabe que el arriendo sale el día 5, que el SOAT vence en marzo, ni que hay $800.000 comprometidos en la cuota de la tarjeta. Mirar solo el saldo es exactamente como se llega a fin de mes en rojo habiendo «tenido plata» todo el mes.
+
+## 💡 La solución
+
+Finlia calcula el **dinero realmente disponible**, restando al ingreso esperado todo lo que ya tiene dueño:
+
+```
+disponible = ingresos esperados
+           − gastos ya realizados
+           − gastos fijos y recurrentes próximos
+           − cuotas de deuda pendientes
+           − ahorro programado
+```
+
+Ese cálculo vive en un único servicio de dominio (`BudgetCalculatorService`) y es la cifra que la app pone en primer plano: **«Puedes gastar hoy $81.521»**, no «tu saldo es $19.992.420». Cada épica del roadmap fue llenando un término de la fórmula sin tocar los demás.
+
+## 📸 Capturas
+
+Datos de demostración generados con Faker (`es_CO`). El repositorio nunca contiene datos financieros reales.
+
+| Panel | Dinero disponible | Registrar gasto |
+|---|---|---|
+| ![Panel](docs/img/panel.png) | ![Dinero disponible](docs/img/dinero-disponible.png) | ![Registrar gasto](docs/img/registrar-gasto.png) |
+| **Reportes** | **Deudas** | **Metas de ahorro** |
+| ![Reportes](docs/img/reportes.png) | ![Deudas](docs/img/deudas.png) | ![Metas](docs/img/metas.png) |
+
+> Se regeneran con `npm run screenshots` (requiere la app corriendo con el seeder).
+
+## 🙋 Why this project?
+
+Finlia no nació de un tutorial ni de un ejercicio: nació de un problema real de administración financiera de un hogar colombiano. Llevar las cuentas en una hoja de cálculo respondía qué había pasado, pero nunca qué se podía hacer hoy — y esa es la decisión que uno toma a diario, no una vez al mes.
+
+Eso condicionó cada decisión técnica del proyecto:
+
+- **Mobile-first de verdad**, no un escritorio encogido: el gasto se registra en la fila de la caja, en menos de cinco segundos, con el pulgar.
+- **Multi-hogar desde el diseño**, porque las finanzas de una familia son de dos personas, no de una cuenta compartida por contraseña. El aislamiento entre hogares es la amenaza #1 del proyecto y tiene su propio barrido de tests.
+- **Hosting compartido como restricción**, no como accidente: nada de colas persistentes, Redis ni Docker. Todo lo periódico entra por una única línea de cron.
+- **Las estimaciones se marcan como estimaciones.** La proyección de fin de deuda dice que es aproximada, porque presentar un cálculo propio como si fuera el estado de cuenta del banco es cómo se pierde la confianza del usuario.
+
+Las decisiones que no eran obvias están escritas y fechadas en [docs/DECISIONS.md](docs/DECISIONS.md) — 37 ADR con contexto, alternativas descartadas y consecuencias.
+
 ## ✨ Funcionalidades (roadmap)
 
 - Registro rápido de ingresos y gastos (mobile-first)
@@ -187,6 +234,25 @@ Este proyecto maneja **información financiera sensible** y es un repositorio **
 - Nunca se commitean `.env`, credenciales ni datos reales.
 
 Para reportar una vulnerabilidad, abre un issue privado o contacta al maintainer. **No abras un issue público** con detalles explotables.
+
+## 🧰 Tecnologías demostradas
+
+Qué se resolvió con cada pieza, no solo qué se usó:
+
+| Tecnología | Dónde se ve en este repositorio |
+|---|---|
+| **Laravel 13 · PHP 8.3** | 22 modelos, 24 enums y 14 servicios de dominio con tipado estricto; middleware propio para términos y cuentas suspendidas |
+| **Arquitectura por capas** | Controladores finos → servicios → Eloquent. Ningún cálculo financiero vive en un controlador o una vista ([ADR-0010](docs/DECISIONS.md#adr-0010)) |
+| **MySQL · PostgreSQL · SQLite** | La misma suite corre contra los tres. El SQL propio de un motor se resuelve con un `match` sobre el driver ([ADR-0036](docs/DECISIONS.md#adr-0036)) |
+| **Modelado de datos** | `DECIMAL(15,2)` para todo el dinero, FKs con `onDelete` explícito, índices compuestos por `(household_id, …)` |
+| **Seguridad multi-tenant** | Aislamiento por hogar con policies + consultas acotadas, y un barrido que intenta el acceso cruzado sobre **cada** ruta |
+| **Autenticación y privacidad** | Verificación de correo, cambio de correo en dos pasos, términos versionados con prueba de consentimiento, eliminación de cuenta con plazo y exportación de datos en ZIP |
+| **Blade · Bootstrap 5** | Sistema de diseño propio (glass, chips, barra inferior, FAB) documentado en [docs/UI_DESIGN.md](docs/UI_DESIGN.md) |
+| **JavaScript vanilla · Chart.js** | Cinco gráficos, simulador de deuda en el navegador que replica el servicio PHP, e indicadores de carga. Sin framework de frontend |
+| **PWA** | Manifest, service worker e instalación en iOS y Android |
+| **Testing** | 559 tests PHPUnit + 37 E2E con Playwright. Barridos que fijan invariantes: aislamiento entre hogares, CSRF y N+1 |
+| **CI/CD** | GitHub Actions con matriz de motores de base de datos, linter, build de assets y E2E con reporte como artefacto |
+| **Despliegue en hosting compartido** | Sin procesos permanentes: cuatro tareas programadas tras una sola línea de cron; cabeceras de seguridad y HTTPS en `.htaccess` |
 
 ## 📚 Documentación
 

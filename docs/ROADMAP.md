@@ -18,7 +18,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 10 | UX mobile y PWA | 🟢 | 3 (y resto) |
 | 11 | Hardening, tests y producción | 🟡 | Todas |
 | 12 | Monetización y modelo SaaS | 🔴 | 2, 11 |
-| 13 | Portafolio profesional | 🔴 | 11 |
+| 13 | Portafolio profesional | 🟢 | 11 |
 | 14 | API REST para app móvil (futura) | 🔴 | 3, 11 |
 
 > 🔧 **Serie de blindaje de cuentas** (`planes/`, 2026-08): seis planes acordados con el
@@ -102,8 +102,14 @@ Auditoría de seguridad completa, privacy, DB (índices, FK, DECIMAL), tests de 
 ### Épica 12 — Monetización y SaaS
 `plans`, `subscriptions`, features/limits. Plan gratuito útil; Premium futuro (más hogares, PDF, multi-moneda, etc.). Puntos de publicidad no invasiva. Autorización de features en backend.
 
-### Épica 13 — Portafolio profesional
-README profesional, `/docs` completa, diagramas Mermaid, limpieza de Git, demo con datos ficticios (nunca reales), sección "Why this project?".
+### Épica 13 — Portafolio profesional ✅
+README con **problema, solución y "Why this project?"**, seis capturas de la app en móvil (`docs/img/`, regenerables con `npm run screenshots`) y una tabla de **tecnologías demostradas** que dice qué se resolvió con cada pieza, no solo cuál se usó. Los diagramas de **capas** y de **flujo de registrar un gasto** pasan de ASCII a **Mermaid** en [ARCHITECTURE.md](ARCHITECTURE.md), junto al ER que ya existía en [DATA_MODEL.md](DATA_MODEL.md).
+
+Dos correcciones que salieron de la propia revisión:
+
+- **El seeder abría la demo en ceros.** Repartía los movimientos con `dateTimeBetween('-5 months', 'now')`, así que al mes en curso le tocaban uno o ninguno y el Panel mostraba "$0,00" en ingresos y gastos durante los primeros días de cada mes. Ahora el mes actual se siembra con importes fijos —dos salarios y una canasta de nueve gastos— y el historial aleatorio se queda solo para las series de seis meses de los reportes.
+- **El hogar demo era insolvente**: los compromisos (4,2 M) superaban a los ingresos esperados, así que la pantalla estrella salía en rojo con "te has pasado del plan". Con dos salarios acordes, la demo enseña lo que el producto sabe hacer: **"Puedes gastar hoy $81.521"**, 41,6 % del presupuesto, en rango.
+- El resumen de [ARCHITECTURE.md](ARCHITECTURE.md) declaraba **ADR-0003 como PENDIENTE** desde la Épica 2, cuando lleva ACEPTADA desde entonces.
 
 ---
 
