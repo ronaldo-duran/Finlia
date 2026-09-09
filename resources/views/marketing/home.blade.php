@@ -83,12 +83,12 @@
                  supera al padding del .container (12px) y la página desborda a lo
                  ancho en móvil. El aire de escritorio lo pone el padding de la sección. --}}
             <div class="row align-items-center g-4 g-lg-5 gx-lg-5">
-                <div class="col-12 col-lg-6">
+                <div class="col-12 col-lg-7">
                     <p class="etiqueta-seccion">Finanzas personales y familiares</p>
 
                     <h1 class="titular">
                         ¿Cuánto puedes gastar hoy
-                        <span class="resaltado">sin quedar mal a fin de mes?</span>
+                        <span class="resaltado">sin quedar&nbsp;mal a fin de mes?</span>
                     </h1>
 
                     <p class="entradilla">
@@ -113,7 +113,7 @@
                     </ul>
                 </div>
 
-                <div class="col-12 col-lg-6">
+                <div class="col-12 col-lg-5">
                     <div class="marco-telefono">
                         {{-- Presupuestos y no el Panel: esta pantalla abre con la
                              cifra que promete la landing, mientras que el Panel

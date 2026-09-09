@@ -93,7 +93,10 @@ body.marketing {
 }
 
 .titular {
-    font-size: clamp(2.1rem, 5.2vw, 3.4rem);
+    /* El tope baja de 3.4 a 3.1rem: con 3.4 el titular rompía en cuatro
+       líneas en portátil. Junto con la columna más ancha, entra en tres. */
+    font-size: clamp(2.1rem, 4.6vw, 3.1rem);
+    max-width: 19ch;
     font-weight: 700;
     line-height: 1.1;
     letter-spacing: -0.02em;
