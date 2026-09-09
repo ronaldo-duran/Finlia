@@ -113,14 +113,17 @@
                     </ul>
                 </div>
 
-                <div class="col-12 col-lg-5">
+                {{-- Solo en escritorio: en un teléfono, la foto de un teléfono no
+                     añade nada y empuja el contenido real fuera de la primera
+                     pantalla. La prueba visual la da la tira de capturas. --}}
+                <div class="col-lg-5 d-none d-lg-block">
                     <div class="marco-telefono">
                         {{-- Presupuestos y no el Panel: esta pantalla abre con la
                              cifra que promete la landing, mientras que el Panel
                              abre con dos avisos de obligaciones próximas — dos
                              alarmas apiladas contradicen el mensaje de la página. --}}
                         <img src="{{ asset('img/capturas/dinero-disponible.png') }}"
-                             width="390" height="844" fetchpriority="high"
+                             width="390" height="844" loading="lazy"
                              alt="Finlia en un celular, mostrando cuánto dinero queda disponible para los días que restan del mes, junto a lo gastado y lo ya comprometido.">
                     </div>
                 </div>
