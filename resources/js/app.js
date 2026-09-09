@@ -396,36 +396,53 @@ window.Finlia.cargando = (function () {
         if (barra) barra.classList.remove('is-activa');
     }
 
-    /** Pone el botón en "enviando" sin cambiar su tamaño ni su payload. */
+    /**
+     * Pone el botón en "enviando" sin cambiar su tamaño ni su payload.
+     *
+     * Cuando el botón tiene icono —que es lo normal en Finlia— el spinner
+     * ocupa el sitio del icono y la etiqueta se queda: "⟳ Crear hogar" dice
+     * qué está pasando, mientras que un botón vacío con una ruedita se lee
+     * como si algo hubiera fallado. Solo cuando no hay icono que sustituir se
+     * recurre a ocultar el contenido entero.
+     */
     function ocuparBoton(boton) {
         if (!boton || boton.classList.contains('is-cargando')) return;
-
-        // `visibility: hidden` saca el texto del árbol de accesibilidad, así
-        // que sin esto el botón se quedaría sin nombre justo mientras está
-        // ocupado: un lector de pantalla anunciaría "botón, ocupado" y ya.
-        // Los botones de solo icono ya traen su propio aria-label y no se
-        // tocan.
-        var etiqueta = (boton.textContent || '').trim();
-        if (etiqueta && !boton.hasAttribute('aria-label')) {
-            boton.setAttribute('aria-label', etiqueta);
-            boton.dataset.finliaEtiquetaTemp = '1';
-        }
-
-        // El contenido original se envuelve en un span oculto en vez de
-        // borrarse: conserva el ancho del botón (nada se mueve alrededor) y
-        // no hay que reconstruir HTML a partir de un string.
-        var envoltorio = document.createElement('span');
-        envoltorio.className = 'invisible';
-        while (boton.firstChild) {
-            envoltorio.appendChild(boton.firstChild);
-        }
 
         var spinner = document.createElement('span');
         spinner.className = 'finlia-btn-spinner';
         spinner.setAttribute('aria-hidden', 'true');
 
-        boton.appendChild(envoltorio);
-        boton.appendChild(spinner);
+        var icono = boton.querySelector('i');
+
+        if (icono) {
+            // `d-none` en vez de `visibility`: el spinner ocupa exactamente su
+            // hueco, así que el botón no cambia de ancho igualmente.
+            icono.classList.add('d-none');
+            icono.dataset.finliaIconoOculto = '1';
+            spinner.classList.add('finlia-btn-spinner-inline');
+            boton.insertBefore(spinner, icono);
+        } else {
+            // `visibility: hidden` conserva el ancho (nada se mueve alrededor)
+            // pero saca el texto del árbol de accesibilidad: sin el aria-label
+            // de respaldo el botón se quedaría sin nombre justo mientras
+            // espera. Los botones de solo icono ya traen el suyo y no se tocan.
+            var etiqueta = (boton.textContent || '').trim();
+            if (etiqueta && !boton.hasAttribute('aria-label')) {
+                boton.setAttribute('aria-label', etiqueta);
+                boton.dataset.finliaEtiquetaTemp = '1';
+            }
+
+            var envoltorio = document.createElement('span');
+            envoltorio.className = 'invisible';
+            while (boton.firstChild) {
+                envoltorio.appendChild(boton.firstChild);
+            }
+
+            spinner.classList.add('finlia-btn-spinner-centrado');
+            boton.appendChild(envoltorio);
+            boton.appendChild(spinner);
+        }
+
         boton.classList.add('is-cargando');
         boton.setAttribute('aria-busy', 'true');
     }
@@ -504,6 +521,12 @@ window.Finlia.cargando = (function () {
     function liberarBoton(boton) {
         var spinner = boton.querySelector(':scope > .finlia-btn-spinner');
         if (spinner) spinner.remove();
+
+        var icono = boton.querySelector('[data-finlia-icono-oculto]');
+        if (icono) {
+            icono.classList.remove('d-none');
+            delete icono.dataset.finliaIconoOculto;
+        }
 
         var envoltorio = boton.querySelector(':scope > span.invisible');
         if (envoltorio) {

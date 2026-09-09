@@ -73,18 +73,49 @@ test.describe('Indicadores de carga', () => {
 
     await boton.click();
 
-    // Que el locator por rol y nombre siga encontrándolo no es casual: el
-    // texto queda oculto con `visibility`, que lo saca del árbol de
-    // accesibilidad, y sin el aria-label de respaldo el botón se quedaría sin
-    // nombre justo mientras está ocupado.
     await expect(boton).toHaveClass(/is-cargando/);
     await expect(boton).toHaveAttribute('aria-busy', 'true');
-    await expect(boton.locator('.finlia-btn-spinner')).toBeVisible();
     await expect(barraDe(page)).toHaveClass(/is-activa/);
 
-    // El contenido se oculta con `visibility`, no se borra: si se borrara, el
-    // botón encogería y desplazaría lo de al lado justo al pulsarlo.
+    // Este botón tiene icono, así que el spinner ocupa su sitio y la etiqueta
+    // se queda: "⟳ Crear hogar" dice qué está pasando, mientras que un botón
+    // vacío con una ruedita se lee como si algo hubiera fallado.
+    await expect(boton.locator('.finlia-btn-spinner-inline')).toBeVisible();
+    await expect(boton).toContainText('Crear hogar');
+
+    // El icono se sustituye, no se suma: si se sumara, el botón crecería y
+    // desplazaría al "Cancelar" de al lado justo al pulsarlo.
     expect((await boton.boundingBox())!.width).toBeCloseTo(anchoAntes, 0);
+  });
+
+  /**
+   * Un botón sin icono no tiene nada que sustituir, así que se oculta su
+   * contenido entero — y `visibility: hidden` lo saca del árbol de
+   * accesibilidad. Sin el aria-label de respaldo, un lector de pantalla
+   * anunciaría "botón, ocupado" y nada más.
+   */
+  test('un botón sin icono conserva su nombre mientras espera', async ({ page }) => {
+    await page.goto('/dashboard');
+
+    const estado = await page.evaluate(() => {
+      const boton = document.createElement('button');
+      boton.type = 'submit';
+      boton.className = 'btn';
+      boton.textContent = 'Confirmar todo';
+      document.body.appendChild(boton);
+
+      (window as any).Finlia.cargando.ocuparBoton(boton);
+
+      return {
+        nombreAccesible: boton.getAttribute('aria-label'),
+        spinnerCentrado: !!boton.querySelector('.finlia-btn-spinner-centrado'),
+        textoOculto: !!boton.querySelector('span.invisible'),
+      };
+    });
+
+    expect(estado.nombreAccesible).toBe('Confirmar todo');
+    expect(estado.spinnerCentrado).toBe(true);
+    expect(estado.textoOculto).toBe(true);
   });
 
   /**

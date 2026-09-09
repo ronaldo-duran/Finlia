@@ -12,6 +12,25 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.26.1] - 2026-09-09 — El FAB se tragaba los clics del panel
+
+### Contexto
+Los botones "Gasto" e "Ingreso" del panel no respondían en el teléfono: había que abrir el "+" y elegir la acción desde ahí. No era un enlace roto —la ruta siempre estuvo bien— sino un contenedor invisible por encima.
+
+### Corregido
+- **El contenedor del FAB interceptaba los clics de la página.** `.fab-container` es una columna `fixed` que incluye su menú, y el menú cerrado sigue ocupando sitio en el layout: la caja del contenedor se estiraba muy por encima del "+" y capturaba todo lo que cayera debajo. `document.elementFromPoint()` en el centro de "Ingreso" devolvía `fab-container`, no el enlace. Ahora el contenedor lleva `pointer-events: none` y solo reciben clics sus hijos interactivos: el botón siempre, el menú al abrirse. Es el mismo síntoma que ya se había reportado sobre botones "Cancelar" — esta es la causa.
+- **Test de regresión** que mide un punto concreto del contenedor, no la posición de un botón del panel: dónde cae ese botón depende de cuánto contenido haya ese día, y si hay que hacer scroll para alcanzarlo el FAB se auto-oculta y el fallo se escondería solo. Solo se reproduce con viewport de teléfono; en escritorio el FAB queda lejos.
+
+### Modificado
+- **El botón ocupado conserva su etiqueta.** Antes se ocultaba su contenido entero y quedaba un botón vacío con una ruedita, que se lee como si algo hubiera fallado. Ahora, cuando el botón tiene icono —lo normal en Finlia—, el spinner ocupa el sitio del icono y la etiqueta se queda: "⟳ Crear hogar". El ancho no se mueve porque el icono se sustituye, no se suma, y el nombre accesible se conserva de forma natural. El `aria-label` de respaldo queda solo para botones sin icono, que siguen ocultando el contenido entero.
+- **La barra de progreso pasa de 3 a 4 px y arranca en cobre.** El petróleo oscuro del principio se confundía con la navbar y hacía que la barra pareciera parte del marco.
+
+### Verificación
+- `php artisan test`: **559/559** en verde.
+- `npm run test:e2e`: **37/37** en verde.
+- El test del FAB falla sin la corrección, señalando al culpable por su nombre (`el contenedor capturó el clic como: fab-container`).
+- `vendor/bin/pint --test`: sin cambios pendientes.
+
 ## [0.26.0] - 2026-09-08 — Indicadores de carga
 
 ### Contexto

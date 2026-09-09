@@ -26,6 +26,63 @@ test.describe('Panel (dashboard)', () => {
     await expect(page).toHaveURL(/\/cuentas$/);
   });
 
+  /**
+   * El FAB flotante vive en un contenedor `fixed` que incluye su menú. El
+   * menú cerrado sigue ocupando sitio en el layout, así que la caja del
+   * contenedor se estira muy por encima del "+" y se tragaba los clics de lo
+   * que hubiera debajo: los botones "Gasto"/"Ingreso" del panel parecían
+   * muertos y había que abrir el "+" para registrar un ingreso.
+   *
+   * Se mide un punto concreto del contenedor —dentro de su caja, fuera del
+   * botón— en vez de la posición de un botón de la página: dónde cae ese
+   * botón depende de cuánto contenido tenga el panel ese día, y si hay que
+   * hacer scroll para alcanzarlo el FAB se auto-oculta y el fallo se
+   * escondería solo.
+   */
+  test('el contenedor del FAB no intercepta los clics de la página', async ({ browser }) => {
+    const context = await browser.newContext({
+      storageState: 'playwright/.auth/demo.json',
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+    });
+    const page = await context.newPage();
+    await page.goto('/dashboard');
+
+    const medida = await page.evaluate(() => {
+      const contenedor = document.getElementById('fabContainer');
+      if (!contenedor) return null;
+
+      const boton = contenedor.querySelector('.fab-btn')!;
+      const cajaContenedor = contenedor.getBoundingClientRect();
+      const cajaBoton = boton.getBoundingClientRect();
+
+      // Esquina superior del contenedor: dentro de su caja, muy por encima
+      // del "+". Ahí no debería haber nada que capture el clic.
+      const x = cajaContenedor.left + 4;
+      const y = cajaContenedor.top + 4;
+      const encima = document.elementFromPoint(x, y);
+
+      return {
+        // Guarda: si algún día el contenedor dejara de ser más alto que el
+        // botón, este test pasaría sin comprobar nada.
+        sobresalePorEncimaDelBoton: cajaContenedor.height - cajaBoton.height,
+        loCaptura: contenedor === encima || contenedor.contains(encima),
+        capturadoPor: encima ? encima.className || encima.tagName : null,
+      };
+    });
+
+    expect(medida, 'no se encontró el FAB').not.toBeNull();
+    expect(medida!.sobresalePorEncimaDelBoton).toBeGreaterThan(20);
+    expect(medida!.loCaptura, `el contenedor capturó el clic como: ${medida!.capturadoPor}`).toBe(false);
+
+    // Y el camino real de la queja: el botón de ingreso lleva a su pantalla.
+    await page.getByRole('link', { name: 'Registrar ingreso' }).click();
+    await expect(page).toHaveURL(/\/ingresos\/crear$/);
+
+    await context.close();
+  });
+
   test('el footer muestra la versión y la moneda del mercado', async ({ page }) => {
     await expect(page.locator('footer.app-footer')).toContainText('COP');
   });

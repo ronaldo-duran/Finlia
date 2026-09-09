@@ -735,6 +735,20 @@ a { color: var(--finlia-primary); }
     flex-direction: column;
     align-items: flex-end;
     gap: 10px;
+
+    /* El contenedor es una columna que incluye el menú: aunque el menú esté
+       cerrado sigue ocupando su sitio en el layout, así que la caja del
+       contenedor se estira hacia arriba y tapa lo que haya debajo. Con
+       `pointer-events: none` deja de ser un objetivo de clic y solo reciben
+       clics sus hijos interactivos — el botón siempre, el menú al abrirse.
+       Sin esto, los botones "Gasto"/"Ingreso" del panel quedaban muertos:
+       el clic se lo comía un contenedor invisible. */
+    pointer-events: none;
+}
+
+.fab-btn,
+.fab-container.is-open .fab-menu {
+    pointer-events: auto;
 }
 
 @media (min-width: 992px) {
@@ -987,13 +1001,16 @@ a { color: var(--finlia-primary); }
     position: fixed;
     top: 0;
     left: 0;
-    height: 3px;
+    height: 4px;
     width: 0;
     z-index: 1060;
+    /* Arranca en cobre: el petróleo oscuro del principio se confundía con la
+       navbar y hacía que la barra pareciera parte del marco. */
     background: linear-gradient(90deg,
-        var(--finlia-primary) 0%,
-        var(--finlia-accent) 100%);
-    box-shadow: 0 0 8px -1px rgba(var(--finlia-accent-rgb), 0.7);
+        var(--finlia-accent) 0%,
+        var(--finlia-accent-hover) 55%,
+        var(--finlia-primary) 100%);
+    box-shadow: 0 0 10px -1px rgba(var(--finlia-accent-rgb), 0.85);
     opacity: 0;
     pointer-events: none;
     transition: opacity 180ms ease;
@@ -1024,16 +1041,30 @@ a { color: var(--finlia-primary); }
 }
 
 .finlia-btn-spinner {
-    position: absolute;
-    top: 50%;
-    left: 50%;
+    display: inline-block;
     width: 1em;
     height: 1em;
-    margin: -0.5em 0 0 -0.5em;
     border: 2px solid currentColor;
     border-right-color: transparent;
     border-radius: 50%;
+    vertical-align: -0.125em;
     animation: finlia-spin 620ms linear infinite;
+}
+
+/* En línea: ocupa el sitio del icono del botón, con su mismo margen. Es la
+   variante preferida — el botón conserva su etiqueta, así que sigue diciendo
+   qué está haciendo en vez de quedarse mudo con una ruedita. */
+.finlia-btn-spinner-inline {
+    margin-right: 0.25rem;
+}
+
+/* Centrada: solo para botones sin icono, donde no hay nada que sustituir y
+   se oculta el contenido entero. */
+.finlia-btn-spinner-centrado {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: -0.5em 0 0 -0.5em;
 }
 
 @keyframes finlia-spin {
