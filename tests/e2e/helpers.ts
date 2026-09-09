@@ -4,7 +4,7 @@ import type { Page } from '@playwright/test';
  * Credenciales del usuario demo que siembra DatabaseSeeder (datos FALSOS).
  */
 export const DEMO_USER = {
-  name: 'Usuario Demo Finlia',
+  name: 'Camila Restrepo',
   email: 'demo@finlia.test',
   password: 'finlia123',
 };

@@ -47,7 +47,7 @@ class DatabaseSeeder extends Seeder
 
         // Usuario de demostración para desarrollo local.
         $demo = User::factory()->create([
-            'name' => 'Usuario Demo Finlia',
+            'name' => 'Camila Restrepo',
             'email' => 'demo@finlia.test',
             'password' => 'finlia123',
             'birth_date' => '1990-05-12',
@@ -62,7 +62,7 @@ class DatabaseSeeder extends Seeder
 
         // Segundo usuario invitado como miembro.
         $miembro = User::factory()->create([
-            'name' => 'Miembro Demo',
+            'name' => 'Andrés Restrepo',
             'email' => 'miembro@finlia.test',
             'password' => 'finlia123',
             'birth_date' => '1995-09-20',

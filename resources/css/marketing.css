@@ -227,31 +227,78 @@ body.marketing {
     letter-spacing: 0.06em;
 }
 
-.formula {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem 0.6rem;
-    font-size: clamp(0.95rem, 2vw, 1.15rem);
-    line-height: 1.6;
+/* Resta vertical: dos columnas, concepto a la izquierda e importe a la
+   derecha con cifras tabulares, para que las unidades queden alineadas y se
+   puedan comparar de arriba abajo. En una sola fila no se podía. */
+.cuenta {
+    margin: 0;
 }
 
-.formula > span:not(.op) {
-    padding: 0.3rem 0.7rem;
-    border-radius: 999px;
-    background: rgba(var(--finlia-primary-rgb), 0.07);
+.cuenta .linea {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 0.75rem 1.5rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--finlia-border);
 }
 
-.formula .op {
+.cuenta .linea:first-child {
+    padding-top: 0;
+}
+
+.cuenta dt {
+    font-weight: 500;
+    color: var(--finlia-text);
+}
+
+.cuenta dt small {
+    display: block;
+    margin-top: 0.15rem;
+    color: var(--finlia-text-muted);
+    font-size: 0.82rem;
+    font-weight: 400;
+}
+
+.cuenta .signo {
+    display: inline-block;
+    width: 1ch;
     color: var(--finlia-text-muted);
     font-weight: 700;
 }
 
-/* El único cobre de la página: es "lo disponible" (docs/BRAND.md). */
-.formula .resultado {
-    background: rgba(var(--finlia-accent-rgb), 0.14);
-    color: var(--finlia-accent-hover);
+.cuenta dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(1rem, 2.4vw, 1.15rem);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* El total: doble filete, como una cuenta hecha a mano. El cobre aquí es
+   correcto — es literalmente "lo disponible" (docs/BRAND.md). */
+.cuenta .linea.total {
+    margin-top: 0.35rem;
+    padding-top: 1rem;
+    border-bottom: 0;
+    border-top: 2px solid var(--finlia-primary);
+}
+
+.cuenta .linea.total dt {
     font-weight: 700;
+    font-size: 1.05rem;
+}
+
+.cuenta .linea.total dd {
+    color: var(--finlia-accent-hover);
+    font-size: clamp(1.35rem, 4vw, 1.75rem);
+    font-weight: 700;
+}
+
+.nota-cuenta {
+    margin-top: 1.1rem;
+    color: var(--finlia-text-muted);
+    font-size: 0.85rem;
 }
 
 /* ----------------------------------------------------------- Capturas ---- */

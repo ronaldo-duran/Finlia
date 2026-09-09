@@ -115,9 +115,13 @@
 
                 <div class="col-12 col-lg-6">
                     <div class="marco-telefono">
-                        <img src="{{ asset('img/capturas/panel.png') }}"
+                        {{-- Presupuestos y no el Panel: esta pantalla abre con la
+                             cifra que promete la landing, mientras que el Panel
+                             abre con dos avisos de obligaciones próximas — dos
+                             alarmas apiladas contradicen el mensaje de la página. --}}
+                        <img src="{{ asset('img/capturas/dinero-disponible.png') }}"
                              width="390" height="844" fetchpriority="high"
-                             alt="Panel de Finlia en un celular, mostrando cuánto dinero puedes gastar hoy y las obligaciones próximas del hogar.">
+                             alt="Finlia en un celular, mostrando cuánto dinero queda disponible para los días que restan del mes, junto a lo gastado y lo ya comprometido.">
                     </div>
                 </div>
             </div>
@@ -180,15 +184,42 @@
                 @endforeach
             </div>
 
+            {{-- Resta vertical y no en línea: es como se hace una cuenta en
+                 papel, y en una fila las cifras no se pueden comparar de un
+                 vistazo.
+
+                 Los importes son redondos y a propósito NO se atan a los de la
+                 captura: la demo se resiembra con historial aleatorio y con la
+                 fecha del día, así que cualquier cifra que copiara de ahí
+                 quedaría descuadrada al siguiente `migrate:fresh --seed`. --}}
             <div class="formula-card mt-5">
                 <p class="rotulo-formula">La cuenta que hace Finlia</p>
-                <p class="formula mb-0">
-                    <span>ingresos esperados</span>
-                    <span class="op">−</span><span>lo que ya gastaste</span>
-                    <span class="op">−</span><span>gastos fijos y recurrentes</span>
-                    <span class="op">−</span><span>cuotas de deuda</span>
-                    <span class="op">−</span><span>ahorro programado</span>
-                    <span class="op">=</span><span class="resultado">lo que puedes gastar</span>
+
+                <dl class="cuenta">
+                    <div class="linea">
+                        <dt>Ingresos esperados del mes</dt>
+                        <dd>$ 7.300.000</dd>
+                    </div>
+                    <div class="linea">
+                        <dt><span class="signo" aria-hidden="true">−</span> Lo que ya gastaste</dt>
+                        <dd>$ 1.250.000</dd>
+                    </div>
+                    <div class="linea">
+                        <dt>
+                            <span class="signo" aria-hidden="true">−</span> Lo que ya tiene dueño
+                            <small>gastos fijos, cuotas de deuda y ahorro programado</small>
+                        </dt>
+                        <dd>$ 4.175.000</dd>
+                    </div>
+                    <div class="linea total">
+                        <dt>Puedes gastar</dt>
+                        <dd>$ 1.875.000</dd>
+                    </div>
+                </dl>
+
+                <p class="nota-cuenta mb-0">
+                    Ejemplo con cifras de demostración. En tu caso, Finlia rehace esta
+                    cuenta cada vez que registras algo.
                 </p>
             </div>
         </div>
@@ -233,7 +264,7 @@
 
             <div class="tira-capturas">
                 @foreach ([
-                    ['dinero-disponible.png', 'Pantalla de presupuestos de Finlia con la cifra de dinero disponible del mes.', 'Cuánto te queda'],
+                    ['panel.png', 'Panel de Finlia con el saludo, las obligaciones próximas y el resumen del mes.', 'Tu mes de un vistazo'],
                     ['registrar-gasto.png', 'Formulario de Finlia para registrar un gasto en pocos segundos.', 'Registrar en segundos'],
                     ['reportes.png', 'Reportes de Finlia con gráficos de gastos por categoría e ingresos contra gastos.', 'Reportes claros'],
                     ['deudas.png', 'Panel de deudas de Finlia con el total, el pago mensual comprometido y el orden sugerido.', 'Deudas bajo control'],

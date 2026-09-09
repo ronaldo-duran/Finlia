@@ -31,6 +31,13 @@ La raíz del dominio servía el formulario de login: quien llegaba sin conocer F
 ### Corregido
 - **Desbordamiento horizontal en móvil** en el hero: una fila de Bootstrap con gutter de 3rem dentro de un contenedor a ancho completo saca 12 px por cada lado, porque su margen negativo supera al padding del contenedor. En escritorio no se nota, en teléfono sí.
 
+### Revisión de la landing
+Tres correcciones que salieron de mirarla en un portátil y en un teléfono de verdad:
+
+- **La fórmula pasa a resta vertical.** En una sola fila las cifras no se pueden comparar de un vistazo y en pantalla estrecha se partía por cualquier sitio. Ahora es una cuenta como se hace en papel: concepto a la izquierda, importe a la derecha con cifras tabulares, filete y total. Con importes de ejemplo, que además demuestran el producto mejor que unas etiquetas sueltas.
+- **El hero deja de abrir con el Panel.** Esa pantalla empieza con dos avisos de obligaciones apilados que ocupaban media imagen: una página que promete tranquilidad no puede abrir con dos alarmas. Pasa a mostrar Presupuestos, que arranca con la cifra que la landing promete. El Panel se queda en la tira de capturas, donde el contexto lo explica.
+- **El usuario de demostración deja de llamarse "Usuario Demo Finlia"**, que en una captura de portada se lee a placeholder.
+
 ### Verificación
 - `phpunit`: **570/571**. Los 12 tests nuevos cubren los metadatos, que son lo que rompe en silencio —un `og:image` que desaparece no da error, solo deja el enlace sin vista previa—, la coherencia entre las preguntas visibles y las del esquema, y el reparto en dos hosts. El fallo restante es el conocido de Windows, ajeno a esta entrega.
 - `playwright`: **37/37**, con el test de la raíz actualizado: ya no redirige al login, ahora muestra la landing.
