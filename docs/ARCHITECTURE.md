@@ -19,12 +19,12 @@
 
 ```mermaid
 flowchart TD
-    REQ["Petición HTTP"] --> RUT["Rutas · routes/web.php<br/><small>nombradas, agrupadas, con middleware</small>"]
-    RUT --> FRQ["Form Request<br/><small>valida la entrada</small>"]
-    FRQ --> POL["Policy<br/><small>autoriza sobre el hogar activo</small>"]
-    POL --> CTR["Controlador<br/><small>FINO: orquesta, sin lógica de negocio</small>"]
-    CTR --> SRV["Servicio de dominio · app/Services<br/><small>cálculos financieros</small>"]
-    SRV --> MOD["Modelo Eloquent<br/><small>datos, relaciones, scopes</small>"]
+    REQ["Petición HTTP"] --> RUT["Rutas · routes/web.php<br/>nombradas, agrupadas, con middleware"]
+    RUT --> FRQ["Form Request<br/>valida la entrada"]
+    FRQ --> POL["Policy<br/>autoriza sobre el hogar activo"]
+    POL --> CTR["Controlador<br/>FINO: orquesta, sin lógica de negocio"]
+    CTR --> SRV["Servicio de dominio · app/Services<br/>cálculos financieros"]
+    SRV --> MOD["Modelo Eloquent<br/>datos, relaciones, scopes"]
     MOD --> BD[("MySQL · MariaDB · PostgreSQL")]
 
     classDef dominio fill:#0f3d3e,stroke:#0f3d3e,color:#fff
