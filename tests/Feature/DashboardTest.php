@@ -36,7 +36,7 @@ class DashboardTest extends TestCase
         $response->assertSee('Hola, Ronaldo Tester');
     }
 
-    public function test_dashboard_muestra_kpis_y_boton_registrar_gasto(): void
+    public function test_dashboard_muestra_kpis_y_acceso_a_registrar(): void
     {
         $user = User::factory()->create();
         app(HouseholdService::class)->createHousehold($user->id, 'Mi hogar');
@@ -44,7 +44,10 @@ class DashboardTest extends TestCase
         $response = $this->actingAs($user)->get(route('dashboard'));
 
         $response->assertOk();
-        $response->assertSee('Registrar gasto');
+        // El panel ya no lleva botones propios de "Gasto"/"Ingreso": duplicaban
+        // dos de las cinco acciones del "+" flotante, que ahora es la única
+        // entrada para registrar.
+        $response->assertSee('Registrar movimiento');
         $response->assertSee('Ingresos del mes');
         $response->assertSee('Gastos del mes');
     }

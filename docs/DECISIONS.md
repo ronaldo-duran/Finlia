@@ -1118,6 +1118,32 @@ Lo relevante es **por qué no se detectó**: la suite corre sobre SQLite en memo
 
 ---
 
+## ADR-0037
+### El "+" flotante es la única entrada para registrar — **ACEPTADA**
+
+**Contexto.** El panel ofrecía dos botones grandes, "Gasto" e "Ingreso", que duplicaban dos de las cinco acciones del FAB. En teléfono eso salió caro por partida doble.
+
+Primero, un fallo real: `.fab-container` es una columna `fixed` que **contiene el menú del "+"**, y el menú cerrado sigue ocupando sitio en el layout. La caja del contenedor se estiraba muy por encima del botón y capturaba los clics de lo que hubiera debajo — `document.elementFromPoint()` en el centro de "Ingreso" devolvía `fab-container`, no el enlace. El síntoma que lo delató: el botón sí funcionaba **cuando el FAB estaba auto-oculto**, porque `.is-hidden` ya traía `pointer-events: none`.
+
+Segundo, aun sin ese fallo quedaba el problema de fondo: dos entradas a la misma acción en la misma pantalla, una de ellas intermitente (el FAB se oculta al bajar y reaparece al subir). Un elemento flotante sobre el contenido siempre acabará encima de algo.
+
+**Decisión.**
+
+1. **El FAB es la única entrada para registrar movimientos.** Se retiran los botones "Gasto"/"Ingreso" del hero del panel. El "+" da acceso a las cinco acciones (gasto, ingreso, transferencia, pago de deuda, aporte a meta) en vez de a dos.
+2. **Todo contenedor `fixed` que envuelva a un control flotante lleva `pointer-events: none`**, y son sus hijos interactivos los que lo recuperan. La caja de un contenedor de layout no es lo que el usuario ve, y lo que no se ve no debe capturar clics.
+3. **El FAB se sigue ocultando en `*.create` / `*.edit`**, donde sería redundante y taparía Guardar/Cancelar.
+
+**Alternativas descartadas.**
+- *Un solo botón "Movimiento" en el panel*: no existe pantalla de "crear movimiento", así que tendría que abrir un selector — exactamente lo que ya hace el "+". Dos elementos con la misma función en pantalla, y el gasto pasando de uno a dos toques igualmente.
+- *Ocultar el FAB solo en el panel y conservar los dos botones*: mantiene el gasto a un toque, pero deja el panel sin acceso a transferencia, deuda y meta, y no resuelve el solape en el resto de pantallas.
+- *Corregir solo el `pointer-events` y dejar los botones*: cierra el fallo medible pero conserva la duplicación, y el círculo de 58 px del "+" seguiría pudiendo caer sobre otros botones según el alto de cada pantalla.
+
+**Consecuencias.** Registrar un gasto desde el panel pasa de uno a dos toques, y el "+" queda como único acceso: si algún día se sustituye o se oculta en más rutas, hay que revisar que no se quede ninguna pantalla sin forma de registrar. A cambio desaparece la duplicación y el solape. Cubierto por un test E2E que mide quién recibe de verdad el clic en la caja del contenedor — no que "se vea bien" — y que falla sin la corrección nombrando al culpable.
+
+**Estado.** ACEPTADA — 2026-09-09.
+
+---
+
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.
 3. Incluye: contexto, decisión, alternativas, consecuencias.

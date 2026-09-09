@@ -76,8 +76,10 @@ test.describe('Panel (dashboard)', () => {
     expect(medida!.sobresalePorEncimaDelBoton).toBeGreaterThan(20);
     expect(medida!.loCaptura, `el contenedor capturó el clic como: ${medida!.capturadoPor}`).toBe(false);
 
-    // Y el camino real de la queja: el botón de ingreso lleva a su pantalla.
-    await page.getByRole('link', { name: 'Registrar ingreso' }).click();
+    // Y el camino real para registrar, que desde que el panel no lleva
+    // botones propios es el único: abrir el "+" y elegir la acción.
+    await page.getByRole('button', { name: 'Registrar movimiento' }).click();
+    await page.getByRole('link', { name: 'Ingreso' }).click();
     await expect(page).toHaveURL(/\/ingresos\/crear$/);
 
     await context.close();

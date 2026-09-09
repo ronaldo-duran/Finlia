@@ -151,6 +151,18 @@ Lo que hay que saber al escribir una vista:
   cualquier formulario que distinga qué botón lo envió. Se bloquea con `pointer-events` y una marca
   en el formulario que descarta los envíos siguientes.
 
+### Flotantes `fixed`: el contenedor no captura clics ([ADR-0037](DECISIONS.md#adr-0037))
+Si añades un control flotante envuelto en un contenedor `fixed` (como `.fab-container`), el
+contenedor lleva `pointer-events: none` y son sus hijos interactivos los que lo recuperan. La caja
+del contenedor no es lo que el usuario ve: incluye hijos ocultos que siguen ocupando sitio en el
+layout, así que se estira mucho más allá del control y se traga los clics de lo que haya debajo.
+Pasó de verdad — los botones del panel parecían muertos — y el síntoma engaña, porque el botón
+tapado sí funciona cuando el flotante se auto-oculta.
+
+**Y no dupliques la acción de un flotante con un botón fijo en la misma pantalla.** El flotante
+acabará encima de algo, y encima aparece y desaparece con el scroll: el usuario ve dos entradas a
+lo mismo, una de ellas intermitente. Registrar movimientos entra solo por el "+".
+
 ### Chips que fijan un `<select>` — sincronización en los dos sentidos
 Cuando un `.chip-row` es un atajo sobre un `<select>` real (categoría en
 `expenses/incomes/_form.blade.php`), el chip elegido debe iluminarse **y** el `<select>` debe

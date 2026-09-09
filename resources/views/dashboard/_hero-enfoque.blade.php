@@ -1,7 +1,13 @@
 {{--
     Variante "Enfoque" (1a): un número, un gesto. La tarjeta hero responde
-    a una sola pregunta —cuánto puedo gastar hoy— y dos acciones del mismo
-    peso visual la acompañan.
+    a una sola pregunta: cuánto puedo gastar hoy.
+
+    Aquí había además dos botones, "Gasto" e "Ingreso", que duplicaban dos de
+    las cinco acciones del "+" flotante. Se quitaron: al estar el "+" fijo
+    sobre el contenido, en pantallas de teléfono acababa cayendo encima de
+    ellos y el panel ofrecía dos entradas para lo mismo, una de ellas
+    intermitente. El "+" es ahora la única entrada para registrar, y da acceso
+    a las cinco acciones en vez de a dos.
 --}}
 @php
     $showDaily = $budgetSummary['days_remaining'] > 0 && ! $isNegative;
@@ -44,13 +50,4 @@
             para que este número sea fiable.
         </div>
     @endif
-</div>
-
-<div class="d-flex gap-2 mb-4">
-    <a href="{{ route('expenses.create') }}" class="btn btn-finlia btn-lg flex-fill" aria-label="Registrar gasto">
-        <i class="bi bi-dash-circle me-1"></i> Gasto
-    </a>
-    <a href="{{ route('incomes.create') }}" class="btn btn-outline-finlia btn-lg flex-fill" aria-label="Registrar ingreso">
-        <i class="bi bi-plus-circle me-1"></i> Ingreso
-    </a>
 </div>

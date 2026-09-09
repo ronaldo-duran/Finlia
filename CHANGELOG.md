@@ -12,6 +12,29 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.27.0] - 2026-09-09 — El "+" es la única entrada para registrar
+
+### Contexto
+Los botones "Gasto" e "Ingreso" del panel no respondían en el teléfono: había que abrir el "+" y elegir la acción desde ahí. El síntoma que lo delató fue que **sí funcionaban cuando el "+" estaba auto-oculto**.
+
+### Corregido
+- **El contenedor del FAB interceptaba los clics de la página.** `.fab-container` es una columna `fixed` que contiene el menú del "+", y el menú cerrado sigue ocupando sitio en el layout: la caja se estiraba muy por encima del botón y capturaba todo lo que cayera debajo. `document.elementFromPoint()` en el centro de "Ingreso" devolvía `fab-container`, no el enlace. Y por eso funcionaba con el FAB oculto: `.is-hidden` ya traía `pointer-events: none`. Ahora lo trae el contenedor siempre, y solo lo recuperan sus hijos interactivos. Es la causa del mismo síntoma reportado antes sobre botones "Cancelar".
+
+### Modificado
+- **El panel ya no lleva botones "Gasto"/"Ingreso"** ([ADR-0037](docs/DECISIONS.md#adr-0037)). Duplicaban dos de las cinco acciones del "+", y un flotante sobre el contenido siempre acaba encima de algo — además de aparecer y desaparecer con el scroll, así que el usuario veía dos entradas a lo mismo, una intermitente. Registrar un gasto desde el panel pasa de uno a dos toques; a cambio, la entrada única da acceso a las cinco acciones.
+- **El botón ocupado conserva su etiqueta.** Antes se ocultaba su contenido entero y quedaba un botón vacío con una ruedita, que se lee como si algo hubiera fallado. Cuando el botón tiene icono —lo normal en Finlia— el spinner ocupa el sitio del icono y la etiqueta se queda: "⟳ Crear hogar". El ancho no se mueve porque el icono se sustituye, no se suma, y el nombre accesible se conserva de forma natural.
+- **La barra de progreso pasa de 3 a 4 px y arranca en cobre.** El petróleo oscuro del principio se confundía con la navbar.
+
+### Añadido
+- **Test E2E del solape** que mide quién recibe de verdad el clic en la caja del contenedor, no la posición de un botón del panel: dónde cae ese botón depende de cuánto contenido haya ese día, y si hay que hacer scroll para alcanzarlo el FAB se auto-oculta y el fallo se escondería solo. Solo se reproduce con viewport de teléfono.
+- **[ADR-0037](docs/DECISIONS.md#adr-0037)** con las dos reglas que se derivan: un contenedor `fixed` nunca captura clics, y no se duplica la acción de un flotante con un botón fijo en la misma pantalla.
+
+### Verificación
+- `php artisan test`: **559/559** en verde.
+- `npm run test:e2e`: **37/37** en verde.
+- El test del FAB falla sin la corrección, nombrando al culpable (`el contenedor capturó el clic como: fab-container`).
+- `vendor/bin/pint --test`: sin cambios pendientes.
+
 ## [0.26.1] - 2026-09-09 — El FAB se tragaba los clics del panel
 
 ### Contexto
