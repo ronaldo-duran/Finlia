@@ -7,12 +7,63 @@
     AddType application/manifest+json .webmanifest
 </IfModule>
 
+# Cabeceras de seguridad (docs/SECURITY.md §5, docs/DEPLOYMENT.md §8).
+#
+# `always` para que salgan también en respuestas de error (403/404/500), que
+# es justo donde Laravel devuelve páginas propias y donde más importa que el
+# navegador no adivine el tipo ni permita enmarcar la página.
+<IfModule mod_headers.c>
+    # El navegador respeta el Content-Type declarado y no lo adivina.
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Nadie enmarca Finlia: sin iframes no hay clickjacking sobre el panel
+    # ni sobre los formularios de registrar movimientos. La app no se
+    # embebe a sí misma en ningún sitio.
+    Header always set X-Frame-Options "DENY"
+
+    # Al salir a un sitio externo solo viaja el origen, nunca la ruta: las
+    # URLs de Finlia llevan IDs de recursos del hogar.
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Finlia no usa cámara, micrófono, geolocalización ni pagos del
+    # navegador. Negarlos explícitamente cierra la puerta a que lo haga
+    # un script inyectado.
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+
+    # HSTS: solo se emite sobre TLS (mod_ssl/LiteSpeed definen la variable
+    # HTTPS). Sobre http la cabecera no se envía — que es lo correcto: el
+    # navegador la ignoraría igualmente, y en local nunca aparece.
+    #
+    # ⚠️ Es un compromiso de un año: una vez emitida, el navegador se niega
+    # a hablar http con este dominio hasta que expire. Actívala cuando el
+    # certificado esté funcionando, no antes.
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+</IfModule>
+
+# Sin CSP a propósito. Unas diez vistas llevan <script> en línea (los datos
+# de los gráficos, los chips de categoría, el simulador de deuda), así que
+# un `script-src 'self'` rompería la app entera. Añadirla exige antes pasar
+# esos bloques a ficheros o darles un nonce por petición; hasta entonces una
+# CSP a medias solo daría falsa sensación de cobertura. Ver docs/SECURITY.md §5.
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
 
     RewriteEngine On
+
+    # Forzar HTTPS (Hostinger incluye certificado gratuito).
+    #
+    # El desarrollo local queda excluido: XAMPP sirve por http://localhost y
+    # una redirección incondicional dejaría el proyecto inaccesible en la
+    # máquina de trabajo. Se comprueba también X-Forwarded-Proto por si algún
+    # día hay un proxy delante terminando el TLS.
+    RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:[0-9]+)?$ [NC]
+    RewriteCond %{HTTP_HOST} !\.(test|localhost)(:[0-9]+)?$ [NC]
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

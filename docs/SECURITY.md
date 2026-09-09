@@ -126,7 +126,8 @@ Cubrir `index`, `show`, `store` (con `household_id` forzado), `update`, `destroy
   - `{{ }}` sigue siendo lo correcto en contexto HTML (texto, `value`, `title`): ahí `&#039;` es seguro.
 - **CSRF**: `@csrf` en todos los forms; métodos `POST/PUT/PATCH/DELETE` vía form o con header `X-CSRF-TOKEN`/`X-XSRF-TOKEN`. Laravel lo gestiona, pero no desactivarlo.
 - **SQLi**: Query Builder / Eloquent con bindings. **Nunca** `DB::raw`/`whereRaw` con concatenación de input; usar `?` y bindings.
-- **Cabeceras** (producción): HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` o CSP. Configurar vía `.htaccess` (Hostinger) o middleware.
+- **Cabeceras** (producción): ya configuradas en `public/.htaccess` — `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` negando cámara/micrófono/geolocalización/pagos y **HSTS** (un año, condicionada a TLS: en local no se emite). Se eligió `.htaccess` sobre un middleware porque también cubre los ficheros estáticos, que nunca pasan por PHP. El precio es que la suite no puede verificarlas: son cabeceras del servidor, no de Laravel — se comprueban con `curl -I` tras desplegar (ver [DEPLOYMENT.md §8](DEPLOYMENT.md#8-https-y-cabeceras)).
+- **Sin CSP todavía**: una decena de vistas llevan `<script>` en línea (datos de los gráficos, chips de categoría, simulador de deuda). Un `script-src 'self'` las rompería, y una CSP a medias solo daría falsa sensación de cobertura. Requisito previo: mover esos bloques a ficheros o darles un nonce por petición.
 
 ---
 

@@ -142,14 +142,41 @@ chown -R <usuario>:<grupo> storage bootstrap/cache
 
 ## 8. HTTPS y cabeceras
 
-- Forzar HTTPS en el panel de Hostinger (certificado gratuito).
-- En `public/.htaccess` (Opción A) redirigir HTTP → HTTPS y añadir cabeceras:
-  ```apache
-  Header always set X-Content-Type-Options "nosniff"
-  Header always set X-Frame-Options "DENY"
-  Header always set Referrer-Policy "strict-origin-when-cross-origin"
-  ```
-  (HSTS y CSP según convenga.)
+**Ya viene resuelto en el repo**: `public/.htaccess` trae la redirección a HTTPS y las
+cabeceras de seguridad. No hay que añadir nada a mano en el servidor.
+
+- Activar el certificado gratuito en el panel de Hostinger. Con eso basta: la
+  redirección HTTP → HTTPS del `.htaccess` empieza a funcionar sola.
+- El desarrollo local **no** redirige: `localhost`, `127.0.0.1` y los dominios
+  `.test`/`.localhost` están excluidos, porque XAMPP sirve por http y una
+  redirección incondicional dejaría el proyecto inaccesible al trabajar.
+- Detrás de un proxy que termine el TLS, `X-Forwarded-Proto: https` también
+  evita el bucle de redirección.
+
+Cabeceras que se emiten (con `always`, así salen también en 403/404/500):
+
+| Cabecera | Valor |
+|---|---|
+| `X-Content-Type-Options` | `nosniff` |
+| `X-Frame-Options` | `DENY` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=(), usb=()` |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` — **solo sobre TLS** |
+
+> ⚠️ **HSTS se activa solo** en cuanto el dominio sirva por HTTPS (va condicionada a
+> la variable `HTTPS`, así que en local nunca se emite). Es un compromiso de un año:
+> el navegador se negará a hablar http con el dominio hasta que expire. Si el
+> certificado aún no está listo, comenta esa línea del `.htaccess` antes de subir.
+
+> **Sin CSP a propósito.** Una decena de vistas llevan `<script>` en línea (datos de
+> los gráficos, chips de categoría, simulador de deuda), así que un `script-src 'self'`
+> rompería la app. Añadirla exige antes mover esos bloques a ficheros o darles un
+> nonce por petición.
+
+> `mod_headers` y `mod_rewrite` están activos por defecto en Hostinger (LiteSpeed).
+> Si algún día no lo estuvieran, los bloques `<IfModule>` hacen que el fichero se
+> ignore en silencio: comprueba las cabeceras con `curl -I https://tudominio.com`
+> después del primer despliegue.
 
 ## 9. Despliegues posteriores (CI/CD opcional)
 

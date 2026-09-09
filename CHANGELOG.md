@@ -12,6 +12,31 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.27.1] - 2026-09-09 — Cabeceras de seguridad y HTTPS forzado
+
+### Contexto
+Las cabeceras de seguridad del servidor estaban **documentadas pero no aplicadas**: la guía de despliegue pedía añadirlas a mano al subir, que es justo el paso que se olvida cuando toca desplegar. Ahora viajan en el repositorio.
+
+### Seguridad
+- **Cinco cabeceras en `public/.htaccess`**: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` (sin iframes no hay clickjacking sobre los formularios de registrar movimientos), `Referrer-Policy: strict-origin-when-cross-origin` (al salir a un sitio externo solo viaja el origen, y las URLs de Finlia llevan IDs de recursos del hogar), `Permissions-Policy` negando cámara, micrófono, geolocalización, pagos y USB, y **HSTS** de un año.
+- **Se emiten con `always`**, así que también salen en las respuestas de error — que es donde la aplicación devuelve páginas propias y donde más importa que el navegador no adivine el tipo.
+- **HSTS solo sobre TLS.** Va condicionada a la variable `HTTPS`, de modo que en desarrollo nunca se emite y en producción se activa sola en cuanto el dominio sirva por HTTPS. Es un compromiso de un año: conviene activar el certificado antes de desplegar.
+- **Redirección HTTP → HTTPS**, con el desarrollo local excluido (`localhost`, `127.0.0.1` y los dominios `.test`/`.localhost`): una redirección incondicional dejaría el proyecto inaccesible al trabajar sobre XAMPP. `X-Forwarded-Proto: https` también corta la redirección, por si algún día hay un proxy terminando el TLS.
+
+### Detalles de implementación
+- **Sin CSP, a propósito.** Una decena de vistas llevan `<script>` en línea —los datos de los gráficos, los chips de categoría, el simulador de deuda—, así que un `script-src 'self'` rompería la aplicación entera. Añadirla exige antes mover esos bloques a ficheros o darles un nonce por petición; hasta entonces, una CSP a medias solo daría falsa sensación de cobertura.
+- **`.htaccess` en vez de un middleware**: cubre también los ficheros estáticos, que nunca pasan por PHP. El precio es que la suite no puede verificar estas cabeceras — son del servidor, no del framework — y se comprueban con `curl -I` tras desplegar.
+
+### Modificado
+- La guía de despliegue pasa de instruir "añade esto a mano" a documentar lo que ya trae el repositorio, con la tabla de cabeceras y el aviso sobre el compromiso de HSTS. La política de seguridad registra las dos decisiones de arriba.
+- **`.env.example` refleja por fin el proyecto**: fuera Redis, AWS y Memcached, que no se usan; `DB_CONNECTION=mysql` con el bloque completo y PostgreSQL comentado al lado, porque SQLite es solo de la suite de tests; y `FINLIA_MAIL_ENABLED`, el interruptor global del correo, que se leía en configuración pero no estaba documentado en ninguna parte.
+
+### Verificación
+- Comprobado contra un Apache real, no solo leído: sobre `http://localhost` la página se sirve sin redirigir, con las cuatro cabeceras presentes y **HSTS ausente**; con un host externo devuelve **301** a `https://` conservando la ruta; y con `X-Forwarded-Proto: https` no redirige, así que no hay bucle detrás de un proxy.
+- Las cabeceras aparecieron sobre una respuesta de error, que confirma de paso el efecto de `always`.
+- `phpunit`: **558/559**, idéntico a antes del cambio — esta entrega no toca código PHP. El fallo restante (`DebtTest::test_no_se_puede_registrar_una_deuda_imposible`) solo se reproduce en Windows: el mensaje de validación se pasa a `__()` como frase con `:` dentro, y en NTFS `file_exists()` da `true` para esa ruta por los flujos alternativos de datos, así que el traductor intenta cargarla como fichero de idioma. En Linux —donde corre la integración continua— la suite queda en 559/559.
+- `vendor/bin/pint --test`: sin cambios pendientes.
+
 ## [0.27.0] - 2026-09-09 — El "+" es la única entrada para registrar
 
 ### Contexto
