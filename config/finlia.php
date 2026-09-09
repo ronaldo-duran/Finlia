@@ -18,7 +18,27 @@ return [
 
     // Versión actual del software (fuente de verdad; sincronizar con package.json
     // y CHANGELOG.md al publicar cada versión).
-    'version' => '0.29.0',
+    'version' => '0.30.0',
+
+    /*
+    | Dominios (ADR pendiente de la landing).
+    |
+    | Finlia se sirve desde dos hosts: el sitio público (finlia.online) y la
+    | aplicación (app.finlia.online). El reparto es de URLs, no de código: una
+    | sola app Laravel responde a los dos.
+    |
+    | Se separan porque una PWA instalada queda atada al origen desde el que
+    | se instaló. Mover la app de host más adelante le rompería el icono de la
+    | pantalla de inicio a cada usuario que la tenga puesta; mover el sitio de
+    | marketing, en cambio, es repuntar un DNS. Se deja quieto lo caro.
+    |
+    | En local ambos van vacíos: entonces las rutas no llevan restricción de
+    | dominio y todo responde en el mismo host, con la landing en «/».
+    */
+    'domains' => [
+        'marketing' => env('FINLIA_MARKETING_DOMAIN'),
+        'app' => env('FINLIA_APP_DOMAIN'),
+    ],
 
     // Mercado / idioma por defecto.
     'market' => env('FINLIA_MARKET', 'CO'),

@@ -1118,6 +1118,7 @@ Lo relevante es **por qué no se detectó**: la suite corre sobre SQLite en memo
 
 ---
 
+
 ## ADR-0037
 ### El "+" flotante es la única entrada para registrar — **ACEPTADA**
 
@@ -1144,7 +1145,39 @@ Segundo, aun sin ese fallo quedaba el problema de fondo: dos entradas a la misma
 
 ---
 
+## ADR-0038
+### El sitio público y la aplicación viven en hosts distintos, en un solo repositorio — **ACEPTADA**
+
+**Contexto.** Con el dominio `finlia.online` contratado, la raíz servía el formulario de login: un desconocido llegaba, veía dos campos pidiéndole correo y contraseña sin una línea que explicara qué es esto, y se iba. Tampoco había una sola etiqueta Open Graph, así que compartir el enlace por WhatsApp —el canal real de distribución en Colombia— mostraba la URL pelada, sin título ni imagen.
+
+La pregunta que se hizo no fue "¿landing sí o no?" sino **dónde vive cada cosa**, porque hay una asimetría que se paga tarde: una PWA instalada queda atada al origen desde el que se instaló. Si los primeros usuarios instalan Finlia desde `finlia.online` y más adelante la aplicación se mueve a un subdominio para dejar la raíz al marketing, a cada uno se le rompe el icono de la pantalla de inicio, y con él las sesiones y los enlaces compartidos. Mover el marketing, en cambio, es repuntar un DNS.
+
+**Decisión.**
+
+1. **Dos hosts, un repositorio y una sola aplicación Laravel.** `finlia.online` sirve el sitio público; `app.finlia.online` sirve la aplicación. El reparto es de URLs, no de código.
+2. **La aplicación no se mueve nunca.** Se le da host propio desde antes del primer usuario, que es el único momento en que sale gratis.
+3. Los dominios se configuran con `FINLIA_MARKETING_DOMAIN` y `FINLIA_APP_DOMAIN`. **Vacíos** (desarrollo local y suite de tests) las rutas no llevan restricción de dominio y todo responde en el mismo host, con la landing en «/».
+4. **El grupo de marketing se registra primero.** La raíz de la aplicación solo se registra **si** hay dominio propio: sin él, ambas rutas «/» colisionan y Laravel —que indexa por método+dominio+URI— deja viva la última, dejando la landing inaccesible. Se descubrió exactamente así. `DomainRoutingTest` fija la regla.
+5. **`robots.txt` es una ruta, no un fichero estático**, porque debe decir cosas distintas según el host: rastreo libre en el sitio, `Disallow: /` en la aplicación. Todo lo que hay allí está tras sesión, así que un buscador solo indexaría pantallas de login.
+6. **El repositorio no se separa todavía.** Precios y testimonios son vistas Blade más.
+
+**Alternativas descartadas.**
+- *Todo en un host, la aplicación bajo la raíz*: es la opción cómoda hoy y la cara mañana, por lo de la PWA. La decisión se toma cuando no cuesta nada.
+- *Dos repositorios desde el principio*: para un solo desarrollador son dos despliegues y un sistema de diseño duplicado, a cambio de ningún beneficio a esta escala.
+- *Sitio estático generado aparte (Astro, Hugo)*: no comparte tokens ni componentes con la aplicación, y hoy no hay nada que lo justifique.
+- *Marketing en un subdominio (`www` o `inicio`) y la aplicación en la raíz*: invierte la asimetría — deja quieto lo barato de mover y móvil lo caro.
+
+**Consecuencias.** `APP_URL` debe apuntar al host de la aplicación, para que `route('register')` y `route('login')` resuelvan allí desde la landing. Hay que crear el subdominio en Hostinger apuntando al mismo *document root*. A cambio, el día que el marketing se vaya a un CMS o a un sitio estático, se repunta el DNS de la raíz y se borran unas rutas: los usuarios no se enteran, porque la aplicación nunca se movió.
+
+**Cuándo separar el repositorio** (ninguna se cumple hoy): cuando se quiera cambiar la copy sin desplegar la aplicación, cuando alguien que no programa edite la web, o cuando el marketing crezca a blog con SEO propio.
+
+**Estado.** ACEPTADA — 2026-09-09.
+
+---
+
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.
 3. Incluye: contexto, decisión, alternativas, consecuencias.
 4. Si sustituye a otro, enlázalo.
+
+---
