@@ -81,7 +81,9 @@ Auditoría de seguridad completa, privacy, DB (índices, FK, DECIMAL), tests de 
 >
 > **Cerrado en la segunda pasada:** cabeceras de seguridad y redirección a HTTPS en `public/.htaccess` (`nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` y HSTS condicionada a TLS), con el desarrollo local excluido de la redirección para no romper XAMPP. Verificadas contra un Apache real, incluida la exclusión de `localhost` y el caso `X-Forwarded-Proto: https`. Se descartó la **CSP** a propósito: una decena de vistas llevan `<script>` en línea y un `script-src 'self'` rompería la app — ver [SECURITY.md §5](SECURITY.md).
 >
-> **Pendiente:** terminar `.env.example`. Ya tiene locale, `APP_TIMEZONE` y `FINLIA_MARKET`/`CURRENCY_*`, pero le falta `FINLIA_MAIL_ENABLED` (que `config/finlia.php` sí lee), sigue con los bloques de Redis/AWS/Memcached que el proyecto no usa y trae `DB_CONNECTION=sqlite` cuando el proyecto exige MySQL o PostgreSQL fuera de los tests. El sandbox del agente bloquea escribir rutas `.env*`, así que queda para aplicar a mano.
+> **`.env.example` cerrado también:** fuera los bloques de Redis, AWS y Memcached que el proyecto no usa; `DB_CONNECTION=mysql` con el bloque completo y PostgreSQL comentado al lado (igual que el README), porque SQLite es solo de la suite; y `FINLIA_MAIL_ENABLED`, que `config/finlia.php` lee y no estaba documentada. Cada bloque lleva por qué existe.
+>
+> **Con esto la épica queda cerrada.** Lo que falta para producción ya no es código: dominio, certificado, base de datos, SMTP con el dominio autenticado y el cron de `schedule:run`.
 
 > **Deuda de performance/patrón detectada en la revisión de la Épica 8** (2026-08-29, rama `epica-8-dashboard-reportes`; las líneas son de ese momento). Ningún punto nota el usuario hoy — son de patrón, no de latencia — pero conviene cerrarlos aquí:
 >

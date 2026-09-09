@@ -29,6 +29,7 @@ Las cabeceras de seguridad del servidor estaban **documentadas pero no aplicadas
 
 ### Modificado
 - La guía de despliegue pasa de instruir "añade esto a mano" a documentar lo que ya trae el repositorio, con la tabla de cabeceras y el aviso sobre el compromiso de HSTS. La política de seguridad registra las dos decisiones de arriba.
+- **`.env.example` refleja por fin el proyecto**: fuera Redis, AWS y Memcached, que no se usan; `DB_CONNECTION=mysql` con el bloque completo y PostgreSQL comentado al lado, porque SQLite es solo de la suite de tests; y `FINLIA_MAIL_ENABLED`, el interruptor global del correo, que se leía en configuración pero no estaba documentado en ninguna parte.
 
 ### Verificación
 - Comprobado contra un Apache real, no solo leído: sobre `http://localhost` la página se sirve sin redirigir, con las cuatro cabeceras presentes y **HSTS ausente**; con un host externo devuelve **301** a `https://` conservando la ruta; y con `X-Forwarded-Proto: https` no redirige, así que no hay bucle detrás de un proxy.
