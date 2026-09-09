@@ -46,7 +46,12 @@ Datos de demostración generados con Faker (`es_CO`). El repositorio nunca conti
 | **Reportes** | **Deudas** | **Metas de ahorro** |
 | ![Reportes](public/img/capturas/reportes.png) | ![Deudas](public/img/capturas/deudas.png) | ![Metas](public/img/capturas/metas.png) |
 
-> Se regeneran con `npm run screenshots` (requiere la app corriendo con el seeder).
+> Se regeneran con la app corriendo y sembrada. La clave es la del usuario demo
+> de más abajo; va por entorno para no dejarla escrita en el repositorio:
+>
+> ```bash
+> SHOTS_PASSWORD=finlia123 npm run screenshots
+> ```
 
 ## 🙋 Why this project?
 

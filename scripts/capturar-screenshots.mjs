@@ -5,8 +5,8 @@
  * tests/e2e y no la recoge `npm run test:e2e`. Usa la API de Playwright
  * directamente contra un servidor que ya esté corriendo.
  *
- *   php artisan serve --port=8899        (con datos del seeder)
- *   npm run screenshots
+ *   php artisan serve --port=8899                    (con datos del seeder)
+ *   SHOTS_PASSWORD=<clave del usuario demo> npm run screenshots
  *
  * Los datos son los del DatabaseSeeder: FALSOS, generados con Faker es_CO.
  * Nunca se capturan datos reales de nadie.
@@ -75,10 +75,28 @@ const sesion = await navegador.newContext({
     reducedMotion: 'reduce',
 });
 
+// Credenciales del usuario que crea DatabaseSeeder. Se piden por entorno y no
+// van escritas aquí: es una clave de demostración sobre una base local y
+// desechable —está en el README—, pero un literal junto a un campo `password`
+// lo marca cualquier escáner de secretos, y con razón: no se distingue de una
+// credencial de verdad.
+const USUARIO = process.env.SHOTS_USER ?? 'demo@finlia.test';
+const CLAVE = process.env.SHOTS_PASSWORD;
+
+if (!CLAVE) {
+    console.error('Falta SHOTS_PASSWORD.');
+    console.error('Es la clave del usuario de demostración que siembra DatabaseSeeder;');
+    console.error('está en el README, sección «Instalación local».');
+    console.error('');
+    console.error('  SHOTS_PASSWORD=... npm run screenshots');
+    await navegador.close();
+    process.exit(1);
+}
+
 const login = await sesion.newPage();
 await login.goto(`${BASE}/login`);
-await login.fill('input[name="email"]', 'demo@finlia.test');
-await login.fill('input[name="password"]', 'finlia123');
+await login.fill('input[name="email"]', USUARIO);
+await login.fill('input[name="password"]', CLAVE);
 await login.getByRole('button', { name: 'Iniciar sesión' }).click();
 await login.waitForURL(/\/dashboard$/);
 await login.close();
