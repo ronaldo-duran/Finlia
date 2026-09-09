@@ -271,4 +271,29 @@ Qué se resolvió con cada pieza, no solo qué se usó:
 
 ## 📄 Licencia
 
-MIT. Consulta el archivo [LICENSE](LICENSE).
+**GNU Affero General Public License v3.0 o posterior** (AGPL-3.0-or-later). El texto completo está en [LICENSE](LICENSE).
+
+```
+Copyright (C) 2026 Ronaldo Duran
+
+Este programa es software libre: puedes redistribuirlo y/o modificarlo bajo
+los términos de la GNU Affero General Public License publicada por la Free
+Software Foundation, en su versión 3 o (a tu elección) cualquier versión
+posterior.
+
+Se distribuye con la esperanza de que sea útil, pero SIN NINGUNA GARANTÍA;
+ni siquiera la garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN
+PROPÓSITO PARTICULAR. Consulta la GNU Affero General Public License para
+más detalles.
+```
+
+### Qué implica en la práctica
+
+- Puedes usar, estudiar, modificar y redistribuir Finlia libremente.
+- Si **ofreces Finlia como servicio en red** —modificado o no—, la AGPL (§13) obliga a poner el código fuente correspondiente a disposición de quienes lo usan. Es la diferencia con la GPL normal, y la razón de elegirla: cierra el hueco de tomar el proyecto, montarlo como SaaS cerrado y no devolver nada.
+- El trabajo derivado debe distribuirse también bajo AGPL.
+
+> **Sobre versiones anteriores:** Finlia se publicó bajo licencia MIT hasta la
+> versión 0.28.0. Ese código sigue disponible bajo MIT para quien lo obtuviera
+> entonces — una relicencia no es retroactiva. El cambio aplica de esta versión
+> en adelante.

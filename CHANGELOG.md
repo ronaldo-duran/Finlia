@@ -12,6 +12,23 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.29.0] - 2026-09-09 — La licencia pasa a AGPL-3.0
+
+### Contexto
+Finlia se publicó bajo licencia **MIT**, que permite a cualquiera tomar el proyecto, cerrarlo y venderlo como servicio sin devolver nada. Con la monetización en el horizonte, esa no es la licencia adecuada — y el momento de cambiarla es **ahora**, mientras el titular del copyright es una sola persona: en cuanto se acepta la primera contribución externa, relicenciar exige el permiso de cada contribuyente.
+
+### Cambiado
+- **Licencia: MIT → GNU Affero General Public License v3.0 o posterior.** Texto íntegro tomado de la fuente canónica de la Free Software Foundation. `composer.json` declara el identificador SPDX `AGPL-3.0-or-later`.
+- **El README explica qué implica en la práctica**, no solo el nombre de la licencia: el proyecto se puede usar, estudiar, modificar y redistribuir, pero **ofrecerlo como servicio en red obliga a poner el código correspondiente a disposición de quien lo usa** (AGPL §13). Esa cláusula es justo la diferencia con la GPL normal y la razón de elegirla.
+
+### Nota sobre versiones anteriores
+Una relicencia **no es retroactiva**: el código publicado hasta la versión 0.28.0 sigue disponible bajo MIT para quien lo obtuviera entonces, y eso no se puede revocar. El cambio aplica de esta versión en adelante. El README lo deja escrito para que nadie se lleve una sorpresa.
+
+### Verificación
+- `composer validate --strict`: válido — el identificador SPDX se acepta.
+- Texto de la licencia comprobado: 34.523 bytes, con la cabecera y el cierre canónicos de la FSF.
+- Las apariciones de "MIT" que quedan en `package-lock.json` son las licencias de las dependencias de terceros y no se tocan.
+
 ## [0.28.0] - 2026-09-09 — El repositorio se explica solo
 
 ### Contexto
