@@ -12,6 +12,51 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.32.0] - 2026-09-10 — Términos y condiciones definitivos
+
+> **Publica la versión de términos `2026-09-v1`.** La versión de los términos es
+> independiente de la del software y así seguirá: cambian en momentos distintos y
+> por razones distintas. Este changelog es el sitio donde queda anotado qué
+> entrega publicó qué versión legal.
+
+### Añadido
+- **Términos y condiciones oficiales**, en sustitución del borrador con marcadores. Quince secciones ajustadas a Finlia y a la ley colombiana, escritas para que se entiendan.
+- Se declara expresamente que **Finlia no es una entidad financiera** ni está vigilada por la Superintendencia Financiera: no capta dinero, no otorga créditos y no se conecta a bancos.
+- Queda por escrito que **las cifras son estimaciones** y que la entidad de crédito puede aplicar otras reglas —seguros, cuota de manejo, días de mora—. Es el mismo principio que la aplicación ya muestra en el panel de deudas, ahora también en el contrato.
+- **Advertencia destacada sobre los hogares compartidos**: dentro de un hogar no hay información privada, todos los miembros ven todo. Es el riesgo que un usuario menos se espera al invitar a alguien.
+- **Derechos del titular bajo la Ley 1581** enumerados, con los plazos legales de respuesta: diez días hábiles para consultas y quince para reclamos, con sus prórrogas.
+- **Noventa días de aviso** si el servicio cerrara, con la exportación de datos disponible durante todo el plazo.
+- Se separa la licencia del **código** (AGPL-3.0) de los derechos sobre la **marca** y sobre el servicio.
+
+### Detalles de redacción
+- **La limitación de responsabilidad no lo excluye todo, a propósito.** Se dice explícitamente que nada limita la responsabilidad por dolo o culpa grave ni los derechos del consumidor. En Colombia una cláusula que intente excluirlo todo se tiene por abusiva y puede caer entera, dejando al prestador peor que si no hubiera escrito nada.
+- El canal de contacto y de ejercicio de derechos es **contacto@finlia.online**, que debe existir y leerse: los plazos de respuesta corren desde que llega el mensaje.
+
+### Política de tratamiento de datos
+La página `/datos` dejó de ser un borrador con marcadores. Renderizaba literalmente «[60 / 90] días» y una frase que terminaba en «escríbenos a .», enlazada desde el pie de toda la aplicación.
+
+Le faltaban además **cuatro elementos que la Ley 1581 exige**, no adornos: quién es el responsable del tratamiento, para qué se usan los datos, cuáles son los derechos del titular y con quién se comparten. Ahora están, junto con:
+
+- **Los encargados del tratamiento con nombre**: Hostinger para el alojamiento —con los servidores en Brasil, lo que implica una transferencia internacional que hay que informar— y Brevo para el correo, que solo recibe la dirección de destino y el contenido.
+- **Qué se guarda y por qué**, incluida la prueba de consentimiento (versión aceptada, fecha e IP) y por qué la IP solo se guarda en los mensajes enviados sin sesión.
+- **Cómo protegemos los datos**, en concreto: tráfico cifrado, contraseñas con hash irreversible, aislamiento por hogar verificado en cada cambio del código, y el código público para que cualquiera lo compruebe en lugar de creerse la página.
+- **Las copias de seguridad no son un archivo histórico** y no sustituyen tu exportación. Decirlo evita una expectativa que el proveedor de alojamiento no cumple.
+- Los **90 días** de aviso de cierre, ahora coherentes con los términos.
+
+**Cuatro tests nuevos** fijan que la página no se publique con marcadores sin rellenar, que informe cada elemento que la ley exige, y que el plazo de cierre coincida con el de los términos — si se contradicen, la promesa se rompe.
+
+### Poder volver a leerlos
+Los términos solo aparecían al tener que aceptarlos. Se podían releer —`/terminos` siempre fue público— pero el único enlace estaba en el pie: al final de un scroll largo y tapado por la barra inferior en el teléfono. Nadie vuelve a leer un contrato si hay que cazarlo.
+
+- **Términos y «Tus datos» entran en la navegación lateral**, donde se buscan.
+- **Historial de versiones** en `/terminos/historial`. Existía una URL por versión, pero ningún índice: había que adivinar el identificador. Los propios términos prometen que las versiones anteriores quedan consultables, así que la promesa estaba escrita y no se cumplía.
+- Quien tiene sesión ve además **cuál aceptó y en qué fecha**. Es su prueba de consentimiento y tiene derecho a consultarla sin pedírsela a nadie.
+
+Siete tests cubren el historial, incluido que la ruta del índice gane a la comodín de versión — sin ese orden, «historial» se interpretaría como el identificador de una versión y daría 404.
+
+### Nota
+El texto no lo redactó un abogado. Conviene una revisión profesional antes de cobrar por el servicio.
+
 ## [0.31.0] - 2026-09-10 — Contacto y reportes de error
 
 ### Añadido
