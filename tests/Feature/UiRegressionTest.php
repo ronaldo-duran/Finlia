@@ -73,26 +73,48 @@ class UiRegressionTest extends TestCase
         $this->app->setLocale('en');
         Carbon::setLocale('en');
 
-        $owner = User::factory()->create();
+        // Nombres fijos y no de Faker: el navbar pinta el nombre del usuario en
+        // todas las páginas, y Faker genera "August Schuppe", "June Blick" o
+        // "Domenic Mayer" — que hacían fallar este test una de cada cien veces
+        // sin que hubiera nada roto.
+        $owner = User::factory()->create(['name' => 'Persona de prueba']);
         $household = app(HouseholdService::class)->createHousehold($owner->id, 'Hogar A');
         $debt = Debt::factory()->create([
             'household_id' => $household->id,
             'name' => 'Crédito',
+            'institution' => 'Entidad de prueba',
             'original_amount' => 1200000,
             'current_balance' => 1200000,
             'interest_rate' => 0,
             'planned_payment' => 100000, // 12 cuotas exactas
             'minimum_payment' => null,
+            // Fija, no la aleatoria de la factory: con una fecha de inicio al
+            // azar la deuda podía salir ya saldada, la proyección no se
+            // renderizaba y el test se quedaba sin sujeto, pasando siempre
+            // mirara lo que mirara.
+            'start_date' => Carbon::now()->subMonth()->toDateString(),
             'due_day' => 15,
         ]);
+
+        $meses = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+            'August', 'September', 'October', 'November', 'December'];
 
         foreach ([route('debts.show', $debt), route('debts.index')] as $url) {
             $html = $this->actingAs($owner)->get($url)->assertOk()->getContent();
 
-            foreach (['January', 'February', 'March', 'April', 'May', 'June', 'July',
-                'August', 'September', 'October', 'November', 'December'] as $mesIngles) {
-                $this->assertStringNotContainsString(
-                    $mesIngles,
+            // Sin esta comprobación el test es decorativo: si la proyección
+            // deja de pintarse no hay ningún mes que revisar, y todo "pasa".
+            $this->assertStringContainsString(
+                'terminarías hacia',
+                $html,
+                "La proyección de fin de deuda no se renderizó en {$url}; sin ella este test no comprueba nada.",
+            );
+
+            foreach ($meses as $mesIngles) {
+                // Palabra completa: buscando la subcadena, un usuario llamado
+                // "Augusto" o una entidad "Mayer" contaban como mes en inglés.
+                $this->assertDoesNotMatchRegularExpression(
+                    '/\b'.$mesIngles.'\b/',
                     $html,
                     "La proyección muestra «{$mesIngles}» en inglés en {$url}.",
                 );
