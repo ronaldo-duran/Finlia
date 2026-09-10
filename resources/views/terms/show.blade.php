@@ -26,4 +26,11 @@
             <p class="small mb-3">{{ $parrafo }}</p>
         @endforeach
     </div>
+
+    <hr class="my-4">
+    <p class="small text-muted text-center mb-0">
+        <a href="{{ route('terms.history') }}" class="text-decoration-none">Ver todas las versiones</a>
+        &middot;
+        <a href="{{ route('data.policy') }}" class="text-decoration-none">Tus datos y Finlia</a>
+    </p>
 @endsection

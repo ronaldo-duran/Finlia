@@ -29,6 +29,37 @@ class TermsController extends Controller
     }
 
     /**
+     * Índice de versiones, lectura pública.
+     *
+     * Los términos prometen que las versiones anteriores quedan consultables;
+     * sin esta página habría que adivinar el identificador de cada una. Si hay
+     * sesión, se marca además cuál aceptó el usuario y cuándo: es su prueba de
+     * consentimiento y tiene derecho a verla.
+     */
+    public function history(Request $request): View
+    {
+        $versions = TermsVersion::query()
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->get();
+
+        abort_if($versions->isEmpty(), 404);
+
+        // Fecha de aceptación por versión, solo del usuario autenticado.
+        $accepted = $request->user()
+            ?->acceptedTerms()
+            ->get()
+            ->keyBy('terms_version_id')
+            ->map(fn ($aceptacion) => $aceptacion->accepted_at) ?? collect();
+
+        return view('terms.history', [
+            'versions' => $versions,
+            'current' => TermsVersion::current(),
+            'accepted' => $accepted,
+        ]);
+    }
+
+    /**
      * Versión histórica, lectura pública: la aceptación guarda el
      * identificador de la versión, y esta URL es su referencia externa.
      */

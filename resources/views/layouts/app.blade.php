@@ -184,6 +184,22 @@
                                 <i class="bi bi-house-heart"></i> Hogares
                             </a>
                         </li>
+
+                        {{-- Legal. En el pie también están, pero ahí quedan al
+                             final de un scroll largo y tapadas por la barra
+                             inferior en móvil: nadie vuelve a leer los términos
+                             si hay que cazarlos. --}}
+                        <li><hr class="my-2 opacity-25"></li>
+                        <li>
+                            <a class="nav-link @if(request()->routeIs('terms.*'))active @endif" href="{{ route('terms.show') }}">
+                                <i class="bi bi-file-text"></i> Términos
+                            </a>
+                        </li>
+                        <li>
+                            <a class="nav-link @if(request()->routeIs('data.policy'))active @endif" href="{{ route('data.policy') }}">
+                                <i class="bi bi-shield-check"></i> Tus datos
+                            </a>
+                        </li>
                     @endauth
                 </ul>
             </div>

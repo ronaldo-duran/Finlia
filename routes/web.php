@@ -165,6 +165,12 @@ Route::get('manifest.webmanifest', function () {
         'Content-Type' => 'application/manifest+json',
     ]);
 })->name('pwa.manifest');
+// Índice de versiones. Va ANTES de terminos/{termsVersion}: si no, Laravel
+// interpretaría "historial" como el identificador de una versión y daría 404.
+// Los términos prometen que las versiones anteriores son consultables
+// públicamente; esta ruta es lo que hace cierta esa promesa.
+Route::get('terminos/historial', [TermsController::class, 'history'])->name('terms.history');
+
 Route::get('terminos/{termsVersion}', [TermsController::class, 'version'])
     ->name('terms.version')
     ->where('termsVersion', '[0-9]{4}-[0-9]{2}-v[0-9]+');

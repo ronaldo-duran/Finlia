@@ -45,6 +45,15 @@ Le faltaban además **cuatro elementos que la Ley 1581 exige**, no adornos: qui�
 
 **Cuatro tests nuevos** fijan que la página no se publique con marcadores sin rellenar, que informe cada elemento que la ley exige, y que el plazo de cierre coincida con el de los términos — si se contradicen, la promesa se rompe.
 
+### Poder volver a leerlos
+Los términos solo aparecían al tener que aceptarlos. Se podían releer —`/terminos` siempre fue público— pero el único enlace estaba en el pie: al final de un scroll largo y tapado por la barra inferior en el teléfono. Nadie vuelve a leer un contrato si hay que cazarlo.
+
+- **Términos y «Tus datos» entran en la navegación lateral**, donde se buscan.
+- **Historial de versiones** en `/terminos/historial`. Existía una URL por versión, pero ningún índice: había que adivinar el identificador. Los propios términos prometen que las versiones anteriores quedan consultables, así que la promesa estaba escrita y no se cumplía.
+- Quien tiene sesión ve además **cuál aceptó y en qué fecha**. Es su prueba de consentimiento y tiene derecho a consultarla sin pedírsela a nadie.
+
+Siete tests cubren el historial, incluido que la ruta del índice gane a la comodín de versión — sin ese orden, «historial» se interpretaría como el identificador de una versión y daría 404.
+
 ### Nota
 El texto no lo redactó un abogado. Conviene una revisión profesional antes de cobrar por el servicio.
 
