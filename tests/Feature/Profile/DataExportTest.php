@@ -331,6 +331,8 @@ class DataExportTest extends TestCase
         $this->get(route('data.policy'))
             ->assertSee('Portabilidad')
             ->assertSee('Eliminación')
-            ->assertSee('Retiro del software');
+            // Antes se llamaba "Retiro del software": jerga cambiada por lo que
+            // el usuario de verdad se pregunta.
+            ->assertSee('Si Finlia dejara de operar');
     }
 }

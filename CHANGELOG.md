@@ -32,6 +32,19 @@ reciente de este archivo.
 - **La limitación de responsabilidad no lo excluye todo, a propósito.** Se dice explícitamente que nada limita la responsabilidad por dolo o culpa grave ni los derechos del consumidor. En Colombia una cláusula que intente excluirlo todo se tiene por abusiva y puede caer entera, dejando al prestador peor que si no hubiera escrito nada.
 - El canal de contacto y de ejercicio de derechos es **contacto@finlia.online**, que debe existir y leerse: los plazos de respuesta corren desde que llega el mensaje.
 
+### Política de tratamiento de datos
+La página `/datos` dejó de ser un borrador con marcadores. Renderizaba literalmente «[60 / 90] días» y una frase que terminaba en «escríbenos a .», enlazada desde el pie de toda la aplicación.
+
+Le faltaban además **cuatro elementos que la Ley 1581 exige**, no adornos: quién es el responsable del tratamiento, para qué se usan los datos, cuáles son los derechos del titular y con quién se comparten. Ahora están, junto con:
+
+- **Los encargados del tratamiento con nombre**: Hostinger para el alojamiento —con los servidores en Brasil, lo que implica una transferencia internacional que hay que informar— y Brevo para el correo, que solo recibe la dirección de destino y el contenido.
+- **Qué se guarda y por qué**, incluida la prueba de consentimiento (versión aceptada, fecha e IP) y por qué la IP solo se guarda en los mensajes enviados sin sesión.
+- **Cómo protegemos los datos**, en concreto: tráfico cifrado, contraseñas con hash irreversible, aislamiento por hogar verificado en cada cambio del código, y el código público para que cualquiera lo compruebe en lugar de creerse la página.
+- **Las copias de seguridad no son un archivo histórico** y no sustituyen tu exportación. Decirlo evita una expectativa que el proveedor de alojamiento no cumple.
+- Los **90 días** de aviso de cierre, ahora coherentes con los términos.
+
+**Cuatro tests nuevos** fijan que la página no se publique con marcadores sin rellenar, que informe cada elemento que la ley exige, y que el plazo de cierre coincida con el de los términos — si se contradicen, la promesa se rompe.
+
 ### Nota
 El texto no lo redactó un abogado. Conviene una revisión profesional antes de cobrar por el servicio.
 
