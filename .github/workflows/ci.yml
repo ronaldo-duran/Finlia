@@ -34,6 +34,16 @@ jobs:
           path: vendor
           key: vendor-${{ runner.os }}-php8.4-${{ hashFiles('composer.lock') }}
 
+      - name: Fichero .env para los tests
+        # Sin él, Laravel intenta leerlo al arrancar y CADA test emite un aviso
+        # de `file_get_contents`: ~575 de 586. Es inofensivo —las variables las
+        # da phpunit.xml— pero ahoga cualquier advertencia real.
+        #
+        # Los <env> de phpunit.xml se fijan ANTES de arrancar Laravel, y Dotenv
+        # carga en modo inmutable: lo que ya está puesto no se pisa. Así que
+        # este fichero no cambia la configuración de la suite.
+        run: cp .env.example .env
+
       - name: Validar composer.json
         run: composer validate --strict
 
@@ -127,6 +137,16 @@ jobs:
         with:
           path: vendor
           key: vendor-${{ runner.os }}-php8.4-${{ hashFiles('composer.lock') }}
+
+      - name: Fichero .env para los tests
+        # Sin él, Laravel intenta leerlo al arrancar y CADA test emite un aviso
+        # de `file_get_contents`: ~575 de 586. Es inofensivo —las variables las
+        # da phpunit.xml— pero ahoga cualquier advertencia real.
+        #
+        # Los <env> de phpunit.xml se fijan ANTES de arrancar Laravel, y Dotenv
+        # carga en modo inmutable: lo que ya está puesto no se pisa. Así que
+        # este fichero no cambia la configuración de la suite.
+        run: cp .env.example .env
 
       - name: Instalar dependencias (Composer)
         run: composer install --prefer-dist --no-interaction --no-progress
