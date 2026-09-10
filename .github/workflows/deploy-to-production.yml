@@ -38,7 +38,7 @@ jobs:
 
       - name: Push to production repo
         env:
-          PROD_REPO: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/ronaldo-duran/finlia-produccion.git
+          PROD_REPO: https://x-access-token:${{ secrets.FINLIA_PROD_TOKEN }}@github.com/ronaldo-duran/finlia-produccion.git
         run: |
           git remote add production $PROD_REPO
           git push production main:main --force
