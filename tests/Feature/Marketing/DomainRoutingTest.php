@@ -74,4 +74,48 @@ class DomainRoutingTest extends TestCase
         $this->assertStringContainsString(self::MARKETING, route('home'));
         $this->assertStringNotContainsString(self::APP, route('home'));
     }
+
+    /**
+     * La aplicación NO debe responder en el host del sitio.
+     *
+     * Si lo hace, los enlaces de la landing se quedan en el host equivocado,
+     * un buscador puede indexar la pantalla de login y —lo caro— la PWA se
+     * puede instalar desde el dominio del sitio y queda atada a él.
+     */
+    public function test_la_aplicacion_no_responde_en_el_host_del_sitio(): void
+    {
+        $this->get('http://'.self::MARKETING.'/login')->assertNotFound();
+        $this->get('http://'.self::MARKETING.'/dashboard')->assertNotFound();
+        $this->get('http://'.self::MARKETING.'/manifest.webmanifest')->assertNotFound();
+    }
+
+    public function test_la_aplicacion_responde_en_su_propio_host(): void
+    {
+        $this->get('http://'.self::APP.'/login')->assertOk();
+        $this->get('http://'.self::APP.'/manifest.webmanifest')->assertOk();
+    }
+
+    /**
+     * Las páginas legales son al revés: viven en el sitio, porque son
+     * públicas, indexables y entran en el sitemap.
+     */
+    public function test_las_paginas_legales_viven_en_el_sitio(): void
+    {
+        $this->get('http://'.self::MARKETING.'/datos')->assertOk();
+        $this->get('http://'.self::APP.'/datos')->assertNotFound();
+    }
+
+    /**
+     * Lo que reportó el fallo: desde la landing, "Entrar" mandaba a
+     * finlia.online/login en vez de al subdominio de la aplicación.
+     */
+    public function test_los_enlaces_de_entrar_y_registrarse_apuntan_a_la_aplicacion(): void
+    {
+        foreach (['login', 'register'] as $ruta) {
+            $this->assertStringContainsString(self::APP, route($ruta), "route('{$ruta}') no apunta al host de la aplicación.");
+        }
+
+        $this->assertStringContainsString(self::MARKETING, route('terms.show'));
+        $this->assertStringContainsString(self::MARKETING, route('data.policy'));
+    }
 }

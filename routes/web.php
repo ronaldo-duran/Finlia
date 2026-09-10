@@ -72,7 +72,28 @@ Route::group(array_filter(['domain' => config('finlia.domains.marketing')]), fun
     Route::post('contacto', [ContactController::class, 'store'])
         ->middleware('throttle:3,60')
         ->name('contact.store');
+
+    // ---- Páginas legales (Planes 03 y 06) ----
+    // Viven en el sitio y no en la aplicación: son públicas, entran en el
+    // sitemap y cualquiera debe poder leerlas antes de registrarse. El
+    // historial va ANTES de terminos/{termsVersion} o "historial" se
+    // interpretaría como el identificador de una versión.
+    Route::get('terminos', [TermsController::class, 'show'])->name('terms.show');
+    Route::get('terminos/historial', [TermsController::class, 'history'])->name('terms.history');
+    Route::get('terminos/{termsVersion}', [TermsController::class, 'version'])
+        ->name('terms.version')
+        ->where('termsVersion', '[0-9]{4}-[0-9]{2}-v[0-9]+');
+
+    Route::get('datos', [DataPolicyController::class, 'show'])->name('data.policy');
 });
+
+// Restricción de dominio de la APLICACIÓN. Vacía en local (un solo host), y
+// entonces `array_filter` la elimina y las rutas no llevan restricción.
+//
+// Sin esto la app entera respondía también en finlia.online: enlaces que se
+// quedaban en el host equivocado, la PWA instalable desde el dominio del sitio
+// y un buscador libre de indexar la pantalla de login.
+$enLaApp = array_filter(['domain' => config('finlia.domains.app')]);
 
 // robots.txt responde en AMBOS hosts —el controlador decide qué decir según
 // cuál sea—, así que queda fuera del grupo de marketing.
@@ -89,7 +110,7 @@ if (($dominioApp = config('finlia.domains.app')) !== null) {
 }
 
 // ---- Rutas públicas (solo invitados) ----
-Route::middleware('guest')->group(function () {
+Route::group($enLaApp + ['middleware' => 'guest'], function () {
     // Registro
     Route::get('registro', [RegisteredUserController::class, 'create'])
         ->name('register');
@@ -124,9 +145,11 @@ Route::middleware('guest')->group(function () {
 // sesión abierta también debe poder darse de baja desde su correo.
 Route::get('recordatorios/correo/baja', [ReminderController::class, 'unsubscribe'])
     ->name('reminders.unsubscribe')
-    ->middleware('signed');
+    ->middleware('signed')
+    ->domain(config('finlia.domains.app'));
 Route::post('recordatorios/correo/baja', [ReminderController::class, 'unsubscribe'])
-    ->middleware('signed');
+    ->middleware('signed')
+    ->domain(config('finlia.domains.app'));
 
 // ---- Enlace de verificación del correo (Plan 01) ----
 // Público + firmado: la firma es la autorización (patrón de la baja del
@@ -135,7 +158,8 @@ Route::post('recordatorios/correo/baja', [ReminderController::class, 'unsubscrib
 // la prueba; lo comprueba el controlador.
 Route::get('verificar-correo/{id}/{hash}', [EmailVerificationController::class, 'verify'])
     ->name('verification.verify')
-    ->middleware(['signed', 'throttle:6,1']);
+    ->middleware(['signed', 'throttle:6,1'])
+    ->domain(config('finlia.domains.app'));
 
 // ---- Confirmación del cambio de correo (Plan 02) ----
 // Público con token aleatorio (hash sha256 en la base, patrón de las
@@ -144,18 +168,8 @@ Route::get('verificar-correo/{id}/{hash}', [EmailVerificationController::class, 
 // (mismo criterio que la verificación del registro). GET muta a propósito.
 Route::get('confirmar-correo/{token}', [ProfileController::class, 'confirmEmail'])
     ->name('profile.email.confirm')
-    ->middleware('throttle:6,1');
-
-// ---- Términos y condiciones (Plan 03) ----
-// Lectura pública de la vigente y del histórico por versión: es la
-// referencia externa de qué aceptó cada usuario. El patrón de {version}
-// ("YYYY-MM-vN") hace imposible que colisione con las URIs fijas de
-// abajo, vengan en el orden que vengan.
-Route::get('terminos', [TermsController::class, 'show'])->name('terms.show');
-
-// ---- Política de datos (Plan 06, ADR-0034) ----
-// Pública: visible sin cuenta, para quienes evalúen antes de registrarse.
-Route::get('datos', [DataPolicyController::class, 'show'])->name('data.policy');
+    ->middleware('throttle:6,1')
+    ->domain(config('finlia.domains.app'));
 
 // ---- PWA (Épica 10): manifest con cabecera correcta ----
 // Algunos hosting o proxies no reconocen .webmanifest como JSON y
@@ -164,23 +178,17 @@ Route::get('manifest.webmanifest', function () {
     return response()->file(public_path('manifest.webmanifest'), [
         'Content-Type' => 'application/manifest+json',
     ]);
-})->name('pwa.manifest');
-// Índice de versiones. Va ANTES de terminos/{termsVersion}: si no, Laravel
-// interpretaría "historial" como el identificador de una versión y daría 404.
-// Los términos prometen que las versiones anteriores son consultables
-// públicamente; esta ruta es lo que hace cierta esa promesa.
-Route::get('terminos/historial', [TermsController::class, 'history'])->name('terms.history');
-
-Route::get('terminos/{termsVersion}', [TermsController::class, 'version'])
-    ->name('terms.version')
-    ->where('termsVersion', '[0-9]{4}-[0-9]{2}-v[0-9]+');
-
+})->name('pwa.manifest')
+    // Solo desde el origen de la app: si el manifiesto se sirviera también
+    // en el sitio, la PWA podría instalarse desde el host equivocado y
+    // quedar atada a él para siempre.
+    ->domain(config('finlia.domains.app'));
 // ---- Rutas privadas ----
 // Nivel 1 (solo sesión): cerrar sesión y el flujo de verificación son lo
 // ÚNICO alcanzable sin correo confirmado (Plan 01: bloqueo total hasta
 // confirmar). Nivel 2½: aceptación de términos. Nivel 3: el resto de la
 // app, ya con los términos vigentes aceptados (Plan 03).
-Route::middleware('auth')->group(function () {
+Route::group($enLaApp + ['middleware' => 'auth'], function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 
@@ -205,7 +213,7 @@ Route::middleware('auth')->group(function () {
 // justamente el flujo de aceptación — con el middleware puesto sería un
 // bucle de redirección. Aceptar y rechazar son del propio autenticado;
 // no hay IDs en las URLs.
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::group($enLaApp + ['middleware' => ['auth', 'verified']], function () {
     Route::get('terminos/aceptar', [TermsController::class, 'acceptForm'])
         ->name('terms.accept');
     Route::post('terminos/aceptar', [TermsController::class, 'accept'])
@@ -219,7 +227,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // Nivel 3 (sesión + verificado + términos aceptados + cuenta activa): el
 // resto de la app. Una cuenta suspendida queda aquí bloqueada y se redirige
 // a /cuenta/suspendida (account.active, Plan 05, ADR-0033).
-Route::middleware(['auth', 'verified', 'terms.current', 'account.active'])->group(function () {
+Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', 'account.active']], function () {
     Route::get('dashboard', DashboardController::class)
         ->name('dashboard');
 
