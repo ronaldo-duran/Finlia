@@ -1,0 +1,45 @@
+name: Deploy to Production
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.5
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Composer dependencies
+        run: composer install --optimize-autoloader --no-dev
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Configure git
+        run: |
+          git config --global user.email "bot@finlia.online"
+          git config --global user.name "Finlia Bot"
+
+      - name: Push to production repo
+        env:
+          PROD_REPO: https://x-access-token:${{ secrets.FINLIA_PROD_TOKEN }}@github.com/ronaldo-duran/finlia-produccion.git
+        run: |
+          git remote add production $PROD_REPO
+          git push production main:main --force
+          git push production --tags
