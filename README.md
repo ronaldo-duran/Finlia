@@ -85,7 +85,7 @@ El estado detallado de cada funcionalidad está en [docs/ROADMAP.md](docs/ROADMA
 
 ## 🧱 Stack
 
-- **Laravel 13.8** · **PHP 8.3**
+- **Laravel 13.8** · **PHP 8.4**
 - **MySQL/MariaDB o PostgreSQL** (SQLite para tests) — ambos soportados, [ADR-0036](docs/DECISIONS.md#adr-0036)
 - **Blade** · **Bootstrap 5** · **JavaScript vanilla** · **Chart.js**
 - **Eloquent** · Migrations · Seeders · Factories
