@@ -37,7 +37,7 @@ class TermsVersionSeeder extends Seeder
 
                 '1. QUIÉN PRESTA EL SERVICIO',
 
-                'Finlia es operado por Ronaldo Durán, persona natural domiciliada en Colombia, a través del sitio finlia.online y de la aplicación disponible en app.finlia.online. Para cualquier asunto relacionado con estos términos o con tus datos, el canal de contacto es hola@finlia.online y el formulario disponible en finlia.online/contacto.',
+                'Finlia es operado por Ronaldo Durán, persona natural domiciliada en Colombia, a través del sitio finlia.online y de la aplicación disponible en app.finlia.online. Para cualquier asunto relacionado con estos términos o con tus datos, el canal de contacto es contacto@finlia.online y el formulario disponible en finlia.online/contacto.',
 
                 '2. QUÉ ES FINLIA — Y QUÉ NO ES',
 
@@ -73,7 +73,7 @@ class TermsVersionSeeder extends Seeder
 
                 'Como titular tienes derecho a conocer, actualizar y rectificar tus datos; a solicitar prueba de esta autorización; a ser informado sobre el uso que se les ha dado; a presentar quejas ante la Superintendencia de Industria y Comercio; a revocar la autorización y solicitar la supresión de tus datos cuando no exista un deber legal de conservarlos; y a acceder gratuitamente a ellos.',
 
-                'Para ejercerlos escríbenos a hola@finlia.online. Las consultas se atienden en un máximo de diez (10) días hábiles, prorrogables por cinco (5) más; los reclamos, en quince (15) días hábiles, prorrogables por ocho (8), informándote siempre el motivo de la prórroga.',
+                'Para ejercerlos escríbenos a contacto@finlia.online. Las consultas se atienden en un máximo de diez (10) días hábiles, prorrogables por cinco (5) más; los reclamos, en quince (15) días hábiles, prorrogables por ocho (8), informándote siempre el motivo de la prórroga.',
 
                 'Puedes descargar todos tus datos en cualquier momento desde tu perfil, en formato abierto. Finlia no vende ni cede tu información a terceros con fines comerciales ni publicitarios. El detalle completo está en la política de tratamiento de datos, disponible en finlia.online/datos, que forma parte de estos términos.',
 
@@ -81,7 +81,7 @@ class TermsVersionSeeder extends Seeder
 
                 'No puedes usar Finlia para actividades ilícitas, ni intentar acceder a datos de otros usuarios o de hogares ajenos, ni vulnerar o probar la seguridad del servicio sin autorización escrita, ni interferir con su funcionamiento, ni automatizar su uso de forma que degrade el servicio para los demás, ni suplantar a otra persona.',
 
-                'Si encuentras una vulnerabilidad, te agradecemos que nos escribas a hola@finlia.online antes de divulgarla. Responderemos y te daremos crédito si así lo quieres.',
+                'Si encuentras una vulnerabilidad, te agradecemos que nos escribas a contacto@finlia.online antes de divulgarla. Responderemos y te daremos crédito si así lo quieres.',
 
                 '8. DISPONIBILIDAD DEL SERVICIO',
 
@@ -127,7 +127,7 @@ class TermsVersionSeeder extends Seeder
 
                 '15. CONTACTO',
 
-                'Escríbenos a hola@finlia.online o desde finlia.online/contacto. Respondemos.',
+                'Escríbenos a contacto@finlia.online o desde finlia.online/contacto. Respondemos.',
             ]),
         ]);
     }

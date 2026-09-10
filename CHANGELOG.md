@@ -12,6 +12,29 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.32.0] - 2026-09-10 — Términos y condiciones definitivos
+
+> **Publica la versión de términos `2026-09-v1`.** La versión de los términos es
+> independiente de la del software y así seguirá: cambian en momentos distintos y
+> por razones distintas. Este changelog es el sitio donde queda anotado qué
+> entrega publicó qué versión legal.
+
+### Añadido
+- **Términos y condiciones oficiales**, en sustitución del borrador con marcadores. Quince secciones ajustadas a Finlia y a la ley colombiana, escritas para que se entiendan.
+- Se declara expresamente que **Finlia no es una entidad financiera** ni está vigilada por la Superintendencia Financiera: no capta dinero, no otorga créditos y no se conecta a bancos.
+- Queda por escrito que **las cifras son estimaciones** y que la entidad de crédito puede aplicar otras reglas —seguros, cuota de manejo, días de mora—. Es el mismo principio que la aplicación ya muestra en el panel de deudas, ahora también en el contrato.
+- **Advertencia destacada sobre los hogares compartidos**: dentro de un hogar no hay información privada, todos los miembros ven todo. Es el riesgo que un usuario menos se espera al invitar a alguien.
+- **Derechos del titular bajo la Ley 1581** enumerados, con los plazos legales de respuesta: diez días hábiles para consultas y quince para reclamos, con sus prórrogas.
+- **Noventa días de aviso** si el servicio cerrara, con la exportación de datos disponible durante todo el plazo.
+- Se separa la licencia del **código** (AGPL-3.0) de los derechos sobre la **marca** y sobre el servicio.
+
+### Detalles de redacción
+- **La limitación de responsabilidad no lo excluye todo, a propósito.** Se dice explícitamente que nada limita la responsabilidad por dolo o culpa grave ni los derechos del consumidor. En Colombia una cláusula que intente excluirlo todo se tiene por abusiva y puede caer entera, dejando al prestador peor que si no hubiera escrito nada.
+- El canal de contacto y de ejercicio de derechos es **contacto@finlia.online**, que debe existir y leerse: los plazos de respuesta corren desde que llega el mensaje.
+
+### Nota
+El texto no lo redactó un abogado. Conviene una revisión profesional antes de cobrar por el servicio.
+
 ## [0.31.0] - 2026-09-10 — Contacto y reportes de error
 
 ### Añadido
