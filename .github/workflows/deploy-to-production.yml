@@ -93,6 +93,18 @@ jobs:
             --exclude 'storage/framework/views/*' \
             --exclude 'database/*.sqlite*'
 
+          # Laravel mantiene vivas las carpetas de storage con un .gitignore
+          # dentro de cada una, y los --exclude de arriba se los llevaban por
+          # delante. Como git no versiona directorios vacíos, el artefacto
+          # llegaba sin storage/framework y la app moría con "Please provide a
+          # valid cache path". Se recrean con un .gitkeep que sí viaja.
+          for dir in framework/views framework/cache/data framework/sessions framework/testing logs app/public; do
+            mkdir -p "../produccion/storage/$dir"
+            touch "../produccion/storage/$dir/.gitkeep"
+          done
+          mkdir -p ../produccion/bootstrap/cache
+          touch ../produccion/bootstrap/cache/.gitkeep
+
           # El artefacto NO hereda el .gitignore del código: aquí vendor/ y
           # public/build son justamente lo que hay que publicar.
           cat > ../produccion/.gitignore <<'IGNORE'
@@ -100,9 +112,13 @@ jobs:
           # Solo se ignora lo que genera el servidor en caliente.
           /.env
           /storage/logs/*
+          !/storage/logs/.gitkeep
           /storage/framework/cache/data/*
+          !/storage/framework/cache/data/.gitkeep
           /storage/framework/sessions/*
+          !/storage/framework/sessions/.gitkeep
           /storage/framework/views/*
+          !/storage/framework/views/.gitkeep
           /public/storage
           IGNORE
 
