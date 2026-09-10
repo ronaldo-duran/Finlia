@@ -12,6 +12,27 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.31.0] - 2026-09-10 — Contacto y reportes de error
+
+### Añadido
+- **Formulario de contacto público** en `/contacto`, con selector de motivo (alianzas, comercial, sugerencia). Uno solo con selector y no cuatro formularios: al que escribe le da igual, y hay un tercio del código que mantener.
+- **Reporte de error desde la aplicación**, con sesión iniciada. No pide nombre ni correo —ya se conocen— y **adjunta el contexto técnico solo**: versión, pantalla desde la que se reportó, navegador y tamaño de ventana. Eso es lo que convierte un «no me funciona» en algo accionable. La pantalla dice exactamente qué viaja, y deja claro que **no van movimientos, saldos ni cuentas**.
+- **Aviso por correo** al buzón del producto, con `Reply-To` de quien escribió para poder responderle sin copiar la dirección a mano. Si no hay buzón configurado o el SMTP falla, **el mensaje se guarda igual**: perderlo por un correo caído sería peor que enterarse tarde.
+
+### Seguridad
+- **Límite de envíos**: 3 por hora y por IP en el formulario público, 5 por hora y por usuario en el reporte de error. Una persona real manda uno; tres dejan margen para reintentos sin permitir una ráfaga.
+- **Campo trampa** en ambos formularios en lugar de un CAPTCHA: está fuera de la pantalla y del alcance del teclado, así que una persona nunca lo ve y un bot que rellena todo el DOM, sí. Cubrir el 99 % del spam sin ponerle un puzzle a quien sí es humano.
+- **La dirección IP se guarda solo en envíos anónimos.** Con sesión iniciada ya está el `user_id`, así que guardarla además sería recolectar un dato personal sin necesidad. La política de datos lo dice con esas palabras.
+- El contexto técnico llega del navegador y por tanto es manipulable: se valida, se recorta y **nunca se usa para decidir nada** — solo para leerlo.
+
+### Decisiones
+- **Sin reglas de composición en las contraseñas.** Se mantiene el mínimo de 8 caracteres y nada más: exigir mayúscula y número no produce contraseñas fuertes sino predecibles (`Finlia2026!`), que es lo que el NIST SP 800-63B desaconseja explícitamente desde 2017.
+- **Sin creación automática de issues en GitHub.** Los issues son públicos, y un reporte de error en una aplicación de finanzas suele venir con contexto personal: publicarlo automáticamente sería publicar datos de un usuario sin que él lo entienda. Los reportes quedan en la base de datos y se decide a mano cuál se hace público.
+
+### Verificación
+- `phpunit`: **585/586** — 15 tests nuevos que cubren el campo trampa, el límite de envíos, el rechazo del motivo «error» en el formulario público, que la IP solo se guarde sin sesión, que el contexto se recorte y que el aviso permita responder a quien escribió. El fallo restante es el conocido de Windows.
+- `vendor/bin/pint`: limpio.
+
 ## [0.30.0] - 2026-09-09 — Sitio público en finlia.online
 
 ### Contexto

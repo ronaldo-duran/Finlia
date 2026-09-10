@@ -13,6 +13,7 @@
             <a href="#como-funciona" class="enlace-nav">Cómo funciona</a>
             <a href="#funciones" class="enlace-nav">Funciones</a>
             <a href="#preguntas" class="enlace-nav">Preguntas</a>
+            <a href="{{ route('contact.create') }}" class="enlace-nav">Contacto</a>
         </div>
 
         <div class="d-flex align-items-center gap-2">

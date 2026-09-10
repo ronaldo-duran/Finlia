@@ -18,7 +18,7 @@ return [
 
     // Versión actual del software (fuente de verdad; sincronizar con package.json
     // y CHANGELOG.md al publicar cada versión).
-    'version' => '0.30.0',
+    'version' => '0.31.0',
 
     /*
     | Dominios (ADR pendiente de la landing).
@@ -60,6 +60,17 @@ return [
         // Transports que NO entregan a una bandeja real (desarrollo y tests).
         // Con ellos la UI sigue mostrando el enlace manual como vía principal.
         'fake_transports' => ['log', 'array'],
+    ],
+
+    /*
+    | Contacto.
+    |
+    | Buzón al que se avisa cuando alguien escribe desde el formulario público
+    | o reporta un error desde la aplicación. Vacío = los mensajes se guardan
+    | igual, pero no se avisa por correo: el registro nunca depende del SMTP.
+    */
+    'contact' => [
+        'inbox' => env('FINLIA_CONTACT_EMAIL'),
     ],
 
     // Moneda por defecto (ISO 4217).

@@ -205,6 +205,7 @@
             <span class="text-finlia fw-semibold">COP</span> &middot;
             <a href="{{ route('terms.show') }}" class="text-decoration-none">Términos</a> &middot;
             <a href="{{ route('data.policy') }}" class="text-decoration-none">Tus datos</a> &middot;
+            <a href="{{ route('bug-report.create') }}" class="text-decoration-none">Reportar un error</a> &middot;
             v{{ config('finlia.version') }} &middot;
             &copy; {{ date('Y') }}
         </div>

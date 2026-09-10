@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CreditCardController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataPolicyController;
@@ -61,6 +62,16 @@ Route::group(array_filter(['domain' => config('finlia.domains.marketing')]), fun
 
     // Materia prima de la imagen para compartir; no es contenido (lleva noindex).
     Route::get('og', [MarketingController::class, 'ogPreview'])->name('og-preview');
+
+    // Contacto: alianzas, comercial y sugerencias. Abierto a cualquiera.
+    //
+    // 3 envíos por hora y por IP: una persona real manda uno, y tres dejan
+    // margen para reintentos sin permitir una ráfaga. El reporte de error NO
+    // entra aquí — ese exige sesión (ver más abajo).
+    Route::get('contacto', [ContactController::class, 'create'])->name('contact.create');
+    Route::post('contacto', [ContactController::class, 'store'])
+        ->middleware('throttle:3,60')
+        ->name('contact.store');
 });
 
 // robots.txt responde en AMBOS hosts —el controlador decide qué decir según
@@ -346,6 +357,15 @@ Route::middleware(['auth', 'verified', 'terms.current', 'account.active'])->grou
     // el enum en el controlador.
     Route::post('avisos/{key}', [AcknowledgementController::class, 'store'])
         ->name('acknowledgements.store');
+
+    // Reporte de error. Exige sesión a propósito: así llega con el usuario y
+    // el contexto técnico ya adjuntos, sin preguntarle nada más a quien
+    // reporta. 5 por hora y por usuario.
+    Route::get('reportar-error', [ContactController::class, 'createBugReport'])
+        ->name('bug-report.create');
+    Route::post('reportar-error', [ContactController::class, 'storeBugReport'])
+        ->middleware('throttle:5,60')
+        ->name('bug-report.store');
 
     // ---- Épica 6: deudas y tarjetas de crédito ----
     Route::get('deudas', [DebtController::class, 'index'])

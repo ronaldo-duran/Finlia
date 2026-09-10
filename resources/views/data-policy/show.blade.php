@@ -28,6 +28,7 @@
         <ul>
             <li><strong>Cuenta:</strong> nombre, correo, fecha de nacimiento, región y género (estos dos últimos, opcionales). Nunca almacenamos tu número de tarjeta, CVV ni PIN — esas columnas sencillamente no existen.</li>
             <li><strong>Hogar:</strong> cuentas bancarias, movimientos de ingresos y gastos, presupuestos, gastos recurrentes, deudas, metas de ahorro, recordatorios y los miembros que invites.</li>
+            <li><strong>Mensajes que nos escribes:</strong> si nos contactas o reportas un error, guardamos tu nombre, tu correo y lo que escribiste. En un reporte de error se adjunta además el contexto técnico —versión de Finlia, pantalla desde la que reportaste, navegador y tamaño de ventana— para poder reproducir el problema; <strong>nunca tus movimientos, saldos ni cuentas</strong>. Si escribes desde el sitio público <strong>sin haber iniciado sesión</strong>, guardamos también la dirección IP del envío, con la única finalidad de frenar el abuso del formulario: cuando hay sesión no se guarda, porque ya sabemos quién eres.</li>
         </ul>
         <p>
             No vendemos ni compartimos tus datos con terceros. Los datos del hogar son visibles para todos sus miembros activos.

@@ -108,6 +108,7 @@ MAIL_SCHEME=smtp                   # 587 = smtp (STARTTLS)
 MAIL_FROM_ADDRESS=no-responder@tudominio.com
 MAIL_FROM_NAME="${APP_NAME}"
 FINLIA_MAIL_ENABLED=true        # ponlo en false para apagar TODO el correo (invitaciones y digest)
+FINLIA_CONTACT_EMAIL=hola@tudominio.com   # buzón del formulario de contacto y los reportes de error
 ```
 
 > **Brevo en 4 pasos** ([ADR-0028](DECISIONS.md#adr-0028)): (1) cuenta gratis en brevo.com → 300 correos/día; (2) **autenticar el dominio** en Brevo → Senders & IP → Senders (añade los registros SPF/DKIM que te da en la zona DNS de Hostinger; sin esto acaba en spam); (3) crear una **SMTP key** y usarla como `MAIL_PASSWORD`; (4) usar un remitente **del propio dominio** — Brevo no deja enviar desde gmail/outlook sin verificación. La alternativa sin Brevo es el SMTP del propio Hostinger (`smtp.hostinger.com:465`, `MAIL_SCHEME=smtps`), pero su límite diario es menor.

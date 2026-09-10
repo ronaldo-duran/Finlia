@@ -1084,3 +1084,19 @@ a { color: var(--finlia-primary); }
         animation-duration: 1.4s;
     }
 }
+
+/*
+|------------------------------------------------------------------------------
+| Campo trampa de los formularios de contacto
+|------------------------------------------------------------------------------
+| Oculto para personas, visible para un bot que rellena todos los campos del
+| DOM. No se usa `display:none` a secas porque algunos bots lo detectan: se
+| saca del flujo y del alcance del teclado.
+*/
+.campo-trampa {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
