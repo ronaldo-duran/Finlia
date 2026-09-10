@@ -1,50 +1,152 @@
-name: Deploy to Production
+name: Publicar artefacto de producción
 
 on:
   push:
     tags:
       - 'v*'
+  # Permite republicar sin crear un tag nuevo (p. ej. tras arreglar el token).
+  workflow_dispatch:
+
+# Dos despliegues a la vez dejarían el repositorio de producción a medias.
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  publicar:
+    name: Construir y publicar
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      # Se saca el TAG, no `main`: se despliega lo que se etiquetó, no lo que
+      # haya en main en este momento, que puede haber avanzado.
+      - name: Checkout del tag
+        uses: actions/checkout@v4
 
-      - name: Setup PHP 8.5
+      # 8.3 y no la última: es la versión de PHP de Hostinger
+      # (docs/DEPLOYMENT.md §1). Resolver dependencias con una versión más
+      # nueva puede traer paquetes que el servidor no sabe ejecutar.
+      - name: PHP 8.3 — la misma que producción
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: '8.3'
+          extensions: mbstring, intl, dom, curl, bcmath
+          coverage: none
 
-      - name: Setup Node.js
+      - name: Node 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 22
+          cache: npm
 
-      - name: Install Composer dependencies
-        run: composer install --optimize-autoloader --no-dev
+      - name: Dependencias de PHP (sin las de desarrollo)
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
-      - name: Install npm dependencies
-        run: npm install
+      # `npm ci` y no `npm install`: respeta package-lock.json, así que el
+      # artefacto es reproducible.
+      - name: Dependencias de JS
+        run: npm ci
 
-      - name: Build assets
+      - name: Compilar assets
         run: npm run build
 
-      - name: Checkout main branch
+      - name: Comprobar que lo compilado existe
         run: |
-          git fetch origin main
-          git checkout main
+          test -f public/build/manifest.json || { echo "::error::No se generó public/build/manifest.json"; exit 1; }
+          test -d vendor/laravel || { echo "::error::No se instalaron las dependencias de Composer"; exit 1; }
+          echo "Artefacto listo: $(du -sh vendor public/build | tr '\n' ' ')"
 
-      - name: Configure git
-        run: |
-          git config --global user.email "bot@finlia.online"
-          git config --global user.name "Finlia Bot"
-
-      - name: Push to production repo
+      - name: Clonar el repositorio de producción
         env:
           PROD_REPO: https://x-access-token:${{ secrets.FINLIA_PROD_TOKEN }}@github.com/ronaldo-duran/finlia-produccion.git
         run: |
-          git remote add production $PROD_REPO
-          git push production main:main --force
-          git push production --tags
+          # Sin silenciar stderr: si el token no alcanza el repositorio, el
+          # error de git ("Repository not found") es justo lo que hay que leer.
+          # Un repositorio vacío clona bien, solo avisa.
+          if ! git clone --depth 1 "$PROD_REPO" ../produccion; then
+            echo "::error::No se pudo clonar finlia-produccion. Revisa que FINLIA_PROD_TOKEN tenga acceso a ESE repositorio con permiso Contents: Read and write."
+            exit 1
+          fi
+
+          # Un repo recién creado clona sin rama: se crea aquí.
+          cd ../produccion
+          git rev-parse --verify HEAD >/dev/null 2>&1 || git checkout -b main
+
+      - name: Copiar el artefacto
+        run: |
+          # Se borra todo salvo .git para que un fichero eliminado en el código
+          # también desaparezca de producción.
+          find ../produccion -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+
+          rsync -a ./ ../produccion/ \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'node_modules' \
+            --exclude 'tests' \
+            --exclude 'scrum' \
+            --exclude '.env' \
+            --exclude '.env.*' \
+            --exclude 'storage/logs/*' \
+            --exclude 'storage/framework/cache/data/*' \
+            --exclude 'storage/framework/sessions/*' \
+            --exclude 'storage/framework/views/*' \
+            --exclude 'database/*.sqlite*'
+
+          # El artefacto NO hereda el .gitignore del código: aquí vendor/ y
+          # public/build son justamente lo que hay que publicar.
+          cat > ../produccion/.gitignore <<'IGNORE'
+          # Artefacto de despliegue: se versiona todo lo necesario para correr.
+          # Solo se ignora lo que genera el servidor en caliente.
+          /.env
+          /storage/logs/*
+          /storage/framework/cache/data/*
+          /storage/framework/sessions/*
+          /storage/framework/views/*
+          /public/storage
+          IGNORE
+
+      - name: Publicar
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          ORIGEN_SHA: ${{ github.sha }}
+        run: |
+          cd ../produccion
+          git config user.email "bot@finlia.online"
+          git config user.name "Finlia Deploy Bot"
+
+          # Lanzado a mano, ref_name es la rama ("main"): etiquetar con eso
+          # crearía un tag llamado "main" en el repositorio de producción.
+          if [ "$REF_TYPE" = "tag" ]; then
+            VERSION="$REF_NAME"
+          else
+            VERSION="manual-$(date -u +%Y%m%d-%H%M)"
+          fi
+
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Sin cambios respecto del último despliegue."
+            exit 0
+          fi
+
+          git commit -m "Despliegue ${VERSION}" \
+                     -m "Construido desde ronaldo-duran/Finlia@${ORIGEN_SHA}"
+          git push origin HEAD:main
+
+          # Producción solo se etiqueta cuando el origen era un tag.
+          if [ "$REF_TYPE" = "tag" ]; then
+            git tag -f "$VERSION"
+            git push origin "$VERSION" --force
+          fi
+
+      - name: Recordatorio de los pasos en el servidor
+        run: |
+          echo "### Despliegue publicado :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "En Hostinger, dentro de la carpeta del proyecto:" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "git fetch origin && git reset --hard origin/main" >> $GITHUB_STEP_SUMMARY
+          echo "php artisan migrate --force" >> $GITHUB_STEP_SUMMARY
+          echo "php artisan config:cache && php artisan route:cache && php artisan view:cache" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

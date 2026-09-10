@@ -199,19 +199,50 @@ Cabeceras que se emiten (con `always`, así salen también en 403/404/500):
 > ignore en silencio: comprueba las cabeceras con `curl -I https://tudominio.com`
 > después del primer despliegue.
 
-## 9. Despliegues posteriores (CI/CD opcional)
+## 9. Despliegue: artefacto construido en CI
 
-Para updates manuales:
+Hostinger **no tiene Node ni Composer**, así que no se puede compilar en el servidor. Y publicar el código fuente sin compilar no sirve: `vendor/` y `public/build` están en `.gitignore`, de modo que un `git pull` del repositorio de código deja la aplicación sin dependencias y sin estilos.
+
+La solución son **dos repositorios**:
+
+| Repositorio | Qué contiene |
+|---|---|
+| `ronaldo-duran/Finlia` (público) | El código. Sin `vendor/` ni `public/build` |
+| `ronaldo-duran/finlia-produccion` (privado) | El **artefacto desplegable**: lo mismo **más** `vendor/` y `public/build` |
+
+### Cómo se publica
+
+Al empujar un tag `v*`, el workflow `.github/workflows/deploy-to-production.yml`:
+
+1. Saca **el tag** (no `main`: se despliega lo etiquetado, no lo que haya avanzado después).
+2. Instala con **PHP 8.3**, la misma versión de Hostinger. Resolver con una más nueva puede traer paquetes que el servidor no ejecute.
+3. `composer install --no-dev --optimize-autoloader` y `npm ci && npm run build`.
+4. Comprueba que `public/build/manifest.json` y `vendor/` existen — si no, falla en vez de publicar un artefacto roto.
+5. Copia todo al repositorio de producción **con su propio `.gitignore`**, donde `vendor/` y `public/build` sí se versionan.
+
+Se excluyen del artefacto: `.github`, `node_modules`, `tests`, `scrum`, cualquier `.env` y los ficheros que genera el servidor en caliente (logs, caché de vistas y sesiones).
+
+### En el servidor
+
 ```bash
-cd .../finlia
-git pull origin main
-composer install --no-dev --optimize-autoloader
+cd ~/domains/finlia.online/finlia
+git fetch origin && git reset --hard origin/main
 php artisan migrate --force
 php artisan config:cache && php artisan route:cache && php artisan view:cache
-npm ci && npm run build
 ```
 
-O un script `deploy.sh` con estos pasos. CI/CD vía GitHub Actions a Hostinger (SSH/rsync) es posible más adelante.
+> `reset --hard` y no `pull`: el artefacto se reescribe entero en cada despliegue, así que un merge no tiene sentido. Todo lo que el servidor necesita conservar —`.env`, `storage/`— está fuera del control de git.
+
+### El token
+
+El workflow empuja con `FINLIA_PROD_TOKEN`, un secreto del repositorio de código. Si es un **token de acceso personal de alcance fino**, necesita:
+
+- **Repository access** → incluir explícitamente `finlia-produccion`.
+- **Repository permissions** → **Contents: Read and write**.
+
+Si es un token clásico, el permiso `repo`. Sin alguna de las dos cosas GitHub responde `Repository not found` — un 404 en lugar de un 403, para no revelar que el repositorio existe.
+
+> Alternativa más segura: una **clave de despliegue** con permiso de escritura en `finlia-produccion`. Solo alcanza a ese repositorio, no a toda la cuenta.
 
 ## 10. Troubleshooting
 
