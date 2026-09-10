@@ -4,7 +4,8 @@
 
 ## 1. Requisitos del entorno
 
-- PHP **8.3** (verificar en el panel de Hostinger → Advanced → PHP Configuration).
+- PHP **8.4** (verificar en el panel de Hostinger → Advanced → PHP Configuration).
+  No vale 8.3: las dependencias bloqueadas en `composer.lock` incluyen Symfony 8.1, que exige `php >= 8.4.1`. Con 8.3 `composer install` falla antes de empezar.
 - Extensiones: `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath`, `gd`/`imagick` (si hay imágenes), `fileinfo`.
 - **MySQL/MariaDB** (con `utf8mb4`) **o PostgreSQL** — ambos soportados ([ADR-0036](DECISIONS.md#adr-0036)). En hosting compartido lo habitual es MySQL.
 - Acceso **SSH** (recomendado) o File Manager + terminal.

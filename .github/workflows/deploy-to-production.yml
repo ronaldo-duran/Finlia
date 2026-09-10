@@ -24,13 +24,13 @@ jobs:
       - name: Checkout del tag
         uses: actions/checkout@v4
 
-      # 8.3 y no la última: es la versión de PHP de Hostinger
-      # (docs/DEPLOYMENT.md §1). Resolver dependencias con una versión más
-      # nueva puede traer paquetes que el servidor no sabe ejecutar.
-      - name: PHP 8.3 — la misma que producción
+      # La MISMA versión que Hostinger (docs/DEPLOYMENT.md §1). No es un
+      # detalle: composer.lock trae Symfony 8.1, que exige PHP >= 8.4.1, así
+      # que construir con 8.3 ni siquiera instala.
+      - name: PHP 8.4 — la misma que producción
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: mbstring, intl, dom, curl, bcmath
           coverage: none
 

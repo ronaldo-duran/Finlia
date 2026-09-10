@@ -23,7 +23,7 @@ Mercado inicial: **Colombia** (COP, español, DD/MM/AAAA, timezone `America/Bogo
 
 | Capa | Tecnología |
 |---|---|
-| Backend | **Laravel 13.8** · **PHP 8.3** |
+| Backend | **Laravel 13.8** · **PHP 8.4** |
 | DB | **MySQL/MariaDB o PostgreSQL** (local y producción) · SQLite solo para tests |
 | ORM | **Eloquent** + Migrations + Seeders + Factories |
 | Frontend | **Blade** · **Bootstrap 5** · **JavaScript vanilla** · **Chart.js** |
