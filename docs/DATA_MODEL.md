@@ -512,6 +512,24 @@ Gmail/Yahoo (devuelve 204). Idempotente y por hogar.
 
 ## Mapa de relaciones (simplificado)
 
+## Contacto y reportes de error
+
+### `contact_messages`
+
+Mensajes del formulario público (alianzas, comercial, sugerencias) y reportes de error desde la aplicación. **No lleva `household_id`**: no es un dato financiero del hogar sino una conversación con el responsable del producto, así que no tiene Policy de hogar ni entra en la exportación de datos del hogar.
+
+| Campo | Tipo | Notas |
+|---|---|---|
+| reason | string(20) | `App\Enums\ContactReason`: partnership, commercial, suggestion, bug |
+| name | string(120) | Del formulario, o de la cuenta en un reporte de error |
+| email | string(255) | Ídem |
+| body | text | 20–3000 caracteres |
+| user_id | FK nullable | Autor, si tenía sesión. `nullOnDelete` |
+| ip_address | string(45) nullable | **Solo en envíos anónimos** — con sesión ya está `user_id` |
+| context | json nullable | Contexto técnico del reporte: versión, pantalla, navegador, viewport |
+
+> `bug` es el único motivo que **no** acepta el formulario público: exige sesión para que llegue con contexto y sin preguntarle nada más a quien reporta.
+
 ```mermaid
 erDiagram
     users ||--o{ household_user : "pertenece"

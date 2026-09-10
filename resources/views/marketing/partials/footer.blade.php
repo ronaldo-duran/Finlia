@@ -17,6 +17,7 @@
                     <li><a href="#como-funciona" class="enlace-footer">Cómo funciona</a></li>
                     <li><a href="#funciones" class="enlace-footer">Funciones</a></li>
                     <li><a href="{{ route('register') }}" class="enlace-footer">Crear cuenta</a></li>
+                    <li><a href="{{ route('contact.create') }}" class="enlace-footer">Contacto</a></li>
                 </ul>
             </div>
 
