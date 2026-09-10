@@ -32,7 +32,9 @@ jobs:
         run: npm run build
 
       - name: Checkout main branch
-        run: git checkout main
+        run: |
+          git fetch origin main
+          git checkout main
 
       - name: Configure git
         run: |
