@@ -6,6 +6,8 @@
 
 *¿Cuánto dinero puedo gastar realmente sin comprometer mis obligaciones?*
 
+**[finlia.online](https://finlia.online)** · [Entrar a la app](https://app.finlia.online)
+
 </div>
 
 ---
@@ -94,8 +96,8 @@ El estado detallado de cada funcionalidad está en [docs/ROADMAP.md](docs/ROADMA
 ## 🚀 Instalación local
 
 ```bash
-git clone https://github.com/<usuario>/finlia.git
-cd finlia
+git clone https://github.com/ronaldo-duran/Finlia.git
+cd Finlia
 composer install
 cp .env.example .env
 php artisan key:generate
@@ -184,15 +186,18 @@ producción sin que ningún test se entere.
 
 ## 📦 Despliegue
 
-El despliegue se hace en **Hostinger** (hosting compartido). Instrucciones paso a paso y optimizaciones en [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Resumen de un despliegue posterior:
+Finlia corre en **Hostinger** (hosting compartido) sobre dos dominios: `finlia.online` sirve el sitio público y `app.finlia.online` la aplicación ([ADR-0038](docs/DECISIONS.md#adr-0038)).
+
+Hostinger **no tiene Node ni Composer**, así que el artefacto desplegable —código + `vendor/` + `public/build`— se construye en GitHub Actions al publicar un tag `v*` y se publica en un repositorio aparte del que el servidor solo hace *pull*:
 
 ```bash
-git pull origin main
-composer install --no-dev --optimize-autoloader
+# En el servidor, tras cada despliegue publicado
+git fetch origin && git reset --hard origin/main
 php artisan migrate --force
-npm ci && npm run build          # genera public/build (no está en git)
-php artisan config:cache route:cache view:cache
+php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
+
+El detalle está en [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 El *document root* del dominio debe apuntar a `public/`, para que `.env`, `storage/` y `app/` queden fuera de la web.
 

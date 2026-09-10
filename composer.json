@@ -5,6 +5,7 @@
     "description": "The skeleton application for the Laravel framework.",
     "keywords": ["laravel", "framework"],
     "license": "AGPL-3.0-or-later",
+    "homepage": "https://finlia.online",
     "require": {
         "php": "^8.3",
         "laravel/framework": "^13.8",
