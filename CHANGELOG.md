@@ -12,6 +12,26 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.32.1] - 2026-09-10 — Cada cosa en su dominio
+
+### Corregido
+Desde la landing, el botón «Entrar» llevaba a `finlia.online/login` en lugar del subdominio de la aplicación. El síntoma era un enlace; la causa era que **la aplicación entera respondía también en el dominio del sitio**.
+
+Al repartir por host solo se habían acotado las rutas de marketing. Las de la aplicación no llevaban restricción, así que respondían en cualquier host y `route()` las resolvía con el host desde el que se navegara. Eso traía tres problemas, y el del enlace era el menor:
+
+- Un buscador podía indexar `finlia.online/login` y el resto de pantallas de sesión.
+- **El manifiesto de la PWA se servía desde los dos hosts**, así que la aplicación se podía instalar desde el dominio del sitio y quedar atada a él para siempre — exactamente lo que el reparto en dos dominios existía para evitar ([ADR-0038](docs/DECISIONS.md#adr-0038)).
+- Dos URLs distintas para el mismo contenido.
+
+Ahora las rutas de la aplicación están acotadas a su host, y `route('login')` genera la URL del subdominio se navegue desde donde se navegue.
+
+### Cambiado
+- **Las páginas legales se mudan al sitio público**, al revés que el resto: términos, historial de versiones y política de datos son públicas, indexables y entran en el sitemap, así que su sitio natural es `finlia.online` y no el subdominio de la aplicación. La aplicación las enlaza cruzando de host.
+- Los enlaces firmados que llegan por correo —baja del digest, verificación de correo, confirmación de cambio de dirección— quedan acotados al host de la aplicación, que es a donde apuntan esos correos.
+
+### Verificación
+Cinco comprobaciones nuevas fijan el reparto: que la aplicación **no** responda en el host del sitio, que sí lo haga en el suyo, que las páginas legales sean al contrario, que el manifiesto solo se sirva desde la aplicación y que «Entrar» y «Crear cuenta» apunten al subdominio. Suite completa en 600/601 y 37/37 en Playwright.
+
 ## [0.32.0] - 2026-09-10 — Términos y condiciones definitivos
 
 > **Publica la versión de términos `2026-09-v1`.** La versión de los términos es
