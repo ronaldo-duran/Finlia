@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\HouseholdService;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,8 @@ use Illuminate\View\View;
  */
 class EmailVerificationController extends Controller
 {
+    public function __construct(private readonly HouseholdService $households) {}
+
     /**
      * Pantalla de aviso: "Revisa tu correo" (accesible sin verificar).
      */
@@ -44,25 +47,45 @@ class EmailVerificationController extends Controller
             abort(403, __('Este enlace de verificación no es válido.'));
         }
 
+        $household = null;
+
         if (! $user->hasVerifiedEmail()) {
             $user->markEmailAsVerified();
 
             event(new Verified($user));
+
+            // Quien se registró desde una invitación entra aquí a su hogar: con
+            // el correo ya probado y sin depender de la sesión, porque el enlace
+            // se abre a menudo en otro dispositivo (ADR-0039).
+            $household = $this->households->provisionHouseholdAfterVerification($user);
         }
+
+        $joinedName = $household !== null && $household->owner_id !== $user->id
+            ? $household->name
+            : null;
 
         // Regenera la sesión al autenticar la identidad (fijación de sesión).
         if ($request->user()?->is($user)) {
             $request->session()->regenerate();
 
+            if ($household !== null) {
+                session(['household_id' => $household->id]);
+                app()->forgetInstance('finlia.active_household');
+            }
+
             return redirect()
                 ->intended(route('dashboard'))
-                ->with('status', __('¡Correo confirmado! Bienvenido a Finlia.'));
+                ->with('status', $joinedName !== null
+                    ? __('¡Correo confirmado! Ya formas parte de ":name".', ['name' => $joinedName])
+                    : __('¡Correo confirmado! Bienvenido a Finlia.'));
         }
 
         // Click desde otro dispositivo/navegador: entra a iniciar sesión.
         return redirect()
             ->route('login')
-            ->with('status', __('Correo confirmado. Ya puedes iniciar sesión.'));
+            ->with('status', $joinedName !== null
+                ? __('Correo confirmado: ya formas parte de ":name". Inicia sesión para entrar.', ['name' => $joinedName])
+                : __('Correo confirmado. Ya puedes iniciar sesión.'));
     }
 
     /**
