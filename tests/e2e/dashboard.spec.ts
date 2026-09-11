@@ -88,4 +88,25 @@ test.describe('Panel (dashboard)', () => {
   test('el footer muestra la versión y la moneda del mercado', async ({ page }) => {
     await expect(page.locator('footer.app-footer')).toContainText('COP');
   });
+
+  /**
+   * En móvil el pie queda tras un scroll largo y bajo la barra inferior, así
+   * que reportar un error y ver la versión tienen que estar en el menú "Más".
+   */
+  test('el menú «Más» ofrece reportar un error y muestra la versión', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    await page.goto('/dashboard');
+
+    await page.getByRole('button', { name: 'Más' }).click();
+
+    const menu = page.locator('#sidebar');
+    await expect(menu.getByTestId('app-version')).toContainText(/Finlia v\d+\.\d+\.\d+/);
+
+    await menu.getByRole('link', { name: 'Reportar un error' }).click();
+    await expect(page).toHaveURL(/\/reportar-error$/);
+    await expect(page.getByRole('heading', { name: 'Reportar un error' })).toBeVisible();
+
+    await context.close();
+  });
 });

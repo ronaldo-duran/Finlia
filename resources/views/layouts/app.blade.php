@@ -200,8 +200,27 @@
                                 <i class="bi bi-shield-check"></i> Tus datos
                             </a>
                         </li>
+                        {{-- Reportar un error también está en el pie, pero ahí solo
+                             se encuentra por casualidad: en móvil el pie queda tras
+                             un scroll largo y debajo de la barra inferior. Quien se
+                             topa con un fallo lo busca en el menú, no al final de
+                             la página. --}}
+                        <li>
+                            <a class="nav-link @if(request()->routeIs('bug-report.*'))active @endif" href="{{ route('bug-report.create') }}">
+                                <i class="bi bi-bug"></i> Reportar un error
+                            </a>
+                        </li>
                     @endauth
                 </ul>
+
+                @auth
+                    {{-- La versión, a la vista y no solo en el pie: es el primer dato
+                         que hace falta para entender un reporte, y quien reporta no
+                         debería tener que cazarla. --}}
+                    <p class="small text-body-tertiary text-center mt-3 mb-0" data-testid="app-version">
+                        Finlia v{{ config('finlia.version') }}
+                    </p>
+                @endauth
             </div>
         </aside>
 

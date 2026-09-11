@@ -12,6 +12,12 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.34.1] - 2026-09-11 — Reportar un error sin cazarlo
+
+### Añadido
+- **«Reportar un error» entra al menú de la aplicación**, junto a Términos y Tus datos. Existía desde la versión 0.31.0, pero solo se enlazaba desde el pie: en el teléfono queda tras un scroll largo y debajo de la barra inferior, así que en la práctica no se encontraba.
+- **La versión se muestra al final de ese mismo menú** («Finlia v0.34.1»). Es el primer dato que hace falta para entender un reporte, y hasta ahora había que ir a buscarlo al pie.
+
 ## [0.34.0] - 2026-09-10 — «Puedes gastar hoy» con la plata que ya tienes
 
 ### Cambiado
