@@ -29,7 +29,8 @@
     <div class="form-text">Monto en COP. Usa la coma para decimales.</div>
     @if ($available !== null)
         <div class="small mt-1" data-remaining-hint data-available="{{ $available }}">
-            Te quedarían <strong>@money($available)</strong> este mes.
+            Te quedarían <strong>@money($available)</strong>
+            @isset($availableUntil) hasta el {{ $availableUntil->format('d/m/Y') }}. @else este mes. @endisset
         </div>
     @endif
 </div>
@@ -113,7 +114,7 @@
                     select.addEventListener('change', function () { syncChips(select.value); });
                 });
 
-                // "Te quedarían $X este mes" tras restar el valor ingresado.
+                // "Te quedarían $X hasta el DD/MM" tras restar el valor ingresado.
                 document.querySelectorAll('[data-remaining-hint]').forEach(function (hint) {
                     var amount = hint.closest('form')?.querySelector('#amount');
                     if (!amount) return;

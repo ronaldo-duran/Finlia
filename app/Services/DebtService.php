@@ -366,28 +366,42 @@ class DebtService
     // ---------------------------------------------------------------
 
     /**
+     * Deudas vigentes con sus pagos: la entrada de `committedInRange` y
+     * `dueUntil`, cargada una sola vez cuando se necesitan las dos.
+     *
+     * `with('payments')`: sin esto `hasPaymentForMonth` lanzaba un `exists()`
+     * por deuda y vencimiento (N queries diminutas en cada carga de
+     * Panel/presupuestos/reportes). Mismo patrón que `balanceEvolution`.
+     *
+     * @return Collection<int, Debt>
+     */
+    public function outstandingWithPayments(int $householdId): Collection
+    {
+        return Debt::where('household_id', $householdId)
+            ->outstanding()
+            ->with('payments')
+            ->get();
+    }
+
+    /**
      * Cuotas de deuda comprometidas dentro de la ventana [from, to].
      *
      * Solo cuenta las que siguen PENDIENTES: si el pago de este mes ya se
      * registró, su cuota sale del comprometido, porque ese dinero ya figura
      * como gasto (ADR-0021). Sin esta resta, pagar una deuda haría bajar el
      * "puedes gastar" dos veces.
+     *
+     * @param  Collection<int, Debt>|null  $debts  deudas vigentes ya cargadas con
+     *                                             sus pagos (ver `outstandingWithPayments`).
      */
-    public function committedInRange(int $householdId, CarbonInterface $from, CarbonInterface $to): float
+    public function committedInRange(int $householdId, CarbonInterface $from, CarbonInterface $to, ?Collection $debts = null): float
     {
         $from = Carbon::parse($from)->startOfDay();
         $to = Carbon::parse($to)->startOfDay();
 
         $committed = 0.0;
 
-        // `with('payments')`: sin esto `hasPaymentForMonth` lanzaba un
-        // `exists()` por deuda y vencimiento (N queries diminutas en cada
-        // carga de Panel/presupuestos/reportes). Mismo patrón que
-        // `balanceEvolution`.
-        Debt::where('household_id', $householdId)
-            ->outstanding()
-            ->with('payments')
-            ->get()
+        ($debts ?? $this->outstandingWithPayments($householdId))
             ->each(function (Debt $debt) use (&$committed, $from, $to): void {
                 $installment = $debt->monthlyCommitment();
 
@@ -401,6 +415,49 @@ class DebtService
                     }
 
                     // La última cuota nunca es mayor que lo que queda.
+                    $committed += min($installment, (float) $debt->current_balance);
+                }
+            });
+
+        return round($committed, 2);
+    }
+
+    /**
+     * Cuotas que hay que tener apartadas desde hoy hasta `$until` (último día
+     * cubierto por el saldo actual, ADR-0040).
+     *
+     * Incluye la cuota VENCIDA del mes en curso que siga sin pagar, pero solo
+     * si venció estando la deuda ya registrada: la de antes casi siempre se
+     * pagó antes de empezar a usar Finlia.
+     *
+     * @param  Collection<int, Debt>|null  $debts  deudas vigentes ya cargadas con sus pagos
+     */
+    public function dueUntil(int $householdId, CarbonInterface $today, CarbonInterface $until, ?Collection $debts = null): float
+    {
+        $today = Carbon::parse($today)->startOfDay();
+        $until = Carbon::parse($until)->startOfDay();
+
+        $committed = 0.0;
+
+        ($debts ?? $this->outstandingWithPayments($householdId))
+            ->each(function (Debt $debt) use (&$committed, $today, $until): void {
+                $installment = $debt->monthlyCommitment();
+
+                if ($installment <= 0.0) {
+                    return;
+                }
+
+                $registeredAt = Carbon::parse($debt->created_at)->startOfDay();
+
+                foreach ($this->dueDatesInRange($debt, $today->copy()->startOfMonth(), $until) as $dueDate) {
+                    if ($dueDate->lt($today) && $dueDate->lt($registeredAt)) {
+                        continue;
+                    }
+
+                    if ($this->hasPaymentForMonth($debt, $dueDate)) {
+                        continue;
+                    }
+
                     $committed += min($installment, (float) $debt->current_balance);
                 }
             });

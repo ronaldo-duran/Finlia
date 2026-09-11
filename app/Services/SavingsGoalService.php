@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\SavingsGoalContributionType;
 use App\Enums\SavingsGoalPriority;
 use App\Enums\SavingsGoalStatus;
 use App\Models\Household;
@@ -291,6 +292,77 @@ class SavingsGoalService
             ));
 
         return round((float) $committed, 2);
+    }
+
+    /**
+     * Metas que no están archivadas: activas, pausadas y logradas. Es la
+     * entrada común del compromiso mensual, lo apartado y el aporte pendiente,
+     * cargada una sola vez cuando el calculador necesita los tres.
+     *
+     * @return Collection<int, SavingsGoal>
+     */
+    public function nonArchived(int $householdId): Collection
+    {
+        return SavingsGoal::where('household_id', $householdId)
+            ->where('status', '!=', SavingsGoalStatus::Archived->value)
+            ->get();
+    }
+
+    /**
+     * Plata ya apartada en metas (ADR-0040). Los aportes no mueven cuentas
+     * (ADR-0025): ese dinero sigue sumando en el saldo, así que hay que
+     * restarlo para no ofrecerlo como gastable. Cuentan activas, pausadas y
+     * logradas —la plata sigue ahí hasta que se registra el retiro—; las
+     * archivadas no.
+     */
+    /**
+     * @param  Collection<int, SavingsGoal>|null  $goals  metas no archivadas ya cargadas (ver `nonArchived`)
+     */
+    public function setAside(int $householdId, ?Collection $goals = null): float
+    {
+        $goals ??= $this->nonArchived($householdId);
+
+        return round((float) $goals
+            ->filter(fn (SavingsGoal $g): bool => $g->status !== SavingsGoalStatus::Archived)
+            ->sum(fn (SavingsGoal $g) => (float) $g->current_amount), 2);
+    }
+
+    /**
+     * Aporte programado que aún falta por hacer en el ciclo que empezó en
+     * `$since` (ADR-0040): por cada meta activa, su compromiso mensual
+     * (tope: lo que le falta) menos lo ya aportado desde esa fecha.
+     *
+     * @param  Collection<int, SavingsGoal>|null  $goals  metas no archivadas ya cargadas
+     */
+    public function pendingCommitmentSince(int $householdId, CarbonInterface $since, ?Collection $goals = null): float
+    {
+        $goals = ($goals ?? $this->nonArchived($householdId))
+            ->filter(fn (SavingsGoal $g): bool => $g->status === SavingsGoalStatus::Active
+                && $g->monthly_commitment !== null)
+            ->values();
+
+        if ($goals->isEmpty()) {
+            return 0.0;
+        }
+
+        // Aporte neto por meta desde el inicio del ciclo, en una sola consulta.
+        $contributed = SavingsGoalContribution::where('household_id', $householdId)
+            ->whereIn('savings_goal_id', $goals->modelKeys())
+            ->where('date', '>=', Carbon::parse($since)->toDateString())
+            ->get(['savings_goal_id', 'amount', 'type'])
+            ->groupBy('savings_goal_id')
+            ->map(fn (Collection $rows) => $rows->sum(
+                fn (SavingsGoalContribution $c) => $c->type === SavingsGoalContributionType::Withdrawal
+                    ? -(float) $c->amount
+                    : (float) $c->amount
+            ));
+
+        $pending = $goals->sum(fn (SavingsGoal $g) => max(
+            0.0,
+            min((float) $g->monthly_commitment, $g->remainingAmount()) - (float) ($contributed[$g->id] ?? 0.0),
+        ));
+
+        return round((float) $pending, 2);
     }
 
     /**

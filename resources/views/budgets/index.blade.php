@@ -61,11 +61,20 @@
 
         <div class="col-12 col-lg-7">
             @php
-                $kpis = [
-                    ['label' => 'Gastado', 'value' => $summary['spent'], 'icon' => 'bi-graph-down-arrow', 'tone' => 'danger'],
-                    ['label' => 'Comprometido', 'value' => $summary['committed']['total'], 'icon' => 'bi-lock', 'tone' => 'warning'],
-                    ['label' => 'Libre en cuentas', 'value' => $summary['free'], 'icon' => 'bi-unlock', 'tone' => 'success'],
-                ];
+                $liquidity = $summary['liquidity'];
+                // Semana/mes: la foto de hoy (saldo real hasta el cobro).
+                // Próximo mes: el plan, que es proyección (ADR-0040).
+                $kpis = $liquidity !== null
+                    ? [
+                        ['label' => 'Saldo en cuentas', 'value' => $liquidity['current_balance'], 'icon' => 'bi-wallet2', 'tone' => 'success'],
+                        ['label' => 'Reservado', 'value' => $liquidity['reserved']['total'] + $liquidity['set_aside'], 'icon' => 'bi-lock', 'tone' => 'warning'],
+                        ['label' => 'Gastado', 'value' => $summary['spent'], 'icon' => 'bi-graph-down-arrow', 'tone' => 'danger'],
+                    ]
+                    : [
+                        ['label' => 'Ingresos esperados', 'value' => $summary['expected_income'], 'icon' => 'bi-graph-up-arrow', 'tone' => 'success'],
+                        ['label' => 'Comprometido', 'value' => $summary['committed']['total'], 'icon' => 'bi-lock', 'tone' => 'warning'],
+                        ['label' => 'Gastado', 'value' => $summary['spent'], 'icon' => 'bi-graph-down-arrow', 'tone' => 'danger'],
+                    ];
             @endphp
             <div class="row g-2 g-md-3">
                 @foreach ($kpis as $kpi)
@@ -85,11 +94,23 @@
                 <div class="col-6 col-xxl-3">
                     <div class="card h-100 border-0">
                         <div class="card-body p-3">
-                            <div class="text-muted small text-uppercase">
-                                <i class="bi bi-hourglass-split me-1 text-primary"></i>Días restantes
-                            </div>
-                            <div class="fw-bold mt-2 money-figure">{{ $summary['days_remaining'] }}</div>
-                            <div class="small text-muted">de {{ $summary['days_total'] }}</div>
+                            @if ($liquidity !== null)
+                                <div class="text-muted small text-uppercase">
+                                    {{-- La etiqueta va pegada al icono, como en las demás
+                                         tarjetas: así el texto del elemento es solo la etiqueta. --}}
+                                    <i class="bi bi-hourglass-split me-1 text-primary"></i>{{ $liquidity['payday_known'] ? 'Días para tu pago' : 'Días del mes' }}
+                                </div>
+                                <div class="fw-bold mt-2 money-figure">{{ $liquidity['days'] }}</div>
+                                @if ($liquidity['payday_known'])
+                                    <div class="small text-muted">llega el {{ $liquidity['payday']->format('d/m') }}</div>
+                                @endif
+                            @else
+                                <div class="text-muted small text-uppercase">
+                                    <i class="bi bi-hourglass-split me-1 text-primary"></i>Días restantes
+                                </div>
+                                <div class="fw-bold mt-2 money-figure">{{ $summary['days_remaining'] }}</div>
+                                <div class="small text-muted">de {{ $summary['days_total'] }}</div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -103,45 +124,88 @@
                         <i class="bi bi-question-circle me-1"></i> ¿Cómo se calcula?
                     </a>
                     <div class="collapse mt-2" id="comoSeCalcula">
-                        <ul class="list-unstyled small text-muted mb-0 budget-figures">
-                            <li class="d-flex justify-content-between gap-2">
-                                <span>Ingresos esperados</span>
-                                <span class="fw-semibold text-success">@money($summary['expected_income'])</span>
-                            </li>
-                            <li class="d-flex justify-content-between gap-2">
-                                <span>− Ya gastado</span>
-                                <span class="fw-semibold text-danger">@money($summary['spent'])</span>
-                            </li>
-                            <li class="d-flex justify-content-between gap-2">
-                                <span>− Presupuesto aún sin gastar</span>
-                                <span class="fw-semibold">@money($summary['committed']['budget'])</span>
-                            </li>
-                            <li class="d-flex justify-content-between gap-2">
-                                <span>− Gastos fijos (arriendo, servicios)</span>
-                                <span class="fw-semibold">@money($summary['committed']['fixed_expenses'])</span>
-                            </li>
-                            <li class="d-flex justify-content-between gap-2">
-                                <span>− Obligaciones próximas (SOAT, seguro)</span>
-                                <span class="fw-semibold">@money($summary['committed']['recurring'])</span>
-                            </li>
-                            <li class="d-flex justify-content-between gap-2">
-                                <span>− Cuotas de deuda pendientes</span>
-                                <span class="fw-semibold">@money($summary['committed']['debt'])</span>
-                            </li>
-                            <li class="d-flex justify-content-between text-body-tertiary">
-                                <span>− Ahorro programado</span>
-                                <span>Épica 7</span>
-                            </li>
-                            <li><hr class="my-2"></li>
-                            <li class="d-flex justify-content-between gap-2">
-                                <span class="fw-semibold text-body">= Puedes gastar</span>
-                                <span class="fw-bold text-body">@money($summary['available'])</span>
-                            </li>
-                            <li class="d-flex justify-content-between mt-2 pt-2 border-top">
-                                <span>Saldo actual en cuentas</span>
-                                <span class="fw-semibold">@money($summary['current_balance'])</span>
-                            </li>
-                        </ul>
+                        @if ($liquidity !== null)
+                            @php $hasta = $liquidity['payday_known'] ? 'antes del '.$liquidity['payday']->format('d/m') : 'este mes'; @endphp
+                            <p class="small text-muted mb-2">
+                                Solo cuenta la plata que ya tienes. Lo que esperas recibir no suma hasta
+                                que lo registras: sirve para saber hasta cuándo te tiene que alcanzar.
+                            </p>
+                            <ul class="list-unstyled small text-muted mb-0 budget-figures">
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>Saldo en cuentas hoy</span>
+                                    <span class="fw-semibold text-success text-nowrap">@money($liquidity['current_balance'])</span>
+                                </li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>− Apartado en metas de ahorro</span>
+                                    <span class="fw-semibold text-nowrap">@money($liquidity['set_aside'])</span>
+                                </li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>− Gastos fijos que vencen {{ $hasta }}</span>
+                                    <span class="fw-semibold text-nowrap">@money($liquidity['reserved']['fixed_expenses'])</span>
+                                </li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>− Obligaciones (SOAT…) {{ $hasta }}</span>
+                                    <span class="fw-semibold text-nowrap">@money($liquidity['reserved']['recurring'])</span>
+                                </li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>− Cuotas de deuda {{ $hasta }}</span>
+                                    <span class="fw-semibold text-nowrap">@money($liquidity['reserved']['debt'])</span>
+                                </li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>− Ahorro programado hasta el cobro</span>
+                                    <span class="fw-semibold text-nowrap">@money($liquidity['reserved']['savings'])</span>
+                                </li>
+                                <li><hr class="my-2"></li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span class="fw-semibold text-body">= Disponible hasta el cobro</span>
+                                    <span class="fw-bold text-body text-nowrap">@money($liquidity['cash_available'])</span>
+                                </li>
+                                @if ($liquidity['limited_by'] === 'plan')
+                                    {{-- El plan solo aparece cuando pone el límite: como
+                                         dato suelto ("te sobrarían 3 millones") confunde. --}}
+                                    <li class="d-flex justify-content-between gap-2">
+                                        <span>Tope de tu plan del mes</span>
+                                        <span class="fw-semibold text-nowrap">@money($liquidity['plan_limit'])</span>
+                                    </li>
+                                @endif
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>÷ {{ $liquidity['days'] }} {{ $liquidity['days'] === 1 ? 'día' : 'días' }}</span>
+                                    <span class="fw-bold text-body text-nowrap">@money($liquidity['daily_allowance']) al día</span>
+                                </li>
+                            </ul>
+                        @else
+                            <ul class="list-unstyled small text-muted mb-0 budget-figures">
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>Ingresos esperados</span>
+                                    <span class="fw-semibold text-success text-nowrap">@money($summary['expected_income'])</span>
+                                </li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>− Ya gastado</span>
+                                    <span class="fw-semibold text-danger text-nowrap">@money($summary['spent'])</span>
+                                </li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>− Gastos fijos (arriendo, servicios)</span>
+                                    <span class="fw-semibold text-nowrap">@money($summary['committed']['fixed_expenses'])</span>
+                                </li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>− Obligaciones próximas (SOAT, seguro)</span>
+                                    <span class="fw-semibold text-nowrap">@money($summary['committed']['recurring'])</span>
+                                </li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>− Cuotas de deuda pendientes</span>
+                                    <span class="fw-semibold text-nowrap">@money($summary['committed']['debt'])</span>
+                                </li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>− Ahorro programado</span>
+                                    <span class="fw-semibold text-nowrap">@money($summary['committed']['savings'])</span>
+                                </li>
+                                <li><hr class="my-2"></li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span class="fw-semibold text-body">= Te sobraría</span>
+                                    <span class="fw-bold text-body text-nowrap">@money($summary['plan_available'])</span>
+                                </li>
+                            </ul>
+                        @endif
                     </div>
                 </div>
             </div>

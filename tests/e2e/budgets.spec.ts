@@ -14,12 +14,15 @@ test.describe('Presupuestos y dinero disponible (Épica 4)', () => {
     // aleatorios, así que se comprueba la tarjeta y su importe, no el signo.
     const card = page.getByTestId('available-money');
     await expect(card).toBeVisible();
-    await expect(card).toContainText(/Puedes gastar aproximadamente|Te has pasado del plan/);
+    await expect(card).toContainText(/Puedes gastar hoy|Te falta plata antes de tu próximo pago|Te has pasado del plan/);
     await expect(page.getByTestId('available-money-amount')).toContainText(/\$\s[\d.]+,\d{2}/);
 
-    for (const label of ['Gastado', 'Comprometido', 'Libre en cuentas', 'Días restantes']) {
+    // Este mes: la foto de hoy, con el saldo real hasta el próximo cobro (ADR-0040).
+    for (const label of ['Saldo en cuentas', 'Reservado', 'Gastado']) {
       await expect(page.getByText(label, { exact: true })).toBeVisible();
     }
+    // Sin anclar: con expresión regular Playwright no normaliza los espacios del elemento.
+    await expect(page.getByText(/Días (para tu pago|del mes)/)).toBeVisible();
   });
 
   test('permite cambiar entre semana, mes y próximo mes', async ({ page }) => {
@@ -34,16 +37,27 @@ test.describe('Presupuestos y dinero disponible (Épica 4)', () => {
   test('el desglose "cómo se calcula" revela los términos de la fórmula', async ({ page }) => {
     await page.locator('a[href="#comoSeCalcula"]').click();
 
-    // Acotado al colapsable: "Ingresos esperados" también es un enlace del menú.
+    // Este mes: parte del saldo real y resta lo que vence antes del cobro.
     const desglose = page.locator('#comoSeCalcula');
     await expect(desglose).toBeVisible();
+    await expect(desglose.getByText('Saldo en cuentas hoy', { exact: true })).toBeVisible();
+    await expect(desglose.getByText('− Apartado en metas de ahorro')).toBeVisible();
+    await expect(desglose.getByText(/− Cuotas de deuda/)).toBeVisible();
+    await expect(desglose.getByText('− Ahorro programado hasta el cobro')).toBeVisible();
+    await expect(desglose.getByText('= Disponible hasta el cobro')).toBeVisible();
+  });
+
+  test('el próximo mes es una proyección con los ingresos esperados', async ({ page }) => {
+    await page.goto('/presupuestos?periodo=proximo-mes');
+    await expect(page.getByTestId('available-money')).toContainText(/Te quedaría según tu plan|Tu plan no cuadra/);
+
+    await page.locator('a[href="#comoSeCalcula"]').click();
+
+    // Acotado al colapsable: "Ingresos esperados" también es un enlace del menú.
+    const desglose = page.locator('#comoSeCalcula');
     await expect(desglose.getByText('Ingresos esperados', { exact: true })).toBeVisible();
-    await expect(desglose.getByText('− Ya gastado')).toBeVisible();
-    await expect(desglose.getByText('= Puedes gastar')).toBeVisible();
-    // Los términos de la fórmula se anuncian, no se ocultan: los ya
-    // implementados con su cifra y los pendientes con su épica.
     await expect(desglose.getByText('− Cuotas de deuda pendientes')).toBeVisible();
-    await expect(desglose.getByText('− Ahorro programado')).toBeVisible();
+    await expect(desglose.getByText('= Te sobraría')).toBeVisible();
   });
 
   test('crea un presupuesto para el próximo mes y lo elimina', async ({ page }) => {

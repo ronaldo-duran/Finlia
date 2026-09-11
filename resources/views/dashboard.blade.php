@@ -1,7 +1,7 @@
 @extends('layouts.app', ['title' => 'Panel'])
 
 @php
-    $isNegative = $budgetSummary['available'] < 0;
+    $isNegative = $budgetSummary['liquidity']['status'] !== 'ok';
 @endphp
 
 @section('content')

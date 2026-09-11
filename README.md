@@ -26,17 +26,21 @@ El saldo del banco no lo dice. Ese número no sabe que el arriendo sale el día 
 
 ## 💡 La solución
 
-Finlia calcula el **dinero realmente disponible**, restando al ingreso esperado todo lo que ya tiene dueño:
+Finlia calcula el **dinero realmente disponible** con la plata que ya tienes, no con la que esperas recibir:
 
 ```
-disponible = ingresos esperados
-           − gastos ya realizados
-           − gastos fijos y recurrentes próximos
-           − cuotas de deuda pendientes
-           − ahorro programado
+disponible hasta el cobro = saldo real en cuentas
+                          − lo ya apartado en metas de ahorro
+                          − gastos fijos y obligaciones que vencen antes del próximo pago
+                          − cuotas de deuda que vencen antes del próximo pago
+                          − ahorro programado de esos días
+
+puedes gastar hoy = disponible hasta el cobro ÷ días que faltan para el pago
 ```
 
-Ese cálculo vive en un único servicio de dominio (`BudgetCalculatorService`) y es la cifra que la app pone en primer plano: **«Puedes gastar hoy $81.521»**, no «tu saldo es $19.992.420». Cada épica del roadmap fue llenando un término de la fórmula sin tocar los demás.
+El sueldo que aún no llega no suma: el día de cobro solo dice hasta cuándo tiene que alcanzar lo de hoy. Por eso la cifra sirve desde el primer día, sin historial, y no miente si un pago se atrasa. Los ingresos esperados alimentan el **plan** del mes (la proyección del mes siguiente y un tope para que la cifra no se dispare), nunca la aumentan ([ADR-0040](docs/DECISIONS.md#adr-0040)).
+
+Ese cálculo vive en un único servicio de dominio (`BudgetCalculatorService`) y es la cifra que la app pone en primer plano: **«Puedes gastar hoy $81.521»**, no «tu saldo es $19.992.420».
 
 ## 📸 Capturas
 

@@ -17,7 +17,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0011 — Hogar personal auto-creado al registrar + hogar activo en sesión](#adr-0011) — **ACEPTADA**
 - [ADR-0012 — Saldo de cuenta persistido + recomputado en cada escritura](#adr-0012) — **ACEPTADA**
 - [ADR-0013 — CI en GitHub Actions con Pint + PHPUnit + build de Vite + E2E con Playwright](#adr-0013) — **ACEPTADA**
-- [ADR-0014 — Ingresos esperados configurables y dinero disponible con seams por épica](#adr-0014) — **ACEPTADA**
+- [ADR-0014 — Ingresos esperados configurables y dinero disponible con seams por épica](#adr-0014) — **ACEPTADA** (el "puedes gastar" lo sustituye [ADR-0040](#adr-0040))
 - [ADR-0015 — Correo transaccional mínimo: solo invitaciones y recuperación de contraseña](#adr-0015) — **ACEPTADA**
 - [ADR-0016 — Rediseño mobile-first adelantado (Épica 10 parcial) + sistema de diseño propio](#adr-0016) — **ACEPTADA**
 - [ADR-0017 — Identidad de marca Finlia (símbolo de puntos, petróleo/cobre)](#adr-0017) — **ACEPTADA**
@@ -40,6 +40,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0034 — Exportación de datos: ZIP con CSVs + JSON, throttle 3/día](#adr-0034) — **ACEPTADA**
 - [ADR-0035 — Transferencias entre cuentas del mismo hogar](#adr-0035) — **ACEPTADA**
 - [ADR-0036 — Soporte de dos motores: MySQL/MariaDB y PostgreSQL](#adr-0036) — **ACEPTADA**
+- [ADR-0040 — "Puedes gastar hoy" sale del saldo real hasta el próximo cobro](#adr-0040) — **ACEPTADA**
 
 ---
 
@@ -296,6 +297,8 @@ Al implementarla surgieron tres huecos:
 - Al no haber aún gastos recurrentes ni deuda, el "puedes gastar" de hoy es **optimista** respecto al que dará la Épica 6. La UI lo hace explícito en "¿Cómo se calcula?".
 
 **Estado.** ACEPTADA — confirmado por el equipo al iniciar Épica 4 (2026-08-18). Implementado en `BudgetCalculatorService`, `expected_incomes`, `budgets`, `BudgetScope`, `BudgetPeriod` y `BudgetAlertLevel`.
+
+> **Sustituida en parte por [ADR-0040](#adr-0040)** (2026-09-10): el "puedes gastar" ya no sale de los ingresos esperados sino del saldo real hasta el próximo cobro, y el presupuesto deja de restarse. La tabla `expected_incomes`, el `max(esperado, registrado)` y los seams siguen vigentes, ahora para el **plan** del período.
 
 ---
 
@@ -1205,6 +1208,47 @@ De ahí la separación que da forma a esta decisión: **el token autoriza la vin
 **Consecuencias.** Entre el registro y la confirmación, la persona existe sin ningún hogar. Es inocuo: `verified` no la deja entrar, y si nunca confirma la purga de fantasmas (>14 días) la limpia. `provisionHouseholdAfterVerification()` solo actúa sobre usuarios **sin** hogar, así que un registro normal —que ya trae «Mi hogar»— no queda unido en silencio a hogares que no eligió. `InvitationOnboardingTest` fija el recorrido completo, incluidos el correo manipulado en el formulario y la confirmación desde otro navegador.
 
 **Estado.** ACEPTADA — 2026-09-10.
+## ADR-0040
+### "Puedes gastar hoy" sale del saldo real hasta el próximo cobro — **ACEPTADA**
+
+**Contexto.** ADR-0014 calculaba el "puedes gastar" como *ingresos esperados del mes − gastado − comprometido*, repartido en los días que quedan del mes. Un usuario real lo desmontó el primer día: cuenta nueva, $100.000 en el banco, gana 3 millones y cobra el 15. El día 10 la app le decía **"puedes gastar hoy $151.447"**. Tres fallos juntos:
+
+1. **Contaba plata que no había llegado.** El salario del 15 entraba como si estuviera en la cuenta desde el día 1. Si el pago se atrasa o no llega, el usuario ya se lo gastó.
+2. **Ignoraba el saldo.** Los $100.000 reales solo aparecían en el "libre", no en la cifra protagonista.
+3. **Necesitaba historial para no mentir.** La fórmula resta "lo gastado en el mes"; quien empieza el día 10 no registró lo del 1 al 9, así que la app suponía que el salario seguía entero. La única salida era decirle a la gente "úsala uno o dos meses hasta que se estabilice", que para una app cuya promesa es *certeza* es inaceptable.
+
+**Decisión.** Dos respuestas separadas en `BudgetCalculatorService`:
+
+1. **Liquidez (`liquidity()`) — es el "puedes gastar hoy".**
+   ```
+   disponible = saldo real − apartado en metas − lo que vence antes del próximo cobro
+   hoy        = disponible ÷ días que faltan para ese cobro
+   ```
+   Solo depende de datos que el usuario conoce el primer día (saldo, día de cobro, pagos próximos). El caso del contexto da $100.000 ÷ 5 días = **$20.000**.
+2. **El ingreso esperado nunca suma a la liquidez.** Sirve para dos cosas: fijar el horizonte (hasta cuándo tiene que alcanzar lo de hoy) y el **plan** (siguiente punto).
+3. **Plan (`plan_available`) = ingresos esperados − gastado − comprometido**, la fórmula de ADR-0014 sin el presupuesto (punto 7). Es la vista "próximo mes" (proyección, sin liquidez) y un **tope** de la liquidez: `disponible = min(liquidez, plan del mes ÷ días que quedan del mes × días hasta el cobro)`. Así, ahorros que no están en una meta o un salario adelantado no se convierten en "gasta 4 millones al día". El plan puede bajar la cifra, **nunca subirla**. Sin ingresos esperados configurados no hay tope.
+4. **Horizonte = próximo pago del ingreso principal** (el de mayor monto; a igual monto, el más cercano, así dos quincenas iguales se turnan). Un ingreso menor que llegue antes no lo acorta: si se atrasa, no puede dejar al hogar corto. Sin día de cobro configurado, el horizonte es el fin de mes y la UI pide el día.
+5. **Pagos adelantados y atrasados.** Un ingreso registrado hasta 7 días antes de la fecha de cobro, por al menos la mitad del monto esperado, cuenta como ese pago: el horizonte salta al cobro siguiente (si no, un salario que llegó el viernes 13 daría "gasta 3 millones hoy" hasta el 15). Equivocarse hacia el "ya llegó" solo alarga el horizonte, por eso la regla es generosa. Si la fecha pasó y el ingreso no aparece, se avisa en la tarjeta y la cifra sigue contando solo con lo que hay. Solo se avisa de fechas posteriores a la configuración del ingreso: el cobro de antes de empezar a usar Finlia ya es parte del saldo inicial.
+6. **Qué se reserva antes del cobro.** Recurrentes y cuotas de deuda con fecha en `[hoy, cobro)`, más la ocurrencia **vencida** sin pagar, pero solo si venció estando ya registrada (una fecha pasada tecleada al crearla casi siempre es un pago que ya se hizo). El ahorro programado no tiene fecha: se reparte en el ciclo de cobro y se aparta la parte de los días que faltan, menos lo ya aportado en el ciclo.
+7. **El presupuesto sale del comprometido.** ADR-0014 lo restaba, así que el "puedes gastar" era *lo que queda fuera de los presupuestos*, y comprar mercado dentro del presupuesto no movía la cifra. Con la liquidez esa semántica produce absurdos (100.000 en la cuenta − 500.000 de mercado pendiente = "te has pasado"). El presupuesto **reparte** lo que puedes gastar, no lo reduce; queda como `budget_remaining`, alertas 80/100 % y tendencia.
+8. **Lo apartado en metas se resta del saldo.** Los aportes no mueven cuentas (ADR-0025): esa plata sigue sumando en el banco. Cuentan metas activas, pausadas y logradas; las archivadas no.
+9. **Una tarjeta de crédito solo resta.** Su saldo positivo es cupo, plata prestada.
+10. **Estados.** `ok`, `short` (el saldo no cubre lo que vence antes del cobro: se muestra cuánto falta) y `over_plan` (hay saldo, pero el mes ya gastó más de lo que espera recibir). `short` tiene prioridad: faltar plata antes del cobro es más urgente.
+
+**Alternativas (descartadas).**
+- **Mantener ADR-0014 y avisar "úsala un par de meses"** — la app sería inútil justo cuando la gente decide si le sirve.
+- **Proyección de flujo de caja día a día con todos los ingresos esperados** (el punto más bajo del saldo en el ciclo) — más precisa en hogares con dos ingresos en fechas distintas, pero cuenta con plata futura para cubrir pagos futuros: si ese ingreso no llega, el hogar queda corto. Choca con la promesa de certeza y es más difícil de explicar. Queda como refinamiento posible, junto con marcar a mano el ingreso principal.
+- **Horizonte hasta el próximo ingreso de cualquier monto** — un arriendo de $200.000 el día 12 haría gastar el saldo como si el salario del 30 llegara ese día.
+- **Mostrar solo el total disponible, sin dividir por días** — con horizontes cortos (el 14 para un cobro el 15) evita cifras diarias enormes, pero el tope del plan ya lo resuelve y "cuánto hoy" es la pregunta del producto.
+
+**Consecuencias y mitigaciones.**
+- La cifra es **conservadora** en hogares con dos ingresos en fechas distintas: hasta que llega el segundo, el primero tiene que alcanzar hasta el cobro principal. Sube sola cuando el segundo se registra.
+- La calidad del número depende de que el saldo de las cuentas sea real. La tarjeta avisa si no hay cuentas o no hay día de cobro, con enlace para configurarlo.
+- Una meta cuyo dinero no está en ninguna cuenta registrada resta de más. Se ve en el desglose ("Apartado en metas") y se corrige registrando la cuenta o archivando la meta.
+- `summary()` cambia de forma: desaparecen `available`, `daily_allowance` y `free` del nivel superior; la liquidez va en `summary['liquidity']` y el plan en `plan_available`. Los consumidores (panel, presupuestos, formulario de gasto) se actualizaron en el mismo cambio. La futura API (Épica 14) expone `liquidity()` tal cual.
+- El plan y la liquidez comparten recurrentes, deudas y metas cargados una sola vez (`obligations()`): el panel se mantiene dentro de su presupuesto de consultas (`PerformanceTest`).
+
+**Estado.** ACEPTADA — 2026-09-10. Implementada en `BudgetCalculatorService::liquidity()`, `RecurringExpenseService::dueUntil()`, `DebtService::dueUntil()`, `SavingsGoalService::setAside()` / `pendingCommitmentSince()`, la tarjeta del panel, la de presupuestos y la landing.
 
 ---
 

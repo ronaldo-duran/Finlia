@@ -10,8 +10,9 @@
     a las cinco acciones en vez de a dos.
 --}}
 @php
-    $showDaily = $budgetSummary['days_remaining'] > 0 && ! $isNegative;
-    $heroAmount = $showDaily ? $budgetSummary['daily_allowance'] : abs($budgetSummary['available']);
+    // "Puedes gastar hoy" sale del saldo real hasta el próximo cobro (ADR-0040).
+    $liquidity = $budgetSummary['liquidity'];
+    $heroAmount = $isNegative ? $liquidity['shortfall'] : $liquidity['daily_allowance'];
     $percent = $budgetSummary['consumed_percent'];
 @endphp
 
@@ -20,18 +21,29 @@
 <div class="hero-card {{ $isNegative ? 'bg-danger-subtle' : 'bg-finlia-accent-subtle' }} mb-3" data-testid="available-money">
     <div class="text-uppercase small fw-semibold {{ $isNegative ? 'text-danger' : 'text-finlia-accent' }} mb-2">
         <i class="bi bi-wallet2 me-1"></i>
-        {{ $isNegative ? 'Te has pasado del plan' : ($showDaily ? 'Puedes gastar hoy' : 'Puedes gastar este mes') }}
+        @switch($liquidity['status'])
+            @case('short') Te falta plata antes de tu próximo pago @break
+            @case('over_plan') Te has pasado del plan @break
+            @default Puedes gastar hoy
+        @endswitch
     </div>
     <div class="hero-figure" data-testid="available-money-amount">@money($heroAmount)</div>
 
-    @if ($showDaily)
-        <p class="text-muted small mb-0 mt-2">
-            Quedan <strong>@money($budgetSummary['available'])</strong> para los
-            {{ $budgetSummary['days_remaining'] }} {{ $budgetSummary['days_remaining'] === 1 ? 'día' : 'días' }} que quedan.
-        </p>
-    @elseif ($isNegative)
-        <p class="text-muted small mb-0 mt-2">Tus gastos superan lo que esperas recibir este mes.</p>
-    @endif
+    <p class="text-muted small mb-0 mt-2" data-testid="available-money-horizon">
+        @switch($liquidity['status'])
+            @case('short')
+                Es lo que te falta para cubrir los pagos que vencen antes del {{ $liquidity['payday']->format('d/m/Y') }}.
+                @break
+            @case('over_plan')
+                Este mes ya gastaste más de lo que esperas recibir.
+                @break
+            @default
+                <x-payday-horizon :liquidity="$liquidity" />
+                @if ($liquidity['limited_by'] === 'plan')
+                    Tienes más en cuentas, pero tu plan del mes no da para más.
+                @endif
+        @endswitch
+    </p>
 
     @if ($percent !== null)
         <div class="progress mt-3" role="progressbar" aria-label="Presupuesto consumido"
@@ -42,12 +54,7 @@
             <span>@percent($percent) del presupuesto usado</span>
             <span class="budget-figures">@money($budgetSummary['budget_defined'])</span>
         </div>
-    @elseif (! $budgetSummary['has_expected_income'])
-        <div class="mt-3 small">
-            <i class="bi bi-info-circle me-1"></i>
-            Aún no has configurado tus ingresos esperados.
-            <a href="{{ route('expected-incomes.index') }}" class="fw-semibold">Configúralos</a>
-            para que este número sea fiable.
-        </div>
     @endif
+
+    <x-liquidity-notes :liquidity="$liquidity" />
 </div>

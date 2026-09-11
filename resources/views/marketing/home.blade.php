@@ -8,6 +8,14 @@
             'r' => 'No. Los movimientos los registras tú, y por eso Finlia nunca pide las claves de tu banco ni accede a tus cuentas. A cambio de escribir el gasto, ves de verdad en qué se te va la plata.',
         ],
         [
+            'p' => '¿Y si todavía no me han pagado?',
+            'r' => 'Finlia solo cuenta la plata que ya tienes. Lo que esperas recibir sirve para saber hasta qué día te tiene que alcanzar, pero no se suma hasta que lo registras. Si el pago se atrasa, la cifra no te miente: te avisa y sigue contando solo con lo que hay.',
+        ],
+        [
+            'p' => '¿Tengo que usarla un tiempo antes de que sirva?',
+            'r' => 'No. Con el saldo de tus cuentas y el día en que te pagan, la cifra es correcta desde el primer día. No necesita meses de historial para "estabilizarse".',
+        ],
+        [
             'p' => '¿Cuánto cuesta?',
             'r' => 'Finlia es gratis. Registra gastos e ingresos, controla deudas, arma presupuestos y define metas de ahorro sin pagar nada. Más adelante habrá funciones avanzadas de pago, pero lo que hoy funciona seguirá siendo gratuito.',
         ],
@@ -173,9 +181,9 @@
 
             <div class="row g-4">
                 @foreach ([
-                    ['1', 'Dinos qué esperas recibir', 'Tu sueldo, el arriendo que cobras, lo que entra cada mes. Se configura una vez y queda.'],
+                    ['1', 'Dinos qué tienes y cuándo te pagan', 'El saldo de tus cuentas hoy y el día en que te llega la plata. Con eso la cifra es real desde el primer día, sin meses de historial.'],
                     ['2', 'Anota lo que gastas', 'Menos de cinco segundos por gasto, desde el celular, con el botón «+» siempre a mano.'],
-                    ['3', 'Mira cuánto te queda de verdad', 'Finlia descuenta lo comprometido y te dice la cifra que sí puedes gastar hoy.'],
+                    ['3', 'Mira cuánto puedes gastar hoy', 'Finlia aparta lo que vence antes de tu próximo pago y reparte el resto en los días que faltan.'],
                 ] as [$numero, $tituloPaso, $textoPaso])
                     <div class="col-12 col-md-4">
                         <div class="paso h-100">
@@ -194,35 +202,43 @@
                  Los importes son redondos y a propósito NO se atan a los de la
                  captura: la demo se resiembra con historial aleatorio y con la
                  fecha del día, así que cualquier cifra que copiara de ahí
-                 quedaría descuadrada al siguiente `migrate:fresh --seed`. --}}
+                 quedaría descuadrada al siguiente `migrate:fresh --seed`.
+
+                 Parte del saldo, no de los ingresos esperados (ADR-0040): el
+                 sueldo que aún no llega no se puede gastar. --}}
             <div class="formula-card mt-5">
                 <p class="rotulo-formula">La cuenta que hace Finlia</p>
 
                 <dl class="cuenta">
                     <div class="linea">
-                        <dt>Ingresos esperados del mes</dt>
-                        <dd>$ 7.300.000</dd>
-                    </div>
-                    <div class="linea">
-                        <dt><span class="signo" aria-hidden="true">−</span> Lo que ya gastaste</dt>
-                        <dd>$ 1.250.000</dd>
+                        <dt>Saldo en tus cuentas hoy</dt>
+                        <dd>$ 1.700.000</dd>
                     </div>
                     <div class="linea">
                         <dt>
                             <span class="signo" aria-hidden="true">−</span> Lo que ya tiene dueño
-                            <small>gastos fijos, cuotas de deuda y ahorro programado</small>
+                            <small>arriendo, servicios y cuotas que vencen antes de tu próximo pago, y lo apartado para tus metas</small>
                         </dt>
-                        <dd>$ 4.175.000</dd>
+                        <dd>$ 1.250.000</dd>
+                    </div>
+                    <div class="linea">
+                        <dt><span class="signo" aria-hidden="true">=</span> Te queda hasta el día de pago</dt>
+                        <dd>$ 450.000</dd>
+                    </div>
+                    <div class="linea">
+                        <dt><span class="signo" aria-hidden="true">÷</span> Días que faltan para tu pago</dt>
+                        <dd>9</dd>
                     </div>
                     <div class="linea total">
-                        <dt>Puedes gastar</dt>
-                        <dd>$ 1.875.000</dd>
+                        <dt>Puedes gastar hoy</dt>
+                        <dd>$ 50.000</dd>
                     </div>
                 </dl>
 
                 <p class="nota-cuenta mb-0">
-                    Ejemplo con cifras de demostración. En tu caso, Finlia rehace esta
-                    cuenta cada vez que registras algo.
+                    Ejemplo con cifras de demostración. Lo que esperas cobrar no se suma
+                    hasta que llega: si el pago se atrasa, la cifra sigue siendo real.
+                    Finlia rehace esta cuenta cada vez que registras algo.
                 </p>
             </div>
         </div>
