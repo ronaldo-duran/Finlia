@@ -44,6 +44,8 @@ Configurar Laravel (PHP, MySQL, `.env`, timezone Colombia, locale español, COP)
 ### Épica 4 — Presupuestos y dinero disponible
 `budgets` (total + por categoría) y `expected_incomes` (ingresos mensuales fijos configurables, [ADR-0014](DECISIONS.md#adr-0014)). Servicio `BudgetCalculatorService`: ingresos esperados − gastado − comprometido = disponible; los términos de recurrentes, deuda y ahorro quedan **en cero como seams** para las épicas 5-7. Tarjeta "💰 Puedes gastar" (panel y dashboard), consulta semana/mes/próximo mes, indicadores de consumo y tendencia, alertas 80 %/100 %.
 
+> **Revisado tras el primer uso real** ([ADR-0040](DECISIONS.md#adr-0040)): el "puedes gastar hoy" pasa a salir del **saldo real** hasta el próximo cobro. Los ingresos esperados ya no suman: fijan hasta cuándo tiene que alcanzar la plata y alimentan el plan del mes. La cifra es correcta desde el primer día, sin historial.
+
 ### Épica 5 — Gastos recurrentes y obligaciones futuras 🟢
 `recurring_expenses` (frecuencias semanal→anual + personalizada, próxima fecha, cuenta/categoría opcionales, pausar). Sección "Próximas obligaciones" (agrupada: vencidas / esta semana / más adelante), alertas en el dashboard (ventana de 30 días), "Separa ~X al mes" (SOAT $600.000 anual → $50.000/mes) y **"Marcar pagado"** (registra el gasto y avanza la fecha, sin duplicar en el cálculo, [ADR-0018](DECISIONS.md#adr-0018)). Integra al cálculo de dinero disponible **rellenando las claves `fixed_expenses` y `recurring`** de `BudgetCalculatorService` (ver [ADR-0014](DECISIONS.md#adr-0014)) sin tocar la fórmula ni la UI. La generación automática de recordatorios queda para la Épica 9 (Scheduler).
 

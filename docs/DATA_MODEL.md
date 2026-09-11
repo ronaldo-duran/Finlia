@@ -175,7 +175,7 @@ Ingresos mensuales esperados del hogar (salario, arriendos, inversiones). Entrad
 | category_id | FK, null | categoría de tipo `income` (`nullOnDelete`) |
 | name | string | "Salario", "Arriendo local" |
 | amount | decimal(15,2) | importe **mensual** esperado |
-| day_of_month | tinyint unsigned, null | día previsto de cobro (informativo) |
+| day_of_month | tinyint unsigned, null | día previsto de cobro: el del ingreso principal fija hasta cuándo tiene que alcanzar el saldo ([ADR-0040](DECISIONS.md#adr-0040)) |
 | is_active | boolean | solo los activos entran en el cálculo |
 | notes | text, null | |
 | timestamps | | |
@@ -184,20 +184,33 @@ Ingresos mensuales esperados del hogar (salario, arriendos, inversiones). Entrad
 - **No** es `recurring_expenses` (Épica 5): esa modela *gastos* con frecuencias variadas; esta, *ingresos* mensuales.
 
 ### Servicio: `App\Services\BudgetCalculatorService`
-No es tabla. `summary(householdId, BudgetScope, ?referencia)` devuelve un array serializable (Blade y futuro JSON) con:
+No es tabla. `summary(householdId, BudgetScope, ?referencia)` devuelve un array serializable (Blade y futuro JSON) con dos respuestas que **no se mezclan** ([ADR-0040](DECISIONS.md#adr-0040)):
+
+**Liquidez** (`summary['liquidity']`, o `liquidity(householdId, ?referencia)` directo) — el "puedes gastar hoy". Siempre sobre hoy; `null` en "próximo mes".
+
+```
+cobro      = próximo pago del ingreso principal (el mayor; a igual monto, el más cercano)
+             · pago adelantado (≤ 7 días antes, ≥ 50 % del monto) → el cobro siguiente
+             · sin día de cobro → fin de mes
+reservado  = recurrentes y cuotas de deuda que vencen en [hoy, cobro)  (+ la vencida sin pagar)
+           + ahorro programado pendiente del ciclo × días que faltan / días del ciclo
+disponible = saldoReal − apartadoEnMetas − reservado        (tarjetas de crédito solo restan)
+           tope: plan del mes ÷ días que quedan del mes × días hasta el cobro
+hoy        = disponible ÷ días hasta el cobro               ← "puedes gastar hoy"
+```
+
+**Plan** (`plan_available`) — proyección del período, nunca plata disponible:
 
 ```
 ingresosEsperados = max(Σ expected_incomes activos × factor, ingresos registrados del período)
-comprometido      = presupuestoPendiente          (= max(total pendiente, Σ categorías pendientes))
-                  + gastosFijos + recurrentes     (ocurrencias en la ventana — Épica 5)
+comprometido      = gastosFijos + recurrentes     (ocurrencias en la ventana — Épica 5)
                   + obligacionesDeuda             (cuotas pendientes — Épica 6)
                   + ahorroProgramado              (aportes de metas activas, tope faltante — Épica 7)
 
-disponible = ingresosEsperados − gastado − comprometido     ← "puedes gastar"
-libre      = balanceActual − comprometido
+planDisponible = ingresosEsperados − gastado − comprometido
 ```
 
-Cuatro conceptos que **no se mezclan**: **balance actual · disponible · comprometido · libre**.
+El presupuesto **no** se resta: reparte lo que se puede gastar. Queda como `budget_remaining` (= max(total pendiente, Σ categorías pendientes)), alertas y tendencia.
 
 ### Enums de la épica
 - `BudgetPeriod` — periodicidad guardada (`monthly`).

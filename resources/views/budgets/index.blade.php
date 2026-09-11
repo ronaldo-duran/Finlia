@@ -132,78 +132,76 @@
                             <ul class="list-unstyled small text-muted mb-0 budget-figures">
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>Saldo en cuentas hoy</span>
-                                    <span class="fw-semibold text-success">@money($liquidity['current_balance'])</span>
+                                    <span class="fw-semibold text-success text-nowrap">@money($liquidity['current_balance'])</span>
                                 </li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>− Apartado en metas de ahorro</span>
-                                    <span class="fw-semibold">@money($liquidity['set_aside'])</span>
+                                    <span class="fw-semibold text-nowrap">@money($liquidity['set_aside'])</span>
                                 </li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>− Gastos fijos que vencen {{ $hasta }}</span>
-                                    <span class="fw-semibold">@money($liquidity['reserved']['fixed_expenses'])</span>
+                                    <span class="fw-semibold text-nowrap">@money($liquidity['reserved']['fixed_expenses'])</span>
                                 </li>
                                 <li class="d-flex justify-content-between gap-2">
-                                    <span>− Obligaciones (SOAT, seguro) {{ $hasta }}</span>
-                                    <span class="fw-semibold">@money($liquidity['reserved']['recurring'])</span>
+                                    <span>− Obligaciones (SOAT…) {{ $hasta }}</span>
+                                    <span class="fw-semibold text-nowrap">@money($liquidity['reserved']['recurring'])</span>
                                 </li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>− Cuotas de deuda {{ $hasta }}</span>
-                                    <span class="fw-semibold">@money($liquidity['reserved']['debt'])</span>
+                                    <span class="fw-semibold text-nowrap">@money($liquidity['reserved']['debt'])</span>
                                 </li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>− Ahorro programado hasta el cobro</span>
-                                    <span class="fw-semibold">@money($liquidity['reserved']['savings'])</span>
+                                    <span class="fw-semibold text-nowrap">@money($liquidity['reserved']['savings'])</span>
                                 </li>
                                 <li><hr class="my-2"></li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span class="fw-semibold text-body">= Disponible hasta el cobro</span>
-                                    <span class="fw-bold text-body">@money($liquidity['cash_available'])</span>
+                                    <span class="fw-bold text-body text-nowrap">@money($liquidity['cash_available'])</span>
                                 </li>
                                 @if ($liquidity['limited_by'] === 'plan')
+                                    {{-- El plan solo aparece cuando pone el límite: como
+                                         dato suelto ("te sobrarían 3 millones") confunde. --}}
                                     <li class="d-flex justify-content-between gap-2">
                                         <span>Tope de tu plan del mes</span>
-                                        <span class="fw-semibold">@money($liquidity['plan_limit'])</span>
+                                        <span class="fw-semibold text-nowrap">@money($liquidity['plan_limit'])</span>
                                     </li>
                                 @endif
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>÷ {{ $liquidity['days'] }} {{ $liquidity['days'] === 1 ? 'día' : 'días' }}</span>
-                                    <span class="fw-bold text-body">@money($liquidity['daily_allowance']) al día</span>
-                                </li>
-                                <li class="d-flex justify-content-between mt-2 pt-2 border-top">
-                                    <span>Según tu plan, este mes te sobrarían</span>
-                                    <span class="fw-semibold">@money($liquidity['plan_available'])</span>
+                                    <span class="fw-bold text-body text-nowrap">@money($liquidity['daily_allowance']) al día</span>
                                 </li>
                             </ul>
                         @else
                             <ul class="list-unstyled small text-muted mb-0 budget-figures">
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>Ingresos esperados</span>
-                                    <span class="fw-semibold text-success">@money($summary['expected_income'])</span>
+                                    <span class="fw-semibold text-success text-nowrap">@money($summary['expected_income'])</span>
                                 </li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>− Ya gastado</span>
-                                    <span class="fw-semibold text-danger">@money($summary['spent'])</span>
+                                    <span class="fw-semibold text-danger text-nowrap">@money($summary['spent'])</span>
                                 </li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>− Gastos fijos (arriendo, servicios)</span>
-                                    <span class="fw-semibold">@money($summary['committed']['fixed_expenses'])</span>
+                                    <span class="fw-semibold text-nowrap">@money($summary['committed']['fixed_expenses'])</span>
                                 </li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>− Obligaciones próximas (SOAT, seguro)</span>
-                                    <span class="fw-semibold">@money($summary['committed']['recurring'])</span>
+                                    <span class="fw-semibold text-nowrap">@money($summary['committed']['recurring'])</span>
                                 </li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>− Cuotas de deuda pendientes</span>
-                                    <span class="fw-semibold">@money($summary['committed']['debt'])</span>
+                                    <span class="fw-semibold text-nowrap">@money($summary['committed']['debt'])</span>
                                 </li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>− Ahorro programado</span>
-                                    <span class="fw-semibold">@money($summary['committed']['savings'])</span>
+                                    <span class="fw-semibold text-nowrap">@money($summary['committed']['savings'])</span>
                                 </li>
                                 <li><hr class="my-2"></li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span class="fw-semibold text-body">= Te sobraría</span>
-                                    <span class="fw-bold text-body">@money($summary['plan_available'])</span>
+                                    <span class="fw-bold text-body text-nowrap">@money($summary['plan_available'])</span>
                                 </li>
                             </ul>
                         @endif

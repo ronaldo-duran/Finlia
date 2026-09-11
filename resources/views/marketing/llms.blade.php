@@ -4,10 +4,13 @@
 > pregunta que un saldo bancario no responde: cuánto dinero puede gastar hoy una
 > persona sin comprometer el arriendo, las cuotas de deuda ni sus metas de ahorro.
 
-Finlia calcula el **dinero realmente disponible** restando, a los ingresos esperados
-del mes, todo lo que ya tiene dueño: lo gastado, los gastos fijos y recurrentes que
-aún no se han cobrado, las cuotas de deuda pendientes y el ahorro programado. Esa
-cifra —no el saldo— es la que muestra en primer plano.
+Finlia calcula cuánto se puede gastar hoy **con la plata que ya se tiene**: toma el
+saldo real de las cuentas, le resta lo que vence antes del próximo pago (arriendo,
+servicios, cuotas de deuda) y lo ya apartado para metas de ahorro, y reparte el resto
+entre los días que faltan para ese pago. Los ingresos esperados no se suman hasta que
+llegan: sirven para saber hasta cuándo debe alcanzar el dinero y para proyectar el mes
+siguiente. Esa cifra —no el saldo— es la que muestra en primer plano, y es correcta
+desde el primer día de uso, sin necesidad de historial.
 
 ## Datos básicos
 
@@ -20,7 +23,8 @@ cifra —no el saldo— es la que muestra en primer plano.
 ## Qué hace
 
 - Registro de gastos e ingresos con categorías, cuentas y medios de pago.
-- Cálculo de dinero disponible por semana, mes o mes siguiente.
+- Cálculo de cuánto se puede gastar hoy con el saldo real hasta el próximo pago, y
+  proyección del mes siguiente con los ingresos esperados.
 - Presupuestos mensuales, totales o por categoría, con alertas antes de pasarse.
 - Control de deudas y tarjetas de crédito: saldo, cuota mensual, progreso, proyección
   de fin de deuda y orden de pago por estrategia avalancha o bola de nieve.
