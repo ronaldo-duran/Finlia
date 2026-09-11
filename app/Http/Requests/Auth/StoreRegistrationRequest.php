@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\HouseholdInvitation;
 use App\Rules\AdultBirthDate;
+use App\Services\HouseholdService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,9 +19,41 @@ use Illuminate\Validation\Rule;
  */
 class StoreRegistrationRequest extends FormRequest
 {
+    private HouseholdInvitation|false|null $invitation = false;
+
     public function authorize(): bool
     {
         return true; // ruta pública bajo middleware 'guest'
+    }
+
+    /**
+     * La invitación desde la que se registra, si llegó por su enlace y sigue
+     * vigente (ADR-0039). El token vive en la sesión, nunca en el formulario.
+     */
+    public function invitation(): ?HouseholdInvitation
+    {
+        if ($this->invitation === false) {
+            $token = $this->session()->get('invitation_token');
+
+            $this->invitation = is_string($token)
+                ? app(HouseholdService::class)->findAcceptableInvitation($token)
+                : null;
+        }
+
+        return $this->invitation;
+    }
+
+    /**
+     * Desde una invitación, el correo lo dicta la invitación: el campo del
+     * formulario es de solo lectura, pero el servidor no se fía de él.
+     */
+    protected function prepareForValidation(): void
+    {
+        $invitation = $this->invitation();
+
+        if ($invitation !== null) {
+            $this->merge(['email' => $invitation->email]);
+        }
     }
 
     /**

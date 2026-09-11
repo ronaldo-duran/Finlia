@@ -1178,6 +1178,36 @@ La pregunta que se hizo no fue "¿landing sí o no?" sino **dónde vive cada cos
 
 ---
 
+## ADR-0039
+### La invitación se ve sin sesión; la vinculación espera a que el correo esté verificado — **ACEPTADA**
+
+**Contexto.** El primer uso real de una invitación, en producción, salió mal de principio a fin. La persona invitada —sin cuenta todavía, que es el caso normal— pulsó el enlace y el middleware `auth` la mandó a `/login` a pedirle una contraseña que no tenía. Creó una cuenta, y el registro le fabricó su propio «Mi hogar», sin relación con la invitación. Solo al volver al correo y pulsar el enlace por segunda vez, ya con sesión, entró al hogar invitado; y quedó con dos hogares, uno de ellos huérfano. En una aplicación de finanzas **familiares**, invitar a la pareja es la función que justifica el producto, y ese flujo producía un hogar huérfano en el 100 % de los casos.
+
+Las rutas de invitación vivían en el grupo de Nivel 3 (sesión + verificado + términos + cuenta activa), a contracorriente del patrón que el propio proyecto ya aplicaba a los enlaces que llegan desde un buzón: verificación de correo, confirmación del cambio de correo y baja del digest son públicas, y el token o la firma son la autorización.
+
+**Decisión.**
+
+1. **Ver la invitación es público**; el token es la autorización, como en el resto de enlaces que llegan por correo. La página solo muestra nombre del hogar, rol y caducidad: nada del dinero del hogar. Y ofrece siempre las mismas dos salidas —crear cuenta o entrar—, **exista o no una cuenta con ese correo**: si lo dijera, cualquier dueño de hogar podría invitar a una dirección y abrir el enlace para averiguar si esa persona usa Finlia (enumeración, [SECURITY.md](SECURITY.md)).
+2. **Aceptarla sigue exigiendo sesión con el correo verificado** (el `POST` se queda en el Nivel 3). Hacer pública la vista no obligaba a abrir también la acción.
+3. **Sin sesión, la invitación se recuerda en la sesión** —nunca en la URL, para no multiplicar el token por historiales y cabeceras `Referer`—. El login vuelve a ella por `url.intended`, que `AuthenticatedSessionController` ya consume.
+4. **El registro desde una invitación no crea hogar propio, y el correo lo impone la invitación**: el campo es de solo lectura en el formulario, pero `StoreRegistrationRequest::prepareForValidation()` lo sobrescribe en el servidor, que no se fía del input.
+5. **El correo se sigue verificando, y la vinculación al hogar ocurre al confirmarlo** (`HouseholdService::provisionHouseholdAfterVerification()`, desde `EmailVerificationController::verify()`). Si la invitación caducó mientras tanto, la persona recibe su hogar personal: nadie se queda sin hogar.
+
+**Por qué no dar el correo por verificado.** Fue la primera propuesta: si el enlace llegó a esa bandeja, quien lo abre la controla, y pedir la verificación sería exigir dos veces la misma prueba. **Se descartó porque el enlace es transferible.** El dueño del hogar puede copiarlo y mandarlo por WhatsApp —el canal real en Colombia—, y entonces la persona nunca tocó ese buzón. La aplicación no puede distinguir un caso del otro: el enlace es el mismo. Darlo por verificado dejaría entrar una dirección que nadie confirmó, y con ella la recuperación de contraseña y los avisos del hogar viajarían a un buzón ajeno.
+
+De ahí la separación que da forma a esta decisión: **el token autoriza la vinculación al hogar; la verificación prueba el control del correo.** Son dos pruebas distintas y se exigen las dos.
+
+**Por qué vincular en la verificación y no en la sesión.** El enlace de confirmación se abre a menudo en otro dispositivo —el correo llega al móvil aunque el registro se hiciera en el portátil—, y `verify()` ya contempla ese caso. Vinculando ahí, con el correo recién probado, el flujo no depende de que la sesión sobreviva.
+
+**Alternativas descartadas.**
+- *Dar el correo por verificado al registrarse desde la invitación*: por lo dicho arriba.
+- *Pasar el token al registro como parámetro de la URL*: más explícito, pero el token acabaría en historiales y en `Referer`.
+- *Vincular ya en el registro y bloquear la entrada hasta verificar*: rompe la regla de ADR-0029 —sin correo verificado no se crea ningún dato— para no ganar nada.
+- *Hacer pública también la aceptación*: el registro desde invitación ya no la necesita, así que abrirla solo ampliaba la superficie.
+
+**Consecuencias.** Entre el registro y la confirmación, la persona existe sin ningún hogar. Es inocuo: `verified` no la deja entrar, y si nunca confirma la purga de fantasmas (>14 días) la limpia. `provisionHouseholdAfterVerification()` solo actúa sobre usuarios **sin** hogar, así que un registro normal —que ya trae «Mi hogar»— no queda unido en silencio a hogares que no eligió. `InvitationOnboardingTest` fija el recorrido completo, incluidos el correo manipulado en el formulario y la confirmación desde otro navegador.
+
+**Estado.** ACEPTADA — 2026-09-10.
 ## ADR-0040
 ### "Puedes gastar hoy" sale del saldo real hasta el próximo cobro — **ACEPTADA**
 

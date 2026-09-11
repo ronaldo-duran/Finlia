@@ -5,6 +5,7 @@
     'type' => 'text',
     'value' => null,
     'required' => false,
+    'readonly' => false,
     'autocomplete' => null,
     'autofocus' => false,
     'help' => null,
@@ -39,6 +40,7 @@
         @if ($max) max="{{ $max }}" @endif
         @if ($autofocus) autofocus @endif
         @if ($required) required @endif
+        @if ($readonly) readonly @endif
         aria-describedby="@error($name){{ $inputId }}-error @endif"
     >
 
