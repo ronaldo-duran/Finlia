@@ -11,7 +11,9 @@
     </div>
     <p class="text-muted mb-4">
         Lo que esperas recibir cada mes de forma fija: salario, arriendos, inversiones…
-        Es la base del cálculo de <a href="{{ route('budgets.index') }}">cuánto puedes gastar</a>.
+        Finlia no lo cuenta como plata disponible hasta que lo registras: con el día de cobro
+        sabe hasta cuándo te tiene que alcanzar lo que tienes hoy, y con el monto proyecta el mes.
+        Mira <a href="{{ route('budgets.index') }}">cuánto puedes gastar</a>.
     </p>
 
     <div class="row g-3">
@@ -31,7 +33,7 @@
                         <div class="row g-3">
                             <div class="col-6">
                                 <x-form-input label="Día de cobro" name="day_of_month" type="number"
-                                    placeholder="30" help="Opcional" />
+                                    placeholder="30" help="Hasta ese día te tiene que alcanzar" />
                             </div>
                             <div class="col-6">
                                 <x-form-select label="Categoría" name="category_id"
@@ -44,7 +46,7 @@
                             <input class="form-check-input" type="checkbox" name="is_active" value="1"
                                    id="is_active" checked>
                             <label class="form-check-label" for="is_active">
-                                Contar en el cálculo de dinero disponible
+                                Tenerlo en cuenta en el cálculo
                             </label>
                         </div>
 
@@ -141,7 +143,7 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="is_active" value="1" id="edit-ei-active">
                             <label class="form-check-label" for="edit-ei-active">
-                                Contar en el cálculo de dinero disponible
+                                Tenerlo en cuenta en el cálculo
                             </label>
                         </div>
                     </div>

@@ -109,9 +109,11 @@ class RecurringExpenseService
      * avanza y la ocurrencia sale de la ventana (no se duplica con el gasto
      * ya registrado).
      *
+     * @param  Collection<int, RecurringExpense>|null  $items  recurrentes activos ya
+     *                                                         cargados (ver `activeItems`); evita repetir la consulta.
      * @return array{fixed: float, recurring: float, total: float}
      */
-    public function committedInRange(int $householdId, CarbonInterface $from, CarbonInterface $to): array
+    public function committedInRange(int $householdId, CarbonInterface $from, CarbonInterface $to, ?Collection $items = null): array
     {
         $from = Carbon::parse($from)->startOfDay();
         $to = Carbon::parse($to)->startOfDay();
@@ -119,14 +121,67 @@ class RecurringExpenseService
         $fixed = 0.0;
         $recurring = 0.0;
 
-        RecurringExpense::where('household_id', $householdId)
-            ->active()
-            ->get()
+        ($items ?? $this->activeItems($householdId))
             ->each(function (RecurringExpense $recurringExpense) use (&$fixed, &$recurring, $from, $to): void {
                 $amount = (float) $recurringExpense->amount
                     * $this->occurrencesInWindow($recurringExpense, $from, $to);
 
                 if ($recurringExpense->frequency->isFixedLike($recurringExpense->frequency_interval)) {
+                    $fixed += $amount;
+                } else {
+                    $recurring += $amount;
+                }
+            });
+
+        $fixed = round($fixed, 2);
+        $recurring = round($recurring, 2);
+
+        return ['fixed' => $fixed, 'recurring' => $recurring, 'total' => round($fixed + $recurring, 2)];
+    }
+
+    /**
+     * Recurrentes activos del hogar: la entrada de `committedInRange` y
+     * `dueUntil`, cargada una sola vez cuando se necesitan las dos.
+     *
+     * @return Collection<int, RecurringExpense>
+     */
+    public function activeItems(int $householdId): Collection
+    {
+        return RecurringExpense::where('household_id', $householdId)->active()->get();
+    }
+
+    /**
+     * Lo que hay que tener apartado por recurrentes desde hoy hasta `$until`
+     * (último día cubierto por el saldo actual, ADR-0040).
+     *
+     * A diferencia de `committedInRange`, aquí sí cuenta la ocurrencia VENCIDA
+     * sin pagar: la plata se sigue debiendo y sale del saldo de hoy. Solo si
+     * venció estando ya registrada en Finlia; una fecha pasada tecleada al
+     * crearla casi siempre es un pago ya hecho antes de empezar a usar la app.
+     *
+     * @param  Collection<int, RecurringExpense>|null  $items  recurrentes activos ya cargados
+     * @return array{fixed: float, recurring: float, total: float}
+     */
+    public function dueUntil(int $householdId, CarbonInterface $today, CarbonInterface $until, ?Collection $items = null): array
+    {
+        $today = Carbon::parse($today)->startOfDay();
+        $until = Carbon::parse($until)->startOfDay();
+
+        $fixed = 0.0;
+        $recurring = 0.0;
+
+        ($items ?? $this->activeItems($householdId))
+            ->each(function (RecurringExpense $item) use (&$fixed, &$recurring, $today, $until): void {
+                $count = $until->gte($today) ? $this->occurrencesInWindow($item, $today, $until) : 0;
+
+                $nextDate = Carbon::parse($item->next_date)->startOfDay();
+                if ($nextDate->lt($today) && $nextDate->gte(Carbon::parse($item->created_at)->startOfDay())) {
+                    $count++;
+                }
+
+                $amount = (float) $item->amount * $count;
+
+                if ($item->frequency->isFixedLike($item->frequency_interval)) {
                     $fixed += $amount;
                 } else {
                     $recurring += $amount;

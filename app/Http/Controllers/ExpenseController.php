@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\BudgetScope;
 use App\Enums\CategoryType;
 use App\Http\Requests\Expense\StoreExpenseRequest;
 use App\Http\Requests\Expense\UpdateExpenseRequest;
@@ -26,11 +25,14 @@ class ExpenseController extends Controller
 
     public function create(Request $request): View
     {
-        // "Te quedarían $X" (hint en vivo del formulario): dinero disponible
-        // del mes ANTES de este gasto, no lógica nueva —reutiliza la Épica 4.
-        $available = $this->budgets->summary(active_household_id(), BudgetScope::Month)['available'];
+        // "Te quedarían $X hasta el DD/MM" (hint en vivo del formulario): lo
+        // disponible hasta el próximo cobro ANTES de este gasto (ADR-0040).
+        $liquidity = $this->budgets->liquidity(active_household_id());
 
-        return view('expenses.create', array_merge($this->formOptions(), ['available' => $available]));
+        return view('expenses.create', array_merge($this->formOptions(), [
+            'available' => $liquidity['available'],
+            'availableUntil' => $liquidity['until'],
+        ]));
     }
 
     public function store(StoreExpenseRequest $request): RedirectResponse

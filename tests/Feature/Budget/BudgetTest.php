@@ -43,7 +43,7 @@ class BudgetTest extends TestCase
         $this->actingAs($owner)
             ->get(route('budgets.index'))
             ->assertOk()
-            ->assertSee('Puedes gastar aproximadamente');
+            ->assertSee('Puedes gastar hoy');
     }
 
     public function test_los_tres_periodos_responden_ok(): void
