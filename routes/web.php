@@ -171,6 +171,15 @@ Route::get('confirmar-correo/{token}', [ProfileController::class, 'confirmEmail'
     ->middleware('throttle:6,1')
     ->domain(config('finlia.domains.app'));
 
+// ---- Ver una invitación al hogar (ADR-0039) ----
+// Público con token aleatorio (hash sha256 en la base): el enlace llega por
+// correo o reenviado por WhatsApp, casi siempre a alguien sin cuenta. Verla
+// no cambia nada; ACEPTAR sigue tras sesión verificada, en el Nivel 3.
+Route::get('invitaciones/{token}', [InvitationController::class, 'show'])
+    ->name('invitations.show')
+    ->middleware('throttle:10,1')
+    ->domain(config('finlia.domains.app'));
+
 // ---- PWA (Épica 10): manifest con cabecera correcta ----
 // Algunos hosting o proxies no reconocen .webmanifest como JSON y
 // omiten el Content-Type. Servir vía PHP garantiza la cabecera.
@@ -279,10 +288,8 @@ Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', '
     Route::delete('hogares/{household}/invitaciones/{invitation}', [HouseholdInvitationController::class, 'destroy'])
         ->name('households.invitations.destroy');
 
-    // Aceptar invitación por enlace (token hasheado en BD)
-    Route::get('invitaciones/{token}', [InvitationController::class, 'show'])
-        ->name('invitations.show')
-        ->middleware('throttle:10,1');
+    // Aceptar la invitación sí exige sesión verificada; verla es público
+    // (arriba, junto a confirmar-correo).
     Route::post('invitaciones/{token}', [InvitationController::class, 'accept'])
         ->name('invitations.accept')
         ->middleware('throttle:10,1');

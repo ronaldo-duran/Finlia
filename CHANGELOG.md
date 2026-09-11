@@ -12,6 +12,30 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.33.0] - 2026-09-10 — Invitar a alguien que todavía no tiene cuenta
+
+### Contexto
+La primera invitación real salió mal de principio a fin. La persona invitada —sin cuenta, que es lo normal— pulsó el enlace y la aplicación le pidió una contraseña que no tenía. Creó una cuenta y el registro le fabricó un hogar propio, sin relación con la invitación. Solo al pulsar el enlace **por segunda vez**, ya con sesión, entró al hogar invitado, y quedó con dos hogares. En una aplicación de finanzas familiares, invitar a la pareja es la función que justifica el producto, y hasta ahora dejaba un hogar huérfano en cada invitación.
+
+### Cambiado
+- **La invitación se puede ver sin haber iniciado sesión** ([ADR-0039](docs/DECISIONS.md#adr-0039)). Quien la abre sin cuenta ve dos salidas, «Crear mi cuenta» o «Ya tengo cuenta, entrar», y la página no muestra nada del dinero del hogar.
+- **Quien entra desde la invitación vuelve a ella** tras iniciar sesión y la acepta con un toque.
+- **Registrarse desde la invitación ya no crea un hogar propio.** El formulario llega con el correo invitado fijo y avisa a qué hogar se va a entrar; al confirmar el correo, la persona entra directamente a ese hogar, con uno solo. Funciona aunque el enlace de confirmación se abra en otro dispositivo.
+- Si la invitación caduca antes de confirmar el correo, la persona recibe su hogar personal: nadie se queda sin hogar.
+- **El botón «Entrar» del sitio se ve también en el teléfono.** Estaba oculto por debajo de 576 px, así que en el caso más común solo aparecía «Crear cuenta». A 320 px los dos caben en una línea.
+
+### Seguridad
+- **El correo se sigue verificando al registrarse desde una invitación.** El enlace es transferible —se reenvía por WhatsApp—, así que no prueba que quien lo abre controle ese buzón. El token autoriza entrar al hogar; la verificación prueba el correo. Se exigen las dos, y la vinculación ocurre solo al confirmar.
+- **El correo del registro lo impone el servidor** desde la invitación: manipular el campo del formulario no cambia la dirección registrada.
+- **Aceptar sigue exigiendo sesión con el correo verificado.** Solo se abrió la vista, no la acción.
+- La página de invitación es **idéntica exista o no una cuenta** con ese correo: si lo dijera, cualquier dueño de hogar podría invitar a una dirección para averiguar si esa persona usa Finlia.
+- El token viaja en la sesión entre la invitación y el registro, nunca en la URL.
+
+### Verificación
+- `phpunit`: **615/616** — 15 tests nuevos en `InvitationOnboardingTest`, comprobados saboteando el código a propósito (aceptar el correo del formulario, no vincular al confirmar, crear hogar siempre, vincular sin verificar, revelar la cuenta): cada sabotaje tumba al menos un test. El fallo restante es el conocido de Windows.
+- Recorrido completo en el navegador, en viewport de teléfono: invitación sin sesión → registro con el correo manipulado a mano → confirmación → panel del hogar invitado con un solo hogar; y el camino de quien ya tiene cuenta, que vuelve a la invitación tras entrar.
+- `vendor/bin/pint`: limpio.
+
 ## [0.32.1] - 2026-09-10 — Cada cosa en su dominio
 
 ### Corregido

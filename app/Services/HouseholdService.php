@@ -178,6 +178,58 @@ class HouseholdService
     }
 
     /**
+     * Como findInvitationByPlainToken(), pero solo si todavía se puede aceptar.
+     */
+    public function findAcceptableInvitation(string $plainToken): ?HouseholdInvitation
+    {
+        $invitation = $this->findInvitationByPlainToken($plainToken);
+
+        if ($invitation === null || ! $invitation->isPending() || $invitation->isExpired()) {
+            return null;
+        }
+
+        return $invitation;
+    }
+
+    /**
+     * Da hogar a un usuario que acaba de confirmar su correo y aún no tiene
+     * ninguno — el que se registró desde una invitación (ADR-0039).
+     *
+     * La vinculación espera a la verificación a propósito: el enlace de la
+     * invitación es transferible (se reenvía por WhatsApp), así que el token
+     * autoriza entrar al hogar pero no prueba que el correo sea de quien lo
+     * usa. Si la invitación caducó mientras confirmaba, recibe su hogar
+     * personal: nadie se queda sin hogar.
+     *
+     * Devuelve el hogar a activar, o null si no había nada que hacer.
+     */
+    public function provisionHouseholdAfterVerification(User $user): ?Household
+    {
+        if (! $user->hasVerifiedEmail() || $user->households()->exists()) {
+            return null;
+        }
+
+        return DB::transaction(function () use ($user): Household {
+            $invitations = HouseholdInvitation::query()
+                ->where('email', str($user->email)->lower()->toString())
+                ->where('status', InvitationStatus::Pending->value)
+                ->where('expires_at', '>', now())
+                ->with('household')
+                ->latest('id')
+                ->get();
+
+            $joined = null;
+
+            foreach ($invitations as $invitation) {
+                $household = $this->acceptInvitation($invitation, $user);
+                $joined ??= $household;
+            }
+
+            return $joined ?? $this->createHousehold(ownerId: $user->id, name: 'Mi hogar');
+        });
+    }
+
+    /**
      * Acepta una invitación: valida estado, expiración y coincidencia de correo,
      * vincula al usuario y marca la invitación como aceptada.
      *

@@ -1,7 +1,20 @@
-@extends('layouts.guest', ['title' => 'Crear cuenta', 'subtitle' => 'Empieza a gestionar tus finanzas'])
+@extends('layouts.guest', [
+    'title' => 'Crear cuenta',
+    'subtitle' => $invitation
+        ? 'Te unes a «'.$invitation->household->name.'»'
+        : 'Empieza a gestionar tus finanzas',
+])
 
 @section('content')
     <x-flash-messages />
+
+    @if ($invitation)
+        <div class="alert alert-info border-0 small" role="status">
+            <i class="bi bi-envelope-open-heart me-1"></i>
+            Al crear tu cuenta te pediremos confirmar tu correo. En cuanto lo confirmes
+            entrarás directamente a <strong>{{ $invitation->household->name }}</strong>.
+        </div>
+    @endif
 
     <form method="POST" action="{{ route('register') }}">
         @csrf
@@ -20,9 +33,11 @@
             label="Correo electrónico"
             name="email"
             type="email"
-            :value="old('email')"
+            :value="$invitation?->email ?? old('email')"
             autocomplete="username"
             required
+            :readonly="$invitation !== null"
+            :help="$invitation ? 'Es el correo al que llegó la invitación.' : null"
             placeholder="tucorreo@ejemplo.com"
         />
 

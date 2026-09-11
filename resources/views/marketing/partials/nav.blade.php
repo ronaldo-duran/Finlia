@@ -3,7 +3,7 @@
 <a href="#contenido" class="visually-hidden-focusable saltar-contenido">Saltar al contenido</a>
 
 <header class="marketing-nav glass-nav">
-    <nav class="container d-flex align-items-center justify-content-between gap-3" aria-label="Principal">
+    <nav class="container d-flex align-items-center justify-content-between gap-2 gap-sm-3" aria-label="Principal">
         <a href="{{ route('home') }}" class="marca d-inline-flex align-items-center gap-2 text-decoration-none">
             <x-brandmark :size="30" />
             <span class="fs-5 fw-semibold">Finlia</span>
@@ -16,13 +16,13 @@
             <a href="{{ route('contact.create') }}" class="enlace-nav">Contacto</a>
         </div>
 
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-1 gap-sm-2">
             <button type="button" class="btn-icon" data-theme-toggle aria-label="Cambiar tema">
                 <i class="bi bi-sun-fill show-in-dark"></i>
                 <i class="bi bi-moon-stars-fill show-in-light"></i>
             </button>
-            <a href="{{ route('login') }}" class="btn btn-outline-finlia btn-sm d-none d-sm-inline-flex">Entrar</a>
-            <a href="{{ route('register') }}" class="btn btn-finlia btn-sm">Crear cuenta</a>
+            <a href="{{ route('login') }}" class="btn btn-outline-finlia btn-sm text-nowrap">Entrar</a>
+            <a href="{{ route('register') }}" class="btn btn-finlia btn-sm text-nowrap">Crear cuenta</a>
         </div>
     </nav>
 </header>
