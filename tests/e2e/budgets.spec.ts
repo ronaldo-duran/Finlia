@@ -21,7 +21,8 @@ test.describe('Presupuestos y dinero disponible (Épica 4)', () => {
     for (const label of ['Saldo en cuentas', 'Reservado', 'Gastado']) {
       await expect(page.getByText(label, { exact: true })).toBeVisible();
     }
-    await expect(page.getByText(/^(Días para tu pago|Días del mes)$/)).toBeVisible();
+    // Sin anclar: con expresión regular Playwright no normaliza los espacios del elemento.
+    await expect(page.getByText(/Días (para tu pago|del mes)/)).toBeVisible();
   });
 
   test('permite cambiar entre semana, mes y próximo mes', async ({ page }) => {

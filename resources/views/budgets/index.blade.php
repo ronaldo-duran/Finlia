@@ -96,8 +96,9 @@
                         <div class="card-body p-3">
                             @if ($liquidity !== null)
                                 <div class="text-muted small text-uppercase">
-                                    <i class="bi bi-hourglass-split me-1 text-primary"></i>
-                                    {{ $liquidity['payday_known'] ? 'Días para tu pago' : 'Días del mes' }}
+                                    {{-- La etiqueta va pegada al icono, como en las demás
+                                         tarjetas: así el texto del elemento es solo la etiqueta. --}}
+                                    <i class="bi bi-hourglass-split me-1 text-primary"></i>{{ $liquidity['payday_known'] ? 'Días para tu pago' : 'Días del mes' }}
                                 </div>
                                 <div class="fw-bold mt-2 money-figure">{{ $liquidity['days'] }}</div>
                                 @if ($liquidity['payday_known'])
