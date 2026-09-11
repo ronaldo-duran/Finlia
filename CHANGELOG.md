@@ -12,6 +12,34 @@ reciente de este archivo.
 > tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
 > actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.34.0] - 2026-09-10 — «Puedes gastar hoy» con la plata que ya tienes
+
+> Se numera 0.34.0 porque la 0.33.0 corresponde a la entrega de invitaciones sin cuenta, publicada en paralelo.
+
+### Cambiado
+Una cuenta nueva con $100.000 en el banco, que gana 3 millones y cobra el 15, veía el día 10 **«Puedes gastar hoy $151.447»**. La cifra salía de los ingresos esperados del mes: contaba el salario como si ya hubiera llegado, ignoraba el saldo real y, como restaba lo gastado desde el día 1, solo era fiable tras un mes de uso. Ahora la misma cuenta ve **$20.000 hasta tu pago del 15** ([ADR-0040](docs/DECISIONS.md#adr-0040)).
+
+- **El «puedes gastar hoy» sale del saldo real**: saldo en cuentas − lo apartado en metas − lo que vence antes del próximo cobro, repartido en los días que faltan para ese cobro. Es correcto desde el primer día, sin historial.
+- **Lo que esperas recibir ya no suma.** El día de cobro dice hasta cuándo tiene que alcanzar lo de hoy; el monto alimenta el plan del mes, que solo puede **bajar** la cifra (ahorros fuera de metas o un salario adelantado no se convierten en «gasta millones hoy»).
+- **El horizonte es el pago del ingreso principal**: el de mayor monto; dos quincenas iguales se turnan. Un ingreso menor que llegue antes no lo acorta.
+- **El presupuesto reparte lo que puedes gastar, no lo reduce.** Comprar mercado dentro del presupuesto sí baja la cifra, como pasa con la plata de verdad.
+- **«Próximo mes» es una proyección** («Te quedaría según tu plan»), no plata disponible.
+- El formulario de gasto dice «Te quedarían $X hasta el DD/MM» en vez de «este mes».
+- La landing, `llms.txt` y el README explican la cuenta nueva, con dos preguntas frecuentes más: «¿Y si todavía no me han pagado?» y «¿Tengo que usarla un tiempo antes de que sirva?».
+
+### Añadido
+- **Aviso de pago atrasado**: si la fecha de cobro pasó y el ingreso no aparece, la tarjeta lo dice y la cifra sigue contando solo con lo que hay. Un pago adelantado (hasta 7 días antes) se reconoce y la plata tiene que alcanzar hasta el cobro siguiente.
+- **Faltante antes del cobro**: si el saldo no cubre lo que vence antes del próximo pago, la tarjeta muestra cuánto falta, distinto de «te has pasado del plan».
+- La tarjeta pide lo que falta para que la cifra sea exacta: cuentas con su saldo, ingreso esperado o día de cobro.
+- Desglose «¿Cómo se calcula?» nuevo: saldo, apartado en metas, lo que vence antes del cobro y reparto por días.
+
+### Corregido
+- Una tarjeta de crédito ya no suma su cupo como si fuera plata propia: solo resta lo que se debe.
+- La plata registrada en metas de ahorro ya no se ofrecía como gastable (los aportes no mueven cuentas, ADR-0025).
+
+### Verificación
+20 pruebas más del cálculo (50 en total) (horizonte, pagos adelantados y atrasados, quincenas, metas, tarjetas, tope del plan, faltante, aislamiento entre hogares). El panel sigue dentro de su presupuesto de consultas: el plan y la liquidez comparten recurrentes, deudas y metas cargados una sola vez. Suite completa en 620/621; el fallo restante (`DebtTest`, traducción con «:» en la clave) solo ocurre en Windows y es previo a esta entrega.
+
 ## [0.32.1] - 2026-09-10 — Cada cosa en su dominio
 
 ### Corregido
