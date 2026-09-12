@@ -12,6 +12,18 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.35.0] - 2026-09-12 — Páginas de error y modo mantenimiento
+
+### Añadido
+- **Seis páginas de error propias** (403, 404, 419, 429, 500 y 503), en español y con la marca, en vez de las de fábrica de Laravel. Cada una dice qué pasó y cuál es la salida. Dos se llevan atención especial: la de **sesión caducada**, que aparece en el peor momento —el formulario recién llenado— y de fábrica solo decía "Page Expired"; y la de **demasiados intentos**, que sale del límite de seguridad del login sin explicar que basta con esperar un minuto.
+- **Modo mantenimiento con página propia** («Estamos actualizando Finlia»), que se sirve **sin arrancar la aplicación**: es lo que verá la gente durante los despliegues, en lugar de errores intermitentes mientras el servidor cambia de versión ([ADR-0041](docs/DECISIONS.md#adr-0041)).
+
+### Cambiado
+- Los pasos de despliegue en el servidor ahora entran y salen de mantenimiento, y usan la ruta absoluta de PHP 8.4 en todos los comandos.
+
+### Verificación
+Ocho comprobaciones nuevas. Las dos que importan: las seis páginas se renderizan con la base de datos apuntando a una conexión inexistente —porque un error 500 suele ser justo eso— y el modo mantenimiento se pre-renderiza de verdad en la prueba, que es la única forma de detectar en CI, y no en mitad de un despliegue, que alguien coló en esa vista algo que necesita sesión.
+
 ## [0.34.3] - 2026-09-11 — Las trampas del despliegue, por escrito
 
 ### Documentación

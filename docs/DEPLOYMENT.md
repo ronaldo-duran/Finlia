@@ -307,14 +307,24 @@ Se excluyen del artefacto: `.github`, `node_modules`, `tests`, `scrum`, cualquie
 
 ### En el servidor
 
+Estos son los pasos que ejecuta el despliegue automático. Escritos aquí porque siguen siendo los que hay que correr a mano si alguna vez falla:
+
 ```bash
+export PHP84=/opt/alt/php84/usr/bin/php   # el `php` del shell es 8.2 (ver §1)
 cd ~/domains/finlia.online/finlia
-git fetch origin && git reset --hard origin/main
-php artisan migrate --force
-php artisan config:cache && php artisan route:cache && php artisan view:cache
+
+$PHP84 artisan down --render="errors::503" --retry=15
+git fetch --tags --force && git reset --hard <tag>
+$PHP84 artisan migrate --force
+$PHP84 artisan optimize
+$PHP84 artisan up
 ```
 
-> `reset --hard` y no `pull`: el artefacto se reescribe entero en cada despliegue, así que un merge no tiene sentido. Todo lo que el servidor necesita conservar —`.env`, `storage/`— está fuera del control de git.
+> `reset --hard` y no `pull`: el artefacto se reescribe entero en cada despliegue, así que un merge no tiene sentido. Todo lo que el servidor necesita conservar —`.env`, `storage/`— está fuera del control de git. Eso incluye los `.gitignore` de `storage/` que el propio Laravel reescribe: aparecen como modificados en `git status` y el `reset --hard` se los lleva sin avisar, que es justo lo que se quiere.
+
+> **`down` va primero y `up` al final, pase lo que pase.** Entre el `reset` y el `optimize` la aplicación corre con código nuevo y cachés viejas: servir peticiones ahí es pedir errores intermitentes. El modo mantenimiento responde con la página 503 de Finlia ([ADR-0041](DECISIONS.md#adr-0041)), que se pre-renderiza en ese mismo `down` y se sirve **sin arrancar la aplicación**. Si algo falla a mitad, `up` es lo primero que hay que ejecutar: el sitio no puede quedarse en mantenimiento.
+
+> `optimize` hace de una vez `config:cache`, `route:cache`, `view:cache` y la caché de eventos.
 
 ### El token
 
@@ -341,6 +351,8 @@ Si es un token clásico, el permiso `repo`. Sin alguna de las dos cosas GitHub r
 | `Please provide a valid cache path` en cualquier comando de artisan | Falta el árbol de `storage/framework` | `mkdir -p storage/framework/{views,cache/data,sessions} storage/logs bootstrap/cache` |
 | El comando de artisan falla con errores de sintaxis raros | El `php` del shell no es el de producción | Usar la ruta absoluta del binario correcto ([§1](#1-requisitos-del-entorno)) |
 | Cambié el `.env` y no pasa nada | La configuración está cacheada | `php artisan config:cache` — y `route:cache` si cambiaron las variables de dominio |
+| El sitio se quedó en mantenimiento | Un despliegue falló entre `down` y `up` | `$PHP84 artisan up` desde la carpeta del proyecto. Es lo primero que hay que hacer, antes de averiguar qué falló |
+| El mantenimiento muestra la página de fábrica, no la de Finlia | Se ejecutó `down` sin `--render` | `$PHP84 artisan up && $PHP84 artisan down --render="errors::503"` |
 
 ## 11. Backups
 

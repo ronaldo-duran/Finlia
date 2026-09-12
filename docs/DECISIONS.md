@@ -41,6 +41,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0035 — Transferencias entre cuentas del mismo hogar](#adr-0035) — **ACEPTADA**
 - [ADR-0036 — Soporte de dos motores: MySQL/MariaDB y PostgreSQL](#adr-0036) — **ACEPTADA**
 - [ADR-0040 — "Puedes gastar hoy" sale del saldo real hasta el próximo cobro](#adr-0040) — **ACEPTADA**
+- [ADR-0041 — Páginas de error con layout aislado, y el mantenimiento como paso del despliegue](#adr-0041) — **ACEPTADA**
 
 ---
 
@@ -1249,6 +1250,37 @@ De ahí la separación que da forma a esta decisión: **el token autoriza la vin
 - El plan y la liquidez comparten recurrentes, deudas y metas cargados una sola vez (`obligations()`): el panel se mantiene dentro de su presupuesto de consultas (`PerformanceTest`).
 
 **Estado.** ACEPTADA — 2026-09-10. Implementada en `BudgetCalculatorService::liquidity()`, `RecurringExpenseService::dueUntil()`, `DebtService::dueUntil()`, `SavingsGoalService::setAside()` / `pendingCommitmentSince()`, la tarjeta del panel, la de presupuestos y la landing.
+
+---
+
+## ADR-0041
+### Páginas de error con layout aislado, y el mantenimiento como paso del despliegue — **ACEPTADA**
+
+**Contexto.** La aplicación no tenía `resources/views/errors/`, así que un 404 o un 500 mostraban la página de fábrica de Laravel: en inglés, sin marca y sin decir qué hacer. Tampoco había página de mantenimiento, y el despliegue —tres comandos a mano por SSH— dejaba la aplicación sirviendo peticiones con el código nuevo y las cachés viejas durante unos segundos.
+
+Al escribirlas apareció la pregunta que decide el diseño: **¿qué layout usan?** `layouts.app` llama a `active_household_id()` y a `Auth::user()`, o sea sesión y base de datos. Usarlo en la página de error significa que un 500 causado por la base de datos caída —el caso más común— rompería también la página que debe explicarlo, y el usuario acabaría viendo una pantalla blanca. La 503 lo lleva más lejos: se pre-renderiza desde la **consola**, donde no hay petición, ni sesión, ni rutas resueltas.
+
+**Decisión.**
+
+1. **Layout propio (`layouts/error.blade.php`), sin sesión ni base de datos.** Ni `csrf_token()`, ni `Auth`, ni hogar activo, ni el manifiesto de la PWA. Solo depende de ficheros estáticos —CSS compilado e iconos—, que el servidor sigue sirviendo aunque la aplicación esté abajo.
+2. **Seis páginas**: 403, 404, 419, 429, 500 y 503. Cada una dice qué pasó y cuál es la salida. Dos merecen texto propio: la **419**, que aparece en el peor momento (el formulario recién llenado) y de fábrica solo dice "Page Expired"; y la **429**, que sale del rate limit de login y registro sin explicar que hay que esperar.
+3. **La 503 no enlaza a ninguna parte.** Durante el despliegue todo el sitio responde con ella, así que un enlace llevaría a la misma página. Lleva un botón que recarga con JavaScript.
+4. **El modo mantenimiento es un paso del despliegue**, no una acción manual: `down --render="errors::503"` antes de tocar nada y `up` al final, pase lo que pase. Entre el `git reset` y el `optimize` la aplicación corre con código nuevo y cachés viejas; servir peticiones ahí produce errores intermitentes difíciles de reproducir.
+5. **Una prueba ejecuta el `down --render` de verdad** y comprueba el HTML generado. Es la única forma de que un `csrf_token()` o un `route()` colado en esa vista se detecte en CI y no en mitad de un despliegue, que es cuando más caro sale. Otra prueba renderiza las seis páginas con la base de datos apuntando a una conexión inexistente.
+
+**Alternativas (descartadas).**
+- **Reutilizar `layouts.app` o `layouts.guest`** — menos ficheros, pero ambos dependen de sesión y el segundo además de `csrf_token()`; el 500 y la 503 fallarían justo cuando hacen falta.
+- **Páginas de error con HTML y estilos en línea**, sin depender ni del CSS compilado — a prueba de todo, pero se quedan fuera del sistema de diseño y hay que mantener los colores a mano en dos sitios.
+- **Mantenimiento manual, "solo cuando la migración sea grande"** — es una decisión que se toma con prisa y bajo presión, que es cuando peor se decide. Cuesta lo mismo hacerlo siempre.
+- **`--secret` para saltarse el mantenimiento** y revisar la app mientras se despliega — se descartó por ahora: añade una URL con acceso privilegiado a cambio de mirar una ventana de menos de un minuto.
+
+**Consecuencias y mitigaciones.**
+- Las páginas de error **no llevan navegación**: son un callejón con una salida única y deliberada. En la 404 y la 403, el panel.
+- El CSS compilado tiene que existir en el artefacto para que se vean con estilos. Ya se verifica al construirlo (`public/build/manifest.json`).
+- Si alguien añade una dependencia de sesión a `layouts/error.blade.php`, la prueba del `down --render` lo caza.
+- La ventana de mantenimiento alarga el despliegue en unos segundos. A cambio, nadie ve un error a medio camino.
+
+**Estado.** ACEPTADA — 2026-09-12. Implementada en `resources/views/layouts/error.blade.php`, `resources/views/errors/*` y `tests/Feature/Errors/ErrorPagesTest.php`. El despliegue que la usa se automatiza en el workflow de `finlia-produccion`.
 
 ---
 

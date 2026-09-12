@@ -1100,3 +1100,17 @@ a { color: var(--finlia-primary); }
     height: 1px;
     overflow: hidden;
 }
+
+/*
+|------------------------------------------------------------------------------
+| Páginas de error y modo mantenimiento
+|------------------------------------------------------------------------------
+| El código (404, 503…) es contexto, no el mensaje: grande para orientar de un
+| vistazo, en gris para que el titular siga mandando. `tabular-nums` evita que
+| los dígitos bailen entre una página y otra.
+*/
+.error-code {
+    font-size: clamp(3rem, 14vw, 4.5rem);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+}
