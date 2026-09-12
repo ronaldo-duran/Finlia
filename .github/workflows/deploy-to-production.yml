@@ -77,7 +77,13 @@ jobs:
         run: |
           # Se borra todo salvo .git para que un fichero eliminado en el código
           # también desaparezca de producción.
-          find ../produccion -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          #
+          # .github se preserva a propósito: ahí vive el workflow que despliega
+          # en el servidor, y es del repositorio de producción, no del artefacto
+          # (la llave SSH no puede estar en un repositorio público). Sin esta
+          # excepción, cada publicación lo borraría y el tag apuntaría a un
+          # commit sin workflow: el despliegue no se dispararía nunca.
+          find ../produccion -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '.github' -exec rm -rf {} +
 
           rsync -a ./ ../produccion/ \
             --exclude '.git' \
@@ -156,13 +162,20 @@ jobs:
             git push origin "$VERSION" --force
           fi
 
-      - name: Recordatorio de los pasos en el servidor
+      - name: Dónde seguir
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          echo "### Despliegue publicado :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "### Artefacto publicado :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "En Hostinger, dentro de la carpeta del proyecto:" >> $GITHUB_STEP_SUMMARY
-          echo '```bash' >> $GITHUB_STEP_SUMMARY
-          echo "git fetch origin && git reset --hard origin/main" >> $GITHUB_STEP_SUMMARY
-          echo "php artisan migrate --force" >> $GITHUB_STEP_SUMMARY
-          echo "php artisan config:cache && php artisan route:cache && php artisan view:cache" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          if [ "$REF_TYPE" = "tag" ]; then
+            echo "El servidor se actualiza solo: el tag **${REF_NAME}** dispara el despliegue en el repositorio de producción." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "👉 [Ver el despliegue](https://github.com/ronaldo-duran/finlia-produccion/actions)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Publicación **manual**: el artefacto quedó actualizado, pero el servidor **no** se despliega solo (eso lo dispara un tag)." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Para desplegarlo, ejecuta a mano el workflow de [finlia-produccion](https://github.com/ronaldo-duran/finlia-produccion/actions)." >> $GITHUB_STEP_SUMMARY
+          fi
