@@ -97,6 +97,7 @@ Detalle completo en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Principios en 
   - El formato de dinero/fechas se centraliza en helpers/Blade `@money` que sirvan **igual para Blade que para JSON**.
   - **Por qué**: garantiza que una futura **API REST/JSON** (app móvil Android/iOS, [Épica 14](docs/ROADMAP.md)) reutilice los mismos Services sin reescribir lógica.
 - **Multi-tenant por `household`**: cada dato financiero pertenece a un `household_id`. El aislamiento entre hogares es la **amenaza #1** del proyecto (ver seguridad).
+- **Frontera `ee/`**: las funciones Premium viven en `ee/`, que **no está bajo la AGPL** sino bajo licencia comercial ([ADR-0042](docs/DECISIONS.md#adr-0042)). La dependencia va en un solo sentido —`ee/` → núcleo, nunca al revés— y **borrar `ee/` debe dejar la app funcionando**. Detalle en [ee/README.md](ee/README.md) y [AGENTS.md §2.8](AGENTS.md).
 
 ---
 
@@ -190,6 +191,8 @@ composer audit             # revisa vulnerabilidades de dependencias
 | [docs/UI_DESIGN.md](docs/UI_DESIGN.md) | Sistema de diseño: componentes, tokens, cuándo usar cada uno |
 | [docs/BRAND.md](docs/BRAND.md) | Identidad de marca: símbolo, paleta petróleo/cobre, logo, favicon |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Registro de decisiones (ADR) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Cómo contribuir, qué se acepta y el CLA ([ADR-0042](docs/DECISIONS.md#adr-0042)) |
+| [ee/README.md](ee/README.md) | Frontera de las funciones Premium: licencia comercial y regla de dependencia |
 | [CHANGELOG.md](CHANGELOG.md) | Registro de cambios por versión (mantener con `/update-changelog`; versión vigente en `config/finlia.php` + `package.json`) |
 | `scrum/epics/` | Ficha detallada de las épicas **aún abiertas**. Las completadas se liberaron en la v0.34.1: su histórico está en [CHANGELOG.md](CHANGELOG.md) y [docs/DECISIONS.md](docs/DECISIONS.md) |
 

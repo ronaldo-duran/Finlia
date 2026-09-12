@@ -285,7 +285,26 @@ Qué se resolvió con cada pieza, no solo qué se usó:
 
 ## 📄 Licencia
 
-**GNU Affero General Public License v3.0 o posterior** (AGPL-3.0-or-later). El texto completo está en [LICENSE](LICENSE).
+Finlia tiene **dos licencias**, y la frontera es un directorio:
+
+| Qué | Licencia | Qué puedes hacer |
+|---|---|---|
+| **Todo el repositorio** | [AGPL-3.0-or-later](LICENSE) | Usar, estudiar, modificar, redistribuir y **autoalojar**, incluso ofrecerlo como servicio, publicando tus cambios |
+| **El directorio [`ee/`](ee/)** (funciones Premium) | [Licencia comercial](ee/LICENSE) | Leer, auditar y ejecutar en local para evaluarlo o contribuir. **No** usarlo en producción ni ofrecerlo como servicio sin autorización escrita |
+
+**Finlia funciona completa sin `ee/`**: borrar ese directorio deja una aplicación
+de finanzas personales plenamente usable, libre y autoalojable. Las funciones de
+pago se publican para que puedan **leerse y auditarse** —quien confía sus
+finanzas a la app tiene derecho a verificar también aquello por lo que paga—, no
+para que puedan operarse como servicio. El razonamiento completo, con las
+alternativas descartadas, está en [ADR-0042](docs/DECISIONS.md#adr-0042).
+
+Si quieres contribuir, [CONTRIBUTING.md](CONTRIBUTING.md) explica cómo y qué
+implica para tus aportes.
+
+### El núcleo: AGPL-3.0-or-later
+
+El texto completo está en [LICENSE](LICENSE).
 
 ```
 Copyright (C) 2026 Ronaldo Duran

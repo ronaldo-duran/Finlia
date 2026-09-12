@@ -1,11 +1,26 @@
-# Planes — Hardening de cuenta (pre-Épica 10)
+# Planes
+
+Requisitos que la app necesita tener bien puestos **antes de crecer**. No son
+épicas: no añaden funcionalidad de producto, pero sin ellos crecer sale caro.
+Hay dos series.
+
+## Serie 2 — Lanzamiento (2026-09-11)
+
+| Plan | Qué cubre | Estado |
+|---|---|---|
+| [Semana 0: antes de invitar a nadie](lanzamiento-semana-0.md) | Copia de seguridad probada, aviso de errores en producción, prueba de humo del registro, cuota de correo, métricas del embudo, licencia y `CONTRIBUTING.md` | ⬜ |
+
+Se escribió al terminar el MVP, antes de promocionar la app en redes. Su premisa:
+el riesgo de un lanzamiento no es la aplicación, es el embudo y la ceguera
+operativa.
+
+## Serie 1 — Hardening de cuenta (pre-Épica 10)
 
 Ajustes a la gestión de cuenta que se mapearon el 2026-08-30, tras cerrar la
-Épica 9 y antes de continuar con la Épica 10. No son épicas: son requisitos
-de cuenta/privacidad/cumplimiento que la app necesita tener bien puestos
-antes de crecer.
+Épica 9 y antes de continuar con la Épica 10. Requisitos de
+cuenta/privacidad/cumplimiento.
 
-## Orden sugerido y dependencias
+### Orden sugerido y dependencias
 
 | # | Plan | Depende de | Tamaño | Estado |
 |---|---|---|---|---|
@@ -13,8 +28,8 @@ antes de crecer.
 | 02 | [Perfil: contraseña y cambio de correo](02-perfil-contrasena-y-correo.md) | 01 (reusa sus correos de verificación) | M | ✅ 2026-08-30 ([ADR-0030](../docs/DECISIONS.md#adr-0030)) |
 | 03 | [Términos y condiciones versionados](03-terminos-y-condiciones-versionados.md) | — (paralelizable) | M | ✅ 2026-08-30 ([ADR-0031](../docs/DECISIONS.md#adr-0031)) |
 | 04 | [Datos personales y perfil](04-datos-personales-y-perfil.md) | 02 (misma pantalla /perfil) | S–M | ✅ 2026-08-30 ([ADR-0032](../docs/DECISIONS.md#adr-0032)) |
-| 05 | [Eliminación: suspensión 30 días y purga](05-eliminacion-suspension-y-purga.md) | 03 (rechazo de términos → eliminar), 04 (qué se purga) | L | ⬜ |
-| 06 | [Política de retiro, migración y datos](06-politica-retiro-migracion-y-datos.md) | 05 (eliminación), 04 (perfil) | M | ⬜ |
+| 05 | [Eliminación: suspensión 30 días y purga](05-eliminacion-suspension-y-purga.md) | 03 (rechazo de términos → eliminar), 04 (qué se purga) | L | ✅ ([ADR-0033](../docs/DECISIONS.md#adr-0033)) |
+| 06 | [Política de retiro, migración y datos](06-politica-retiro-migracion-y-datos.md) | 05 (eliminación), 04 (perfil) | M | ✅ ([ADR-0034](../docs/DECISIONS.md#adr-0034)) |
 
 Flujo natural: **01 → 02 → 04** (misma pantalla de perfil) por un lado,
 **03** en paralelo, luego **05** (el más grande, y su puerta de entrada es
