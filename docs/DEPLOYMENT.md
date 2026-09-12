@@ -172,6 +172,7 @@ DB_USERNAME=u123456_finlia
 DB_PASSWORD=contraseña_fuerte_y_secreta
 
 SESSION_DRIVER=database
+SESSION_SECURE_COOKIE=true      # HTTPS obligatorio: la cookie no viaja por http
 CACHE_STORE=database            # o 'file' (compatible hosting compartido)
 QUEUE_CONNECTION=database       # se procesa vía cron, no worker persistente
 

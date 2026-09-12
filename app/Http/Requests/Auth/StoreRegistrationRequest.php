@@ -9,6 +9,7 @@ use App\Rules\AdultBirthDate;
 use App\Services\HouseholdService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 
 /**
  * Valida el alta de un usuario (registro).
@@ -74,7 +75,7 @@ class StoreRegistrationRequest extends FormRequest
                 'max:150',
                 Rule::unique('users', 'email')->whereNotNull('email_verified_at'),
             ],
-            'password' => ['required', 'string', 'min:8', 'max:72', 'confirmed'],
+            'password' => ['required', 'string', 'confirmed', PasswordRule::defaults()],
             'birth_date' => ['required', 'date', new AdultBirthDate],
         ];
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Profile;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 /**
  * Cambio de contraseña con re-autenticación (Plan 02): la contraseña
@@ -25,8 +26,9 @@ class UpdatePasswordRequest extends FormRequest
     {
         return [
             'current_password' => ['required', 'string', 'current_password:web'],
-            // Mismas reglas que el registro (StoreRegistrationRequest).
-            'password' => ['required', 'string', 'min:8', 'max:72', 'confirmed'],
+            // Política central de contraseñas (AppServiceProvider): misma para
+            // registro, cambio y reset.
+            'password' => ['required', 'string', 'confirmed', Password::defaults()],
         ];
     }
 

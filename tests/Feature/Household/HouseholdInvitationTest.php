@@ -50,6 +50,23 @@ class HouseholdInvitationTest extends TestCase
         ]);
     }
 
+    public function test_no_se_puede_invitar_como_owner(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+
+        // La titularidad se decide por households.owner_id, no por el pivot:
+        // aceptar role=owner creaba un "administrador fantasma" sin poder real.
+        $this->actingAs($owner)->post(route('households.invitations.store', $household), [
+            'email' => 'amigo@finlia.test',
+            'role' => 'owner',
+        ])->assertSessionHasErrors('role');
+
+        $this->assertDatabaseMissing('household_invitations', [
+            'household_id' => $household->id,
+            'email' => 'amigo@finlia.test',
+        ]);
+    }
+
     public function test_miembro_no_puede_invitar(): void
     {
         [, $household, $member] = $this->setupHouseholdWithMember();

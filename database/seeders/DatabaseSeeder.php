@@ -38,12 +38,26 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Categorías globales (catálogo, no datos financieros).
+        // Siembras GLOBALES (idempotentes): producción también las necesita.
+        //  - CategorySeeder: catálogo de categorías globales (household_id NULL);
+        //    sin él, los selects de gasto/ingreso salen vacíos.
+        //  - TermsVersionSeeder: versión vigente de los términos; sin una fila,
+        //    hasAcceptedCurrentTerms() devuelve true (fail-open) y la puerta de
+        //    consentimiento (ADR-0031) queda inerte.
+        // Por eso corren ANTES de la guarda de entorno, para que
+        // `migrate --seed` (README) siga sirviendo en una instalación nueva o
+        // una restauración.
         $this->call(CategorySeeder::class);
-
-        // Versión inicial de los términos (Plan 03). Se publica aquí para
-        // que el flujo de aceptación exista desde el primer arranque.
         $this->call(TermsVersionSeeder::class);
+
+        // Guarda de entorno: SOLO los datos demo (cuentas con contraseña
+        // conocida, en un repo público) se saltan en producción. Un `db:seed`
+        // accidental no debe crear usuarios de acceso público.
+        if (app()->isProduction()) {
+            $this->command?->warn('Datos demo omitidos: solo se sembraron catálogo y términos en producción.');
+
+            return;
+        }
 
         // Usuario de demostración para desarrollo local.
         $demo = User::factory()->create([

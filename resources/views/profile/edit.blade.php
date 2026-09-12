@@ -6,7 +6,7 @@
     @php
         $openPersonal = $errors->hasAny(['name', 'birth_date', 'region', 'gender']) && old('_section') === 'personal';
         $openPassword = $errors->hasAny(['current_password', 'password', 'password_confirmation']) && old('_section') === 'password';
-        $openEmail    = $errors->has('email') && old('_section') === 'email';
+        $openEmail    = $errors->hasAny(['email', 'current_password']) && old('_section') === 'email';
         $openDeletion = $errors->has('current_password') && old('_section') === 'deletion';
     @endphp
 
@@ -193,6 +193,10 @@
                             <x-form-input label="Correo nuevo" name="email" type="email" required
                                 autocomplete="email" placeholder="nuevo@ejemplo.com"
                                 help="Te enviaremos un enlace a esa bandeja: el cambio solo se completa al confirmarlo." />
+
+                            <x-form-input label="Contraseña actual" name="current_password" type="password" required
+                                autocomplete="current-password"
+                                help="Confirmamos tu identidad antes de cambiar el correo de la cuenta." />
 
                             <div class="d-flex gap-2 mt-3">
                                 <button type="submit" class="btn btn-finlia btn-sm">

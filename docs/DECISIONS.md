@@ -42,6 +42,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0036 — Soporte de dos motores: MySQL/MariaDB y PostgreSQL](#adr-0036) — **ACEPTADA**
 - [ADR-0040 — "Puedes gastar hoy" sale del saldo real hasta el próximo cobro](#adr-0040) — **ACEPTADA**
 - [ADR-0041 — Páginas de error con layout aislado, y el mantenimiento como paso del despliegue](#adr-0041) — **ACEPTADA**
+- [ADR-0042 — Dos licencias en un repositorio: núcleo AGPL y `ee/` comercial, con CLA](#adr-0042) — **ACEPTADA**
 - [ADR-0043 — Revisión automática de PRs: el veredicto se calcula fuera del modelo](#adr-0043) — **ACEPTADA**
 
 ---
@@ -1282,6 +1283,45 @@ Al escribirlas apareció la pregunta que decide el diseño: **¿qué layout usan
 - La ventana de mantenimiento alarga el despliegue en unos segundos. A cambio, nadie ve un error a medio camino.
 
 **Estado.** ACEPTADA — 2026-09-12. Implementada en `resources/views/layouts/error.blade.php`, `resources/views/errors/*` y `tests/Feature/Errors/ErrorPagesTest.php`. El despliegue que la usa se automatiza en el workflow de `finlia-produccion`.
+
+---
+
+## ADR-0042
+### Dos licencias en un repositorio: núcleo AGPL y `ee/` comercial, con CLA — **ACEPTADA**
+
+**Contexto.** El MVP está terminado y lo siguiente es promocionarlo. La Épica 12 ya prevé Premium (hogares y miembros extra, PDF, análisis avanzados), y a eso se suman tres funciones que el producto quiere cobrar: integración con el correo del usuario, árbol de decisiones para compras compulsivas y chat con IA sobre las propias finanzas.
+
+Eso obliga a mirar de frente algo que la licencia actual no resuelve: **la AGPL no prohíbe el uso comercial**. Cierra el hueco del fork cerrado —quien la ofrezca como servicio debe publicar sus cambios (§13)— pero cualquiera puede alojar Finlia, ponerle su marca y cobrar suscripciones, con esa única obligación. Si las funciones Premium se publican bajo AGPL, se regalan a quien quiera montar el mismo negocio.
+
+Y hay un segundo problema, este con fecha de caducidad. Hoy el titular tiene el **100 % del copyright**, y por eso pudo relicenciar de MIT a AGPL en la v0.28.0. **El día que se acepte el primer Pull Request sin un acuerdo de licencia, esa libertad se pierde**: ese código pertenece a quien lo escribió, bajo AGPL, y cualquier decisión posterior de licenciamiento exigiría el permiso de cada colaborador, uno por uno. Es la única de estas decisiones que no se puede tomar retroactivamente, y el post que invita a colaborar está a punto de publicarse.
+
+**Decisión.**
+
+1. **Dos licencias en el mismo repositorio público.** El núcleo sigue bajo **AGPL-3.0-or-later**, sin cambios. El directorio **`ee/`** lleva una **licencia comercial** (`ee/LICENSE`): se puede leer, auditar, compilar y ejecutar en local para evaluarlo o contribuir; **no** se puede usar en producción, ofrecer como servicio ni redistribuir sin autorización escrita. Es el modelo de GitLab y Cal.com.
+2. **Visible, no privado.** La credibilidad de Finlia es que cualquiera puede leer cómo se calcula el dinero disponible; quien confía sus finanzas a la app tiene derecho a auditar también aquello por lo que paga. Un repositorio privado para Premium partiría en dos ese argumento justo cuando es el principal activo del proyecto. Se renuncia al secreto del código y se conserva el derecho exclusivo a explotarlo.
+3. **La dependencia va en un solo sentido: `ee/` → núcleo, nunca al revés.** Borrar `ee/` debe dejar una aplicación que arranca, pasa la suite y sirve todas las funciones gratuitas. No es estilo: es lo que sostiene la licencia. Si el núcleo AGPL necesitara algo de `ee/` para funcionar, `ee/` sería parte de la obra AGPL y su licencia no tendría efecto. El punto de contacto es **uno**: el registro condicional del `ServiceProvider` (`class_exists`), con una prueba que verifique el arranque sin el directorio.
+4. **CLA en `CONTRIBUTING.md`.** Quien abra un PR concede al titular una licencia perpetua, mundial, no exclusiva, gratuita e irrevocable **con derecho a relicenciar**, y **conserva su copyright**. Se explica por qué se pide y se ofrecen vías de aporte que no lo requieren (reportes de error, revisión del cálculo, revisión de seguridad).
+5. **Lo que de verdad protege el negocio no es la licencia.** Ninguna licencia de software cede derechos de **marca**: pueden copiar el código, no llamarlo Finlia. El registro de marca en la SIC y la operación (hosting, entregabilidad, soporte, usuarios, coste de las APIs) son el foso real. El registro de marca pasa a ser requisito previo del lanzamiento público, no una tarea futura.
+
+**Alternativas (descartadas).**
+
+- **Todo AGPL, vendiendo solo el servicio alojado** (modelo Plausible). Máxima coherencia y cero complejidad, y para las funciones que hoy existen habría bastado. Se descartó porque las tres funciones nuevas son precisamente las que justifican un precio, y regalarlas en términos de licencia no le aporta nada al proyecto. **Sigue siendo la opción de reserva** si el doble licenciamiento llegara a estorbar más de lo que protege.
+- **Premium en un repositorio privado** (open core clásico). Protege lo mismo, pero rompe la auditabilidad —el argumento central del proyecto— y mete un paquete privado en un despliegue que hoy es un artefacto limpio construido en Actions.
+- **BSL 1.1 con fecha de conversión** (modelo CockroachDB/Sentry): es el estándar del sector y tiene la propiedad elegante de volverse software libre pasados unos años. Se descartó **por ahora** porque su texto canónico debe incorporarse literal y parametrizado, y no se pudo garantizar eso al escribir este ADR. Es la ruta de mejora natural si se quiere esa promesa de apertura por escrito.
+- **Licenciamiento dual vendiendo excepciones comerciales** (MySQL/Qt). No hay mercado para eso en una app de finanzas personales en Colombia.
+- **DCO en lugar de CLA.** Menos fricción y mejor visto por la comunidad, pero deja el copyright repartido y cierra todas las puertas del punto 4.
+
+**Consecuencias y mitigaciones.**
+
+- Un repositorio con dos licencias exige que nadie se confunda: se dice en los tres sitios donde alguien mira — `ee/LICENSE`, `ee/README.md` y la sección de licencia del README raíz.
+- **El CLA añade fricción** y hay gente que por principio no contribuye a proyectos que lo piden. Mitigación: se explica el motivo y se dejan claras las formas de aportar que no exigen ceder nada.
+- El código publicado bajo **MIT hasta la v0.28.0** sigue siendo MIT para quien lo obtuviera entonces. La protección empieza en el código posterior; no debe presentarse como un blindaje retroactivo.
+- Quien aloje su propia instancia puede **borrar los controles de suscripción** de su copia. Es irrelevante: esa persona nunca iba a pagar. Lo que importa es que en la instancia oficial la autorización sea de backend ([AGENTS.md §2.7](../AGENTS.md)), y que el código visible haga eso **más** importante, no menos.
+- El **chat con IA** manda datos financieros a un tercero: es una transferencia de datos personales, probablemente internacional. La Ley 1581 obliga a declararla y pedir consentimiento explícito, y hay que actualizar la política de datos ([ADR-0034](#adr-0034)) **antes** de encenderla. El obstáculo de esa función es ese, no la licencia.
+- La **integración con correo** por API de Gmail usa scopes restringidos: exige verificación de Google y una evaluación de seguridad anual de pago. En su épica debe evaluarse primero la ruta barata — que el usuario **reenvíe** las notificaciones a una dirección de Finlia, procesada por el cron que ya existe, sin OAuth ni credenciales ajenas guardadas.
+- El texto de `ee/LICENSE` es una **reserva de derechos redactada en el proyecto**, no una licencia estándar revisada por un abogado. Está deliberadamente del lado conservador (reserva todo y concede solo lectura y evaluación), así que un error no regala nada por accidente. Debe revisarlo un abogado antes del primer cliente de pago, junto con el registro de marca — conforme a la nota legal de `planes/README.md`.
+
+**Estado.** ACEPTADA — 2026-09-12. Implementada en `ee/LICENSE`, `ee/README.md`, `CONTRIBUTING.md` y la sección de licencia del README. La estructura de `ee/src`, su autoload PSR-4 y el registro condicional con su prueba se implementan en la **Épica 12**; hoy `ee/` está vacío a propósito.
 
 ---
 

@@ -23,8 +23,14 @@ class TransferController extends Controller
 {
     public function __construct(private readonly MovementService $movements) {}
 
-    public function create(): View
+    public function create(): View|RedirectResponse
     {
+        if (active_household() === null) {
+            return redirect()->route('households.create');
+        }
+
+        $this->authorize('create', Transfer::class);
+
         return view('transfers.create', $this->formOptions());
     }
 

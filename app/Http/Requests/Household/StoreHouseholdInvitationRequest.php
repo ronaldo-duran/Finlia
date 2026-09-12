@@ -25,7 +25,11 @@ class StoreHouseholdInvitationRequest extends FormRequest
     {
         return [
             'email' => ['required', 'string', 'email:rfc', 'max:150'],
-            'role' => ['required', Rule::enum(HouseholdRole::class)],
+            // Solo se puede invitar como MIEMBRO. La titularidad (owner) se
+            // decide por households.owner_id, no por el pivot; aceptar
+            // role=owner creaba un "administrador fantasma" (un pivot owner
+            // sin poder real) que confundía la UI y dejaba residuos al purgar.
+            'role' => ['sometimes', Rule::in([HouseholdRole::Member->value])],
         ];
     }
 
@@ -36,9 +40,7 @@ class StoreHouseholdInvitationRequest extends FormRequest
 
     public function invitedRole(): HouseholdRole
     {
-        /** @var HouseholdRole $role */
-        $role = $this->enum('role', HouseholdRole::class);
-
-        return $role;
+        // Las invitaciones siempre son de miembro (ver rules()).
+        return HouseholdRole::Member;
     }
 }

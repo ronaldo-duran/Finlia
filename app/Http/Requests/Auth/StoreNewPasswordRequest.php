@@ -29,7 +29,7 @@ class StoreNewPasswordRequest extends FormRequest
         return [
             'token' => ['required', 'string'],
             'email' => ['required', 'string', 'email:rfc', 'max:150'],
-            'password' => ['required', 'string', 'confirmed', PasswordRule::min(8)->max(72)],
+            'password' => ['required', 'string', 'confirmed', PasswordRule::defaults()],
         ];
     }
 
