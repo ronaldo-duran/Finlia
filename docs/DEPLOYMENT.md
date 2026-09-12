@@ -305,6 +305,20 @@ Al empujar un tag `v*`, el workflow `.github/workflows/deploy-to-production.yml`
 
 Se excluyen del artefacto: `.github`, `node_modules`, `tests`, `scrum`, cualquier `.env` y los ficheros que genera el servidor en caliente (logs, caché de vistas y sesiones).
 
+> El `.github` **del repositorio de producción** sí se conserva entre publicaciones, aunque el del código se excluya. Ahí vive el workflow que despliega en el servidor, que pertenece a ese repositorio y no al artefacto: la llave SSH no puede estar en un repositorio público. Sin esa excepción, cada publicación lo borraría y el tag apuntaría a un commit sin workflow — el despliegue no se dispararía nunca.
+
+### Quién despliega
+
+El repositorio de código **construye y publica**; el de producción **despliega**. Son dos workflows, uno en cada sitio, encadenados por el tag:
+
+```
+tag vX.Y.Z en Finlia
+  → construye el artefacto y lo publica en finlia-produccion (con el mismo tag)
+    → ese tag dispara el despliegue por SSH en Hostinger
+```
+
+La razón de que el despliegue no viva aquí es el repositorio público: una llave SSH con acceso al servidor no puede estar en el mismo sitio que recibe PR de desconocidos. En el repositorio privado del artefacto, esa llave solo alcanza lo que tiene que alcanzar.
+
 ### En el servidor
 
 Estos son los pasos que ejecuta el despliegue automático. Escritos aquí porque siguen siendo los que hay que correr a mano si alguna vez falla:
