@@ -3,7 +3,7 @@
 > Manual operativo para Claude Code (y cualquier agente de IA) que trabaje en este repositorio.
 > Lee este archivo **completo** antes de escribir una sola línea de código.
 
-Finlia es una aplicación web de **gestión de finanzas personales y familiares** dirigida al mercado colombiano. Se desarrolla por **épicas** (ver `scrum/epics/`). Este documento define cómo se trabaja; los detalles profundos viven en `docs/`.
+Finlia es una aplicación web de **gestión de finanzas personales y familiares** dirigida al mercado colombiano. Se desarrolla por **épicas** (ver [docs/ROADMAP.md](docs/ROADMAP.md)). Este documento define cómo se trabaja; los detalles profundos viven en `docs/`.
 
 ---
 
@@ -62,7 +62,7 @@ Si una decisión afecta **significativamente la arquitectura**, **DETENTE** y ex
 
 ## 4. Protocolo por épica (cómo se construye)
 
-Las épicas están en `scrum/epics/ÉPICA N — ….md`. Orden obligatorio (cada una depende de las anteriores):
+El estado y el alcance de cada épica están en [docs/ROADMAP.md](docs/ROADMAP.md); las que siguen abiertas conservan su ficha detallada en `scrum/epics/`. Orden obligatorio (cada una depende de las anteriores):
 
 1. Fundación y configuración
 2. Hogares, familias y miembros
@@ -191,7 +191,7 @@ composer audit             # revisa vulnerabilidades de dependencias
 | [docs/BRAND.md](docs/BRAND.md) | Identidad de marca: símbolo, paleta petróleo/cobre, logo, favicon |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Registro de decisiones (ADR) |
 | [CHANGELOG.md](CHANGELOG.md) | Registro de cambios por versión (mantener con `/update-changelog`; versión vigente en `config/finlia.php` + `package.json`) |
-| `scrum/epics/` | Definición detallada de cada épica (se elimina al generar el primer tag/MVP) |
+| `scrum/epics/` | Ficha detallada de las épicas **aún abiertas**. Las completadas se liberaron en la v0.34.1: su histórico está en [CHANGELOG.md](CHANGELOG.md) y [docs/DECISIONS.md](docs/DECISIONS.md) |
 
 ---
 

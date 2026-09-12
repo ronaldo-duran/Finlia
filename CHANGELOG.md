@@ -7,10 +7,19 @@ versionado sigue [SemVer](https://semver.org/lang/es/). La versión vigente del 
 se declara en `config/finlia.php` y `package.json`, y debe coincidir con la versión más
 reciente de este archivo.
 
-> **Estado actual: desarrollo pre-MVP (sin tags).** Cada entrega mayor de
-> funcionalidad publica un **minor** `0.x` y cada corrección un **patch**. El primer
-> tag marcará el lanzamiento del MVP con la versión vigente de ese momento. Para
-> actualizar este archivo usa la skill `/update-changelog`.
+> **Estado actual: desarrollo `0.x`.** Cada entrega mayor de funcionalidad publica un
+> **minor** y cada corrección un **patch**. Las versiones publicadas se taguean
+> (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
+> crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
+
+## [0.34.2] - 2026-09-11 — Las épicas terminadas se liberan
+
+### Eliminado
+- **Las fichas de las once épicas completadas** (1–10 y 13) salen del repositorio: lo entregado se cuenta en este changelog y el porqué, en los ADR de [docs/DECISIONS.md](docs/DECISIONS.md). Las épicas que siguen abiertas —11 (hardening) y 12 (monetización)— conservan su ficha hasta que se cierren.
+
+### Cambiado
+- **La regla de versionado decía que no había tags y que el primero marcaría el MVP.** No era cierto desde la 0.31.0: se venía tageando cada versión publicada. El changelog y la skill `/update-changelog` describen ahora lo que de verdad se hace —tag anotado sobre el merge en `main`, con el título de la versión— y que las versiones publicadas sin tag no se taguean a posteriori.
+- README, CLAUDE.md, ROADMAP y la skill `/implement-epic` apuntan al ROADMAP como fuente del alcance de cada épica, en vez de a las fichas borradas.
 
 ## [0.34.1] - 2026-09-11 — Reportar un error sin cazarlo
 

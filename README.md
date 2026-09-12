@@ -281,7 +281,7 @@ Qué se resolvió con cada pieza, no solo qué se usó:
 - [docs/UI_DESIGN.md](docs/UI_DESIGN.md) — Sistema de diseño (UI mobile-first)
 - [docs/BRAND.md](docs/BRAND.md) — Identidad de marca (símbolo, logo, paleta)
 - [docs/DECISIONS.md](docs/DECISIONS.md) — Decisiones (ADR)
-- `scrum/epics/` — Épicas detalladas
+- `scrum/epics/` — Detalle de las épicas aún abiertas (las completadas se liberaron en la v0.34.1; su histórico está en [CHANGELOG.md](CHANGELOG.md))
 
 ## 📄 Licencia
 
