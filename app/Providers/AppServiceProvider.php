@@ -12,11 +12,14 @@ use App\Models\SavingsGoalContribution;
 use App\Observers\ReminderSummaryCacheObserver;
 use App\Services\ReminderService;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Validation\UncompromisedVerifier;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\NotPwnedVerifier;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\View\View as ViewContract;
 
@@ -27,7 +30,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // uncompromised() (política de contraseñas) consulta HaveIBeenPwned con
+        // un timeout de 30 s por defecto. En hosting compartido, un HIBP lento
+        // o inaccesible bloquearía cada registro/cambio/reset hasta 30 s (y
+        // podría superar max_execution_time → 504) antes de fallar en abierto.
+        // Se acota a 3 s: la comprobación sigue, pero nunca cuelga el embudo.
+        $this->app->bind(
+            UncompromisedVerifier::class,
+            fn ($app) => new NotPwnedVerifier(
+                $app[Factory::class],
+                timeout: 3,
+            ),
+        );
     }
 
     /**

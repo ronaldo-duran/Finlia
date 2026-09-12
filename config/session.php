@@ -173,7 +173,7 @@ return [
     // una petición http:// inducida (imagen/enlace) filtra la sesión antes del
     // redirect a HTTPS. Por defecto se activa en producción aunque la plantilla
     // del .env omita la variable; se puede forzar explícitamente si hace falta.
-    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV', 'production') === 'production'),
 
     /*
     |--------------------------------------------------------------------------
