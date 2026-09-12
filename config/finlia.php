@@ -18,7 +18,7 @@ return [
 
     // Versión actual del software (fuente de verdad; sincronizar con package.json
     // y CHANGELOG.md al publicar cada versión).
-    'version' => '0.34.3',
+    'version' => '0.35.0',
 
     /*
     | Dominios (ADR pendiente de la landing).
