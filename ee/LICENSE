@@ -1,0 +1,68 @@
+Licencia Comercial de Finlia — funciones Premium (directorio `ee/`)
+
+Copyright (c) 2026 Ronaldo Duran. Todos los derechos reservados.
+
+IMPORTANTE: el contenido de este directorio NO está cubierto por la GNU Affero
+General Public License que licencia el resto de este repositorio (ver el
+archivo LICENSE de la raíz). Son dos licencias distintas en un mismo
+repositorio. Si obtuviste este código como parte de Finlia, la AGPL cubre todo
+MENOS este directorio.
+
+1. Lo que sí puedes hacer, sin pedir permiso
+
+   a. Leer, estudiar y auditar este código. Está publicado a propósito: quien
+      confía sus finanzas a Finlia tiene derecho a verificar cómo se calculan,
+      y eso incluye las funciones de pago.
+   b. Copiarlo y ejecutarlo en tu propia máquina con el fin de evaluarlo,
+      depurarlo, revisarlo o desarrollar una contribución al proyecto.
+   c. Proponer cambios mediante un Pull Request, en los términos de
+      CONTRIBUTING.md.
+
+2. Lo que necesita autorización escrita del titular
+
+   a. Usar este código en producción, para ti o para terceros.
+   b. Ofrecerlo como servicio, alojado o gestionado, sea de pago o gratuito.
+   c. Distribuirlo, sublicenciarlo, venderlo o incorporarlo a otro producto.
+   d. Eliminar o eludir los controles de suscripción para habilitar estas
+      funciones en una instancia que las ofrezca a otras personas.
+
+   Para solicitarla: https://finlia.online/contacto
+
+3. Sin garantía
+
+   ESTE CÓDIGO SE ENTREGA "TAL CUAL", SIN GARANTÍA DE NINGÚN TIPO, EXPRESA O
+   IMPLÍCITA, INCLUIDAS SIN LIMITACIÓN LAS GARANTÍAS DE COMERCIABILIDAD E
+   IDONEIDAD PARA UN PROPÓSITO PARTICULAR. EN NINGÚN CASO EL TITULAR SERÁ
+   RESPONSABLE DE RECLAMACIONES, DAÑOS U OTRAS RESPONSABILIDADES DERIVADAS DEL
+   USO DE ESTE CÓDIGO.
+
+4. Independencia del núcleo AGPL
+
+   Finlia funciona completa y legalmente sin este directorio: el núcleo bajo
+   AGPL no requiere nada de aquí para operar. Borrar `ee/` deja una aplicación
+   de finanzas personales plenamente usable, libre y autoalojable. Esta
+   licencia no impone ninguna restricción sobre ese núcleo ni sobre los
+   derechos que la AGPL te concede sobre él.
+
+5. Ley aplicable
+
+   Esta licencia se rige por las leyes de la República de Colombia.
+
+---
+
+English summary (the Spanish text above is the authoritative version)
+
+The contents of this directory are NOT licensed under the AGPL-3.0 that covers
+the rest of this repository. All rights reserved.
+
+You MAY read, audit, and run this code locally to evaluate it, review it, or
+develop a contribution, and you may submit pull requests under the terms of
+CONTRIBUTING.md.
+
+You MAY NOT, without written permission from the copyright holder, use this
+code in production, offer it as a hosted or managed service (paid or free),
+distribute or sublicense it, or bypass its subscription checks in an instance
+offered to others. Requests: https://finlia.online/contacto
+
+Provided "as is", without warranty of any kind. Finlia's AGPL core runs
+without this directory; nothing here restricts your AGPL rights over it.

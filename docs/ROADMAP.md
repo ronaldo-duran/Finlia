@@ -88,6 +88,8 @@ Auditoría de seguridad completa, privacy, DB (índices, FK, DECIMAL), tests de 
 > **`.env.example` cerrado también:** fuera los bloques de Redis, AWS y Memcached que el proyecto no usa; `DB_CONNECTION=mysql` con el bloque completo y PostgreSQL comentado al lado (igual que el README), porque SQLite es solo de la suite; y `FINLIA_MAIL_ENABLED`, que `config/finlia.php` lee y no estaba documentada. Cada bloque lleva por qué existe.
 >
 > **Con esto la épica queda cerrada.** Lo que falta para producción ya no es código: dominio, certificado, base de datos, SMTP con el dominio autenticado y el cron de `schedule:run`.
+>
+> 🚀 **Lo que la auditoría no cubría es la operación**: copia de seguridad probada, aviso de errores en producción y métricas del embudo. Eso vive en [planes/lanzamiento-semana-0.md](../planes/lanzamiento-semana-0.md), escrito antes de promocionar la app, y es lo que bloquea el lanzamiento — no una tercera pasada de auditoría.
 
 > **Deuda de performance/patrón detectada en la revisión de la Épica 8** (2026-08-29, rama `epica-8-dashboard-reportes`; las líneas son de ese momento). Ningún punto nota el usuario hoy — son de patrón, no de latencia — pero conviene cerrarlos aquí:
 >
