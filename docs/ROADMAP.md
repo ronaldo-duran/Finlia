@@ -1,6 +1,8 @@
 # Roadmap de Épicas — Finlia
 
-> Las épicas se desarrollan **en orden**. Cada una depende de las anteriores. El detalle de cada una está en `scrum/epics/`.
+> Las épicas se desarrollan **en orden**. Cada una depende de las anteriores.
+>
+> **Las épicas completadas ya no tienen ficha propia**: se liberaron al publicar la v0.34.1 y su histórico vive en [CHANGELOG.md](../CHANGELOG.md) y en los ADR de [DECISIONS.md](DECISIONS.md). Las que siguen abiertas (11 y 12) conservan su detalle en `scrum/epics/`; la 14 se define aquí mismo.
 
 Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 

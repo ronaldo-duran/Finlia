@@ -1,6 +1,6 @@
 ---
 name: update-changelog
-description: Publica una versión de Finlia en CHANGELOG.md a partir de los cambios reales del trabajo reciente (entrega mayor, fix, refactor o docs) y sincroniza la versión del software en config/finlia.php y package.json. Mantiene el formato Keep a Changelog en español con versionado SemVer pre-MVP (0.x, sin tags). Invócala como /update-changelog al cerrar una entrega, antes de un merge a main o cuando el usuario pida "actualiza el changelog" o "nueva versión". También define el flujo del primer tag (MVP).
+description: Publica una versión de Finlia en CHANGELOG.md a partir de los cambios reales del trabajo reciente (entrega mayor, fix, refactor o docs) y sincroniza la versión del software en config/finlia.php y package.json. Mantiene el formato Keep a Changelog en español con versionado SemVer 0.x. Invócala como /update-changelog al cerrar una entrega, antes de un merge a main o cuando el usuario pida "actualiza el changelog" o "nueva versión". También define cómo se taguean las versiones publicadas.
 ---
 
 # Skill: update-changelog
@@ -17,7 +17,7 @@ commits/diffs reales**, nunca de memoria. La fuente de verdad es `git log` / `gi
 - Ante la duda sobre una funcionalidad, **verifícala en el código** (rutas, servicios,
   tests) antes de escribirla. No inventes ni sobreestimes.
 
-## 2. Versionado (fase pre-MVP, sin tags)
+## 2. Versionado (fase `0.x`)
 
 - **SemVer en `0.x`**: cada entrega mayor de funcionalidad (lo que internamente el
   roadmap llama "épica") publica un **minor**: `0.1.0` fundación, `0.2.0` hogares,
@@ -26,7 +26,8 @@ commits/diffs reales**, nunca de memoria. La fuente de verdad es `git log` / `gi
   sección propia con su fecha.
 - La **versión vigente** es la más reciente del changelog y debe coincidir con
   `config/finlia.php` (`'version'`) y `package.json` (`"version"`).
-- No se generan tags todavía: el primer tag marcará el **MVP** (ver sección 5).
+- **Cada versión publicada se taguea** (ver sección 5). No todas las versiones tienen
+  tag: las hay publicadas sin él (0.33.0 y 0.34.0), y no se crean a posteriori.
 
 ## 3. Formato (obligatorio)
 
@@ -60,21 +61,21 @@ commits/diffs reales**, nunca de memoria. La fuente de verdad es `git log` / `gi
 3. Edita solo la sección nueva; no reescribas histórico.
 4. No commitear salvo petición explícita del usuario (igual que el resto del repo).
 
-## 5. Flujo del primer tag (MVP)
+## 5. Tags
 
-Ejecutar **solo cuando el usuario lo pida explícitamente** (decisión del equipo: no se
-generan tags antes de liberar el MVP):
+Ejecutar **solo cuando el usuario lo pida explícitamente**:
 
-1. El tag taguea la **versión vigente** en ese momento, sobre `main` verde:
-   `git tag -a vX.Y.Z -m "Finlia MVP"`. El push del tag lo decide el usuario.
-2. **Eliminar `scrum/epics/*.md`**: con el primer tag el MVP queda liberado y los
-   ficheros de planificación se borran del repositorio (decisión del equipo). Antes de
-   borrar:
-   - Verifica con Grep que nada referencie `scrum/epics` y quede roto (ROADMAP,
-     CLAUDE.md, AGENTS.md, skills); ajusta esos textos al estado "planificación
-     completada, histórico en CHANGELOG.md".
-   - Confirma la lista de borrados con el usuario antes de ejecutarlo.
-3. Tras el tag, continuar con SemVer normal (`0.x+1` o `1.0.0` según decida el equipo).
+1. El tag es **anotado**, sobre el commit de merge de la versión en `main` y con el CI
+   en verde: `git tag -a vX.Y.Z -m "Finlia vX.Y.Z — <título de la versión>"`, el mismo
+   título de la sección del changelog. Comprueba antes que la versión coincide en
+   changelog, `config/finlia.php` y `package.json`.
+2. **El push lo decide el usuario**: `git push origin vX.Y.Z`.
+3. No se tagea hacia atrás: una versión que se publicó sin tag se queda sin él.
+
+> Las **épicas completadas se liberaron** al publicar la v0.34.1: sus fichas salieron
+> de `scrum/epics/` y su histórico vive en este changelog y en los ADR de
+> [docs/DECISIONS.md](../../../docs/DECISIONS.md). Las épicas aún abiertas conservan su
+> ficha. Cuando se cierre una, borra su ficha en la misma entrega que la publica.
 
 ## 6. Cierre
 

@@ -29,8 +29,8 @@ el rechazo de términos) y **06** de cierre. Todos antes de la Épica 10.
 - Al terminar cada plan: `/security-checklist`.
 - Las decisiones marcadas como **⚠ DECISIÓN** dentro de cada plan necesitan
   respuesta del dueño del producto antes o durante la implementación.
-- Cuando todos estén terminados, esta carpeta se elimina o archiva (como
-  `scrum/epics/` en el MVP).
+- Cuando todos estén terminados, esta carpeta se elimina o archiva, como se hizo
+  con las épicas completadas de `scrum/epics/` al publicar la v0.34.1.
 
 ## Nota legal
 

@@ -9,7 +9,10 @@ Implementa una épica de Finlia de forma disciplinada. **Argumento esperado**: n
 
 ## 1. Leer y contextualizar
 
-- Lee la épica: `scrum/epics/ÉPICA <N> — ….md`.
+- Lee la épica: si sigue abierta, su ficha está en `scrum/epics/ÉPICA <N> — ….md`. Las
+  completadas ya no tienen ficha (se liberaron en la v0.34.1): su alcance está en
+  [docs/ROADMAP.md](../../../docs/ROADMAP.md) y lo entregado, en
+  [CHANGELOG.md](../../../CHANGELOG.md).
 - Lee el estado actual: [docs/ROADMAP.md](../../../docs/ROADMAP.md) (¿está iniciada?), [docs/DATA_MODEL.md](../../../docs/DATA_MODEL.md) (entidades), [docs/DECISIONS.md](../../../docs/DECISIONS.md) (ADR pendientes de esa épica), [docs/UI_DESIGN.md](../../../docs/UI_DESIGN.md) (si la épica añade vistas).
 - Comprueba que las épicas previas de las que depende están **completas**. Si no, avisa y detente.
 
