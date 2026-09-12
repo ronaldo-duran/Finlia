@@ -12,6 +12,18 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.34.3] - 2026-09-11 — Las trampas del despliegue, por escrito
+
+### Documentación
+El primer despliegue en Hostinger destapó cuatro cosas que no se ven construyendo y que costaron horas de diagnóstico. Quedan en [DEPLOYMENT.md](docs/DEPLOYMENT.md) para que el siguiente no las repita:
+
+- **El subdominio se crea como ALIAS al CDN de Hostinger.** Ese nodo no tiene certificado para el nombre, así que el TLS falla con `ERR_SSL_PROTOCOL_ERROR` aunque el panel muestre el SSL activo y aunque por HTTP responda un 301. Es el síntoma más engañoso de todos: todo parece bien menos el resultado. Se arregla borrando el ALIAS y creando un registro A a la IP del hosting, en la cuenta que administre la zona DNS — que puede no ser la del hosting.
+- **Sacar la aplicación del CDN no es un parche.** Todo lo que sirve `app.` es autenticado y personalizado, y nada es cacheable: un CDN delante no ahorra nada y añade el riesgo de servir una respuesta con datos de sesión a otra persona. En el sitio público sí tiene sentido.
+- **El `php` del shell no es el de producción.** La terminal responde con una versión antigua mientras el sitio corre la del panel. Con la equivocada los comandos fallan con errores desconcertantes y **el cron falla en silencio cada noche**: sin recurrentes automáticos, sin digest y sin purga de cuentas, y sin un error visible en ninguna parte.
+- **El campo de «carpeta personalizada» está restringido a `/public_html/`**, así que no sirve para apuntar al `public/` de Laravel. Y si se usa, Hostinger escribe dentro de la raíz web real: deja una carpeta vacía y su página de bienvenida, que además no desaparecen con el `git reset --hard` de los despliegues siguientes porque no están en git.
+
+Se añade también un bloque de **diagnóstico que separa las causas** en lugar de adivinar —HTTP frente a HTTPS, IPv4 frente a IPv6, y qué IP resuelve de verdad—, cuatro entradas nuevas a la tabla de problemas frecuentes, y la **salida de emergencia**: vaciar las dos variables de dominio devuelve la aplicación a un solo host, que es la configuración que corre en local y en toda la suite.
+
 ## [0.34.2] - 2026-09-11 — Las épicas terminadas se liberan
 
 ### Eliminado
