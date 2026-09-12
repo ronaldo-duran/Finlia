@@ -212,6 +212,53 @@ class AccountSuspensionTest extends TestCase
         $this->assertNotNull(Household::find($household->id));
     }
 
+    public function test_purga_del_dueno_conserva_el_hogar_si_un_miembro_sigue_reactivable(): void
+    {
+        $owner = User::factory()->create();
+        $owner->deletion_requested_at = now()->subDays(31);
+        $owner->save();
+        $household = app(HouseholdService::class)->createHousehold($owner->id, 'Hogar Compartido');
+
+        // El único otro miembro está suspendido, pero DENTRO de su ventana de
+        // reactivación de 30 días (ADR-0033): puede volver y recuperar el hogar.
+        $member = User::factory()->create();
+        $member->deletion_requested_at = now()->subDays(5);
+        $member->save();
+        $household->members()->attach($member->id, [
+            'role' => HouseholdRole::Member->value,
+            'joined_at' => now()->subDays(10),
+        ]);
+
+        app(AccountDeletionService::class)->purge($owner);
+
+        // El hogar NO se destruye: la titularidad se transfiere al miembro
+        // reactivable y su historial financiero se conserva.
+        $this->assertNotNull(Household::find($household->id), 'El hogar no debe borrarse mientras un miembro siga reactivable.');
+        $this->assertEquals($member->id, $household->fresh()->owner_id);
+    }
+
+    public function test_purga_dueno_borra_el_hogar_si_el_otro_miembro_ya_vencio(): void
+    {
+        $owner = User::factory()->create();
+        $owner->deletion_requested_at = now()->subDays(31);
+        $owner->save();
+        $household = app(HouseholdService::class)->createHousehold($owner->id, 'Hogar Doble Vencido');
+
+        // El otro miembro también venció su ventana: será purgado igualmente,
+        // así que no cuenta como superviviente → cascada.
+        $member = User::factory()->create();
+        $member->deletion_requested_at = now()->subDays(31);
+        $member->save();
+        $household->members()->attach($member->id, [
+            'role' => HouseholdRole::Member->value,
+            'joined_at' => now()->subDays(10),
+        ]);
+
+        app(AccountDeletionService::class)->purge($owner);
+
+        $this->assertNull(Household::withTrashed()->find($household->id));
+    }
+
     public function test_purgar_cuenta_no_verificada(): void
     {
         $user = User::factory()->create([

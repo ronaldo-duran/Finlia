@@ -30,8 +30,14 @@ class AccountController extends Controller
         return view('accounts.index', ['accounts' => $accounts]);
     }
 
-    public function create(): View
+    public function create(): View|RedirectResponse
     {
+        if (active_household() === null) {
+            return redirect()->route('households.create');
+        }
+
+        $this->authorize('create', Account::class);
+
         return view('accounts.create');
     }
 

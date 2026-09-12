@@ -7,6 +7,12 @@ on:
   # Permite republicar sin crear un tag nuevo (p. ej. tras arreglar el token).
   workflow_dispatch:
 
+# El GITHUB_TOKEN de este workflow no escribe en el repo: el push a
+# producción usa FINLIA_PROD_TOKEN. Se le retira todo permiso salvo lectura
+# para que una acción comprometida no pueda abusar del token implícito.
+permissions:
+  contents: read
+
 # Dos despliegues a la vez dejarían el repositorio de producción a medias.
 concurrency:
   group: deploy-produccion
@@ -22,20 +28,20 @@ jobs:
       # Se saca el TAG, no `main`: se despliega lo que se etiquetó, no lo que
       # haya en main en este momento, que puede haber avanzado.
       - name: Checkout del tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # La MISMA versión que Hostinger (docs/DEPLOYMENT.md §1). No es un
       # detalle: composer.lock trae Symfony 8.1, que exige PHP >= 8.4.1, así
       # que construir con 8.3 ni siquiera instala.
       - name: PHP 8.4 — la misma que producción
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.4'
           extensions: mbstring, intl, dom, curl, bcmath
           coverage: none
 
       - name: Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm

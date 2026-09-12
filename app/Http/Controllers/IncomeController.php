@@ -19,8 +19,14 @@ class IncomeController extends Controller
 {
     public function __construct(private readonly MovementService $movements) {}
 
-    public function create(Request $request): View
+    public function create(Request $request): View|RedirectResponse
     {
+        if (active_household() === null) {
+            return redirect()->route('households.create');
+        }
+
+        $this->authorize('create', Income::class);
+
         return view('incomes.create', $this->formOptions());
     }
 

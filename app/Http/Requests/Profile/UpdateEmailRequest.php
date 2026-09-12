@@ -11,6 +11,12 @@ use Illuminate\Validation\Rule;
 /**
  * Arranca el cambio de correo (Plan 02): no toca users.email — solo deja
  * el pendiente y envía la confirmación a la bandeja nueva.
+ *
+ * Exige la contraseña actual (current_password): cambiar el correo es el
+ * primer paso de un secuestro de cuenta (con el correo nuevo se dispara el
+ * reset de contraseña), así que se re-autentica igual que el cambio de
+ * contraseña y la eliminación de cuenta. Sin esto, una sesión robada podría
+ * apropiarse de la cuenta sin conocer la contraseña.
  */
 class UpdateEmailRequest extends FormRequest
 {
@@ -25,6 +31,7 @@ class UpdateEmailRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'current_password' => ['required', 'string', 'current_password:web'],
             'email' => [
                 'required',
                 'string',
@@ -44,6 +51,19 @@ class UpdateEmailRequest extends FormRequest
                     }
                 },
             ],
+        ];
+    }
+
+    /**
+     * Mensaje claro para la re-autenticación (el genérico de
+     * current_password es críptico para quien no sabe de "guards").
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'current_password.current_password' => __('La contraseña actual no coincide.'),
         ];
     }
 }
