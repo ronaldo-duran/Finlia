@@ -272,6 +272,36 @@ jobs:
               comentarios.
             - Escribe solo ese archivo. No modifiques código.
 
+      - name: Diagnóstico de la revisión
+        # Barato y solo informativo, pero evita otra ronda de adivinanzas si el
+        # veredicto vuelve a salir "no concluyente": dice si el archivo se
+        # escribió en otro sitio o si no se escribió nunca, y qué herramientas
+        # se denegaron. Imprime solo nombres de herramientas y contadores,
+        # nunca el contenido de la revisión (el log de este repo es público).
+        if: ${{ !cancelled() && steps.pr.outputs.revisar == 'true' }}
+        run: |
+          set -uo pipefail
+
+          echo "--- ¿Existe review.json? ---"
+          find . -maxdepth 3 -name review.json -not -path './node_modules/*' 2>/dev/null || true
+
+          echo "--- Directorio de trabajo ---"
+          pwd
+
+          echo "--- Resumen de la ejecución ---"
+          salida=/home/runner/work/_temp/claude-execution-output.json
+          if [ -f "$salida" ]; then
+            jq -c '[.[] | select(.type == "result")] | last
+                   | {subtype, is_error, num_turns, permission_denials_count}' "$salida" 2>/dev/null \
+              || echo "(no se pudo leer el resumen)"
+
+            echo "--- Herramientas usadas o denegadas ---"
+            grep -o '"tool_name":"[^"]*"' "$salida" 2>/dev/null | sort | uniq -c || true
+            grep -o '"permission_denials":\[[^]]*\]' "$salida" 2>/dev/null | head -3 || true
+          else
+            echo "(no hay archivo de salida en $salida)"
+          fi
+
       - name: Veredicto
         # Corre aunque la revisión haya fallado: un fallo NO puede quedar en
         # silencio ni convertirse en una aprobación por omisión.
