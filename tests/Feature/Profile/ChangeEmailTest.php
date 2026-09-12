@@ -35,9 +35,14 @@ class ChangeEmailTest extends TestCase
     private function requestChange(User $user, string $newEmail): string
     {
         // from() fija la URL previa: el controlador responde back() a /perfil.
+        // Cambiar el correo exige re-autenticación (current_password): es el
+        // primer paso de un secuestro de cuenta.
         $this->actingAs($user)
             ->from(route('profile.edit'))
-            ->put(route('profile.email.update'), ['email' => $newEmail])
+            ->put(route('profile.email.update'), [
+                'email' => $newEmail,
+                'current_password' => 'password',
+            ])
             ->assertRedirect(route('profile.edit'));
 
         $confirmUrl = null;
@@ -77,7 +82,7 @@ class ChangeEmailTest extends TestCase
         User::factory()->create(['email' => 'tomado@ejemplo.com']);
 
         $this->actingAs($user)
-            ->put(route('profile.email.update'), ['email' => 'tomado@ejemplo.com'])
+            ->put(route('profile.email.update'), ['email' => 'tomado@ejemplo.com', 'current_password' => 'password'])
             ->assertSessionHasErrors('email');
 
         $this->assertNull($user->fresh()->pending_email);
@@ -93,7 +98,7 @@ class ChangeEmailTest extends TestCase
         $this->requestChange($beto, 'codiciado@ejemplo.com');
 
         $this->actingAs($ana)
-            ->put(route('profile.email.update'), ['email' => 'codiciado@ejemplo.com'])
+            ->put(route('profile.email.update'), ['email' => 'codiciado@ejemplo.com', 'current_password' => 'password'])
             ->assertSessionHasErrors('email');
 
         $this->assertNull($ana->fresh()->pending_email);
@@ -105,8 +110,31 @@ class ChangeEmailTest extends TestCase
         $user = User::factory()->create(['email' => 'actual@ejemplo.com']);
 
         $this->actingAs($user)
-            ->put(route('profile.email.update'), ['email' => 'actual@ejemplo.com'])
+            ->put(route('profile.email.update'), ['email' => 'actual@ejemplo.com', 'current_password' => 'password'])
             ->assertSessionHasErrors('email');
+
+        $this->assertNull($user->fresh()->pending_email);
+        Mail::assertNothingSent();
+    }
+
+    public function test_rechaza_el_cambio_sin_la_contrasena_actual(): void
+    {
+        Mail::fake();
+        $user = User::factory()->create(['email' => 'viejo@ejemplo.com']);
+
+        // Sin contraseña actual: una sesión robada no debe poder arrancar el
+        // secuestro de cuenta (cambiar correo → reset de contraseña).
+        $this->actingAs($user)
+            ->put(route('profile.email.update'), ['email' => 'nuevo@ejemplo.com'])
+            ->assertSessionHasErrors('current_password');
+
+        $this->assertNull($user->fresh()->pending_email);
+        Mail::assertNothingSent();
+
+        // Con la contraseña equivocada, tampoco.
+        $this->actingAs($user)
+            ->put(route('profile.email.update'), ['email' => 'nuevo@ejemplo.com', 'current_password' => 'incorrecta'])
+            ->assertSessionHasErrors('current_password');
 
         $this->assertNull($user->fresh()->pending_email);
         Mail::assertNothingSent();

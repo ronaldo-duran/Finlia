@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\View\View as ViewContract;
 
 class AppServiceProvider extends ServiceProvider
@@ -39,6 +40,18 @@ class AppServiceProvider extends ServiceProvider
         // firmado público usa el throttle numérico estándar en la ruta.
         RateLimiter::for('verification', function (Request $request): Limit {
             return Limit::perMinute(3)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Política de contraseñas única para registro, cambio y reset:
+        // mínimo 8, máximo 72 (límite de bcrypt). En PRODUCCIÓN se añade
+        // uncompromised(): rechaza contraseñas presentes en filtraciones
+        // conocidas (k-anonymity contra HaveIBeenPwned, falla en abierto si
+        // la API no responde). Se omite en local/tests para no depender de
+        // red externa ni volver no deterministas las pruebas.
+        PasswordRule::defaults(function (): PasswordRule {
+            $rule = PasswordRule::min(8)->max(72);
+
+            return app()->isProduction() ? $rule->uncompromised() : $rule;
         });
 
         // Directiva @money($monto): formato COP centralizado (ADR-0006).

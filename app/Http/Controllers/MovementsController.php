@@ -77,8 +77,25 @@ class MovementsController extends Controller
             'category_id' => $request->filled('category_id') ? (int) $request->input('category_id') : null,
             'account_id' => $request->filled('account_id') ? (int) $request->input('account_id') : null,
             'user_id' => $request->filled('user_id') ? (int) $request->input('user_id') : null,
-            'from' => $request->filled('from') ? (string) $request->input('from') : null,
-            'to' => $request->filled('to') ? (string) $request->input('to') : null,
+            'from' => $this->dateFilter($request->input('from')),
+            'to' => $this->dateFilter($request->input('to')),
         ];
+    }
+
+    /**
+     * Normaliza un filtro de fecha del query string: solo acepta YYYY-MM-DD.
+     * Un valor malformado se descarta (null) en vez de llegar crudo a la
+     * query — en PostgreSQL comparar una columna date contra un string no-fecha
+     * lanza un error SQL (500 reproducible a voluntad).
+     */
+    private function dateFilter(mixed $value): ?string
+    {
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        return ($date !== false && $date->format('Y-m-d') === $value) ? $value : null;
     }
 }

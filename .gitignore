@@ -1,8 +1,19 @@
 *.log
 .DS_Store
 .env
+.env.*
+!.env.example
 .env.backup
 .env.production
+
+# Volcados de base de datos: nunca deben entrar al repo público.
+*.sql
+*.sql.gz
+*.dump
+
+# Lockfiles de gestores no usados (el proyecto usa npm / package-lock.json).
+pnpm-lock.yaml
+yarn.lock
 
 # E2E Playwright: BD sqlite temporal y artefactos de reporte
 /database/*.sqlite

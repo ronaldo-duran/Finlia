@@ -38,6 +38,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Guarda de entorno: este seeder crea cuentas demo con contraseña
+        // conocida (repo público). Un `db:seed` accidental en producción
+        // abriría la puerta a cualquiera. Las categorías/términos globales
+        // tienen sus propios seeders idempotentes para producción.
+        if (app()->isProduction()) {
+            $this->command?->warn('DatabaseSeeder omitido: no se siembran datos demo en producción.');
+
+            return;
+        }
+
         // Categorías globales (catálogo, no datos financieros).
         $this->call(CategorySeeder::class);
 

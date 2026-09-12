@@ -23,8 +23,14 @@ class ExpenseController extends Controller
         private readonly BudgetCalculatorService $budgets,
     ) {}
 
-    public function create(Request $request): View
+    public function create(Request $request): View|RedirectResponse
     {
+        if (active_household() === null) {
+            return redirect()->route('households.create');
+        }
+
+        $this->authorize('create', Expense::class);
+
         // "Te quedarían $X hasta el DD/MM" (hint en vivo del formulario): lo
         // disponible hasta el próximo cobro ANTES de este gasto (ADR-0040).
         $liquidity = $this->budgets->liquidity(active_household_id());

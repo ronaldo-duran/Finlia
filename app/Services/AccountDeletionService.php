@@ -93,17 +93,35 @@ class AccountDeletionService
                 ->with(['members'])
                 ->get();
 
-            foreach ($ownedHouseholds as $household) {
-                $otherActiveMembers = $household->members
-                    ->where('id', '!=', $user->id)
-                    ->where('deletion_requested_at', null);
+            // Un miembro suspendido cuya ventana de 30 días aún no expira
+            // puede reactivarse y recuperar el hogar (ADR-0033); borrar el
+            // hogar mientras tanto violaría esa promesa. Solo cuentan como
+            // "perdidos" los suspendidos cuyo plazo ya venció (se purgarán).
+            $reactivationCutoff = now()->subDays(self::SUSPENSION_DAYS);
 
-                if ($otherActiveMembers->isEmpty()) {
-                    // Regla 2: dueño único → cascade completo.
+            foreach ($ownedHouseholds as $household) {
+                $others = $household->members->where('id', '!=', $user->id);
+
+                // Miembros que SOBREVIVEN a esta purga: los activos y los
+                // suspendidos que todavía están dentro de su ventana.
+                $survivingMembers = $others->filter(
+                    fn (User $m) => $m->deletion_requested_at === null
+                        || $m->deletion_requested_at->greaterThanOrEqualTo($reactivationCutoff)
+                );
+
+                if ($survivingMembers->isEmpty()) {
+                    // Regla 2: nadie más sobrevive → cascade completo.
                     $this->deleteHouseholdCascade($household);
                 } else {
-                    // Regla 3: transferir al miembro activo más antiguo.
-                    $newOwner = $otherActiveMembers->sortBy(
+                    // Regla 3: transferir. Se prefiere un miembro ACTIVO; si
+                    // todos los que sobreviven están suspendidos, se transfiere
+                    // al más antiguo igualmente y conserva sus datos hasta que
+                    // reactive (si nunca lo hace, su propia purga limpiará el
+                    // hogar más adelante).
+                    $activeMembers = $survivingMembers->where('deletion_requested_at', null);
+                    $pool = $activeMembers->isNotEmpty() ? $activeMembers : $survivingMembers;
+
+                    $newOwner = $pool->sortBy(
                         fn (User $m) => $m->pivot?->joined_at ?? $m->created_at
                     )->first();
 
@@ -117,8 +135,10 @@ class AccountDeletionService
                 }
             }
 
-            // Retirar al usuario de los hogares donde solo es miembro.
-            $user->households()->wherePivot('role', HouseholdRole::Member->value)->detach();
+            // Retirar al usuario de todos los hogares restantes (los que
+            // administraba ya se resolvieron arriba). Se desvincula cualquier
+            // pivot, incluidos residuos de rol owner de invitaciones antiguas.
+            $user->households()->detach();
 
             // Regla 1: anonimizar el registro del usuario (preserva historial
             // financiero — los movimientos conservan user_id pero no apuntan

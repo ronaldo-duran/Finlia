@@ -12,6 +12,24 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.35.1] - 2026-09-12 — Endurecimiento de seguridad (auditoría)
+
+### Seguridad
+- **Cambiar el correo ahora exige la contraseña actual.** Era el único hueco real que quedaba: con una sesión viva (un dispositivo desatendido, una cookie robada) se podía cambiar el correo sin conocer la contraseña y, con el correo nuevo, disparar el reset de contraseña — un secuestro de cuenta completo. Ahora se re-autentica igual que el cambio de contraseña y la eliminación de cuenta.
+- **Las invitaciones a un hogar solo pueden ser de miembro.** La titularidad se decide por el dueño del hogar, no por el rol del pivot; aceptar `role=owner` creaba un «administrador fantasma» sin poder real que confundía la interfaz y dejaba residuos al purgar una cuenta. Se quitó también esa opción del formulario.
+- **La purga de un dueño ya no destruye el hogar si otro miembro está suspendido pero aún dentro de su ventana de reactivación de 30 días.** Antes se perdían de forma irreversible sus datos financieros; ahora la titularidad se transfiere y el historial se conserva.
+- **La cookie de sesión sale con el flag `Secure` por defecto en producción**, aunque la plantilla del `.env` omita la variable: evita que viaje en claro por una petición `http://` inducida antes del redirect a HTTPS.
+- **Contraseñas: política única y verificación de filtraciones.** Registro, cambio y reset comparten ahora una sola regla (mínimo 8, máximo 72) y en producción se rechazan contraseñas presentes en filtraciones conocidas (k-anonymity contra HaveIBeenPwned).
+- **CI/CD endurecido:** los workflows de GitHub Actions declaran `permissions: contents: read` (token de solo lectura) y fijan todas las acciones de terceros a un SHA de commit, cerrando el riesgo de que una acción comprometida abuse del token o del secreto de despliegue.
+- **El seeder de demostración no corre en producción** (evita cuentas con contraseña pública) y se validan las fechas de los filtros de `/movimientos` (un valor malformado provocaba errores 500 en PostgreSQL).
+
+### Cambiado
+- Los formularios de crear gasto/ingreso/transferencia/cuenta autorizan de forma explícita y redirigen a crear un hogar si no hay uno activo (antes uno de ellos podía dar un error 500).
+- `.gitignore` cubre volcados de base de datos (`*.sql`, `*.dump`) y variantes de `.env`; se eliminó un `pnpm-lock.yaml` espurio (el proyecto usa npm).
+
+### Verificación
+Tres pruebas nuevas: el cambio de correo se rechaza sin la contraseña actual (o con una incorrecta) y la invitación con `role=owner` se rechaza. Suite completa en verde (646 pruebas) en SQLite, MySQL y PostgreSQL.
+
 ## [0.35.0] - 2026-09-12 — Páginas de error y modo mantenimiento
 
 ### Añadido

@@ -86,28 +86,21 @@
                         <form method="POST" action="{{ route('households.invitations.store', $household) }}">
                             @csrf
                             <div class="row g-2 align-items-end">
-                                <div class="col-12 col-sm-6">
+                                <div class="col-12 col-sm-8">
                                     <label for="email" class="form-label small fw-semibold">Correo del invitado</label>
                                     <input type="email" name="email" id="email"
                                            class="form-control @error('email') is-invalid @enderror"
                                            value="{{ old('email') }}" placeholder="persona@correo.com" required>
                                     @error('email')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                                </div>
-                                <div class="col-7 col-sm-3">
-                                    <label for="role" class="form-label small fw-semibold">Rol</label>
-                                    <select name="role" id="role" class="form-select @error('role') is-invalid @enderror" required>
-                                        <option value="member" @selected(old('role', 'member') === 'member')>Miembro</option>
-                                        <option value="owner" @selected(old('role') === 'owner')>Administrador</option>
-                                    </select>
                                     @error('role')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                 </div>
-                                <div class="col-5 col-sm-3">
+                                <div class="col-12 col-sm-4">
                                     <button type="submit" class="btn btn-finlia w-100">
                                         <i class="bi bi-send me-1"></i> Invitar
                                     </button>
                                 </div>
                             </div>
-                            <div class="form-text">El invitado recibirá un enlace para unirse a este hogar.</div>
+                            <div class="form-text">El invitado se une como miembro del hogar. La administración la conserva quien lo creó.</div>
                         </form>
                     </div>
                 </div>
