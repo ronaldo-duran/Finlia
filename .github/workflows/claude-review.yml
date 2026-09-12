@@ -11,12 +11,22 @@ on:
   workflow_run:
     workflows: [CI]
     types: [completed]
+  # Disparo manual, indispensable para poder probar cambios de este workflow:
+  # `workflow_run` solo ejecuta la copia de la rama por defecto, así que sin
+  # esto cada ajuste exigiría mergear a main para comprobarlo. El disparo
+  # manual sí corre la copia de la rama que elijas, y solo puede lanzarlo
+  # quien tiene permiso de escritura.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Número del PR a revisar
+        required: true
 
 # Sin permisos por defecto: cada job pide lo mínimo que necesita.
 permissions: {}
 
 concurrency:
-  group: claude-review-${{ github.event.workflow_run.head_branch }}
+  group: claude-review-${{ github.event.workflow_run.head_branch || inputs.pr }}
   cancel-in-progress: true
 
 jobs:
@@ -27,9 +37,11 @@ jobs:
     # tiene acceso a secretos y no se los damos a un run disparado por código
     # que no controlamos.
     if: >-
-      github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_repository.full_name == github.repository
+      github.event_name == 'workflow_dispatch' || (
+        github.event.workflow_run.event == 'pull_request' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == github.repository
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -46,41 +58,50 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
-          SHA: ${{ github.event.workflow_run.head_sha }}
+          EVENTO: ${{ github.event_name }}
+          PR_MANUAL: ${{ inputs.pr }}
+          SHA_CI: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
 
-          # El payload de workflow_run no trae el PR de forma fiable, así que se
-          # resuelve por el commit.
-          datos=$(gh api "repos/$REPO/commits/$SHA/pulls" \
-            --jq 'map(select(.state == "open")) | first // empty')
+          if [ "$EVENTO" = "workflow_dispatch" ]; then
+            datos=$(gh api "repos/$REPO/pulls/$PR_MANUAL")
+          else
+            # El payload de workflow_run no trae el PR de forma fiable, así que
+            # se resuelve por el commit.
+            datos=$(gh api "repos/$REPO/commits/$SHA_CI/pulls" \
+              --jq 'map(select(.state == "open")) | first // empty')
+          fi
 
           if [ -z "$datos" ]; then
-            echo "No hay PR abierto para $SHA: nada que revisar."
+            echo "No hay PR abierto que revisar."
             echo "revisar=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           numero=$(printf '%s' "$datos" | jq -r '.number')
           borrador=$(printf '%s' "$datos" | jq -r '.draft')
+          estado=$(printf '%s' "$datos" | jq -r '.state')
           base=$(printf '%s' "$datos" | jq -r '.base.ref')
+          sha=$(printf '%s' "$datos" | jq -r '.head.sha')
 
-          if [ "$borrador" = "true" ]; then
-            echo "El PR #$numero es un borrador: no se revisa hasta que esté listo."
+          if [ "$estado" != "open" ] || [ "$borrador" = "true" ]; then
+            echo "El PR #$numero está $estado (borrador=$borrador): no se revisa."
             echo "revisar=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          echo "PR #$numero (base: $base) listo para revisar."
+          echo "PR #$numero (base: $base, head: $sha) listo para revisar."
           echo "revisar=true" >> "$GITHUB_OUTPUT"
           echo "numero=$numero" >> "$GITHUB_OUTPUT"
           echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Checkout del código del PR
         if: steps.pr.outputs.revisar == 'true'
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ steps.pr.outputs.sha }}
           # Historia completa: la revisión necesita el punto de partida para
           # sacar el diff contra main.
           fetch-depth: 0
@@ -114,9 +135,18 @@ jobs:
           # en una lectura incompleta, y un APPROVE así es peor que no revisar.
           # El gasto se acota con timeout-minutes y la concurrency de arriba.
           claude_args: --model claude-opus-5
-          # Lista blanca estrecha: leer, buscar y escribir UN archivo. Sin bash
-          # libre, sin composer/npm/php, sin red, sin herramientas de GitHub.
-          # Claude no publica nada: su única salida es review.json.
+          # Lista blanca: leer, buscar, escribir y git. Sin ejecutar el código
+          # del PR (ni composer, ni npm, ni php), sin red y sin herramientas de
+          # GitHub: Claude no publica nada, su única salida es review.json.
+          #
+          # `Write` va sin ruta a propósito. Una ruta relativa en una regla de
+          # permisos se resuelve contra la carpeta del archivo de settings, y la
+          # acción escribe estos settings en /home/runner/.claude/settings.json:
+          # `Write(review.json)` apuntaba ahí y no al checkout, así que la
+          # escritura se denegaba y el paso del veredicto no encontraba nada.
+          # Un Write amplio no añade riesgo real aquí: el job no tiene
+          # `contents: write`, así que nada de lo que escriba puede salir del
+          # runner, y el prompt le dice que escriba solo ese archivo.
           settings: |
             {
               "permissions": {
@@ -124,19 +154,20 @@ jobs:
                   "Read",
                   "Grep",
                   "Glob",
-                  "Write(review.json)",
-                  "Bash(git diff:*)",
-                  "Bash(git log:*)",
-                  "Bash(git show:*)",
-                  "Bash(git merge-base:*)"
+                  "Write",
+                  "Bash(git:*)"
                 ],
                 "deny": [
                   "Bash(gh:*)",
                   "Bash(curl:*)",
+                  "Bash(wget:*)",
                   "Bash(composer:*)",
                   "Bash(npm:*)",
+                  "Bash(npx:*)",
+                  "Bash(node:*)",
                   "Bash(php:*)",
                   "Bash(git push:*)",
+                  "Bash(git commit:*)",
                   "WebFetch",
                   "WebSearch"
                 ]
@@ -241,6 +272,36 @@ jobs:
               comentarios.
             - Escribe solo ese archivo. No modifiques código.
 
+      - name: Diagnóstico de la revisión
+        # Barato y solo informativo, pero evita otra ronda de adivinanzas si el
+        # veredicto vuelve a salir "no concluyente": dice si el archivo se
+        # escribió en otro sitio o si no se escribió nunca, y qué herramientas
+        # se denegaron. Imprime solo nombres de herramientas y contadores,
+        # nunca el contenido de la revisión (el log de este repo es público).
+        if: ${{ !cancelled() && steps.pr.outputs.revisar == 'true' }}
+        run: |
+          set -uo pipefail
+
+          echo "--- ¿Existe review.json? ---"
+          find . -maxdepth 3 -name review.json -not -path './node_modules/*' 2>/dev/null || true
+
+          echo "--- Directorio de trabajo ---"
+          pwd
+
+          echo "--- Resumen de la ejecución ---"
+          salida=/home/runner/work/_temp/claude-execution-output.json
+          if [ -f "$salida" ]; then
+            jq -c '[.[] | select(.type == "result")] | last
+                   | {subtype, is_error, num_turns, permission_denials_count}' "$salida" 2>/dev/null \
+              || echo "(no se pudo leer el resumen)"
+
+            echo "--- Herramientas usadas o denegadas ---"
+            grep -o '"tool_name":"[^"]*"' "$salida" 2>/dev/null | sort | uniq -c || true
+            grep -o '"permission_denials":\[[^]]*\]' "$salida" 2>/dev/null | head -3 || true
+          else
+            echo "(no hay archivo de salida en $salida)"
+          fi
+
       - name: Veredicto
         # Corre aunque la revisión haya fallado: un fallo NO puede quedar en
         # silencio ni convertirse en una aprobación por omisión.
@@ -249,9 +310,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           PR: ${{ steps.pr.outputs.numero }}
-          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
+
+          # Se busca también un nivel más abajo: si el archivo aparece en otro
+          # sitio, es mejor encontrarlo que declarar la revisión no concluyente.
+          RUTA=review.json
+          if [ ! -s "$RUTA" ]; then
+            RUTA=$(find . -maxdepth 2 -name review.json -not -path './node_modules/*' 2>/dev/null | head -1)
+            [ -n "$RUTA" ] && echo "review.json encontrado en $RUTA (no en la raíz)."
+          fi
+          RUTA=${RUTA:-review.json}
 
           PIE="_Revisión automática de Claude sobre el diff de este PR. No mergea y no sustituye la revisión humana: el merge lo hace una persona._ · [Ver run]($RUN_URL)"
 
@@ -282,15 +352,15 @@ jobs:
           trap 'no_concluyente "El paso de veredicto falló de forma inesperada. Mira el log del run."' ERR
 
           # --- Caso 1: la revisión no dejó un JSON usable -------------------
-          if [ ! -s review.json ] || ! jq -e '.hallazgos | type == "array"' review.json >/dev/null 2>&1; then
+          if [ ! -s "$RUTA" ] || ! jq -e '.hallazgos | type == "array"' "$RUTA" >/dev/null 2>&1; then
             no_concluyente "La revisión automática no terminó, o devolvió una salida que no se puede leer, así que **no hay veredicto**."
             echo "Publicado como no concluyente."
             exit 1
           fi
 
-          BLOQUEANTES=$(jq '[.hallazgos[] | select(.severidad == "bloqueante")] | length' review.json)
-          TOTAL=$(jq '.hallazgos | length' review.json)
-          RESUMEN=$(jq -r '.resumen // ""' review.json)
+          BLOQUEANTES=$(jq '[.hallazgos[] | select(.severidad == "bloqueante")] | length' "$RUTA")
+          TOTAL=$(jq '.hallazgos | length' "$RUTA")
+          RESUMEN=$(jq -r '.resumen // ""' "$RUTA")
 
           # --- El veredicto se decide AQUÍ, fuera del modelo ----------------
           # Claude no tiene forma de emitirlo: solo escribe hallazgos. El único
@@ -325,7 +395,7 @@ jobs:
           jq -n \
             --rawfile body cuerpo.md \
             --arg event "$EVENTO" \
-            --slurpfile r review.json \
+            --slurpfile r "$RUTA" \
             '{
               event: $event,
               body: $body,
@@ -349,7 +419,7 @@ jobs:
               echo
               echo "#### Hallazgos"
               echo
-              jq -r '.hallazgos[] | "- **" + (if .severidad == "bloqueante" then "🔴" else "🟡" end) + " `" + .archivo + ":" + (.linea | tostring) + "`** — " + .titulo + "\n\n  " + .cuerpo + "\n"' review.json
+              jq -r '.hallazgos[] | "- **" + (if .severidad == "bloqueante" then "🔴" else "🟡" end) + " `" + .archivo + ":" + (.linea | tostring) + "`** — " + .titulo + "\n\n  " + .cuerpo + "\n"' "$RUTA"
             } > cuerpo-plano.md
 
             jq -n --rawfile body cuerpo-plano.md --arg event "$EVENTO" \
