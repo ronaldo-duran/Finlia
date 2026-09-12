@@ -12,6 +12,20 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.35.1] - 2026-09-12 — Licencia dual y puerta abierta a colaborar
+
+### Añadido
+- **Licencia comercial para las funciones Premium**, en el directorio `ee/` y separada de la AGPL que cubre el resto del proyecto ([ADR-0042](docs/DECISIONS.md#adr-0042)). El código de pago se publica para poder **leerse y auditarse** —quien confía sus finanzas a la app tiene derecho a verificar también aquello por lo que paga—, no para operarse como servicio. Finlia sigue funcionando completa sin ese directorio: borrarlo deja una aplicación libre y autoalojable.
+- **`CONTRIBUTING.md`**: qué aportes ayudan más (reportar lo que no cuadra y revisar el cálculo, antes que Pull Requests grandes), cómo dejar en verde la suite y los cuatro jobs de CI, y el acuerdo de licencia de los aportes, en el que quien contribuye **conserva su copyright**.
+- Regla de frontera del directorio `ee/`: la dependencia va en un solo sentido y borrarlo debe dejar la aplicación arrancando y pasando la suite. Es lo que sostiene la separación de licencias.
+
+### Corregido
+- El artefacto de despliegue borraba el `.github` del repositorio de producción, donde vive el workflow que despliega en el servidor. Como el despliegue se dispara con el tag, un artefacto sin esa carpeta no lo disparaba nunca.
+
+### Documentación
+- **Plan de la semana 0 del lanzamiento** (`planes/lanzamiento-semana-0.md`): copia de seguridad probada y restaurada, aviso de errores en producción, prueba de humo del registro desde fuera, vigilancia de la cuota diaria de correo y métricas del embudo. Lo que faltaba para abrir la app al público no era código, era operación.
+- Estado corregido de dos planes de cuenta que seguían marcados como pendientes estando ya publicados (ADR-0033 y ADR-0034).
+
 ## [0.35.0] - 2026-09-12 — Páginas de error y modo mantenimiento
 
 ### Añadido

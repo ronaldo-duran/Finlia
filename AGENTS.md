@@ -61,6 +61,14 @@ Estas son **fallas que un agente nunca debe introducir**. Cada cambio de código
 - La autorización **siempre** se valida en backend. Lo que el frontend oculta es **cosmético**.
 - Nunca exponer IDs internos sensibles si no hace falta (considera UUID/slugs en recursos que se compartan por URL, p.ej. invitaciones).
 
+### 2.8 Frontera `ee/` (licencia distinta)
+El directorio `ee/` contiene las funciones Premium y **no está bajo la AGPL** del resto del repositorio, sino bajo licencia comercial ([ADR-0042](docs/DECISIONS.md#adr-0042), [ee/README.md](ee/README.md)).
+
+- **La dependencia va en un solo sentido: `ee/` → núcleo, nunca al revés.** Ningún archivo de `app/`, `routes/` o `resources/` importa una clase `Finlia\Ee\*`, salvo el único punto de registro condicional del ServiceProvider.
+- **Borrar `ee/` debe dejar la app funcionando**: arranca, pasa la suite y sirve todo lo gratuito. Si al implementar algo el núcleo lo necesita, ese código **va al núcleo bajo AGPL**, no se crea una dependencia hacia dentro de `ee/`.
+- Que el código de pago sea visible hace la regla 2.7 **más** importante: la comprobación de suscripción se hace en backend contra la base de datos, nunca con un flag del cliente.
+- Nada de secretos aquí tampoco: las claves de API van por `.env` (§3).
+
 ---
 
 ## 3. Secretos y repo público
