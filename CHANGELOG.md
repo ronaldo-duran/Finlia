@@ -12,6 +12,15 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.35.4] - 2026-09-12 — La revisión automática, ya funcionando
+
+### Corregido
+- **La revisión automática ya emite veredicto.** En las primeras pruebas no llegaba a publicarlo: primero por una regla de permisos que le impedía escribir su propio resultado, y después porque GitHub **rechaza que una automatización apruebe** un Pull Request. Ahora la señal del veredicto la da un check propio llamado **Revisión de Claude** —verde cuando no hay nada bloqueante, rojo cuando sí— que no impide mergear, y los hallazgos se publican igual aunque la aprobación no se pueda registrar.
+- Cuando algo falla, el motivo queda **escrito en el registro del run** en vez de perderse, que es lo que alargó el diagnóstico.
+
+### Verificación
+La lógica del veredicto se ejecuta ahora contra casos de prueba —con bloqueantes, sin bloqueantes, sin resultado y con la publicación rechazada— y no solo se comprueba su sintaxis. En un Pull Request de prueba con fallos deliberados, la revisión encontró los tres problemas plantados y **rechazó el intento de manipularla** que llevaba escondido en un comentario del código, reportándolo como bloqueante. El comportamiento que más importaba se validó dos veces por causas distintas: **cuando la revisión no concluye, no se aprueba nada**.
+
 ## [0.35.3] - 2026-09-12 — Revisión automática de Pull Requests
 
 ### Añadido

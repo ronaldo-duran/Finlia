@@ -49,6 +49,8 @@ jobs:
       # Para emitir la review. Deliberadamente NO hay `contents: write`: este
       # job no puede empujar commits, y no existe ninguna llamada a merge.
       pull-requests: write
+      # Para el check run que da la señal visible del veredicto.
+      checks: write
       id-token: write
       actions: read
 
@@ -302,6 +304,7 @@ jobs:
             echo "(no hay archivo de salida en $salida)"
           fi
 
+
       - name: Veredicto
         # Corre aunque la revisión haya fallado: un fallo NO puede quedar en
         # silencio ni convertirse en una aprobación por omisión.
@@ -310,51 +313,73 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           PR: ${{ steps.pr.outputs.numero }}
+          SHA: ${{ steps.pr.outputs.sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          set -euo pipefail
-
-          # Se busca también un nivel más abajo: si el archivo aparece en otro
-          # sitio, es mejor encontrarlo que declarar la revisión no concluyente.
-          RUTA=review.json
-          if [ ! -s "$RUTA" ]; then
-            RUTA=$(find . -maxdepth 2 -name review.json -not -path './node_modules/*' 2>/dev/null | head -1)
-            [ -n "$RUTA" ] && echo "review.json encontrado en $RUTA (no en la raíz)."
-          fi
-          RUTA=${RUTA:-review.json}
+          # Sin `set -e` a propósito: aquí cada fallo se gestiona y se informa,
+          # en vez de abortar el paso y dejar el PR sin nada.
+          set -uo pipefail
 
           PIE="_Revisión automática de Claude sobre el diff de este PR. No mergea y no sustituye la revisión humana: el merge lo hace una persona._ · [Ver run]($RUN_URL)"
+          PUBLICADO=0
 
-          # Un PR nunca se queda en silencio: si algo de aquí abajo falla
-          # —timeout, salida malformada, jq, la propia API— se publica un
-          # COMMENT que no aprueba ni bloquea, y el paso termina en rojo para
-          # que se vea. El silencio es el único resultado inaceptable, porque
-          # se confunde con «no había nada que decir».
-          no_concluyente() {
-            trap - ERR   # sin esto, un fallo aquí dentro se llamaría a sí mismo
+          # Llama a la API dejando el cuerpo de la respuesta en resp.json e
+          # imprimiendo el código HTTP. Con `gh api` el mensaje de error no
+          # llega al log —eso nos costó una ronda de diagnóstico a ciegas— y
+          # aquí el motivo exacto del rechazo es justo lo que hace falta.
+          api() {
+            curl -sS -o resp.json -w '%{http_code}' \
+              -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/$REPO/$1" \
+              --data-binary @"$2" 2>/dev/null
+          }
+
+          publicar() {
+            local codigo
+            codigo=$(api "pulls/$PR/reviews" "$1")
+            if [ "$codigo" = "200" ] || [ "$codigo" = "201" ]; then
+              echo "Review publicada ($2)."
+              PUBLICADO=1
+              return 0
+            fi
+            echo "GitHub rechazó la review ($2) con HTTP $codigo:"
+            jq -r '.message // "(sin mensaje)"' resp.json 2>/dev/null
+            jq -r '(.errors // [])[] | tostring' resp.json 2>/dev/null | head -5
+            return 1
+          }
+
+          # --- Caso 1: la revisión no dejó un JSON usable -------------------
+          RUTA=review.json
+          if [ ! -s "$RUTA" ]; then
+            RUTA=$(find . -maxdepth 3 -name review.json -not -path './node_modules/*' 2>/dev/null | head -1)
+            [ -n "$RUTA" ] && echo "review.json encontrado en $RUTA (no en la raíz)."
+          fi
+
+          if [ -z "${RUTA:-}" ] || [ ! -s "$RUTA" ] || ! jq -e '.hallazgos | type == "array"' "${RUTA:-/dev/null}" >/dev/null 2>&1; then
             {
               echo "### ⚠️ Revisión no concluyente"
               echo
-              echo "$1"
+              echo "La revisión automática no terminó, o devolvió una salida que no se puede leer, así que **no hay veredicto**."
               echo
               echo "**No se aprueba nada por omisión**: este PR necesita revisión a mano."
               echo
               echo "---"
               echo "$PIE"
-            } > cuerpo-nc.md
+            } > cuerpo.md
 
-            jq -n --rawfile body cuerpo-nc.md '{event: "COMMENT", body: $body}' > payload-nc.json 2>/dev/null \
-              || printf '%s' '{"event":"COMMENT","body":"Revisión automática no concluyente. No se aprueba nada por omisión: revisa este PR a mano."}' > payload-nc.json
+            jq -n --rawfile body cuerpo.md '{event: "COMMENT", body: $body}' > p-nc.json 2>/dev/null \
+              || printf '%s' '{"event":"COMMENT","body":"Revisión automática no concluyente. No se aprueba nada por omisión: revisa este PR a mano."}' > p-nc.json
+            publicar p-nc.json "no concluyente"
 
-            gh api "repos/$REPO/pulls/$PR/reviews" --method POST --input payload-nc.json >/dev/null || true
-          }
-
-          trap 'no_concluyente "El paso de veredicto falló de forma inesperada. Mira el log del run."' ERR
-
-          # --- Caso 1: la revisión no dejó un JSON usable -------------------
-          if [ ! -s "$RUTA" ] || ! jq -e '.hallazgos | type == "array"' "$RUTA" >/dev/null 2>&1; then
-            no_concluyente "La revisión automática no terminó, o devolvió una salida que no se puede leer, así que **no hay veredicto**."
-            echo "Publicado como no concluyente."
+            jq -n --arg sha "$SHA" '{
+              name: "Revisión de Claude", head_sha: $sha, status: "completed",
+              conclusion: "neutral",
+              output: {title: "No concluyente", summary: "La revisión no terminó. No se aprueba nada por omisión."}
+            }' > p-check.json
+            api "check-runs" p-check.json >/dev/null
             exit 1
           fi
 
@@ -364,18 +389,24 @@ jobs:
 
           # --- El veredicto se decide AQUÍ, fuera del modelo ----------------
           # Claude no tiene forma de emitirlo: solo escribe hallazgos. El único
-          # camino a un APPROVE es que no haya ninguno bloqueante.
+          # camino a una aprobación es que no haya ninguno bloqueante.
           if [ "$BLOQUEANTES" -gt 0 ]; then
             EVENTO="REQUEST_CHANGES"
-            ENCABEZADO="### 🔴 $BLOQUEANTES bloqueante(s) de $TOTAL hallazgo(s)"
+            CHECK="failure"
+            TITULO="$BLOQUEANTES bloqueante(s) de $TOTAL hallazgo(s)"
+            ENCABEZADO="### 🔴 $TITULO"
             CIERRE="Hay que corregir los bloqueantes antes de mergear. Lo marcado como 🟡 queda a tu criterio."
           elif [ "$TOTAL" -gt 0 ]; then
             EVENTO="APPROVE"
-            ENCABEZADO="### ✅ Sin bloqueantes, con $TOTAL punto(s) para decisión humana"
+            CHECK="success"
+            TITULO="Sin bloqueantes, con $TOTAL punto(s) para decisión humana"
+            ENCABEZADO="### ✅ $TITULO"
             CIERRE="Desde el punto de vista de la revisión automática nada impide mergear, pero los puntos de abajo **necesitan que una persona decida**: son deuda técnica, casos borde o decisiones de diseño, no errores claros."
           else
             EVENTO="APPROVE"
-            ENCABEZADO="### ✅ Sin hallazgos"
+            CHECK="success"
+            TITULO="Sin hallazgos"
+            ENCABEZADO="### ✅ $TITULO"
             CIERRE="La revisión automática no encontró nada que corregir ni nada dudoso. Falta tu revisión humana antes de mergear."
           fi
 
@@ -392,6 +423,7 @@ jobs:
             echo "$PIE"
           } > cuerpo.md
 
+          # Intento 1: el veredicto con sus comentarios en línea.
           jq -n \
             --rawfile body cuerpo.md \
             --arg event "$EVENTO" \
@@ -405,15 +437,12 @@ jobs:
                 side: "RIGHT",
                 body: ("**" + (if .severidad == "bloqueante" then "🔴 " else "🟡 " end) + .titulo + "**\n\n" + .cuerpo)
               } ]
-            }' > payload.json
+            }' > p1.json
 
-          # Si GitHub rechaza los comentarios en línea (una línea que quedó
-          # fuera del diff, típicamente), el veredicto se publica igual con los
-          # hallazgos en el cuerpo. Perder la ubicación es aceptable; perder el
-          # veredicto, no.
-          if ! gh api "repos/$REPO/pulls/$PR/reviews" --method POST --input payload.json >/dev/null 2>error.txt; then
-            echo "GitHub rechazó la review con comentarios en línea:"
-            cat error.txt
+          if ! publicar p1.json "con comentarios en línea"; then
+            # Intento 2: sin comentarios en línea, por si alguna línea cayó
+            # fuera del diff. Los hallazgos van en el cuerpo: perder la
+            # ubicación es aceptable, perder el veredicto no.
             {
               cat cuerpo.md
               echo
@@ -423,8 +452,46 @@ jobs:
             } > cuerpo-plano.md
 
             jq -n --rawfile body cuerpo-plano.md --arg event "$EVENTO" \
-              '{event: $event, body: $body}' > payload-plano.json
-            gh api "repos/$REPO/pulls/$PR/reviews" --method POST --input payload-plano.json >/dev/null
+              '{event: $event, body: $body}' > p2.json
+
+            if ! publicar p2.json "sin comentarios en línea"; then
+              # Intento 3: como COMMENT. GitHub puede no permitir que un token
+              # de Actions emita APPROVE; en ese caso el check run de abajo es
+              # el que da la señal verde, y aquí lo que importa es que los
+              # hallazgos lleguen al PR igualmente.
+              if [ "$EVENTO" = "APPROVE" ]; then
+                {
+                  cat cuerpo-plano.md
+                  echo
+                  echo "> ℹ️ No se pudo registrar como aprobación (GitHub rechazó el evento \`APPROVE\`), así que va como comentario. La señal verde está en el check **Revisión de Claude**."
+                } > cuerpo-comment.md
+
+                jq -n --rawfile body cuerpo-comment.md \
+                  '{event: "COMMENT", body: $body}' > p3.json
+                publicar p3.json "como comentario"
+              fi
+            fi
           fi
 
-          echo "Veredicto emitido: $EVENTO ($BLOQUEANTES bloqueantes de $TOTAL hallazgos)."
+          # Último recurso: que el PR no se quede sin nada.
+          if [ "$PUBLICADO" -eq 0 ]; then
+            printf '%s' '{"event":"COMMENT","body":"La revisión automática terminó pero no se pudo publicar su resultado. Mira el log del run. No se aprueba nada por omisión."}' > p4.json
+            publicar p4.json "último recurso"
+          fi
+
+          # El check run es la señal visible del veredicto, independiente de la
+          # API de reviews. No bloquea el merge salvo que se marque como
+          # obligatorio en la protección de rama.
+          jq -n --arg sha "$SHA" --arg conclusion "$CHECK" --arg titulo "$TITULO" --arg url "$RUN_URL" '{
+            name: "Revisión de Claude",
+            head_sha: $sha,
+            status: "completed",
+            conclusion: $conclusion,
+            details_url: $url,
+            output: {title: $titulo, summary: ("Veredicto de la revisión automática. El merge lo decide una persona.")}
+          }' > p-check.json
+          codigo_check=$(api "check-runs" p-check.json)
+          echo "Check run: HTTP $codigo_check ($CHECK — $TITULO)"
+
+          echo "Veredicto: $EVENTO ($BLOQUEANTES bloqueantes de $TOTAL hallazgos). Publicado=$PUBLICADO."
+          [ "$PUBLICADO" -eq 1 ]

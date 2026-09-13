@@ -1359,6 +1359,14 @@ Hay dos restricciones que definen el diseño. La primera: no hay acceso a la API
 - Un PR que legítimamente actualiza `CLAUDE.md` **se revisa con las reglas de la base**. Es deliberado y la consecuencia correcta; los cambios en sí se siguen revisando como cualquier otro archivo del diff.
 - Si un hallazgo apunta a una línea fuera del diff, GitHub rechaza el comentario en línea; el veredicto se publica igual con los hallazgos en el cuerpo. Perder la ubicación es aceptable; perder el veredicto, no.
 - La ruta de mención (`@claude` en un PR de fork) **no se ha probado contra un fork real** todavía: es lo primero que hay que verificar cuando llegue el primer PR externo.
+
+**Añadido tras probarlo (2026-09-12).** Tres cosas que solo aparecieron ejecutándolo, y que corrigen el diseño de arriba:
+
+1. **La aprobación puede no ser posible desde Actions.** El `POST` de la review con evento `APPROVE` devuelve **422**, mientras que `REQUEST_CHANGES` funciona. Así que la señal verde la da ahora un **check run** propio (`Revisión de Claude`), que es independiente de la API de reviews, y el veredicto cae a `COMMENT` cuando la aprobación se rechaza — los hallazgos llegan igual. Ese check no bloquea el merge salvo que se marque obligatorio en la protección de rama, lo que mantiene la regla de que decide una persona.
+2. **La propia acción valida el workflow contra la rama por defecto** y se salta a sí misma si no coinciden («The workflow file must exist and have identical content to the version on the default branch»). Dos consecuencias: el disparo manual **no sirve** para probar cambios de este archivo, y esa validación ya garantiza por su cuenta el punto 3 de la decisión, así que `workflow_run` se sostiene por la otra razón — no gastar en código que no compila.
+3. **`gh api` no deja el mensaje de error en el log**, lo que costó dos rondas de diagnóstico a ciegas. Las llamadas de publicación usan `curl` y **imprimen el código HTTP y el mensaje de GitHub**.
+
+El fallo-seguro del punto 6 se validó solo, dos veces y por causas distintas: con una denegación de permisos y con el rechazo del `APPROVE`, el PR recibió «no concluyente» sin aprobar nada.
 - El prompt de revisión es ahora un artefacto que hay que mantener: si cambian las reglas del proyecto, hay que reflejarlas ahí. Vive en el propio workflow para que se vea en el diff de cualquier cambio.
 
 **Estado.** ACEPTADA — 2026-09-12. Implementada en `.github/workflows/claude-review.yml` (revisión automática y veredicto) y `.github/workflows/claude-mention.yml` (modo a demanda). Requiere el secreto `CLAUDE_CODE_OAUTH_TOKEN` en el repositorio, generado con `claude setup-token`.
