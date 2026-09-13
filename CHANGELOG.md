@@ -12,6 +12,11 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.35.5] - 2026-09-13 — Los puntos a revisar, en su línea
+
+### Corregido
+- **Cuando la revisión automática no encuentra nada bloqueante, sus observaciones ahora aparecen sobre las líneas de código a las que se refieren**, igual que cuando pide cambios. Antes llegaban todas juntas al final del comentario, porque la publicación intentaba primero registrar una aprobación que GitHub no permite a una automatización. La señal verde sigue en el check **Revisión de Claude**.
+
 ## [0.35.4] - 2026-09-12 — La revisión automática, ya funcionando
 
 ### Corregido

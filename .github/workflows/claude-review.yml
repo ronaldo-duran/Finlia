@@ -277,9 +277,9 @@ jobs:
       - name: Diagnóstico de la revisión
         # Barato y solo informativo, pero evita otra ronda de adivinanzas si el
         # veredicto vuelve a salir "no concluyente": dice si el archivo se
-        # escribió en otro sitio o si no se escribió nunca, y qué herramientas
-        # se denegaron. Imprime solo nombres de herramientas y contadores,
-        # nunca el contenido de la revisión (el log de este repo es público).
+        # escribió en otro sitio o si no se escribió nunca, y cuántas
+        # herramientas se denegaron. Imprime solo contadores, nunca el
+        # contenido de la revisión (el log de este repo es público).
         if: ${{ !cancelled() && steps.pr.outputs.revisar == 'true' }}
         run: |
           set -uo pipefail
@@ -296,10 +296,6 @@ jobs:
             jq -c '[.[] | select(.type == "result")] | last
                    | {subtype, is_error, num_turns, permission_denials_count}' "$salida" 2>/dev/null \
               || echo "(no se pudo leer el resumen)"
-
-            echo "--- Herramientas usadas o denegadas ---"
-            grep -o '"tool_name":"[^"]*"' "$salida" 2>/dev/null | sort | uniq -c || true
-            grep -o '"permission_denials":\[[^]]*\]' "$salida" 2>/dev/null | head -3 || true
           else
             echo "(no hay archivo de salida en $salida)"
           fi
@@ -389,7 +385,11 @@ jobs:
 
           # --- El veredicto se decide AQUÍ, fuera del modelo ----------------
           # Claude no tiene forma de emitirlo: solo escribe hallazgos. El único
-          # camino a una aprobación es que no haya ninguno bloqueante.
+          # camino al check verde es que no haya ninguno bloqueante.
+          #
+          # Sin bloqueantes se publica COMMENT, no APPROVE: GitHub responde 422
+          # «GitHub Actions is not permitted to approve pull requests» (ADR-0043).
+          # La señal verde la da el check run de abajo.
           if [ "$BLOQUEANTES" -gt 0 ]; then
             EVENTO="REQUEST_CHANGES"
             CHECK="failure"
@@ -397,13 +397,13 @@ jobs:
             ENCABEZADO="### 🔴 $TITULO"
             CIERRE="Hay que corregir los bloqueantes antes de mergear. Lo marcado como 🟡 queda a tu criterio."
           elif [ "$TOTAL" -gt 0 ]; then
-            EVENTO="APPROVE"
+            EVENTO="COMMENT"
             CHECK="success"
             TITULO="Sin bloqueantes, con $TOTAL punto(s) para decisión humana"
             ENCABEZADO="### ✅ $TITULO"
-            CIERRE="Desde el punto de vista de la revisión automática nada impide mergear, pero los puntos de abajo **necesitan que una persona decida**: son deuda técnica, casos borde o decisiones de diseño, no errores claros."
+            CIERRE="Desde el punto de vista de la revisión automática nada impide mergear, pero los puntos marcados en el código **necesitan que una persona decida**: son deuda técnica, casos borde o decisiones de diseño, no errores claros."
           else
-            EVENTO="APPROVE"
+            EVENTO="COMMENT"
             CHECK="success"
             TITULO="Sin hallazgos"
             ENCABEZADO="### ✅ $TITULO"
@@ -454,23 +454,7 @@ jobs:
             jq -n --rawfile body cuerpo-plano.md --arg event "$EVENTO" \
               '{event: $event, body: $body}' > p2.json
 
-            if ! publicar p2.json "sin comentarios en línea"; then
-              # Intento 3: como COMMENT. GitHub puede no permitir que un token
-              # de Actions emita APPROVE; en ese caso el check run de abajo es
-              # el que da la señal verde, y aquí lo que importa es que los
-              # hallazgos lleguen al PR igualmente.
-              if [ "$EVENTO" = "APPROVE" ]; then
-                {
-                  cat cuerpo-plano.md
-                  echo
-                  echo "> ℹ️ No se pudo registrar como aprobación (GitHub rechazó el evento \`APPROVE\`), así que va como comentario. La señal verde está en el check **Revisión de Claude**."
-                } > cuerpo-comment.md
-
-                jq -n --rawfile body cuerpo-comment.md \
-                  '{event: "COMMENT", body: $body}' > p3.json
-                publicar p3.json "como comentario"
-              fi
-            fi
+            publicar p2.json "sin comentarios en línea"
           fi
 
           # Último recurso: que el PR no se quede sin nada.
