@@ -401,7 +401,7 @@ jobs:
             CHECK="success"
             TITULO="Sin bloqueantes, con $TOTAL punto(s) para decisión humana"
             ENCABEZADO="### ✅ $TITULO"
-            CIERRE="Desde el punto de vista de la revisión automática nada impide mergear, pero los puntos marcados en el código **necesitan que una persona decida**: son deuda técnica, casos borde o decisiones de diseño, no errores claros."
+            CIERRE="Desde el punto de vista de la revisión automática nada impide mergear, pero los puntos señalados **necesitan que una persona decida**: son deuda técnica, casos borde o decisiones de diseño, no errores claros."
           else
             EVENTO="COMMENT"
             CHECK="success"
@@ -447,6 +447,8 @@ jobs:
               cat cuerpo.md
               echo
               echo "#### Hallazgos"
+              echo
+              echo "_GitHub rechazó los comentarios en línea (lo habitual es que alguna línea quedara fuera del diff), así que esta vez los hallazgos van aquí y no sobre el código._"
               echo
               jq -r '.hallazgos[] | "- **" + (if .severidad == "bloqueante" then "🔴" else "🟡" end) + " `" + .archivo + ":" + (.linea | tostring) + "`** — " + .titulo + "\n\n  " + .cuerpo + "\n"' "$RUTA"
             } > cuerpo-plano.md
