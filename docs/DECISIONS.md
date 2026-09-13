@@ -1367,6 +1367,12 @@ Hay dos restricciones que definen el diseño. La primera: no hay acceso a la API
 3. **`gh api` no deja el mensaje de error en el log**, lo que costó dos rondas de diagnóstico a ciegas. Las llamadas de publicación usan `curl` y **imprimen el código HTTP y el mensaje de GitHub**.
 
 El fallo-seguro del punto 6 se validó solo, dos veces y por causas distintas: con una denegación de permisos y con el rechazo del `APPROVE`, el PR recibió «no concluyente» sin aprobar nada.
+
+**Disparo a demanda (2026-09-13).** La revisión deja de lanzarse sola en cada CI en verde: **la pide una persona comentando `/revisar` en el PR** (queda el disparo manual de Actions como reserva). Tres razones. Cada push a un PR abierto gastaba una revisión aunque nadie la necesitara todavía; probar este mismo workflow obligó a pasar PRs a borrador solo para que no se lanzara. Decidir cuándo un PR está listo para revisarse es tarea de una persona, igual que decidir el merge. Y los PR de forks pueden revisarse con el mismo veredicto determinista, porque la revisión la lanza un mantenedor y el código del fork nunca se ejecuta.
+
+Se conservan las garantías del disparo anterior. Los workflows de `issue_comment` se ejecutan **siempre con la copia de la rama por defecto**, así que un PR sigue sin poder alterar su revisor. Solo responde a OWNER, MEMBER y COLLABORATOR. Y **exige CI en verde en el último commit**: si no lo está, lo dice en el PR y no gasta nada; esto sustituye la condición que antes ponía `workflow_run`.
+
+Al abrirse a forks, se endurece además la configuración del checkout. La acción carga la configuración del proyecto que encuentre (el log lo muestra: `settingSources` incluye `project` y `local`, con `enableAllProjectMcpServers: true`), y eso incluye servidores MCP y hooks, que **ejecutan comandos**. Restaurar desde la base solo los archivos que ya existían en ella dejaba pasar los que un PR añadiera, como un `.mcp.json` o un `.claude/settings.local.json`. Ahora se **borran** `.claude/`, `.mcp.json` y `CLAUDE.local.md` antes de traer los de la base.
 - El prompt de revisión es ahora un artefacto que hay que mantener: si cambian las reglas del proyecto, hay que reflejarlas ahí. Vive en el propio workflow para que se vea en el diff de cualquier cambio.
 
 **Estado.** ACEPTADA — 2026-09-12. Implementada en `.github/workflows/claude-review.yml` (revisión automática y veredicto) y `.github/workflows/claude-mention.yml` (modo a demanda). Requiere el secreto `CLAUDE_CODE_OAUTH_TOKEN` en el repositorio, generado con `claude setup-token`.
