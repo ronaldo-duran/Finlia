@@ -12,6 +12,17 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.35.5] - 2026-09-13 — Revisión a demanda, con los puntos en su línea
+
+### Cambiado
+- **La revisión de Claude ya no se lanza sola en cada push: la pide una persona comentando `/revisar` en el Pull Request**, cuando lo considera listo. Solo atiende a quien tiene permiso de escritura en el repositorio y solo si la integración continua está en verde en el último commit; si no lo está, lo dice en el PR y no gasta nada. También sirve para revisar aportes que llegan desde un fork.
+
+### Corregido
+- **Cuando la revisión automática no encuentra nada bloqueante, sus observaciones ahora aparecen sobre las líneas de código a las que se refieren**, igual que cuando pide cambios. Antes llegaban todas juntas al final del comentario, porque la publicación intentaba primero registrar una aprobación que GitHub no permite a una automatización. La señal verde sigue en el check **Revisión de Claude**.
+
+### Seguridad
+- Antes de revisar se descarta la configuración de Claude que traiga el Pull Request (instrucciones, servidores MCP y ajustes del proyecto) y se usa la de la rama principal. Esto incluye los archivos que el PR añada, no solo los que modifique: algunos de ellos pueden ejecutar comandos durante la revisión.
+
 ## [0.35.4] - 2026-09-12 — La revisión automática, ya funcionando
 
 ### Corregido

@@ -2,12 +2,12 @@ name: Claude a demanda
 
 # Modo interactivo: Claude responde cuando alguien con permiso de escritura
 # menciona @claude en un PR, en un issue o en un comentario sobre una línea del
-# diff. Es la vía para dos cosas que la revisión automática no cubre:
+# diff. Sirve para dos cosas que la revisión con veredicto (`/revisar`) no cubre:
 #
-#   1. Revisar un PR que viene de un fork. GitHub no entrega secretos a los runs
-#      disparados por un PR de un fork, así que la revisión automática solo cubre
-#      ramas de este repositorio; en un fork la pide un mantenedor con
-#      «@claude revisa este PR».
+#   1. Preguntas y peticiones abiertas sobre un PR o un issue. La revisión con
+#      veredicto (pedir cambios o check verde) NO se pide aquí: se pide
+#      comentando `/revisar`, que lanza claude-review.yml —también en PRs de
+#      forks— con un veredicto calculado fuera del modelo.
 #   2. Discutir un hallazgo dentro de su propio hilo, cuando no estás de acuerdo
 #      con él o hace falta contexto.
 on:

@@ -1,21 +1,19 @@
 name: Revisión de Claude
 
-# Se dispara cuando CI YA TERMINÓ en verde, no cuando se abre el PR: revisar
-# código que no compila o con la suite roja gasta suscripción para nada.
+# La revisión se PIDE, no se lanza sola: un mantenedor comenta `/revisar` en el
+# PR cuando lo considera listo (ADR-0043, «Disparo a demanda»). Así no se gasta
+# una revisión en cada push, y decidir cuándo revisar es de una persona, igual
+# que decidir el merge.
 #
-# Va con `workflow_run` y no como un job de ci.yml a propósito: con workflow_run
-# GitHub ejecuta **la copia de este archivo que está en main**, no la de la rama
-# del PR. Así nadie puede ablandar o desactivar su propio revisor dentro del
-# mismo PR que se va a revisar.
+# Los workflows de `issue_comment` se ejecutan SIEMPRE con la copia de este
+# archivo que está en la rama por defecto, no con la del PR: nadie puede
+# ablandar o desactivar su propio revisor dentro del PR que se va a revisar.
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-  # Disparo manual, indispensable para poder probar cambios de este workflow:
-  # `workflow_run` solo ejecuta la copia de la rama por defecto, así que sin
-  # esto cada ajuste exigiría mergear a main para comprobarlo. El disparo
-  # manual sí corre la copia de la rama que elijas, y solo puede lanzarlo
-  # quien tiene permiso de escritura.
+  issue_comment:
+    types: [created]
+  # Reserva: Actions → Run workflow, o `gh workflow run claude-review.yml -f pr=N`.
+  # No sirve para probar cambios de este archivo desde una rama: la acción se
+  # niega a correr si el workflow no es idéntico al de la rama por defecto.
   workflow_dispatch:
     inputs:
       pr:
@@ -26,21 +24,21 @@ on:
 permissions: {}
 
 concurrency:
-  group: claude-review-${{ github.event.workflow_run.head_branch || inputs.pr }}
+  group: claude-review-${{ github.event.issue.number || inputs.pr }}
   cancel-in-progress: true
 
 jobs:
   review:
     name: Revisar y emitir veredicto
-    # Solo PRs de ramas de ESTE repositorio con CI en verde. Un PR desde un fork
-    # se revisa a demanda con @claude (ver claude-mention.yml): este workflow
-    # tiene acceso a secretos y no se los damos a un run disparado por código
-    # que no controlamos.
+    # `/revisar` al principio de un comentario de un PR (no de un issue),
+    # escrito por alguien con permiso de escritura. Cualquier otro comentario ni
+    # siquiera arranca un runner. No usa `@claude` a propósito: esa mención es
+    # del workflow conversacional (claude-mention.yml).
     if: >-
       github.event_name == 'workflow_dispatch' || (
-        github.event.workflow_run.event == 'pull_request' &&
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_repository.full_name == github.repository
+        github.event.issue.pull_request &&
+        startsWith(github.event.comment.body, '/revisar') &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
       )
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -51,49 +49,62 @@ jobs:
       pull-requests: write
       # Para el check run que da la señal visible del veredicto.
       checks: write
+      # Para contestar en el PR cuando CI no está en verde y para marcar el
+      # comando con 👀 al recibirlo.
+      issues: write
       id-token: write
       actions: read
 
     steps:
-      - name: Localizar el PR de este run
+      - name: Localizar el PR y comprobar CI
         id: pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
-          EVENTO: ${{ github.event_name }}
-          PR_MANUAL: ${{ inputs.pr }}
-          SHA_CI: ${{ github.event.workflow_run.head_sha }}
+          PR_NUM: ${{ github.event.issue.number || inputs.pr }}
+          COMMENT_ID: ${{ github.event.comment.id }}
         run: |
           set -euo pipefail
 
-          if [ "$EVENTO" = "workflow_dispatch" ]; then
-            datos=$(gh api "repos/$REPO/pulls/$PR_MANUAL")
-          else
-            # El payload de workflow_run no trae el PR de forma fiable, así que
-            # se resuelve por el commit.
-            datos=$(gh api "repos/$REPO/commits/$SHA_CI/pulls" \
-              --jq 'map(select(.state == "open")) | first // empty')
-          fi
+          contestar() {
+            gh api "repos/$REPO/issues/$PR_NUM/comments" -f body="$1" >/dev/null || true
+          }
 
-          if [ -z "$datos" ]; then
-            echo "No hay PR abierto que revisar."
-            echo "revisar=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
+          datos=$(gh api "repos/$REPO/pulls/$PR_NUM")
           numero=$(printf '%s' "$datos" | jq -r '.number')
-          borrador=$(printf '%s' "$datos" | jq -r '.draft')
           estado=$(printf '%s' "$datos" | jq -r '.state')
           base=$(printf '%s' "$datos" | jq -r '.base.ref')
           sha=$(printf '%s' "$datos" | jq -r '.head.sha')
 
-          if [ "$estado" != "open" ] || [ "$borrador" = "true" ]; then
-            echo "El PR #$numero está $estado (borrador=$borrador): no se revisa."
+          if [ "$estado" != "open" ]; then
+            echo "El PR #$numero está $estado: no se revisa."
             echo "revisar=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          echo "PR #$numero (base: $base, head: $sha) listo para revisar."
+          # Un borrador SÍ se revisa: alguien lo ha pedido explícitamente.
+
+          # Acuse de recibo sobre el comentario del comando.
+          if [ -n "$COMMENT_ID" ]; then
+            gh api "repos/$REPO/issues/comments/$COMMENT_ID/reactions" -f content=eyes >/dev/null || true
+          fi
+
+          # CI en verde en el último commit. Revisar código que no compila o con
+          # la suite roja gasta suscripción para nada; esta comprobación
+          # sustituye la condición que antes ponía `workflow_run`.
+          ci=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$sha&per_page=1" \
+            --jq '.workflow_runs[0] // {} | "\(.status // "")/\(.conclusion // "")"' 2>/dev/null || echo "")
+          # Sin ningún run de CI para ese commit el filtro devuelve "/".
+          [ "$ci" = "/" ] && ci=""
+
+          if [ "$ci" != "completed/success" ]; then
+            echo "CI del commit $sha: '${ci}'. No se revisa."
+            contestar "⏳ No lanzo la revisión todavía: la integración continua del último commit (\`${sha:0:7}\`) no está en verde (estado: \`${ci:-sin ejecutar}\`). Comenta \`/revisar\` de nuevo cuando pase."
+            echo "revisar=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "PR #$numero (base: $base, head: $sha) con CI en verde: se revisa."
           echo "revisar=true" >> "$GITHUB_OUTPUT"
           echo "numero=$numero" >> "$GITHUB_OUTPUT"
           echo "base=$base" >> "$GITHUB_OUTPUT"
@@ -108,7 +119,7 @@ jobs:
           # sacar el diff contra main.
           fetch-depth: 0
 
-      - name: Traer la base y restaurar las instrucciones
+      - name: Traer la base y restaurar la configuración
         if: steps.pr.outputs.revisar == 'true'
         env:
           BASE: ${{ steps.pr.outputs.base }}
@@ -119,12 +130,14 @@ jobs:
           # referencia local, así que hay que traerla: sin ella no hay diff.
           git fetch --no-tags origin "+refs/heads/$BASE:refs/remotes/origin/$BASE"
 
-          # Los criterios de revisión salen de la base, nunca de la rama
-          # revisada: si no, un PR podría relajar su propia revisión editando
-          # CLAUDE.md o .claude/ en el mismo commit. El diff sigue mostrando
-          # esos cambios —se revisan como cualquier otro—; lo que no puede es
-          # cambiar las reglas con las que se le revisa.
-          for ruta in CLAUDE.md AGENTS.md docs/SECURITY.md .claude; do
+          # Las instrucciones y la configuración de Claude salen de la base,
+          # nunca del PR. Primero se BORRAN: restaurar solo lo que existe en la
+          # base dejaría pasar lo que el PR AÑADA, y la acción carga la
+          # configuración del proyecto, servidores MCP y hooks incluidos, que
+          # ejecutan comandos con los secretos de este run. El diff sigue
+          # mostrando esos cambios y se revisan como cualquier otro.
+          rm -rf .claude .mcp.json CLAUDE.local.md
+          for ruta in CLAUDE.md AGENTS.md docs/SECURITY.md .claude .mcp.json; do
             git checkout "origin/$BASE" -- "$ruta" 2>/dev/null || true
           done
 
@@ -277,9 +290,9 @@ jobs:
       - name: Diagnóstico de la revisión
         # Barato y solo informativo, pero evita otra ronda de adivinanzas si el
         # veredicto vuelve a salir "no concluyente": dice si el archivo se
-        # escribió en otro sitio o si no se escribió nunca, y qué herramientas
-        # se denegaron. Imprime solo nombres de herramientas y contadores,
-        # nunca el contenido de la revisión (el log de este repo es público).
+        # escribió en otro sitio o si no se escribió nunca, y cuántas
+        # herramientas se denegaron. Imprime solo contadores, nunca el
+        # contenido de la revisión (el log de este repo es público).
         if: ${{ !cancelled() && steps.pr.outputs.revisar == 'true' }}
         run: |
           set -uo pipefail
@@ -296,10 +309,6 @@ jobs:
             jq -c '[.[] | select(.type == "result")] | last
                    | {subtype, is_error, num_turns, permission_denials_count}' "$salida" 2>/dev/null \
               || echo "(no se pudo leer el resumen)"
-
-            echo "--- Herramientas usadas o denegadas ---"
-            grep -o '"tool_name":"[^"]*"' "$salida" 2>/dev/null | sort | uniq -c || true
-            grep -o '"permission_denials":\[[^]]*\]' "$salida" 2>/dev/null | head -3 || true
           else
             echo "(no hay archivo de salida en $salida)"
           fi
@@ -389,7 +398,11 @@ jobs:
 
           # --- El veredicto se decide AQUÍ, fuera del modelo ----------------
           # Claude no tiene forma de emitirlo: solo escribe hallazgos. El único
-          # camino a una aprobación es que no haya ninguno bloqueante.
+          # camino al check verde es que no haya ninguno bloqueante.
+          #
+          # Sin bloqueantes se publica COMMENT, no APPROVE: GitHub responde 422
+          # «GitHub Actions is not permitted to approve pull requests» (ADR-0043).
+          # La señal verde la da el check run de abajo.
           if [ "$BLOQUEANTES" -gt 0 ]; then
             EVENTO="REQUEST_CHANGES"
             CHECK="failure"
@@ -397,13 +410,13 @@ jobs:
             ENCABEZADO="### 🔴 $TITULO"
             CIERRE="Hay que corregir los bloqueantes antes de mergear. Lo marcado como 🟡 queda a tu criterio."
           elif [ "$TOTAL" -gt 0 ]; then
-            EVENTO="APPROVE"
+            EVENTO="COMMENT"
             CHECK="success"
             TITULO="Sin bloqueantes, con $TOTAL punto(s) para decisión humana"
             ENCABEZADO="### ✅ $TITULO"
-            CIERRE="Desde el punto de vista de la revisión automática nada impide mergear, pero los puntos de abajo **necesitan que una persona decida**: son deuda técnica, casos borde o decisiones de diseño, no errores claros."
+            CIERRE="Desde el punto de vista de la revisión automática nada impide mergear, pero los puntos señalados **necesitan que una persona decida**: son deuda técnica, casos borde o decisiones de diseño, no errores claros."
           else
-            EVENTO="APPROVE"
+            EVENTO="COMMENT"
             CHECK="success"
             TITULO="Sin hallazgos"
             ENCABEZADO="### ✅ $TITULO"
@@ -448,29 +461,15 @@ jobs:
               echo
               echo "#### Hallazgos"
               echo
+              echo "_GitHub rechazó los comentarios en línea (lo habitual es que alguna línea quedara fuera del diff), así que esta vez los hallazgos van aquí y no sobre el código._"
+              echo
               jq -r '.hallazgos[] | "- **" + (if .severidad == "bloqueante" then "🔴" else "🟡" end) + " `" + .archivo + ":" + (.linea | tostring) + "`** — " + .titulo + "\n\n  " + .cuerpo + "\n"' "$RUTA"
             } > cuerpo-plano.md
 
             jq -n --rawfile body cuerpo-plano.md --arg event "$EVENTO" \
               '{event: $event, body: $body}' > p2.json
 
-            if ! publicar p2.json "sin comentarios en línea"; then
-              # Intento 3: como COMMENT. GitHub puede no permitir que un token
-              # de Actions emita APPROVE; en ese caso el check run de abajo es
-              # el que da la señal verde, y aquí lo que importa es que los
-              # hallazgos lleguen al PR igualmente.
-              if [ "$EVENTO" = "APPROVE" ]; then
-                {
-                  cat cuerpo-plano.md
-                  echo
-                  echo "> ℹ️ No se pudo registrar como aprobación (GitHub rechazó el evento \`APPROVE\`), así que va como comentario. La señal verde está en el check **Revisión de Claude**."
-                } > cuerpo-comment.md
-
-                jq -n --rawfile body cuerpo-comment.md \
-                  '{event: "COMMENT", body: $body}' > p3.json
-                publicar p3.json "como comentario"
-              fi
-            fi
+            publicar p2.json "sin comentarios en línea"
           fi
 
           # Último recurso: que el PR no se quede sin nada.
