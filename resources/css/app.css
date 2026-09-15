@@ -719,10 +719,12 @@ a { color: var(--finlia-primary); }
 }
 
 /* Cuando se usa como separador de secciones dentro de un list-group (recurrentes,
-   recordatorios), el `list-group-item` vecino ya trae padding-inline; sin este
-   alineado, el icono del encabezado quedaba pegado al borde izquierdo del card. */
+   recordatorios), el `list-group-item` vecino ya trae 1rem de padding-inline y
+   el card-header también: sin más indent, el icono del grupo caía justo debajo
+   del icono del título y se leía como otro encabezado, no como una viñeta.
+   Con 2rem de padding-left el icono actúa de bullet indentado bajo el título. */
 .list-group-flush > .day-group-label {
-    padding: 0.75rem 1rem 0.25rem;
+    padding: 0.9rem 1rem 0.35rem 2rem;
 }
 
 /* =============================================================

@@ -90,7 +90,7 @@
             <div class="col-12">
                 <div class="card border-0">
                     <div class="card-header border-0 bg-transparent fw-semibold">
-                        <i class="bi bi-list-check me-1"></i> Próximas obligaciones
+                        <i class="bi bi-list-check me-1"></i> Obligaciones
                     </div>
 
                     @if ($items->isEmpty())
