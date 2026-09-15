@@ -718,6 +718,13 @@ a { color: var(--finlia-primary); }
     color: var(--finlia-text-muted);
 }
 
+/* Cuando se usa como separador de secciones dentro de un list-group (recurrentes,
+   recordatorios), el `list-group-item` vecino ya trae padding-inline; sin este
+   alineado, el icono del encabezado quedaba pegado al borde izquierdo del card. */
+.list-group-flush > .day-group-label {
+    padding: 0.75rem 1rem 0.25rem;
+}
+
 /* =============================================================
    FAB flotante — botón de acción principal fijo bottom-right
    (estilo Twitter/X). Abre un speed-dial con 5 acciones rápidas.
