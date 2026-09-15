@@ -12,6 +12,15 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.36.0] - 2026-09-14 — Vigilancia para el lanzamiento
+
+### Añadido
+- **Aviso de errores por correo.** Cada hora se revisa el registro de la aplicación y, si hubo errores nuevos, llega un único correo al buzón de contacto con los errores agrupados; sin errores no llega nada ([ADR-0044](docs/DECISIONS.md#adr-0044)). De cada excepción, el correo dice qué tipo de error fue y dónde ocurrió, **sin los datos del mensaje** (que pueden llevar montos o correos): ese detalle se queda en el servidor. También deja ver cuándo se agota la cuota diaria de envío de correo.
+- **Métricas del embudo** (`finlia:metrics`): registros, verificación, hogares con movimientos, usuarios que vuelven a registrar gastos otro día y actividad a los 7 días del registro. Llegan al buzón de contacto cada lunes.
+
+### Documentación
+- Las copias de seguridad se apoyan en la copia diaria de Hostinger, con la recomendación de restaurarla una vez para probarla.
+
 ## [0.35.5] - 2026-09-13 — Revisión a demanda, con los puntos en su línea
 
 ### Cambiado

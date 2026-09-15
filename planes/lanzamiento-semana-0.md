@@ -189,18 +189,31 @@ Está implementada; falta confirmar que se renderiza.
 Bloqueantes del soft launch (semana 1, 5–10 personas por WhatsApp): **T1, T2, T3**.
 Bloqueantes del post de LinkedIn: **todas**.
 
+## Estado (2026-09-14)
+
+| Tarea | Estado | Qué queda |
+|---|---|---|
+| T1 Backup | ✅ Cubierto por Hostinger | Copia diaria del hosting ([DEPLOYMENT §11](../docs/DEPLOYMENT.md)). Queda **una restauración de prueba** |
+| T2 Aviso de errores | ✅ Código | `finlia:report-errors` cada hora ([ADR-0044](../docs/DECISIONS.md#adr-0044)). En producción: `FINLIA_CONTACT_EMAIL` puesto, `APP_DEBUG=false`, y provocar un error para ver llegar el correo |
+| T3 Prueba de humo | ⬜ Manual | Registro completo desde fuera, con Gmail y con Outlook |
+| T4 Cuota de correo | ✅ Cubierto | El panel de Brevo muestra el consumo diario, y agotar la cuota produce un error que avisa T2. Sin contador propio |
+| T5 Métricas | ✅ Código | `finlia:metrics`, con la salida al buzón los lunes. En producción: correrlo una vez y **anotar la línea base** |
+| T6 Licencia y promesa | 🟡 | Hecho ADR-0042. Faltan la marca en la SIC, la revisión de abogado y acotar «Finlia es gratis» en el sitio |
+| T7 Secretos | ✅ Cubierto por GitHub | Secret scanning y push protection activos, 0 alertas. No detecta patrones genéricos (contraseñas sueltas) |
+| T8 Previsualización | 🟡 | Etiquetas OG e imagen verificadas en producción (HTTP 200, 156 KB). Falta verla en WhatsApp y en el LinkedIn Post Inspector |
+
 ## Definición de terminado
 
-- [ ] Un dump de anoche restaurado en local, con la app funcionando sobre él
+- [ ] Una copia de Hostinger restaurada una vez en una base de prueba
 - [ ] Un error provocado en producción llegó por correo
 - [ ] `APP_DEBUG=false` confirmado en el servidor
 - [ ] Dos cuentas nuevas creadas desde fuera (Gmail y Outlook) sin intervención
-- [ ] Consumo diario de correo conocido, con margen y plan B escritos
-- [ ] `finlia:metrics` corriendo y **línea base anotada**
+- [x] Consumo diario de correo visible (panel de Brevo) y cuota agotada detectable (T2)
+- [ ] `finlia:metrics` corriendo en producción y **línea base anotada**
 - [x] Decisión de licencia registrada como ADR y `CONTRIBUTING.md` publicado
 - [ ] Marca radicada en la SIC
 - [ ] Promesa de gratuidad de la beta escrita y visible
-- [ ] gitleaks limpio
+- [x] Historial sin secretos (secret scanning de GitHub, 0 alertas)
 - [ ] Previsualización verificada en WhatsApp y LinkedIn
 
 ## Lo que NO entra en la semana 0

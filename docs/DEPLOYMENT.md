@@ -235,6 +235,8 @@ Para **colas** (si se usan) sin worker persistente, procesar dentro del schedule
 > El correo transaccional (invitaciones, recuperación de contraseña) se envía **de forma síncrona** y **no depende del cron** (ADR-0015). Son dos correos puntuales disparados por una acción del usuario; encolarlos sin este cron activo los perdería en silencio.
 >
 > El **digest de recordatorios** (`finlia:send-reminder-digests`, 06:30) sí vive en el Scheduler y es el único correo en lote (ADR-0028): síncrono dentro de la corrida — corre en el proceso del cron, nunca añade latencia a la app — con `try/catch` por destinatario y `withoutOverlapping()` para que una corrida larga no se solape con la del minuto siguiente. Si el volumen creciera hasta hacer larga la corrida (umbral: ~200–250 digest diarios, donde también se cruza la cuota free de Brevo), la Fase 2 de ADR-0028 es un Job `SendReminderDigest` por destinatario despachado desde el comando y procesado por el `queue:work --stop-when-empty` de arriba; el Job marca el pivote tras enviar de verdad, y el comando pasa de enviar a despachar.
+>
+> **Vigilancia** (plan de lanzamiento): `finlia:report-errors` corre **cada hora**, lee lo nuevo de `storage/logs/laravel.log` y, si hay errores, manda **un único correo agrupado** a `FINLIA_CONTACT_EMAIL` ([ADR-0044](DECISIONS.md#adr-0044)); sin errores no envía nada. De cada excepción el correo trae solo la clase y el `archivo:línea`: el mensaje, que puede llevar montos o correos, se lee en el log del servidor. Guarda hasta dónde leyó en `storage/logs/laravel.log.offset`, que **no se borra** al desplegar. `finlia:metrics` imprime las métricas del embudo, y el Scheduler manda su salida al mismo buzón **los lunes a las 07:00**. Los dos se pueden correr a mano por SSH con la ruta de PHP 8.4. La primera ejecución de `finlia:report-errors` solo marca el punto de partida: para comprobar que el aviso llega, provoca un error después y espera a la corrida siguiente.
 
 ## 7. Permisos
 
@@ -371,5 +373,6 @@ Si es un token clásico, el permiso `repo`. Sin alguna de las dos cosas GitHub r
 
 ## 11. Backups
 
-- Exportar la base de datos periódicamente (cron con `mysqldump` + cifrado, o panel de Hostinger).
-- **Nunca** guardar backups en el repositorio.
+- **Hostinger saca una copia de seguridad diaria** (panel → Copias de seguridad). Es la copia de referencia, así que no hay cron propio de volcado.
+- **Restáurala una vez** en una base de prueba antes de depender de ella: una copia que nunca se restauró no está probada.
+- Si se descarga una copia, contiene las finanzas de otras personas: cifrada y **nunca** en el repositorio.

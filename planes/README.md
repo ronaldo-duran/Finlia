@@ -8,7 +8,7 @@ Hay dos series.
 
 | Plan | Qué cubre | Estado |
 |---|---|---|
-| [Semana 0: antes de invitar a nadie](lanzamiento-semana-0.md) | Copia de seguridad probada, aviso de errores en producción, prueba de humo del registro, cuota de correo, métricas del embudo, licencia y `CONTRIBUTING.md` | ⬜ |
+| [Semana 0: antes de invitar a nadie](lanzamiento-semana-0.md) | Copia de seguridad probada, aviso de errores en producción, prueba de humo del registro, cuota de correo, métricas del embudo, licencia y `CONTRIBUTING.md` | 🟡 Código listo (v0.36.0); quedan verificaciones manuales |
 
 Se escribió al terminar el MVP, antes de promocionar la app en redes. Su premisa:
 el riesgo de un lanzamiento no es la aplicación, es el embudo y la ceguera
