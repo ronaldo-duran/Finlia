@@ -74,23 +74,36 @@ class ReminderService
     /**
      * Conteo para la campanita y el panel: cuántas obligaciones piden
      * atención (vencidas + próximas). `total` incluye las de más
-     * adelante, para la página completa.
+     * adelante, para la página completa. `preview` trae los tres
+     * primeros ítems con atención para que la campanita muestre qué
+     * son, no solo cuántos (Épica 9).
      *
-     * @return array{overdue: int, upcoming: int, attention: int, total: int}
+     * @return array{overdue: int, upcoming: int, attention: int, total: int, preview: list<array{title: string, days_remaining: int, status: string}>}
      */
     public function summary(int $householdId, ?CarbonInterface $reference = null): array
     {
-        $statuses = $this->list($householdId, $reference)
-            ->map(fn (array $item) => $item['status']);
+        $items = $this->list($householdId, $reference);
 
-        $overdue = $statuses->filter(fn (ReminderStatus $s) => $s === ReminderStatus::Overdue)->count();
-        $upcoming = $statuses->filter(fn (ReminderStatus $s) => $s === ReminderStatus::Upcoming)->count();
+        $overdue = $items->where('status', ReminderStatus::Overdue)->count();
+        $upcoming = $items->where('status', ReminderStatus::Upcoming)->count();
+
+        $preview = $items
+            ->filter(fn (array $i) => $i['status'] === ReminderStatus::Overdue || $i['status'] === ReminderStatus::Upcoming)
+            ->take(3)
+            ->map(fn (array $i) => [
+                'title' => $i['title'],
+                'days_remaining' => $i['days_remaining'],
+                'status' => $i['status']->value,
+            ])
+            ->values()
+            ->all();
 
         return [
             'overdue' => $overdue,
             'upcoming' => $upcoming,
             'attention' => $overdue + $upcoming,
-            'total' => $statuses->count(),
+            'total' => $items->count(),
+            'preview' => $preview,
         ];
     }
 
@@ -104,7 +117,7 @@ class ReminderService
      * list() nunca se cachea: la página /recordatorios siempre muestra el
      * estado fresco.
      *
-     * @return array{overdue: int, upcoming: int, attention: int, total: int}
+     * @return array{overdue: int, upcoming: int, attention: int, total: int, preview: list<array{title: string, days_remaining: int, status: string}>}
      */
     public function cachedSummary(int $householdId): array
     {
