@@ -44,6 +44,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0041 — Páginas de error con layout aislado, y el mantenimiento como paso del despliegue](#adr-0041) — **ACEPTADA**
 - [ADR-0042 — Dos licencias en un repositorio: núcleo AGPL y `ee/` comercial, con CLA](#adr-0042) — **ACEPTADA**
 - [ADR-0043 — Revisión automática de PRs: el veredicto se calcula fuera del modelo](#adr-0043) — **ACEPTADA**
+- [ADR-0044 — Aviso de errores en producción: el cron lee el log y avisa por correo](#adr-0044) — **ACEPTADA**
 
 ---
 
@@ -1376,6 +1377,36 @@ Al abrirse a forks, se endurece además la configuración del checkout. La acci�
 - El prompt de revisión es ahora un artefacto que hay que mantener: si cambian las reglas del proyecto, hay que reflejarlas ahí. Vive en el propio workflow para que se vea en el diff de cualquier cambio.
 
 **Estado.** ACEPTADA — 2026-09-12. Implementada en `.github/workflows/claude-review.yml` (revisión automática y veredicto) y `.github/workflows/claude-mention.yml` (modo a demanda). Requiere el secreto `CLAUDE_CODE_OAUTH_TOKEN` en el repositorio, generado con `claude setup-token`.
+
+---
+
+## ADR-0044
+### Aviso de errores en producción: el cron lee el log y avisa por correo — **ACEPTADA**
+
+**Contexto.** Antes de abrir la app al público no había forma de enterarse de un error en producción: las páginas de error propias ([ADR-0041](#adr-0041)) informan a quien lo sufre, no al dueño. El plan de lanzamiento (`planes/lanzamiento-semana-0.md`, T2) lo marcó como bloqueante. Producción tiene dos dependencias (framework y tinker) y corre en hosting compartido, sin procesos persistentes.
+
+**Decisión.**
+
+1. Un comando, `finlia:report-errors`, corre **cada hora** en el Scheduler. Lee lo nuevo de `storage/logs/laravel.log` desde la corrida anterior, agrupa por mensaje los `ERROR`, `CRITICAL`, `ALERT` y `EMERGENCY`, y manda **un único correo** a `FINLIA_CONTACT_EMAIL`. Sin errores, no envía nada.
+2. **La marca de lectura va en un archivo junto al log, no en la caché.** Limpiar la caché al desplegar perdería los errores de la hora del despliegue, que es justo cuando más aparecen.
+3. **La marca avanza después de enviar.** Si el correo falla, la corrida siguiente lo vuelve a intentar.
+4. **La primera corrida solo marca el punto de partida**: no se reporta el historial.
+5. **Cubre también la cuota de Brevo.** Un envío rechazado por cuota lanza una excepción que queda en el log, así que no hace falta un contador propio de correos.
+
+**Alternativas (descartadas).**
+
+- **Sentry, plan gratuito.** Mejor agrupación y aviso inmediato, pero suma una dependencia y un servicio externo, y el contexto de las excepciones —que puede llevar montos o correos— saldría del hosting.
+- **Un canal de log que mande correo con cada error** (el `SymfonyMailerHandler` de Monolog). Envía durante la propia petición que falla, le suma latencia y, en una avalancha, manda un correo por petición.
+- **Un contador propio de correos enviados.** El panel de Brevo ya muestra el consumo diario, y agotar la cuota ya produce un error que este aviso detecta.
+
+**Consecuencias y mitigaciones.**
+
+- El aviso llega con **hasta una hora de retraso**. Con pocos usuarios basta; si el volumen crece, Sentry sigue siendo la salida natural.
+- Solo lee el canal `single`, que es el de producción. Con `daily` habría que leer el archivo del día.
+- En una avalancha se leen solo los últimos 5 MB nuevos, suficientes para saber qué está roto sin agotar la memoria.
+- Del log solo sale la primera línea de cada error, hasta 300 caracteres, y va al buzón del propio dueño.
+
+**Estado.** ACEPTADA — 2026-09-14. Implementada en `app/Console/Commands/ReportLogErrors.php`, `routes/console.php` y `tests/Feature/Console/ReportLogErrorsTest.php`.
 
 ---
 

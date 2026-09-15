@@ -50,3 +50,19 @@ Schedule::command('finlia:process-export-requests')
     ->name('exportaciones-datos')
     ->withoutOverlapping()
     ->dailyAt('02:00');
+
+// Plan de lanzamiento T2 (ADR-0044): aviso por correo de los errores nuevos del
+// log. Con pocos usuarios, cada hora basta; sin errores no envía nada.
+Schedule::command('finlia:report-errors')
+    ->name('aviso-errores')
+    ->withoutOverlapping()
+    ->hourly();
+
+// Plan de lanzamiento T5: métricas del embudo los lunes, con la salida al buzón
+// de contacto. Sin buzón o sin correo real no hay a quién mandarlas.
+if (config('finlia.contact.inbox') && mail_is_deliverable()) {
+    Schedule::command('finlia:metrics')
+        ->name('metricas-embudo')
+        ->weeklyOn(1, '07:00')
+        ->emailOutputTo(config('finlia.contact.inbox'));
+}
