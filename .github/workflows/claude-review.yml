@@ -149,7 +149,9 @@ jobs:
           # Sin --max-turns: una revisión truncada emitiría un veredicto basado
           # en una lectura incompleta, y un APPROVE así es peor que no revisar.
           # El gasto se acota con timeout-minutes y la concurrency de arriba.
-          claude_args: --model claude-opus-5
+          # Sonnet y no Opus: el token es de la suscripción, y cada revisión con
+          # Opus se comía una parte grande del límite de 5 h de uso interactivo.
+          claude_args: --model claude-sonnet-5
           # Lista blanca: leer, buscar, escribir y git. Sin ejecutar el código
           # del PR (ni composer, ni npm, ni php), sin red y sin herramientas de
           # GitHub: Claude no publica nada, su única salida es review.json.
