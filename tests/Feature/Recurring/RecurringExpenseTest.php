@@ -7,7 +7,6 @@ use App\Enums\Frequency;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Household;
-use App\Models\RecurringExpense;
 use App\Models\User;
 use App\Services\HouseholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -327,33 +326,8 @@ class RecurringExpenseTest extends TestCase
             ->assertDontSee('SecretoSOAT');
     }
 
-    public function test_el_panel_muestra_alertas_de_obligaciones_proximas(): void
-    {
-        [$owner, $household] = $this->setupHousehold();
-        $household->recurringExpenses()->create([
-            'name' => 'SOAT muy cerca', 'amount' => 600000,
-            'frequency' => Frequency::Yearly->value,
-            'next_date' => now()->addDays(20)->toDateString(),
-        ]);
-
-        $this->actingAs($owner)
-            ->get(route('dashboard'))
-            ->assertOk()
-            ->assertSee('SOAT muy cerca vence en 20 días');
-    }
-
-    public function test_los_inactivos_no_generan_avisos_en_el_panel(): void
-    {
-        [$owner, $household] = $this->setupHousehold();
-        RecurringExpense::factory()->inactive()->create([
-            'household_id' => $household->id,
-            'name' => 'PausadoAlerta',
-            'next_date' => now()->addDays(3)->toDateString(),
-        ]);
-
-        $this->actingAs($owner)
-            ->get(route('dashboard'))
-            ->assertOk()
-            ->assertDontSee('PausadoAlerta');
-    }
+    // Los avisos de obligaciones recurrentes ya no viven en el panel: la
+    // campanita del navbar y /recordatorios los cubren en un solo lugar
+    // (Épica 9). La lógica de "activa vs pausada" se prueba en
+    // RecurringExpenseServiceTest y ReminderServiceTest.
 }
