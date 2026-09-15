@@ -12,6 +12,18 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.36.1] - 2026-09-15 — Retoques al lanzamiento
+
+### Corregido
+- **La deuda pagada el mismo día del vencimiento deja de avisar como pendiente.** El cálculo interpretaba «vence hoy» como aviso vivo, aunque hubiera un pago registrado ese mismo día; ahora, si el mes tiene un pago, la próxima cita se salta al mes siguiente, sea cual sea la fecha del pago.
+- **El pop-up de editar deuda ahora se puede recorrer entero en el móvil.** El formulario es más alto que la pantalla y el modal no ganaba altura para desplazar; ocupa toda la ventana en móvil (con desplazamiento interno) y sigue centrado en escritorio.
+- **En escritorio la versión queda al final de la barra lateral.** Antes flotaba justo debajo del último enlace, dejando un hueco vacío en la parte baja; ahora está anclada al pie de la barra.
+
+### Cambiado
+- **El botón «Registrar ingreso» del aviso de pago pendiente ahora prellena el formulario** con el monto, la descripción y la categoría del ingreso previsto asociado; antes solo redirigía a un formulario vacío y había que reescribirlo todo.
+- **Los recordatorios estrenan botón de alta con página propia.** «Nuevo recordatorio» se abre en su propia pantalla en lugar de convivir con el listado como columna; la pantalla principal se dedica ahora a ver lo que vence.
+- **Simplificado el aviso del pago automático en los gastos recurrentes.** El texto largo sobre el programa diario del servidor se reduce a «Se debita en la madrugada del día del vencimiento», lo único que necesita saber quien usa la app.
+
 ## [0.36.0] - 2026-09-14 — Vigilancia para el lanzamiento
 
 ### Añadido

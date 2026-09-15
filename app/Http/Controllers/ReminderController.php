@@ -68,6 +68,24 @@ class ReminderController extends Controller
         ]);
     }
 
+    /**
+     * Alta de un recordatorio suelto. Antes vivía como una columna a la
+     * izquierda del listado; ahora está en su propia página para que la
+     * pantalla principal se dedique a ver lo que vence.
+     */
+    public function create(Request $request): View|RedirectResponse
+    {
+        $household = active_household();
+
+        if ($household === null) {
+            return redirect()->route('households.create');
+        }
+
+        $this->authorize('create', Reminder::class);
+
+        return view('reminders.create');
+    }
+
     public function store(StoreReminderRequest $request): RedirectResponse
     {
         $this->authorize('create', Reminder::class);

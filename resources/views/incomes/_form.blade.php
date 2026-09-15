@@ -1,4 +1,14 @@
-@php $income = $income ?? null; @endphp
+@php
+    $income = $income ?? null;
+    /**
+     * Prellenado desde query params (p. ej. el botón «Registrar ingreso» del
+     * aviso de ingreso previsto pendiente): solo aplica al alta, y no
+     * sobrescribe old() ni los valores del modelo si estamos editando.
+     * request()->query() vive fuera del Service (ADR-0010: no hay HTTP en
+     * los servicios); aquí es Blade, así que es legítimo.
+     */
+    $prefill = $income === null ? request()->query() : [];
+@endphp
 
 {{-- 1. Valor: input real (validación nativa intacta) con tipografía grande.
      type="text" + data-money-input: type="number" no admite el punto de
@@ -14,7 +24,7 @@
         data-money-input
         class="form-control border-0 bg-transparent text-center fw-bold mx-auto @error('amount') is-invalid @enderror"
         style="font-size: clamp(1.75rem, 8vw, 2.5rem); max-width: 320px; box-shadow: none;"
-        value="{{ old('amount', $income?->amount) }}"
+        value="{{ old('amount', $income?->amount ?? ($prefill['amount'] ?? null)) }}"
         placeholder="0"
         required
         autofocus
@@ -28,18 +38,19 @@
 {{-- 2. Categoría: chips de acceso rápido + selector completo. --}}
 <div class="mb-3">
     <label class="form-label fw-semibold">Categoría</label>
+    @php $selectedCategoryId = old('category_id', $income?->category_id ?? ($prefill['category_id'] ?? null)); @endphp
     <div class="chip-row mb-2" data-category-chips>
         @foreach ($categories->take(4) as $category)
-            <button type="button" class="chip {{ (string) old('category_id', $income?->category_id) === (string) $category->id ? 'active' : '' }}"
+            <button type="button" class="chip {{ (string) $selectedCategoryId === (string) $category->id ? 'active' : '' }}"
                     data-category-value="{{ $category->id }}">
                 {{ $category->name }}
             </button>
         @endforeach
     </div>
     <select id="category_id" name="category_id" class="form-select @error('category_id') is-invalid @enderror">
-        <option value="" @selected(! old('category_id', $income?->category_id))>Sin categoría</option>
+        <option value="" @selected(! $selectedCategoryId)>Sin categoría</option>
         @foreach ($categories as $category)
-            <option value="{{ $category->id }}" @selected((string) old('category_id', $income?->category_id) === (string) $category->id)>{{ $category->name }}</option>
+            <option value="{{ $category->id }}" @selected((string) $selectedCategoryId === (string) $category->id)>{{ $category->name }}</option>
         @endforeach
     </select>
     @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
@@ -55,17 +66,17 @@
     </div>
     {{-- 4. Fecha --}}
     <div class="col-md-6">
-        <x-form-input label="Fecha" name="date" type="date" :value="old('date', $income?->date?->format('Y-m-d') ?? date('Y-m-d'))" required />
+        <x-form-input label="Fecha" name="date" type="date" :value="old('date', $income?->date?->format('Y-m-d') ?? ($prefill['date'] ?? date('Y-m-d')))" required />
     </div>
 </div>
 
 {{-- 5. Descripción --}}
-<x-form-input label="Descripción" name="description" :value="$income?->description" placeholder="Ej: Pago quincenal" />
+<x-form-input label="Descripción" name="description" :value="$income?->description ?? ($prefill['description'] ?? null)" placeholder="Ej: Pago quincenal" />
 
-<details class="mb-3" @if(old('source') || $income?->source || old('notes') || $income?->notes) open @endif>
+<details class="mb-3" @if(old('source') || $income?->source || old('notes') || $income?->notes || ! empty($prefill['source'])) open @endif>
     <summary class="small fw-semibold text-finlia" style="cursor: pointer;">Más detalles</summary>
     <div class="mt-3">
-        <x-form-input label="Origen" name="source" :value="$income?->source" placeholder="Ej: Salario, Freelance" />
+        <x-form-input label="Origen" name="source" :value="$income?->source ?? ($prefill['source'] ?? null)" placeholder="Ej: Salario, Freelance" />
         <div class="mb-3">
             <label for="notes" class="form-label fw-semibold">Notas <span class="text-muted small">(opcional)</span></label>
             <textarea name="notes" id="notes" rows="2" class="form-control @error('notes') is-invalid @enderror">{{ old('notes', $income?->notes) }}</textarea>

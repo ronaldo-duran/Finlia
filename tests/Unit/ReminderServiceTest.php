@@ -118,6 +118,33 @@ class ReminderServiceTest extends TestCase
         $this->assertSame(200000.0, $item['amount']);
     }
 
+    public function test_la_deuda_pagada_el_mismo_dia_del_vencimiento_avisa_el_mes_siguiente(): void
+    {
+        // Bug histórico: pagar el día del vencimiento dejaba el aviso vivo,
+        // porque $due (hoy) >= $today devolvía la fecha aunque hubiera pago.
+        $debt = $this->household->debts()->forceCreate([
+            'name' => 'Tarjeta hoy',
+            'type' => DebtType::CreditCard->value,
+            'original_amount' => 5000000,
+            'current_balance' => 4800000,
+            'minimum_payment' => 200000,
+            'due_day' => 15,
+            'status' => DebtStatus::Active->value,
+        ]);
+        // Pago registrado hoy (2026-09-15), justo el día del vencimiento.
+        $debt->payments()->forceCreate([
+            'household_id' => $this->household->id,
+            'amount' => 200000,
+            'date' => $this->today->toDateString(),
+        ]);
+
+        $item = $this->service->list($this->household->id, $this->today)
+            ->firstWhere('source', ReminderSource::Debt);
+
+        $this->assertNotNull($item);
+        $this->assertSame('2026-10-15', $item['due_date']->toDateString());
+    }
+
     public function test_la_deuda_impaga_con_dia_pasado_aparece_vencida(): void
     {
         $this->household->debts()->forceCreate([

@@ -15,7 +15,16 @@
                 Tu pago «{{ $pending['name'] }}» del {{ $pending['date']->format('d/m/Y') }} aún no aparece.
             @endif
             Hasta que lo registres, la cifra solo cuenta con lo que ya tienes.
-            <a href="{{ route('incomes.create') }}" class="fw-semibold">Registrar ingreso</a>
+            {{-- Prellena el formulario con lo que ya sabemos del ingreso previsto:
+                 el botón antes solo redirigía y obligaba a reescribir monto,
+                 descripción, fecha y categoría. --}}
+            <a href="{{ route('incomes.create', [
+                'amount' => $pending['amount'],
+                'description' => $pending['name'],
+                'source' => $pending['name'],
+                'date' => $pending['date']->format('Y-m-d'),
+                'category_id' => $pending['category_id'],
+            ]) }}" class="fw-semibold">Registrar ingreso</a>
         </div>
     </div>
 @endforeach
