@@ -204,6 +204,13 @@ jobs:
             hunk. No revises código que el diff no toca, salvo para comprobar
             si un cambio rompe a alguien que lo llama.
 
+            Herramientas: lee archivos con Read y busca con Grep y Glob. En
+            Bash solo tienes git de lectura (diff, log, show). No intentes
+            `cat`, `ls`, `grep` ni `find` por Bash, ni ejecutar php, composer,
+            npm o las pruebas: están bloqueados, y cada intento gasta un turno.
+            Si algo solo se podría comprobar ejecutándolo, dilo en el hallazgo
+            en vez de intentarlo.
+
             ## Criterios
 
             Lee `CLAUDE.md` y `AGENTS.md`: son las reglas del proyecto y forman
@@ -290,9 +297,10 @@ jobs:
       - name: Diagnóstico de la revisión
         # Barato y solo informativo, pero evita otra ronda de adivinanzas si el
         # veredicto vuelve a salir "no concluyente": dice si el archivo se
-        # escribió en otro sitio o si no se escribió nunca, y cuántas
-        # herramientas se denegaron. Imprime solo contadores, nunca el
-        # contenido de la revisión (el log de este repo es público).
+        # escribió en otro sitio o si no se escribió nunca, y qué herramientas
+        # se denegaron. Imprime solo contadores y nombres de herramientas, nunca
+        # lo que intentaban hacer ni el contenido de la revisión (el log de este
+        # repo es público).
         if: ${{ !cancelled() && steps.pr.outputs.revisar == 'true' }}
         run: |
           set -uo pipefail
@@ -307,7 +315,8 @@ jobs:
           salida=/home/runner/work/_temp/claude-execution-output.json
           if [ -f "$salida" ]; then
             jq -c '[.[] | select(.type == "result")] | last
-                   | {subtype, is_error, num_turns, permission_denials_count}' "$salida" 2>/dev/null \
+                   | {subtype, is_error, num_turns,
+                      denegadas: [(.permission_denials // [])[] | .tool_name]}' "$salida" 2>/dev/null \
               || echo "(no se pudo leer el resumen)"
           else
             echo "(no hay archivo de salida en $salida)"
