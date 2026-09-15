@@ -394,6 +394,9 @@ class BudgetCalculatorService
                     'amount' => $this->money((float) $income->amount),
                     'date' => $last,
                     'is_today' => $last->eq($today),
+                    // Para prellenar el formulario de registro: monto,
+                    // descripción y categoría vienen del ingreso previsto.
+                    'category_id' => $income->category_id,
                 ];
             }
         }

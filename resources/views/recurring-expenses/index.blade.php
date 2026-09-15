@@ -130,11 +130,10 @@
                             <input class="form-check-input" type="checkbox" name="auto_generate" value="1"
                                    id="auto_generate">
                             <label class="form-check-label" for="auto_generate">
-                                Registrar el pago solo cuando llegue la fecha
+                                Registrar el pago automáticamente al vencer
                             </label>
                             <div class="form-text">
-                                Al vencer, el pago se registra automáticamente de madrugada
-                                (requiere el programa diario del servidor; en desarrollo local no corre solo).
+                                Se debita en la madrugada del día del vencimiento.
                             </div>
                         </div>
 

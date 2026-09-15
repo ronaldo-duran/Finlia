@@ -262,9 +262,10 @@ class ReminderService
     }
 
     /**
-     * Próxima fecha de pago de una deuda: la de este mes si aún no llegó
-     * (o vence hoy); si ya pasó, esa misma mientras no haya pago en el
-     * mes (cuota vencida); con pago registrado, la del mes siguiente.
+     * Próxima fecha de pago de una deuda: la del mes en curso mientras no
+     * haya pago registrado en ese mes; con pago registrado (aunque sea el
+     * mismo día del vencimiento), la del mes siguiente. Sin esta regla,
+     * pagar el día del vencimiento dejaba el aviso vivo todo ese día.
      */
     private function nextDebtDueDate(Debt $debt, Carbon $today): ?Carbon
     {
@@ -275,7 +276,7 @@ class ReminderService
             $day = min((int) $debt->due_day, $cursor->daysInMonth);
             $due = $cursor->copy()->day($day)->startOfDay();
 
-            if ($due->gte($today) || ! $this->monthHasPayment($debt, $due)) {
+            if (! $this->monthHasPayment($debt, $due)) {
                 return $due;
             }
 

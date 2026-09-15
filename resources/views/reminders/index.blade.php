@@ -18,8 +18,8 @@
         ['label' => 'Más adelante', 'items' => $despues, 'icon' => 'bi-calendar3'],
     ];
 
-    // Frecuencias con sentido para un aviso suelto (sin semanal/custom:
-    // eso es un gasto recurrente de la Épica 5).
+    // Frecuencias del modal de edición. El alta vive en su propia página
+    // (reminders.create); aquí basta con las del modal para editar.
     $frequencies = collect([
         App\Enums\Frequency::Monthly,
         App\Enums\Frequency::Quarterly,
@@ -33,11 +33,19 @@
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
         <h1 class="h3 mb-0"><i class="bi bi-bell me-2"></i>Recordatorios</h1>
-        @if ($enabled)
-            <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2">
-                {{ $summary['overdue'] }} vencidas · {{ $summary['upcoming'] }} próximas
-            </span>
-        @endif
+        <div class="d-flex flex-wrap align-items-center gap-2 w-100 w-sm-auto">
+            @if ($enabled)
+                <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2">
+                    {{ $summary['overdue'] }} vencidas · {{ $summary['upcoming'] }} próximas
+                </span>
+                {{-- El alta vive en su propia página: la pantalla principal es para
+                     ver qué está por vencer, no para compartir espacio con un
+                     formulario. --}}
+                <a href="{{ route('reminders.create') }}" class="btn btn-finlia w-100 w-sm-auto">
+                    <i class="bi bi-plus-lg me-1"></i> Nuevo recordatorio
+                </a>
+            @endif
+        </div>
     </div>
     <p class="text-muted mb-4">
         Todo lo que vence, en un solo sitio: gastos recurrentes, cuotas de deuda,
@@ -75,58 +83,11 @@
 
     @if ($enabled)
         <div class="row g-3">
-            {{-- Columna: alta de aviso suelto --}}
-            <div class="col-12 col-lg-4">
-                <div class="card border-0">
-                    <div class="card-header border-0 bg-transparent fw-semibold">
-                        <i class="bi bi-plus-circle me-1"></i> Nuevo recordatorio
-                    </div>
-                    <div class="card-body">
-                        <form method="POST" action="{{ route('reminders.store') }}">
-                            @csrf
-                            <x-form-input label="De qué te recuerda" name="title" required
-                                placeholder="Ej: Tecnomecánica, Renovar pasaporte" />
-
-                            {{-- Input de dinero real con formato en vivo (UI_DESIGN §4). --}}
-                            <div class="mb-3">
-                                <label for="amount" class="form-label fw-semibold">Cuánto cuesta <span class="text-muted fw-normal">(opcional)</span></label>
-                                <input id="amount" type="text" name="amount" inputmode="decimal"
-                                    data-money-input placeholder="250000"
-                                    class="form-control @error('amount') is-invalid @enderror"
-                                    value="{{ old('amount') }}">
-                                @error('amount')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <x-form-input label="Fecha límite" name="due_date" type="date" required
-                                help="Puede ser una fecha pasada: el aviso queda como vencido." />
-
-                            <x-form-select label="Se repite" name="frequency"
-                                :options="$frequencies" placeholder="No, es de una sola vez" />
-
-                            <details class="mb-3">
-                                <summary class="small text-muted">Nota</summary>
-                                <div class="pt-3">
-                                    <textarea id="notes" name="notes" rows="2"
-                                        class="form-control @error('notes') is-invalid @enderror"
-                                        placeholder="Opcional">{{ old('notes') }}</textarea>
-                                    @error('notes')
-                                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </details>
-
-                            <button type="submit" class="btn btn-finlia">
-                                <i class="bi bi-check-lg me-1"></i> Añadir
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Columna: lista unificada --}}
-            <div class="col-12 col-lg-8">
+            {{-- Lista unificada: recurrentes, deudas, metas y avisos sueltos.
+                 El formulario de alta vivía aquí como columna; ahora está en
+                 su propia página (reminders.create) y este listado ocupa toda
+                 la anchura, que es lo que realmente se viene a mirar. --}}
+            <div class="col-12">
                 <div class="card border-0">
                     <div class="card-header border-0 bg-transparent fw-semibold">
                         <i class="bi bi-list-check me-1"></i> Próximas obligaciones

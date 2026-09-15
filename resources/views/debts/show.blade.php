@@ -320,9 +320,12 @@
         </div>
     </div>
 
-    {{-- Modal de edición --}}
+    {{-- Modal de edición.
+         modal-fullscreen-sm-down: en pantallas pequeñas el formulario es
+         más alto que el viewport; sin esto el modal-body no ganaba altura
+         para scrollear y las últimas secciones quedaban inalcanzables. --}}
     <div class="modal fade" id="editDebtModal" tabindex="-1" aria-labelledby="editDebtModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down">
             <div class="modal-content">
                 <form method="POST" action="{{ route('debts.update', $debt) }}">
                     @csrf

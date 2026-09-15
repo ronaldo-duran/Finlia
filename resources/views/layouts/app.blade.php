@@ -117,7 +117,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Cerrar"></button>
             </div>
-            <div class="offcanvas-body py-3">
+            <div class="offcanvas-body py-3 d-flex flex-column">
                 <ul class="nav flex-column">
                     {{-- Panel, Movimientos y Presupuestos ya están en la barra inferior
                          móvil: mostrarlos también aquí sería duplicar destino. Solo
@@ -216,8 +216,10 @@
                 @auth
                     {{-- La versión, a la vista y no solo en el pie: es el primer dato
                          que hace falta para entender un reporte, y quien reporta no
-                         debería tener que cazarla. --}}
-                    <p class="small text-body-tertiary text-center mt-3 mb-0" data-testid="app-version">
+                         debería tener que cazarla. mt-auto la empuja al final de la
+                         barra en escritorio; en móvil (offcanvas) queda tras la
+                         lista, sin hueco vacío por encima. --}}
+                    <p class="small text-body-tertiary text-center mt-auto pt-3 mb-0" data-testid="app-version">
                         Finlia v{{ config('finlia.version') }}
                     </p>
                 @endauth

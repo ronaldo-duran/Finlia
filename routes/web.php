@@ -464,6 +464,10 @@ Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', '
     // CRUD de los sueltos. El hogar sale del activo en sesión.
     Route::get('recordatorios', [ReminderController::class, 'index'])
         ->name('reminders.index');
+    // Alta en página propia: el listado se dedica a ver lo que vence,
+    // no a compartir espacio con un formulario.
+    Route::get('recordatorios/nuevo', [ReminderController::class, 'create'])
+        ->name('reminders.create');
     Route::post('recordatorios', [ReminderController::class, 'store'])
         ->name('reminders.store');
     // Interruptor del hogar (solo administrador, HouseholdPolicy::update).
