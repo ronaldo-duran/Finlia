@@ -1392,6 +1392,9 @@ Al abrirse a forks, se endurece además la configuración del checkout. La acci�
 3. **La marca avanza después de enviar.** Si el correo falla, la corrida siguiente lo vuelve a intentar.
 4. **La primera corrida solo marca el punto de partida**: no se reporta el historial.
 5. **Cubre también la cuota de Brevo.** Un envío rechazado por cuota lanza una excepción que queda en el log, así que no hace falta un contador propio de correos.
+6. **De una excepción, el correo lleva solo la clase y `archivo:línea`, nunca el mensaje.** El mensaje de una `QueryException` incluye el SQL con los valores sustituidos (montos, correos), y los drivers también meten valores en el suyo (`Duplicate entry 'ana@…'`). Ese detalle se queda en el log del servidor. De un mensaje escrito por la app se envía el texto sin su contexto JSON: [AGENTS.md §2.4](../AGENTS.md) ya prohíbe loguear datos personales.
+7. **Detalles de la marca:** guarda lo realmente leído hasta el último salto de línea (una línea a medias ni se reporta ni se repite) y una huella de los primeros 256 bytes, que distingue «el mismo log, más largo» de «otro log» cuando se rota o se borra a mano.
+8. **Un fallo de envío no se realimenta.** Se registra como `WARNING`, que el comando no recoge, la marca no avanza y el comando termina en fallo; la corrida siguiente reintenta.
 
 **Alternativas (descartadas).**
 
@@ -1404,7 +1407,7 @@ Al abrirse a forks, se endurece además la configuración del checkout. La acci�
 - El aviso llega con **hasta una hora de retraso**. Con pocos usuarios basta; si el volumen crece, Sentry sigue siendo la salida natural.
 - Solo lee el canal `single`, que es el de producción. Con `daily` habría que leer el archivo del día.
 - En una avalancha se leen solo los últimos 5 MB nuevos, suficientes para saber qué está roto sin agotar la memoria.
-- Del log solo sale la primera línea de cada error, hasta 300 caracteres, y va al buzón del propio dueño.
+- Del log solo sale, por error, la clase y `archivo:línea` (con la ruta relativa, sin el usuario del hosting) o el texto de un mensaje propio de la app sin su contexto. Para diagnosticar hay que entrar al log del servidor, y es a propósito.
 
 **Estado.** ACEPTADA — 2026-09-14. Implementada en `app/Console/Commands/ReportLogErrors.php`, `routes/console.php` y `tests/Feature/Console/ReportLogErrorsTest.php`.
 

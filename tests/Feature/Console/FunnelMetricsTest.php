@@ -4,6 +4,7 @@ namespace Tests\Feature\Console;
 
 use App\Models\Account;
 use App\Models\Expense;
+use App\Models\Household;
 use App\Models\User;
 use App\Services\HouseholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,8 +21,14 @@ class FunnelMetricsTest extends TestCase
     {
         // Registrada hace 10 días, gasta en dos días distintos y vuelve al octavo día.
         $ana = User::factory()->create(['created_at' => now()->subDays(10)]);
-        $this->gasto($ana, '2026-09-01', now()->subDays(10));
+        $hogarDeAna = $this->gasto($ana, '2026-09-01', now()->subDays(10));
         $this->gasto($ana, '2026-09-02', now()->subDays(2));
+
+        // Miembro del hogar de Ana, gastó en dos días y luego se purgó: sus
+        // movimientos se conservan, pero ya no es un usuario del embudo.
+        $beto = User::factory()->create(['email' => 'deleted+99@finlia.invalid']);
+        $this->gasto($beto, '2026-09-03', now()->subDays(5), $hogarDeAna);
+        $this->gasto($beto, '2026-09-04', now()->subDays(4), $hogarDeAna);
 
         // Registrado hace 10 días, sin verificar y sin usar la app.
         User::factory()->unverified()->create(['created_at' => now()->subDays(10)]);
@@ -31,9 +38,8 @@ class FunnelMetricsTest extends TestCase
         $this->gasto($carla, '2026-09-13', now());
         $this->gasto($carla, '2026-09-13', now());
 
-        // Suspendida (pidió eliminarse) y ya purgada (anonimizada).
+        // Pidió eliminarse y sigue en su ventana de suspensión.
         User::factory()->create(['deletion_requested_at' => now()]);
-        User::factory()->create(['email' => 'deleted+99@finlia.invalid']);
 
         $this->artisan('finlia:metrics')
             ->expectsTable(['Métrica', 'Valor'], [
@@ -48,9 +54,9 @@ class FunnelMetricsTest extends TestCase
             ->assertSuccessful();
     }
 
-    private function gasto(User $user, string $fecha, \DateTimeInterface $creado): void
+    private function gasto(User $user, string $fecha, \DateTimeInterface $creado, ?Household $hogar = null): Household
     {
-        $hogar = $user->households()->first()
+        $hogar ??= $user->households()->first()
             ?? app(HouseholdService::class)->createHousehold($user->id, 'Hogar de '.$user->name);
 
         Expense::factory()->create([
@@ -60,5 +66,7 @@ class FunnelMetricsTest extends TestCase
             'date' => $fecha,
             'created_at' => $creado,
         ]);
+
+        return $hogar;
     }
 }
