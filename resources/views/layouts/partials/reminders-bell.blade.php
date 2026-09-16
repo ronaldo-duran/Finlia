@@ -24,7 +24,10 @@
             @elseif ($bell['attention'] === 0)
                 <li><span class="dropdown-item-text small text-muted">Nada urgente. Todo al día ✨</span></li>
             @else
-                @foreach ($bell['preview'] ?? [] as $item)
+                {{-- `preview` puede no venir en el summary si la caché guarda
+                     una forma anterior tras un despliegue: no romper la campanita. --}}
+                @php $preview = $bell['preview'] ?? []; @endphp
+                @foreach ($preview as $item)
                     @php
                         $days = $item['days_remaining'];
                         [$dot, $label] = $item['status'] === 'overdue'
@@ -39,9 +42,9 @@
                         </span>
                     </span></li>
                 @endforeach
-                @if ($bell['attention'] > count($bell['preview'] ?? []))
+                @if ($bell['attention'] > count($preview))
                     <li><span class="dropdown-item-text small text-muted">
-                        y {{ $bell['attention'] - count($bell['preview']) }} más…
+                        y {{ $bell['attention'] - count($preview) }} más…
                     </span></li>
                 @endif
             @endif

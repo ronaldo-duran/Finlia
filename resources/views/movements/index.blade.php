@@ -18,7 +18,7 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="h3 mb-0"><i class="bi bi-arrow-left-right me-2"></i>Movimientos</h1>
-        <div class="dropdown">
+        <div class="dropdown" data-tour="movements-new">
             <button class="btn btn-finlia dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-plus-lg me-1"></i> Registrar
             </button>
@@ -31,7 +31,7 @@
     </div>
 
     {{-- Chips de tipo + acceso a filtros avanzados --}}
-    <div class="chip-row mb-3">
+    <div class="chip-row mb-3" data-tour="movements-filters">
         @foreach ($typeChips as $label => $value)
             <a href="{{ request()->fullUrlWithQuery(['type' => $value]) }}"
                class="chip {{ $filters['type'] === $value ? 'active' : '' }}">{{ $label }}</a>
@@ -112,7 +112,7 @@
             </div>
         </div>
     @else
-        <div id="lista-movimientos">
+        <div id="lista-movimientos" data-tour="movements-list">
             @include('movements._groups')
         </div>
 

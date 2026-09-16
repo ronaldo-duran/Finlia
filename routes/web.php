@@ -33,6 +33,7 @@ use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SavingsGoalController;
 use App\Http\Controllers\TermsController;
+use App\Http\Controllers\TourController;
 use App\Http\Controllers\TransferController;
 use Illuminate\Support\Facades\Route;
 
@@ -236,7 +237,7 @@ Route::group($enLaApp + ['middleware' => ['auth', 'verified']], function () {
 // Nivel 3 (sesión + verificado + términos aceptados + cuenta activa): el
 // resto de la app. Una cuenta suspendida queda aquí bloqueada y se redirige
 // a /cuenta/suspendida (account.active, Plan 05, ADR-0033).
-Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', 'account.active']], function () {
+Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', 'account.active', 'tour']], function () {
     Route::get('dashboard', DashboardController::class)
         ->name('dashboard');
 
@@ -378,6 +379,19 @@ Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', '
     // el enum en el controlador.
     Route::post('avisos/{key}', [AcknowledgementController::class, 'store'])
         ->name('acknowledgements.store');
+
+    // ---- Guías de pantalla (ADR-0045) ----
+    // Nada lleva id de usuario: todo aplica al autenticado. La clave de la
+    // guía se valida contra config/tours.php, como la del aviso contra su
+    // enum. El progreso lo marca el navegador al terminar o saltar, así que
+    // lleva tope: nadie necesita marcar diez guías por minuto.
+    Route::post('guias/{tour}/vista', [TourController::class, 'store'])
+        ->name('tours.store')
+        ->middleware('throttle:30,1');
+    Route::put('guias/preferencia', [TourController::class, 'preference'])
+        ->name('tours.preference');
+    Route::delete('guias/progreso', [TourController::class, 'destroy'])
+        ->name('tours.destroy');
 
     // Reporte de error. Exige sesión a propósito: así llega con el usuario y
     // el contexto técnico ya adjuntos, sin preguntarle nada más a quien

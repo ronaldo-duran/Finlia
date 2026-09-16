@@ -5,7 +5,7 @@
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
         <h1 class="h3 mb-0"><i class="bi bi-graph-up-arrow me-2"></i>Ingresos esperados</h1>
-        <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2">
+        <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2" data-tour="expected-total">
             Total mensual: @money($monthlyTotal)
         </span>
     </div>
@@ -31,7 +31,7 @@
                             placeholder="3500000" />
 
                         <div class="row g-3">
-                            <div class="col-6">
+                            <div class="col-6" data-tour="expected-day">
                                 <x-form-input label="Día de cobro" name="day_of_month" type="number"
                                     placeholder="30" help="Hasta ese día te tiene que alcanzar" />
                             </div>

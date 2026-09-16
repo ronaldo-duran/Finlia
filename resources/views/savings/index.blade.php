@@ -33,7 +33,7 @@
 
     @if ($estado === 'vigentes')
         {{-- Resumen solo en vigentes: logradas/archivadas son historia --}}
-        <div class="row g-3 mb-3">
+        <div class="row g-3 mb-3" data-tour="savings-summary">
             <div class="col-12 col-sm-6">
                 <div class="card border-0 h-100"><div class="card-body">
                     <div class="text-muted small text-uppercase">Ahorrado en metas</div>
@@ -69,7 +69,7 @@
     @endif
 
     @forelse ($goals as $goal)
-        <div class="card border-0 mb-2"><div class="card-body">
+        <div class="card border-0 mb-2" data-tour="savings-list"><div class="card-body">
             <div class="d-flex justify-content-between align-items-start gap-2">
                 <div class="flex-grow-1">
                     <a href="{{ route('savings-goals.show', $goal) }}" class="text-decoration-none">

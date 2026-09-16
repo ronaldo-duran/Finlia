@@ -134,6 +134,7 @@ Detalle en [docs/CONVENTIONS.md](docs/CONVENTIONS.md).
 - **Money**: `DECIMAL(15,2)` en migraciones; cast a `decimal:2` en el modelo.
 - **PHP**: tipado estricto (`declare(strict_types=1)` en clases de dominio), readonly ctor donde aporte, sin acoplamientos ocultos.
 - **UI**: toda vista Blade nueva usa el sistema de diseño de [docs/UI_DESIGN.md](docs/UI_DESIGN.md) (glass, `.chip`/`.chip-row`, `.segmented`, `.hero-card`, bottom nav) como **el** lenguaje visual de Finlia — no Bootstrap genérico suelto ni un estilo propio por pantalla.
+- **Guías de pantalla**: la app se explica sola la primera vez que se entra a cada pantalla ([ADR-0045](docs/DECISIONS.md#adr-0045)). El guion vive en **`config/tours.php`** — texto, nada de código. Si tu cambio estrena algo que no se adivina mirando, entra ahí: guía nueva, o **sube la `version`** de la existente y marca los pasos añadidos con ese `since`, para que quien ya la vio reciba solo lo nuevo. Lo que la guía señale se marca en la vista con `data-tour="..."`.
 
 ---
 
