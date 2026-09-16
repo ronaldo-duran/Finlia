@@ -62,6 +62,51 @@ test.describe('Guías de pantalla', () => {
     await expect(page.locator('.tour-globo')).toBeVisible();
   });
 
+  /**
+   * El «+» se esconde al desplazar hacia abajo. Una guía desplaza la página
+   * sola para señalar cada cosa, así que el paso que habla del «+» llegaba
+   * justo después de que ese desplazamiento lo ocultara: el halo se plantaba
+   * sobre un hueco. Estos dos tests son el guión de ese fallo.
+   */
+  test('el «+» no se esconde mientras hay una guía abierta', async ({ page }) => {
+    await page.goto('/dashboard');
+
+    const opacidad = () => page.locator('#fabContainer').evaluate((el) => getComputedStyle(el).opacity);
+
+    // Bajar la página lo esconde: eso es lo normal y no cambia.
+    await page.mouse.wheel(0, 800);
+    await expect.poll(opacidad).toBe('0');
+
+    // Con la guía abierta vuelve, porque hay un paso que lo señala.
+    await page.locator('.avatar-btn').click();
+    await page.locator('[data-tour-open]').click();
+    await expect.poll(opacidad).toBe('1');
+
+    // Y al cerrarla vuelve a obedecer al scroll.
+    await page.keyboard.press('Escape');
+    await expect.poll(opacidad).toBe('0');
+  });
+
+  test('haber bajado la página no le quita un paso a la guía', async ({ page }) => {
+    const totalDePasos = async () => {
+      const texto = (await page.locator('.tour-progreso').textContent()) ?? '';
+
+      return texto.split(' de ')[1];
+    };
+
+    await page.goto('/dashboard?guia=panel');
+    const desdeArriba = await totalDePasos();
+    await page.keyboard.press('Escape');
+
+    // Abierta con el «+» ya escondido: su paso no puede descartarse por
+    // invisible, porque la propia guía lo devuelve a la vista.
+    await page.mouse.wheel(0, 800);
+    await page.locator('.avatar-btn').click();
+    await page.locator('[data-tour-open]').click();
+
+    expect(await totalDePasos()).toBe(desdeArriba);
+  });
+
   test('el perfil lista las guías y desde ahí se vuelve a ver cualquiera', async ({ page }) => {
     await page.goto('/perfil');
 

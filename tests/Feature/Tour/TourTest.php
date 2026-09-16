@@ -75,7 +75,9 @@ class TourTest extends TestCase
 
     public function test_una_pantalla_sin_guia_no_inyecta_nada(): void
     {
-        $respuesta = $this->actingAs($this->usuario())->get(route('categories.index'));
+        // /perfil no tiene guía a propósito: es donde vive el catálogo, y una
+        // guía que explique la pantalla de las guías sobra.
+        $respuesta = $this->actingAs($this->usuario())->get(route('profile.edit'));
 
         $respuesta->assertOk();
         $this->assertFalse($this->traeGuia($respuesta->getContent()));
@@ -320,10 +322,17 @@ class TourTest extends TestCase
         $respuesta->assertSee('Guías de la app');
         $respuesta->assertSee('Volver a verlas desde el principio');
 
-        // Las diez guías del registro, con su enlace de «Ver».
+        // Todas las guías del registro. Las que se pueden enlazar traen su
+        // «Ver»; las de pantallas con id en la URL (el detalle de una deuda)
+        // traen la pista de dónde encontrarlas, que es lo único honesto.
         foreach (config('tours') as $key => $guide) {
             $respuesta->assertSee($guide['title']);
-            $respuesta->assertSee(route($guide['link'], ['guia' => $key]), false);
+
+            if ($guide['link'] !== null) {
+                $respuesta->assertSee(route($guide['link'], ['guia' => $key]), false);
+            } else {
+                $respuesta->assertSee($guide['link_hint']);
+            }
         }
     }
 
@@ -334,9 +343,9 @@ class TourTest extends TestCase
         $this->actingAs($user)->get(route('dashboard'))
             ->assertSee('Guía de esta pantalla');
 
-        // /categorias no tiene guía: ofrecer un botón que no abre nada sería
-        // peor que no ofrecer ninguno.
-        $this->actingAs($user)->get(route('categories.index'))
+        // /perfil no tiene guía: ofrecer un botón que no abre nada sería peor
+        // que no ofrecer ninguno.
+        $this->actingAs($user)->get(route('profile.edit'))
             ->assertDontSee('Guía de esta pantalla');
     }
 }

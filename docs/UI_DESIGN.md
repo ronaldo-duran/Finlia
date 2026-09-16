@@ -194,6 +194,14 @@ Reglas:
 - **Elige anclas del tamaño de lo que explicas.** Un contenedor más alto que la ventana produce un
   halo cuyos bordes quedan todos fuera de pantalla: el motor lo lleva a su borde superior, pero se
   lee mejor un elemento acotado.
+- **Si tu elemento se esconde al desplazar, devuélvelo a la vista con `body.tour-abierto`** (como
+  hace `.fab-container`, §4). La guía mueve la página sola, así que un elemento que reacciona al
+  scroll desaparece justo cuando le toca su paso. La regla que lo devuelve **no debe animarse**: el
+  motor mide la opacidad computada para decidir qué pasos valen, y una transición a medias sigue
+  leyendo 0.
+- **Una guía describe UNA pantalla.** En `config/tours.php` la ruta va con su nombre exacto, sin
+  comodines: `debts.*` casaría también con el detalle de una deuda, donde no está ninguno de los
+  anclajes del listado. Si el detalle merece explicación, lleva **su propia guía**.
 - La entrada para volver a verla ya existe (menú del avatar y `/perfil`): **no** añadas un "?" a la
   cabecera de tu vista.
 

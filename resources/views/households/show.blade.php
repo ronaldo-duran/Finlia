@@ -79,7 +79,7 @@
             {{-- Enviar invitación (solo owner) --}}
             @if ($isOwner)
                 <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-header border-0 bg-transparent fw-semibold">
+                    <div class="card-header border-0 bg-transparent fw-semibold" data-tour="household-invite">
                         <i class="bi bi-person-plus me-1"></i> Invitar miembro
                     </div>
                     <div class="card-body">
@@ -107,7 +107,7 @@
             @endif
 
             {{-- Miembros --}}
-            <div class="card border-0 shadow-sm mb-3">
+            <div class="card border-0 shadow-sm mb-3" data-tour="household-members">
                 <div class="card-header border-0 bg-transparent fw-semibold">
                     <i class="bi bi-people me-1"></i> Miembros
                 </div>

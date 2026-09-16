@@ -199,7 +199,21 @@ class TourServiceTest extends TestCase
                 $this->assertArrayHasKey($campo, $guia, "La guía «{$key}» no declara «{$campo}».");
             }
 
-            $this->assertContains($guia['link'], $rutas, "La guía «{$key}» enlaza a una ruta inexistente.");
+            // La ruta de la pantalla tiene que existir, y ser EXACTA: un
+            // comodín casaría con pantallas donde no están sus anclajes.
+            foreach ((array) $guia['route'] as $ruta) {
+                $this->assertStringNotContainsString('*', $ruta, "La guía «{$key}» usa un comodín en «route».");
+                $this->assertContains($ruta, $rutas, "La guía «{$key}» apunta a una ruta inexistente.");
+            }
+
+            // Sin enlace (pantallas con id en la URL) hace falta decir dónde
+            // está, o el catálogo del perfil la lista sin salida.
+            if ($guia['link'] === null) {
+                $this->assertNotEmpty($guia['link_hint'] ?? null, "La guía «{$key}» no se puede enlazar y no dice dónde está.");
+            } else {
+                $this->assertContains($guia['link'], $rutas, "La guía «{$key}» enlaza a una ruta inexistente.");
+            }
+
             $this->assertNotEmpty($guia['steps'], "La guía «{$key}» no tiene pasos.");
 
             foreach ($guia['steps'] as $i => $paso) {
@@ -208,5 +222,25 @@ class TourServiceTest extends TestCase
                 $this->assertNotEmpty($paso['body'], "Paso {$i} de «{$key}» sin texto.");
             }
         }
+    }
+
+    public function test_ninguna_pantalla_tiene_dos_guias(): void
+    {
+        // keyForRoute() devuelve la primera que case, así que dos guías sobre la
+        // misma ruta dejarían una muerta sin que nadie se entere.
+        $rutas = [];
+
+        foreach (require config_path('tours.php') as $key => $guia) {
+            foreach ((array) $guia['route'] as $ruta) {
+                $this->assertArrayNotHasKey(
+                    $ruta,
+                    $rutas,
+                    "«{$key}» y «".($rutas[$ruta] ?? '')."» se disputan la ruta «{$ruta}».",
+                );
+                $rutas[$ruta] = $key;
+            }
+        }
+
+        $this->assertNotEmpty($rutas);
     }
 }

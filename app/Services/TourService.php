@@ -44,8 +44,12 @@ class TourService
     /**
      * La guía que corresponde a un nombre de ruta ('debts.index' → 'deudas').
      *
-     * El patrón de cada guía admite comodín ('debts.*') para que el detalle de
-     * una deuda cuente como la misma pantalla que el listado.
+     * Cada guía declara nombres EXACTOS (o una lista, si varias rutas pintan la
+     * misma pantalla). Los comodines se probaron y salió mal: 'debts.*' casaba
+     * también con el detalle de una deuda, donde no existe ninguno de los
+     * anclajes del listado, así que allí la guía se reducía a un paso huérfano
+     * describiendo otra pantalla — y de paso la daba por vista, con lo que la
+     * de verdad no volvía a salir.
      */
     public function keyForRoute(?string $routeName): ?string
     {
@@ -228,8 +232,11 @@ class TourService
                 'icon' => $guide['icon'],
                 'summary' => $guide['summary'],
                 // Nombre de ruta, no URL: montarla es de la vista, y así el
-                // Service sigue sin saber nada de HTTP (ADR-0010).
+                // Service sigue sin saber nada de HTTP (ADR-0010). Es null en
+                // las guías de pantallas que necesitan un id (el detalle de una
+                // deuda): esas no se pueden enlazar, y por eso traen la pista.
                 'link' => $guide['link'],
+                'link_hint' => $guide['link_hint'] ?? null,
                 'seen' => $version > 0,
                 'pending' => $this->pendingStepCount($user, $key),
             ];

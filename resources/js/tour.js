@@ -461,11 +461,23 @@ function iniciar(config) {
     function abrir(completa) {
         if (abierto) return;
 
+        // La marca en el <body> va ANTES de medir los pasos, no después: hay
+        // elementos que se esconden al desplazar (el «+» flotante) y que la
+        // guía vuelve a mostrar justamente mientras está abierta. Midiéndolos
+        // antes de ponerla, sus pasos se descartarían por invisibles justo
+        // cuando iban a verse — que es como se abrió esta guía estando ya
+        // desplazada hacia abajo.
+        document.body.classList.add('tour-abierto');
+
         pasos = pasosPara(completa);
 
         // Ni un paso con su elemento en pantalla: no se abre nada y no se da
         // por vista. Así la guía sigue esperando a que haya algo que enseñar.
-        if (pasos.length === 0) return;
+        if (pasos.length === 0) {
+            document.body.classList.remove('tour-abierto');
+
+            return;
+        }
 
         if (!capa) construir();
 
@@ -475,7 +487,6 @@ function iniciar(config) {
         focoPrevio = document.activeElement;
 
         capa.classList.add('tour-visible');
-        document.body.classList.add('tour-abierto');
 
         document.addEventListener('keydown', alPulsarTecla);
         document.addEventListener('focusin', alEntrarFoco);

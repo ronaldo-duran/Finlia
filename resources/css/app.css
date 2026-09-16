@@ -780,6 +780,21 @@ a { color: var(--finlia-primary); }
     transform: translateY(120px);
 }
 
+/* Mientras una guía está abierta, el «+» NO se esconde al desplazar.
+   La guía mueve la página sola para señalar cada cosa, así que el paso que
+   habla del «+» llegaba justo después de que ese desplazamiento lo ocultara:
+   el halo señalaba un hueco. `pointer-events` se deja como está —durante la
+   guía manda el fondo, que captura los clics— para no pelearse con ADR-0037. */
+body.tour-abierto .fab-container.is-hidden {
+    opacity: 1;
+    transform: none;
+    /* Sin animar, y no por estética: el motor mide la opacidad computada justo
+       después de poner `tour-abierto` para decidir qué pasos valen, y con una
+       transición de por medio todavía lee 0 — descartaba el paso del «+»
+       exactamente cuando acababa de devolverlo a la vista. */
+    transition: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .fab-container {
         transition: none;

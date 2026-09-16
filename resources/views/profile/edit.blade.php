@@ -308,9 +308,21 @@
                                     <div class="small text-muted">{{ $guia['summary'] }}</div>
                                 </div>
                                 {{-- ?guia= abre la guía nada más cargar la pantalla, entera.
-                                     Lo entiende el middleware ShareActiveTour. --}}
-                                <a href="{{ route($guia['link'], ['guia' => $guia['key']]) }}"
-                                   class="btn btn-sm btn-outline-finlia flex-shrink-0">Ver</a>
+                                     Lo entiende el middleware ShareActiveTour.
+
+                                     Las guías de pantallas que necesitan un id (el
+                                     detalle de una deuda, de una meta, de un hogar) no
+                                     se pueden enlazar desde aquí: no hay a cuál. En vez
+                                     de un botón que lleve a ninguna parte, se dice dónde
+                                     están. --}}
+                                @if ($guia['link'])
+                                    <a href="{{ route($guia['link'], ['guia' => $guia['key']]) }}"
+                                       class="btn btn-sm btn-outline-finlia flex-shrink-0">Ver</a>
+                                @else
+                                    <span class="small text-muted text-end flex-shrink-0" style="max-width: 11rem;">
+                                        {{ $guia['link_hint'] }}
+                                    </span>
+                                @endif
                             </li>
                         @endforeach
                     </ul>

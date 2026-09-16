@@ -26,9 +26,17 @@ declare(strict_types=1);
 |  title    Nombre visible (menú del avatar y catálogo del perfil).
 |  icon     Icono de Bootstrap Icons para el catálogo.
 |  summary  Una línea: qué enseña. Solo se ve en /perfil.
-|  route    Patrón de nombre de ruta donde vive ('debts.*', 'dashboard').
-|  link     Ruta concreta a la que lleva el catálogo del perfil. No se
-|           deriva del patrón a propósito: 'debts.*' no es una ruta.
+|  route    Nombre de ruta EXACTO de la pantalla ('debts.index'). Admite
+|           una lista si varias rutas pintan la misma pantalla.
+|           NO uses comodines: 'debts.*' casaría también con el detalle de
+|           una deuda, donde no existe ninguno de los anclajes del listado
+|           — la guía se quedaría en un paso huérfano describiendo otra
+|           pantalla, y encima la daría por vista. Cada pantalla, su guía.
+|  link     Ruta del catálogo del perfil para ir a verla. `null` cuando la
+|           pantalla necesita un id (el detalle de una deuda, de una meta o
+|           de un hogar): entonces es obligatorio `link_hint`, que dice
+|           dónde encontrarla.
+| link_hint Solo con `link => null`: una línea corta que diga cómo llegar.
 |  version  Entero. Súbelo SOLO cuando añadas pasos.
 |  auto     true = arranca sola la primera vez que se entra a la pantalla.
 |           false = solo desde el menú del avatar o el catálogo del perfil.
@@ -135,7 +143,7 @@ return [
         'title' => 'Movimientos',
         'icon' => 'bi-arrow-left-right',
         'summary' => 'Registrar gastos e ingresos, y encontrar uno viejo con los filtros.',
-        'route' => 'movements.*',
+        'route' => 'movements.index',
         'link' => 'movements.index',
         'version' => 1,
         'auto' => true,
@@ -176,7 +184,7 @@ return [
         'title' => 'Presupuestos',
         'icon' => 'bi-cash-stack',
         'summary' => 'Ponerle techo a una categoría y entender el aviso del 80 %.',
-        'route' => 'budgets.*',
+        'route' => 'budgets.index',
         'link' => 'budgets.index',
         'version' => 1,
         'auto' => true,
@@ -217,7 +225,7 @@ return [
         'title' => 'Gastos recurrentes',
         'icon' => 'bi-arrow-repeat',
         'summary' => 'Planificar lo que se repite y repartir los pagos anuales mes a mes.',
-        'route' => 'recurring-expenses.*',
+        'route' => 'recurring-expenses.index',
         'link' => 'recurring-expenses.index',
         'version' => 1,
         'auto' => true,
@@ -252,7 +260,7 @@ return [
         'title' => 'Deudas',
         'icon' => 'bi-credit-card-2-front',
         'summary' => 'Ver cuánto te cuesta al mes, cuándo sales y en qué orden conviene pagar.',
-        'route' => 'debts.*',
+        'route' => 'debts.index',
         'link' => 'debts.index',
         'version' => 1,
         'auto' => true,
@@ -297,7 +305,7 @@ return [
         'title' => 'Metas de ahorro',
         'icon' => 'bi-piggy-bank',
         'summary' => 'Convertir un objetivo en una cuota mensual y seguirle el progreso.',
-        'route' => 'savings-goals.*',
+        'route' => 'savings-goals.index',
         'link' => 'savings-goals.index',
         'version' => 1,
         'auto' => true,
@@ -332,7 +340,7 @@ return [
         'title' => 'Reportes',
         'icon' => 'bi-bar-chart-line',
         'summary' => 'Comparar contra el período anterior, leer los hallazgos y exportar a Excel.',
-        'route' => 'reports.*',
+        'route' => 'reports.index',
         'link' => 'reports.index',
         'version' => 1,
         'auto' => true,
@@ -373,7 +381,7 @@ return [
         'title' => 'Recordatorios',
         'icon' => 'bi-bell',
         'summary' => 'Qué vence pronto, de dónde sale cada aviso y el resumen por correo.',
-        'route' => 'reminders.*',
+        'route' => 'reminders.index',
         'link' => 'reminders.index',
         'version' => 1,
         'auto' => true,
@@ -408,7 +416,7 @@ return [
         'title' => 'Cuentas',
         'icon' => 'bi-wallet',
         'summary' => 'Dónde está tu plata y por qué conviene registrarlo.',
-        'route' => 'accounts.*',
+        'route' => 'accounts.index',
         'link' => 'accounts.index',
         'version' => 1,
         'auto' => true,
@@ -443,7 +451,7 @@ return [
         'title' => 'Hogares',
         'icon' => 'bi-house-heart',
         'summary' => 'Compartir finanzas con tu familia y separar lo personal de lo común.',
-        'route' => 'households.*',
+        'route' => 'households.index',
         'link' => 'households.index',
         'version' => 1,
         'auto' => true,
@@ -465,6 +473,247 @@ return [
                 'anchor' => null,
                 'title' => 'Invitar a alguien',
                 'body' => 'Entra al hogar y envía la invitación por correo. Quien la recibe puede aceptarla aunque todavía no tenga cuenta en Finlia.',
+            ],
+        ],
+    ],
+
+    /*
+    |----------------------------------------------------------------------
+    | Ingresos esperados
+    |----------------------------------------------------------------------
+    | La pantalla menos evidente de la app: no registra plata, la proyecta.
+    */
+    'ingresos-esperados' => [
+        'title' => 'Ingresos esperados',
+        'icon' => 'bi-graph-up-arrow',
+        'summary' => 'Por qué anotar lo que esperas recibir cambia lo que Finlia te deja gastar.',
+        'route' => 'expected-incomes.index',
+        'link' => 'expected-incomes.index',
+        'version' => 1,
+        'auto' => true,
+        'steps' => [
+            [
+                'since' => 1,
+                'anchor' => null,
+                'title' => 'Lo que esperas, no lo que ya llegó',
+                'body' => 'Aquí va lo fijo de cada mes: salario, arriendos que cobras, una pensión. **No cuenta como plata disponible** — para eso hay que registrarlo cuando llegue.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => '[data-tour="expected-day"]',
+                'title' => 'El día de cobro es la mitad del truco',
+                'body' => 'Con esa fecha Finlia sabe **hasta cuándo te tiene que alcanzar** lo que tienes hoy. Sin ella solo puede repartir el mes en partes iguales, que casi nunca es como se vive.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => '[data-tour="expected-total"]',
+                'title' => 'De aquí sale la proyección',
+                'body' => 'Este total es la base de **cuánto puedes gastar**: de él se restan tus gastos fijos, las cuotas y el ahorro programado.',
+            ],
+        ],
+    ],
+
+    /*
+    |----------------------------------------------------------------------
+    | Categorías
+    |----------------------------------------------------------------------
+    */
+    'categorias' => [
+        'title' => 'Categorías',
+        'icon' => 'bi-tags',
+        'summary' => 'Para qué sirven, y cuándo conviene crear una propia.',
+        'route' => 'categories.index',
+        'link' => 'categories.index',
+        'version' => 1,
+        'auto' => true,
+        'steps' => [
+            [
+                'since' => 1,
+                'anchor' => null,
+                'title' => 'Con qué se etiqueta cada gasto',
+                'body' => 'Finlia trae las de siempre —mercado, transporte, servicios— y ya funcionan. Son las que agrupan tus **presupuestos** y los gráficos de **Reportes**.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => '[data-tour="categories-new"]',
+                'title' => 'Crea las que te falten',
+                'body' => 'Si algo se repite y no encaja en ninguna —mascotas, colegio, moto—, dale su propia categoría: es la única forma de ponerle un presupuesto aparte.',
+            ],
+        ],
+    ],
+
+    /*
+    |----------------------------------------------------------------------
+    | Registrar un gasto
+    |----------------------------------------------------------------------
+    | La pantalla más usada de la app, y la primera que abre casi todo el
+    | mundo desde el «+».
+    */
+    'registrar-gasto' => [
+        'title' => 'Registrar un gasto',
+        'icon' => 'bi-dash-circle',
+        'summary' => 'Los atajos del formulario y el aviso de cuánto te quedaría.',
+        'route' => 'expenses.create',
+        'link' => 'expenses.create',
+        'version' => 1,
+        'auto' => true,
+        'steps' => [
+            [
+                'since' => 1,
+                'anchor' => '#amount',
+                'title' => 'El monto, como lo escribes tú',
+                'body' => 'Escribe los números y los puntos de miles se ponen solos: **45000** se vuelve 45.000. Al guardar, Finlia te dice **cuánto te quedaría** para el resto del mes.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => '[data-category-chips]',
+                'title' => 'Tus categorías frecuentes',
+                'body' => 'Los atajos son las que más usas. Si la que buscas no está, el desplegable de abajo las tiene todas — los atajos y el desplegable son el mismo campo.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => '[data-tour="expense-extra"]',
+                'title' => 'Lo opcional, guardado',
+                'body' => 'Medio de pago y notas viven aquí dentro para no alargar el formulario. Un gasto se registra en diez segundos sin abrirlo.',
+            ],
+        ],
+    ],
+
+    /*
+    |----------------------------------------------------------------------
+    | Transferencias
+    |----------------------------------------------------------------------
+    */
+    'transferencia' => [
+        'title' => 'Transferencias',
+        'icon' => 'bi-arrow-left-right',
+        'summary' => 'Mover plata entre tus cuentas sin que cuente como gasto ni ingreso.',
+        'route' => 'transfers.create',
+        'link' => 'transfers.create',
+        'version' => 1,
+        'auto' => true,
+        'steps' => [
+            [
+                'since' => 1,
+                'anchor' => null,
+                'title' => 'Tu plata cambiando de bolsillo',
+                'body' => 'Sacar del banco, pasar a Nequi, guardar en efectivo. **No es un gasto ni un ingreso**: no toca lo que puedes gastar, solo mueve el saldo de una cuenta a otra.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => '#from_account_id',
+                'title' => 'De dónde sale y a dónde entra',
+                'body' => 'Finlia recuerda las cuentas que sueles usar y te las deja elegidas la próxima vez.',
+            ],
+        ],
+    ],
+
+    /*
+    |----------------------------------------------------------------------
+    | Detalle de una deuda
+    |----------------------------------------------------------------------
+    | Pantalla propia: registrar pagos y ver la proyección no se parece en
+    | nada al listado. Sin `link` porque la URL necesita el id de la deuda.
+    */
+    'deuda' => [
+        'title' => 'Una deuda por dentro',
+        'icon' => 'bi-cash-coin',
+        'summary' => 'Registrar pagos, ver cuándo sales y qué pasa si refinancias.',
+        'route' => 'debts.show',
+        'link' => null,
+        'link_hint' => 'Entra a cualquier deuda desde «Deudas».',
+        'version' => 1,
+        'auto' => true,
+        'steps' => [
+            [
+                'since' => 1,
+                'anchor' => '[data-tour="debt-projection"]',
+                'title' => 'Cuándo sales de esta',
+                'body' => 'La fecha de salida y los intereses que te faltan por pagar, calculados con tu cuota actual. Es una **estimación**: tu banco manda.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => '[data-tour="debt-payment"]',
+                'title' => 'Cada pago que registras baja el saldo',
+                'body' => 'Anota el abono y la fecha de salida se recalcula sola. Abonar de más se nota aquí al instante — es la mejor razón para hacerlo.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => '[data-tour="debt-history"]',
+                'title' => 'El historial',
+                'body' => 'Todo lo que has abonado, en orden. Si te equivocaste en un pago, se borra desde aquí y el saldo vuelve a cuadrar.',
+            ],
+        ],
+    ],
+
+    /*
+    |----------------------------------------------------------------------
+    | Detalle de una meta de ahorro
+    |----------------------------------------------------------------------
+    */
+    'meta' => [
+        'title' => 'Una meta por dentro',
+        'icon' => 'bi-flag',
+        'summary' => 'Registrar aportes y retiros, y leer el aporte mensual recomendado.',
+        'route' => 'savings-goals.show',
+        'link' => null,
+        'link_hint' => 'Entra a cualquier meta desde «Metas de ahorro».',
+        'version' => 1,
+        'auto' => true,
+        'steps' => [
+            [
+                'since' => 1,
+                'anchor' => '[data-tour="goal-recommendation"]',
+                'title' => 'Cuánto tendrías que apartar',
+                'body' => 'Sale de lo que te falta y del tiempo que queda. Es **informativo**: el que de verdad descuenta de lo que puedes gastar es el aporte programado de la meta.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => '[data-tour="goal-contribution"]',
+                'title' => 'Aportes y retiros',
+                'body' => 'Anota lo que le abonas, y también lo que sacaste si tocó. Al llegar al objetivo la meta **se marca lograda sola**.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => null,
+                'title' => 'Ojo con una cosa',
+                'body' => 'Estos movimientos **no tocan tus cuentas**: son el progreso de la meta. Si además moviste la plata de verdad, regístralo como transferencia.',
+            ],
+        ],
+    ],
+
+    /*
+    |----------------------------------------------------------------------
+    | Detalle de un hogar
+    |----------------------------------------------------------------------
+    */
+    'hogar' => [
+        'title' => 'Un hogar por dentro',
+        'icon' => 'bi-person-plus',
+        'summary' => 'Invitar a alguien, qué ve al entrar y cómo se quita.',
+        'route' => 'households.show',
+        'link' => null,
+        'link_hint' => 'Entra a tu hogar desde «Hogares».',
+        'version' => 1,
+        'auto' => true,
+        'steps' => [
+            [
+                'since' => 1,
+                'anchor' => '[data-tour="household-invite"]',
+                'title' => 'Invitar a alguien',
+                'body' => 'Mandas la invitación al correo y quien la reciba puede aceptarla **aunque todavía no tenga cuenta** en Finlia.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => '[data-tour="household-members"]',
+                'title' => 'Qué ve quien entra',
+                'body' => 'Todo lo de este hogar: cuentas, movimientos, deudas y metas. No hay datos a medias — por eso un hogar se comparte con quien de verdad comparte la plata.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => null,
+                'title' => 'Y si te arrepientes',
+                'body' => 'Puedes revocar una invitación que no han aceptado, o sacar a un miembro. Lo que esa persona registró **se queda**: es historia del hogar, no suya.',
             ],
         ],
     ],

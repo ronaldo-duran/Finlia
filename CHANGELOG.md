@@ -15,7 +15,7 @@ reciente de este archivo.
 ## [0.37.0] - 2026-09-15 — La app se explica sola
 
 ### Añadido
-- **Guías de pantalla.** La primera vez que entras a una pantalla, Finlia te explica en pocos pasos qué puedes hacer ahí, señalando el elemento del que habla ([ADR-0045](docs/DECISIONS.md#adr-0045)). Hay diez: Panel, Movimientos, Presupuestos, Gastos recurrentes, Deudas, Metas de ahorro, Reportes, Recordatorios, Cuentas y Hogares.
+- **Guías de pantalla.** La primera vez que entras a una pantalla, Finlia te explica en pocos pasos qué puedes hacer ahí, señalando el elemento del que habla ([ADR-0045](docs/DECISIONS.md#adr-0045)). Hay **diecisiete**: Panel, Movimientos, Presupuestos, Gastos recurrentes, Deudas, Metas de ahorro, Reportes, Recordatorios, Cuentas, Hogares, Ingresos esperados, Categorías, Registrar un gasto, Transferencias, y el detalle de una deuda, de una meta y de un hogar.
 - **Poco invasivas por diseño.** Solo arrancan la primera visita a cada pantalla y **como máximo una por sesión**: nunca dos seguidas en un mismo paseo por la app. Se cierran con Esc o tocando fuera.
 - **«Saltar esta guía» y «No mostrar más guías»** en el propio globo: la primera quita solo esa, la segunda las apaga todas de una vez.
 - **Catálogo en Mi perfil → Guías de la app**: la lista de las diez, con cuáles ya viste, un botón para ver cualquiera cuando quieras y otro para volver a verlas desde el principio. También está el interruptor para encenderlas o apagarlas.

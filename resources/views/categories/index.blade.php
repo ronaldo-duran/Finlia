@@ -10,7 +10,7 @@
     <div class="row g-3">
         {{-- Columna: crear categoría --}}
         <div class="col-12 col-lg-4">
-            <div class="card border-0">
+            <div class="card border-0" data-tour="categories-new">
                 <div class="card-header border-0 bg-transparent fw-semibold">
                     <i class="bi bi-plus-circle me-1"></i> Nueva categoría
                 </div>
