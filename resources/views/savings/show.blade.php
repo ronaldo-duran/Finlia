@@ -56,7 +56,7 @@
     </div></div>
 
     {{-- Recomendación (estimación) y avisos de estado --}}
-    <div class="card border-0 mb-3"><div class="card-body">
+    <div class="card border-0 mb-3" data-tour="goal-recommendation"><div class="card-body">
         @if ($recommendation['possible'] && $recommendation['amount'] > 0)
             <div class="fw-semibold">
                 <i class="bi bi-graph-up-arrow me-1"></i>
@@ -126,7 +126,7 @@
 
     {{-- Registrar aporte o retiro (solo metas que los aceptan) --}}
     @if ($goal->status->acceptsContributions())
-        <div class="card border-0 mb-3"><div class="card-body">
+        <div class="card border-0 mb-3" data-tour="goal-contribution"><div class="card-body">
             <h2 class="h6 text-muted text-uppercase mb-3">Registrar movimiento</h2>
             <form method="POST" action="{{ route('savings-goals.contributions.store', $goal) }}">
                 @csrf

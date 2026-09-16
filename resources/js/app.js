@@ -17,6 +17,10 @@ import * as bootstrap from 'bootstrap';
 
 window.bootstrap = bootstrap;
 
+// Guías de pantalla (ADR-0045). Se queda dormido salvo que el servidor haya
+// inyectado la guía de esta pantalla; el contenido vive en config/tours.php.
+import './tour.js';
+
 // Toggle de tema (claro/oscuro). El icono lo controla el CSS según
 // el atributo data-bs-theme del <html>; aquí solo se conmuta y persiste.
 (function () {

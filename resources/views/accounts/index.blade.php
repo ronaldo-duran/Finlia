@@ -21,7 +21,7 @@
             </div>
         </div>
     @else
-        <div class="row g-3">
+        <div class="row g-3" data-tour="accounts-list">
             @foreach ($accounts as $account)
                 <div class="col-12 col-sm-6 col-xl-4">
                     <div class="card border-0 h-100">

@@ -70,7 +70,7 @@
     <x-debt-disclaimer />
 
     {{-- Progreso y proyección --}}
-    <div class="card border-0 mb-4"><div class="card-body">
+    <div class="card border-0 mb-4" data-tour="debt-projection"><div class="card-body">
         <div class="d-flex justify-content-between small mb-1">
             <span class="text-muted">Progreso</span>
             <span class="fw-semibold">@percent($debt->progressPercent())</span>
@@ -112,7 +112,7 @@
     <div class="row g-3">
         {{-- Historial de pagos --}}
         <div class="col-12 col-lg-7">
-            <div class="card border-0">
+            <div class="card border-0" data-tour="debt-history">
                 <div class="card-header border-0 bg-transparent fw-semibold">
                     <i class="bi bi-clock-history me-1"></i> Historial de pagos
                 </div>
@@ -181,7 +181,7 @@
         {{-- Acciones --}}
         <div class="col-12 col-lg-5">
             {{-- Registrar pago --}}
-            <div class="card border-0 mb-3">
+            <div class="card border-0 mb-3" data-tour="debt-payment">
                 <div class="card-header border-0 bg-transparent fw-semibold">
                     <i class="bi bi-cash-coin me-1"></i> Registrar pago
                 </div>

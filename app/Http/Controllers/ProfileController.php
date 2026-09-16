@@ -11,6 +11,7 @@ use App\Http\Requests\Profile\UpdateProfileRequest;
 use App\Models\User;
 use App\Services\AccountDeletionService;
 use App\Services\ProfileService;
+use App\Services\TourService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +29,7 @@ class ProfileController extends Controller
     public function __construct(
         private readonly ProfileService $service,
         private readonly AccountDeletionService $deletionService,
+        private readonly TourService $tours,
     ) {}
 
     /**
@@ -45,6 +47,9 @@ class ProfileController extends Controller
             'pendingExpiresAt' => $user->pending_email_requested_at
                 ?->copy()
                 ->addMinutes(ProfileService::EMAIL_CHANGE_TTL_MINUTES),
+            // Catálogo de guías (ADR-0045): el sitio desde el que se vuelven
+            // a ver una por una, y donde se apagan del todo.
+            'tours' => $this->tours->catalog($user),
         ]);
     }
 

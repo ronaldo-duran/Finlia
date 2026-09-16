@@ -23,13 +23,13 @@
         </div>
         {{-- PDF queda preparado (ReportFormat), hoy exporta CSV --}}
         <a href="{{ route('reports.export', ['period' => $period->value]) }}"
-           class="btn btn-outline-finlia text-decoration-none">
+           class="btn btn-outline-finlia text-decoration-none" data-tour="reports-export">
             <i class="bi bi-download me-1"></i> Exportar CSV
         </a>
     </div>
 
     {{-- Comparación de períodos (Épica 8): el chip fija el ?period= real --}}
-    <div class="chip-row mb-3" role="navigation" aria-label="Período del reporte">
+    <div class="chip-row mb-3" role="navigation" aria-label="Período del reporte" data-tour="reports-period">
         @foreach (App\Enums\ReportPeriod::cases() as $option)
             <a href="{{ route('reports.index', ['period' => $option->value]) }}"
                class="chip {{ $option === $period ? 'active' : '' }}"
@@ -96,7 +96,7 @@
     </div>
 
     {{-- Insights (Épica 8): hechos descriptivos, nunca consejos financieros --}}
-    <div class="card border-0 mb-3">
+    <div class="card border-0 mb-3" data-tour="reports-insights">
         <div class="card-header border-0 bg-transparent fw-semibold">
             <i class="bi bi-lightbulb me-1"></i> Observaciones
         </div>

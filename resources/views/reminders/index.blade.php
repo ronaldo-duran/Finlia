@@ -88,7 +88,7 @@
                  su propia página (reminders.create) y este listado ocupa toda
                  la anchura, que es lo que realmente se viene a mirar. --}}
             <div class="col-12">
-                <div class="card border-0">
+                <div class="card border-0" data-tour="reminders-list">
                     <div class="card-header border-0 bg-transparent fw-semibold">
                         <i class="bi bi-list-check me-1"></i> Obligaciones
                     </div>
@@ -192,7 +192,7 @@
         </div>
 
         {{-- Preferencia personal: digest por correo (ADR-0028) --}}
-        <div class="card border-0 mt-3">
+        <div class="card border-0 mt-3" data-tour="reminders-email">
             <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div class="min-w-0">
                     <div class="fw-semibold">
