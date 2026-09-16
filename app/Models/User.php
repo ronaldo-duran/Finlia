@@ -27,6 +27,18 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasFactory, Notifiable;
 
     /**
+     * El `default(true)` de la migración solo lo aplica la base al insertar:
+     * el modelo recién creado sigue en memoria sin ese atributo, y ahí
+     * `tours_enabled` valdría null — es decir, las guías apagadas justo para
+     * quien se acaba de registrar, que es a quien más falta le hacen.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'tours_enabled' => true,
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -40,7 +52,16 @@ class User extends Authenticatable implements MustVerifyEmail
             'data_export_requested_at' => 'datetime',
             'password' => 'hashed',
             'birth_date' => 'date:Y-m-d',
+            'tours_enabled' => 'boolean',
         ];
+    }
+
+    /**
+     * Guías de pantalla que el usuario ya vio, con su versión (ADR-0045).
+     */
+    public function tours(): HasMany
+    {
+        return $this->hasMany(UserTour::class);
     }
 
     /**

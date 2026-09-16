@@ -102,6 +102,7 @@ Una épica **no está terminada** hasta que se cumple **todo** lo siguiente:
 - [ ] **Pruebas**: feature tests del recurso **+ test de aislamiento entre hogares (403)**.
 - [ ] `composer test` en verde.
 - [ ] No se rompió funcionalidad anterior.
+- [ ] **Guía de la pantalla al día** ([ADR-0045](docs/DECISIONS.md#adr-0045)): si la entrega añade o cambia algo que no se adivina mirando la pantalla, se refleja en `config/tours.php`. Guía nueva → se escribe; guía existente → se **sube su `version`** y los pasos añadidos llevan ese `since`, para que quien ya la vio reciba solo lo nuevo. Una guía que describe una pantalla que ya cambió miente, y eso es peor que no tenerla.
 - [ ] Docs actualizadas (DATA_MODEL, ROADMAP, DECISIONS si aplica).
 - [ ] Commits pequeños y descriptivos; sin secretos.
 - [ ] Checklist de seguridad ([docs/SECURITY.md](docs/SECURITY.md)) revisado.

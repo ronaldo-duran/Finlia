@@ -26,7 +26,7 @@
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
         <h1 class="h3 mb-0"><i class="bi bi-arrow-repeat me-2"></i>Gastos recurrentes</h1>
-        <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2">
+        <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2" data-tour="recurring-monthly">
             Separa @money($totalMonthlySavings)/mes
         </span>
     </div>
@@ -147,7 +147,7 @@
 
         {{-- Columna: próximas obligaciones --}}
         <div class="col-12 col-lg-8">
-            <div class="card border-0">
+            <div class="card border-0" data-tour="recurring-upcoming">
                 <div class="card-header border-0 bg-transparent fw-semibold">
                     <i class="bi bi-calendar-event me-1"></i> Próximas obligaciones
                 </div>

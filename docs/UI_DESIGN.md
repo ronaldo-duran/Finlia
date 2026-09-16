@@ -172,6 +172,39 @@ el que coincida (ninguno si el valor no está entre los chips rápidos), llamado
 `click` de cada chip como desde el `change` del `<select>`. Ver el script de
 `expenses/_form.blade.php` — cópialo si añades chips-sobre-select en un formulario nuevo.
 
+### Guías de pantalla — `data-tour="..."` ([ADR-0045](DECISIONS.md#adr-0045))
+La app se explica sola la primera vez que se entra a cada pantalla: un halo sobre un elemento y un
+globo al lado (hoja inferior en móvil). **No se maqueta nada**: el contenido está en
+`config/tours.php` y lo pinta `resources/js/tour.js`.
+
+Lo único que toca una vista nueva es **marcar lo que la guía va a señalar**:
+
+```blade
+<div class="chip-row mb-3" data-tour="movements-filters">
+```
+
+Reglas:
+
+- **`data-tour`, nunca una clase de Bootstrap como anclaje.** Las clases cambian con cualquier
+  retoque de maquetación, y el paso se saltaría en silencio.
+- **Un paso cuyo elemento no se ve, se salta solo.** Es deliberado: el paso de la barra inferior no
+  sale en escritorio, el del menú lateral no sale en móvil, y un paso sobre una lista no sale si el
+  hogar aún no tiene datos. Por eso los pasos que deben verse siempre (intro, cierre) van **sin**
+  anclaje, y se pintan centrados.
+- **Elige anclas del tamaño de lo que explicas.** Un contenedor más alto que la ventana produce un
+  halo cuyos bordes quedan todos fuera de pantalla: el motor lo lleva a su borde superior, pero se
+  lee mejor un elemento acotado.
+- **Si tu elemento se esconde al desplazar, devuélvelo a la vista con `body.tour-abierto`** (como
+  hace `.fab-container`, §4). La guía mueve la página sola, así que un elemento que reacciona al
+  scroll desaparece justo cuando le toca su paso. La regla que lo devuelve **no debe animarse**: el
+  motor mide la opacidad computada para decidir qué pasos valen, y una transición a medias sigue
+  leyendo 0.
+- **Una guía describe UNA pantalla.** En `config/tours.php` la ruta va con su nombre exacto, sin
+  comodines: `debts.*` casaría también con el detalle de una deuda, donde no está ninguno de los
+  anclajes del listado. Si el detalle merece explicación, lleva **su propia guía**.
+- La entrada para volver a verla ya existe (menú del avatar y `/perfil`): **no** añadas un "?" a la
+  cabecera de tu vista.
+
 ## 5. Iconografía de categoría (listas de movimientos)
 
 `Category.icon` casi nunca está poblado (el seeder solo define `color`), así que el patrón es:
@@ -213,6 +246,9 @@ criterio; no reintroduzcas los verdes/rojos vivos por defecto de Bootstrap.
 8. ¿Un input de dinero? `data-money-input`, nunca `type="number"` (§4).
 9. ¿Necesita aparecer en la navegación inferior móvil? Edita el partial existente (4 huecos fijos
    + FAB), no crees otra barra — y si algo no cabe, va al sidebar/"Más", no a un quinto hueco.
+10. ¿La pantalla estrena algo que no se adivina mirando? Añade o actualiza su guía en
+    `config/tours.php` y marca con `data-tour` lo que señale (§4). Si la guía ya existía, sube su
+    `version` y pon el `since` nuevo en los pasos añadidos: quien ya la vio recibirá solo eso.
 10. ¿Alguna acción que **no** cambia de página (se resuelve por JS en la misma pantalla)? →
     `data-sin-progreso` en ese `<form>`/`<a>`, o la barra de carga se quedará encendida (§4).
 11. Corre `npx playwright test` si tocaste Panel/Movimientos/Registrar — son las pantallas con

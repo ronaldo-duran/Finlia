@@ -73,7 +73,7 @@
 <x-form-input label="Descripción" name="description" :value="$expense?->description" placeholder="Ej: Mercado del mes" />
 
 {{-- Medio de pago y notas: detrás de "Más detalles" para no saturar la pantalla. --}}
-<details class="mb-3" @if(old('payment_method') || $expense?->payment_method || old('notes') || $expense?->notes) open @endif>
+<details class="mb-3" data-tour="expense-extra" @if(old('payment_method') || $expense?->payment_method || old('notes') || $expense?->notes) open @endif>
     <summary class="small fw-semibold text-finlia" style="cursor: pointer;">Más detalles</summary>
     <div class="mt-3">
         <x-form-select label="Medio de pago" name="payment_method" :options="$methods"
