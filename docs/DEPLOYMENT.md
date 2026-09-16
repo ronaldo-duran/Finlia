@@ -333,11 +333,14 @@ cd ~/domains/finlia.online/finlia
 $PHP84 artisan down --render="errors::503" --retry=15
 git fetch --tags --force && git reset --hard <tag>
 $PHP84 artisan migrate --force
+$PHP84 artisan cache:clear
 $PHP84 artisan optimize
 $PHP84 artisan up
 ```
 
 > `reset --hard` y no `pull`: el artefacto se reescribe entero en cada despliegue, así que un merge no tiene sentido. Todo lo que el servidor necesita conservar —`.env`, `storage/`— está fuera del control de git. Eso incluye los `.gitignore` de `storage/` que el propio Laravel reescribe: aparecen como modificados en `git status` y el `reset --hard` se los lleva sin avisar, que es justo lo que se quiere.
+
+> `cache:clear` va **después** de `migrate` y **antes** de `optimize`. La caché de aplicación (`CACHE_STORE=database`) sobrevive al despliegue y puede guardar estructuras con el **esquema anterior** al código nuevo — por ejemplo el resumen de recordatorios en `ReminderService::cachedSummary()`, cuyo TTL es de 10 minutos. Si el código nuevo cambia la forma de un valor cacheado, servirlo produce 500 hasta que el TTL expira o un observer lo invalida. `optimize` no purga `Cache::`; hay que llamarlo explícitamente. `cache:clear` **no** toca `config:cache`, `route:cache` ni `view:cache`, que reconstruye `optimize` a continuación.
 
 > **`down` va primero y `up` al final, pase lo que pase.** Entre el `reset` y el `optimize` la aplicación corre con código nuevo y cachés viejas: servir peticiones ahí es pedir errores intermitentes. El modo mantenimiento responde con la página 503 de Finlia ([ADR-0041](DECISIONS.md#adr-0041)), que se pre-renderiza en ese mismo `down` y se sirve **sin arrancar la aplicación**. Si algo falla a mitad, `up` es lo primero que hay que ejecutar: el sitio no puede quedarse en mantenimiento.
 
