@@ -12,6 +12,20 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.37.0] - 2026-09-15 — La app se explica sola
+
+### Añadido
+- **Guías de pantalla.** La primera vez que entras a una pantalla, Finlia te explica en pocos pasos qué puedes hacer ahí, señalando el elemento del que habla ([ADR-0045](docs/DECISIONS.md#adr-0045)). Hay diez: Panel, Movimientos, Presupuestos, Gastos recurrentes, Deudas, Metas de ahorro, Reportes, Recordatorios, Cuentas y Hogares.
+- **Poco invasivas por diseño.** Solo arrancan la primera visita a cada pantalla y **como máximo una por sesión**: nunca dos seguidas en un mismo paseo por la app. Se cierran con Esc o tocando fuera.
+- **«Saltar esta guía» y «No mostrar más guías»** en el propio globo: la primera quita solo esa, la segunda las apaga todas de una vez.
+- **Catálogo en Mi perfil → Guías de la app**: la lista de las diez, con cuáles ya viste, un botón para ver cualquiera cuando quieras y otro para volver a verlas desde el principio. También está el interruptor para encenderlas o apagarlas.
+- **«Guía de esta pantalla» en el menú de tu avatar**, para repasar la de donde estés sin ir al perfil.
+- **Novedades sin repetir lo sabido.** Cada paso guarda en qué versión nació: cuando una guía se reescribe para presentar algo nuevo, quien ya la vio recibe **solo los pasos nuevos**, titulados «Novedades», y quien llega nuevo la ve completa.
+- **El progreso viaja contigo.** Se guarda en tu cuenta, no en el navegador: entrar desde el celular y desde el computador no te muestra la misma guía dos veces. Apagarlas no borra el progreso — si las vuelves a encender, retomas donde ibas.
+
+### Cambiado
+- **Las guías se saltan solas los pasos que no aplican.** Un paso sobre una lista vacía, sobre la barra inferior del celular cuando estás en el computador, o sobre el menú lateral cuando estás en el celular, no se muestra: una guía nunca señala un vacío.
+
 ## [0.36.1] - 2026-09-15 — Retoques al lanzamiento
 
 ### Corregido

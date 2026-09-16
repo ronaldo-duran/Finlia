@@ -76,6 +76,8 @@ Navbar/botones/forms/tablas/gráficos optimizados móvil. Botón flotante "+" (g
 >
 > **Queda solo el push de recordatorios**, abajo — no bloquea nada: los recordatorios ya se ven in-app y llegan por correo.
 
+> 🧭 **Guías de pantalla** ([ADR-0045](DECISIONS.md#adr-0045), v0.37.0). Diez recorridos —Panel, Movimientos, Presupuestos, Recurrentes, Deudas, Metas, Reportes, Recordatorios, Cuentas y Hogares— que se explican solos la primera vez que se entra a cada pantalla, **una por sesión** como mucho. El contenido vive en `config/tours.php` y cada paso guarda la **versión** en que nació: al presentar una funcionalidad nueva, quien ya vio la guía recibe solo los pasos añadidos. «Saltar» y «No mostrar más guías» en el propio globo; el catálogo para volver a verlas, en `/perfil → Guías de la app`.
+
 > 🔔 Aquí llega el **push de recordatorios**: Web Push nativo con VAPID (W3C, sin proveedor ni cuota — gratis de verdad, ver [ADR-0028](DECISIONS.md#adr-0028) §7). Requiere el Service Worker del PWA y HTTPS (Hostinger lo trae). Consumirá `ReminderService::list()/summary()` tal cual, sin reescribir lógica.
 
 ### Épica 11 — Hardening, tests y producción 🟡

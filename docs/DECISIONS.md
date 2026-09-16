@@ -45,6 +45,7 @@ Formato inspirado en ADR (Architecture Decision Records). Índice:
 - [ADR-0042 — Dos licencias en un repositorio: núcleo AGPL y `ee/` comercial, con CLA](#adr-0042) — **ACEPTADA**
 - [ADR-0043 — Revisión automática de PRs: el veredicto se calcula fuera del modelo](#adr-0043) — **ACEPTADA**
 - [ADR-0044 — Aviso de errores en producción: el cron lee el log y avisa por correo](#adr-0044) — **ACEPTADA**
+- [ADR-0045 — Guías de pantalla versionadas, con contenido en config y motor propio](#adr-0045) — **ACEPTADA**
 
 ---
 
@@ -1410,6 +1411,43 @@ Al abrirse a forks, se endurece además la configuración del checkout. La acci�
 - Del log solo sale, por error, la clase y `archivo:línea` (con la ruta relativa, sin el usuario del hosting) o el texto de un mensaje propio de la app sin su contexto. Para diagnosticar hay que entrar al log del servidor, y es a propósito.
 
 **Estado.** ACEPTADA — 2026-09-14. Implementada en `app/Console/Commands/ReportLogErrors.php`, `routes/console.php` y `tests/Feature/Console/ReportLogErrorsTest.php`.
+
+---
+
+## ADR-0045
+### Guías de pantalla versionadas, con contenido en config y motor propio — **ACEPTADA**
+
+**Contexto.** La app llega al lanzamiento con diez pantallas y varios conceptos que no se adivinan mirando: que la cifra del Panel no es el saldo sino lo que se puede gastar, que un gasto recurrente se *planifica* y no se registra, que un SOAT anual se reparte mes a mes, que avalancha y bola de nieve son dos estrategias razonables. Nada de eso lo explica hoy nadie, y quien se registre va a llegar a un Panel vacío. Hace falta además poder **presentar lo nuevo** a quien ya usa la app cuando salga una funcionalidad, sin repetirle lo que ya sabe.
+
+**Decisión.**
+
+1. **El contenido vive en `config/tours.php`, no en el código.** Reescribir una guía —o escribir la de una funcionalidad nueva— es editar un array de textos. El motor no se toca.
+2. **Cada guía tiene `version` y cada paso, el `since` en que nació.** Al subir la versión y añadir pasos con el `since` nuevo, quien ya la vio recibe **solo esos pasos**, presentados como «Novedades»; quien llega nuevo la ve entera. Un paso con `since` mayor que la versión publicada está escrito pero no se muestra: permite dejar redactada la guía de la próxima entrega.
+3. **Poco invasiva, con la regla en la petición y no en el contenido** (`ShareActiveTour`): una guía arranca sola solo la **primera vez** que se entra a su pantalla, **como máximo una por sesión**, y nunca en un POST. Siempre con «Saltar» (esa guía) y «No mostrar más guías» (todas), y se cierra con Esc o clicando fuera.
+4. **El progreso va en el servidor** (`user_tours`, una fila por usuario y guía con la versión vista), no en `localStorage`: quien entra desde el móvil y desde el PC no debe ver dos veces la misma guía. `localStorage` queda solo como espejo, para que un `fetch` fallido no deje la guía en bucle.
+5. **`users.tours_enabled`** es el interruptor global. Apagarlo **no borra el progreso**: volver a encenderlo retoma donde iba.
+6. **Volver a verlas**: el menú del avatar ofrece la guía de la pantalla actual, y `/perfil → Guías de la app` es el catálogo completo, con un enlace por guía (`?guia=<clave>`) y el botón de reiniciar todo. Pedir una guía a mano se salta el interruptor y el cupo de sesión: es lo contrario de que te la impongan.
+7. **Motor propio en JS vanilla** (`resources/js/tour.js`, ~350 líneas), con los tokens de [docs/UI_DESIGN.md](UI_DESIGN.md). Halo sobre el elemento y globo al lado; en móvil, hoja inferior que se va arriba cuando taparía justo lo que señala.
+8. **Un paso cuyo elemento no está en pantalla se salta solo.** Así una guía nunca señala un vacío: el paso de la barra inferior no sale en escritorio, el del menú lateral no sale en móvil, y un paso sobre una lista no sale si aún no hay datos.
+9. **Los anclajes se marcan con `data-tour="..."`** en la vista, no con clases de Bootstrap, que cambian con cualquier retoque de maquetación y dejarían el paso saltándose en silencio.
+
+**Alternativas (descartadas).**
+
+- **Driver.js / Shepherd / Intro.js.** Traen su propio aspecto y habría que repintarlo entero contra los tokens de marca — más código del que tiene el motor propio, más una dependencia que mantener. Ninguna resuelve lo que aquí importa de verdad, que es el versionado por paso.
+- **Progreso en `localStorage`.** Gratis, pero la misma persona vería cada guía una vez por dispositivo, y el «volver a verlas» del perfil no tendría nada que reiniciar.
+- **Repetir la guía completa al subir la versión.** Más simple de razonar, y justo lo que hace que la gente le tome fastidio a los tutoriales: cinco pasos conocidos para enseñar uno nuevo.
+- **Una franja «Finlia v0.37: 3 novedades» en el Panel**, con un recorrido que cruza varias pantallas. Otra pieza que mantener; el versionado por paso ya entrega la novedad en la pantalla donde se usa, que es donde sirve.
+- **Arrancar la guía en la primera visita a cada pantalla sin tope.** Cubriría la app en un solo paseo, a costa de tres globos seguidos el primer día.
+
+**Consecuencias y mitigaciones.**
+
+- **Escribir una funcionalidad nueva ahora incluye contarla.** Queda en la DoD de [AGENTS.md §4](../AGENTS.md): si la entrega cambia una pantalla con guía, se sube su `version` y se añaden los pasos.
+- Un `data-tour` borrado por descuido no rompe nada: el paso se salta. `TourServiceTest::test_el_registro_real_esta_bien_formado` valida la forma del registro y que cada `link` apunte a una ruta que existe, pero **no puede comprobar que el anclaje siga en la vista** — eso solo se ve abriendo la pantalla.
+- El JSON de la guía viaja en cada carga de una pantalla con guía (~2 KB). Se acepta: ahorra una petición y mantiene el «volver a verla» instantáneo.
+- Un paso solo puede llevar texto con `**negrita**` y viñetas. Se pinta con nodos de texto, nunca con `innerHTML`: no hay forma de colar marcado desde el registro.
+- Las guías cuentan lo que hay hoy. Una pantalla que cambie sin que se toque su guía queda **mintiendo**, y eso es peor que no tener guía.
+
+**Estado.** ACEPTADA — 2026-09-15. Implementada en `config/tours.php`, `app/Services/TourService.php`, `app/Http/Middleware/ShareActiveTour.php`, `app/Http/Controllers/TourController.php`, `resources/js/tour.js`, `resources/views/layouts/partials/tour.blade.php` y `tests/Feature/Tour/TourTest.php` + `tests/Unit/TourServiceTest.php`.
 
 ---
 

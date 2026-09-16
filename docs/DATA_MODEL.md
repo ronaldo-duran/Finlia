@@ -277,6 +277,28 @@ No es tabla. Lógica de dominio de la épica (sin dependencias HTTP, ADR-0010):
 
 `unique(user_id, key)`: un acuse por usuario y aviso. Tabla por clave en lugar de una columna por aviso, para que las épicas 7 y 8 reutilicen el mecanismo sin tocar `users`.
 
+## Transversal — Guías de pantalla (ADR-0045)
+
+### `user_tours`
+| Campo | Tipo | Notas |
+|---|---|---|
+| id | | |
+| user_id | FK users (cascade) | preferencia del **usuario**, no del hogar: dos miembros de un hogar aprenden la app por separado |
+| key | string(40) | clave del registro de `config/tours.php`; lista cerrada, validada antes de insertar |
+| version | smallint sin signo | versión de la guía **ya vista**. Es lo que permite enseñar solo las novedades |
+| status | string(12) | valor de `TourStatus` (`completed` \| `skipped`). Las dos cuentan como vista; distinguirlas es lo que dice si una guía aburre |
+| seen_at | timestamp | |
+| timestamps | | |
+
+`unique(user_id, key)`: una fila por usuario y guía — al revisitarla se actualiza, no se acumula historial. Tabla por clave y no una columna por guía en `users`, mismo criterio que `user_acknowledgements`: hay diez guías y cada funcionalidad nueva trae la suya.
+
+### Columna nueva en `users`
+| Campo | Tipo | Notas |
+|---|---|---|
+| tours_enabled | boolean, default `true` | «No mostrarme más guías». No es de ninguna guía en concreto, por eso vive aquí y no en `user_tours`: hay que poder responderlo sin haber visto ninguna. Apagarlo **no borra** el progreso. **No es `fillable`**: se cambia solo desde `TourController`, nunca por asignación masiva. `User::$attributes` le da el mismo default que la migración, porque el de la base no llega al modelo recién creado en memoria |
+
+El contenido de las guías **no está en la base**: vive en `config/tours.php` y se versiona con el código.
+
 ## Transversal — Términos y condiciones (Plan 03, ADR-0031)
 
 ### `terms_versions`
