@@ -411,6 +411,11 @@ Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', '
         ->name('debts.store');
     Route::get('deudas/{debt}', [DebtController::class, 'show'])
         ->name('debts.show');
+    // Edición en página propia (no modal): el formulario es más alto que
+    // el viewport en móvil y ni siquiera `modal-fullscreen-sm-down` deja
+    // llegar a los últimos campos con fiabilidad.
+    Route::get('deudas/{debt}/editar', [DebtController::class, 'edit'])
+        ->name('debts.edit');
     Route::put('deudas/{debt}', [DebtController::class, 'update'])
         ->name('debts.update');
     Route::delete('deudas/{debt}', [DebtController::class, 'destroy'])

@@ -12,6 +12,11 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.37.1] - 2026-09-16 — Editar deuda en página propia
+
+### Cambiado
+- **Editar una deuda ya no vive en un modal, sino en su propia página.** El formulario es más alto que el viewport en un móvil y el pop-up no permitía llegar a los últimos campos ni siquiera con desplazamiento interno; ahora el botón «Editar» abre la pantalla completa, con el mismo formulario que el alta y sin nada que compita con el scroll de la página.
+
 ## [0.37.0] - 2026-09-15 — La app se explica sola
 
 ### Añadido
@@ -25,6 +30,7 @@ reciente de este archivo.
 
 ### Cambiado
 - **Las guías se saltan solas los pasos que no aplican.** Un paso sobre una lista vacía, sobre la barra inferior del celular cuando estás en el computador, o sobre el menú lateral cuando estás en el celular, no se muestra: una guía nunca señala un vacío.
+
 ## [0.36.2] - 2026-09-15 — Recordatorios sin ruido
 
 ### Cambiado

@@ -116,6 +116,28 @@ class DebtController extends Controller
             ->with('status', __('Deuda ":name" registrada.', ['name' => $debt->name]));
     }
 
+    /**
+     * Formulario de edición en página propia (v0.36.3). Antes vivía en un
+     * modal dentro de `debts.show`; el formulario es más alto que el
+     * viewport en móvil y ni siquiera `modal-fullscreen-sm-down` dejaba
+     * llegar a los últimos campos con fiabilidad.
+     */
+    public function edit(Debt $debt): View|RedirectResponse
+    {
+        $this->authorize('update', $debt);
+
+        $household = active_household();
+
+        if ($household === null) {
+            return redirect()->route('households.create');
+        }
+
+        return view('debts.edit', [
+            'debt' => $debt,
+            'accounts' => $household->accounts()->orderBy('name')->get(),
+        ]);
+    }
+
     public function update(UpdateDebtRequest $request, Debt $debt): RedirectResponse
     {
         $this->authorize('update', $debt);
