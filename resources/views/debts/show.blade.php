@@ -27,10 +27,9 @@
                 </p>
             </div>
         </div>
-        <button type="button" class="btn btn-sm btn-outline-secondary"
-                data-bs-toggle="modal" data-bs-target="#editDebtModal">
+        <a href="{{ route('debts.edit', $debt) }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-pencil me-1"></i> Editar
-        </button>
+        </a>
     </div>
 
     {{-- Cifras --}}
@@ -320,29 +319,4 @@
         </div>
     </div>
 
-    {{-- Modal de edición.
-         modal-fullscreen-sm-down: en pantallas pequeñas el formulario es
-         más alto que el viewport; sin esto el modal-body no ganaba altura
-         para scrollear y las últimas secciones quedaban inalcanzables. --}}
-    <div class="modal fade" id="editDebtModal" tabindex="-1" aria-labelledby="editDebtModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down">
-            <div class="modal-content">
-                <form method="POST" action="{{ route('debts.update', $debt) }}">
-                    @csrf
-                    @method('PUT')
-                    <div class="modal-header">
-                        <h2 class="modal-title h5" id="editDebtModalLabel">Editar deuda</h2>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <div class="modal-body">
-                        @include('debts._form', ['debt' => $debt, 'prefix' => 'edit_'])
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-finlia">Guardar cambios</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 @endsection

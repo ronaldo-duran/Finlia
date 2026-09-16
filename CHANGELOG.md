@@ -12,6 +12,11 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.36.3] - 2026-09-16 — Editar deuda en página propia
+
+### Cambiado
+- **Editar una deuda ya no vive en un modal, sino en su propia página.** El formulario es más alto que el viewport en un móvil y el pop-up no permitía llegar a los últimos campos ni siquiera con desplazamiento interno; ahora el botón «Editar» abre la pantalla completa, con el mismo formulario que el alta y sin nada que compita con el scroll de la página.
+
 ## [0.36.2] - 2026-09-15 — Recordatorios sin ruido
 
 ### Cambiado
