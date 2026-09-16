@@ -12,6 +12,16 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.36.2] - 2026-09-15 — Recordatorios sin ruido
+
+### Cambiado
+- **La campanita del navbar ahora muestra qué debes, no solo cuántos.** Lista los tres primeros recordatorios que piden atención (título y «Vence hoy» / «Vencida hace 2 días» / «En 4 días»), con un punto rojo o ámbar delante, un «y N más…» si sobran, y el botón «Ver recordatorios» al pie.
+- **El panel deja de repetir los recordatorios.** Antes salían dos cuadros con obligaciones vencidas y próximas encima de todo; ahora esa información vive en un único sitio (la campanita del navbar y `/recordatorios`).
+- **La lista de recordatorios pasa de «Próximas obligaciones» a «Obligaciones».** Una obligación ya vencida no es próxima, y la sección agrupa las tres bandas (vencidas, vencen pronto, más adelante).
+
+### Corregido
+- **Los encabezados de sección de `/recordatorios` y `/gastos-recurrentes` ya no aparecen pegados al borde izquierdo.** «Vencidas», «Vencen pronto» y «Más adelante» quedan indentados como viñeta bajo el título del bloque, en lugar de leerse como otro encabezado al ras.
+
 ## [0.36.1] - 2026-09-15 — Retoques al lanzamiento
 
 ### Corregido
