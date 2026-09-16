@@ -16,7 +16,7 @@
                       style="font-size:.6rem">{{ $bell['attention'] }}</span>
             @endif
         </button>
-        <ul class="dropdown-menu dropdown-menu-end">
+        <ul class="dropdown-menu dropdown-menu-end" style="min-width: 18rem;">
             <li><h6 class="dropdown-header"><i class="bi bi-bell me-1"></i> Recordatorios</h6></li>
 
             @if (! $bell['enabled'])
@@ -24,14 +24,26 @@
             @elseif ($bell['attention'] === 0)
                 <li><span class="dropdown-item-text small text-muted">Nada urgente. Todo al día ✨</span></li>
             @else
-                <li><span class="dropdown-item-text small">
-                    @if ($bell['overdue'] > 0)
-                        <strong class="text-danger">{{ $bell['overdue'] }} {{ $bell['overdue'] === 1 ? 'obligación vencida' : 'obligaciones vencidas' }}</strong>@if ($bell['upcoming'] > 0) · @endif
-                    @endif
-                    @if ($bell['upcoming'] > 0)
-                        <strong class="text-warning-emphasis">{{ $bell['upcoming'] }} {{ $bell['upcoming'] === 1 ? 'próxima' : 'próximas' }}</strong>
-                    @endif
-                </span></li>
+                @foreach ($bell['preview'] ?? [] as $item)
+                    @php
+                        $days = $item['days_remaining'];
+                        [$dot, $label] = $item['status'] === 'overdue'
+                            ? ['text-danger', 'Vencida hace '.abs($days).' '.(abs($days) === 1 ? 'día' : 'días')]
+                            : ['text-warning-emphasis', $days === 0 ? 'Vence hoy' : 'En '.$days.' '.($days === 1 ? 'día' : 'días')];
+                    @endphp
+                    <li><span class="dropdown-item-text small d-flex gap-2 align-items-baseline">
+                        <i class="bi bi-dot fs-4 lh-1 {{ $dot }}"></i>
+                        <span class="min-w-0 flex-grow-1">
+                            <span class="d-block text-truncate fw-semibold">{{ $item['title'] }}</span>
+                            <span class="text-muted">{{ $label }}</span>
+                        </span>
+                    </span></li>
+                @endforeach
+                @if ($bell['attention'] > count($bell['preview'] ?? []))
+                    <li><span class="dropdown-item-text small text-muted">
+                        y {{ $bell['attention'] - count($bell['preview']) }} más…
+                    </span></li>
+                @endif
             @endif
 
             <li><hr class="dropdown-divider"></li>

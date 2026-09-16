@@ -8,8 +8,6 @@ use App\Enums\BudgetScope;
 use App\Services\BudgetCalculatorService;
 use App\Services\DebtService;
 use App\Services\MovementSummaryService;
-use App\Services\RecurringExpenseService;
-use App\Services\ReminderService;
 use App\Services\SavingsGoalService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -21,10 +19,8 @@ class DashboardController extends Controller
     public function __construct(
         private readonly MovementSummaryService $summary,
         private readonly BudgetCalculatorService $budgets,
-        private readonly RecurringExpenseService $recurring,
         private readonly SavingsGoalService $savingsGoals,
         private readonly DebtService $debts,
-        private readonly ReminderService $reminders,
     ) {}
 
     /**
@@ -72,8 +68,6 @@ class DashboardController extends Controller
             'fechaActual' => $hoy->isoFormat('dddd, D [de] MMMM [de] YYYY'),
             // Épica 4: "¿cuánto puedo gastar?" del mes en curso.
             'budgetSummary' => $this->budgets->summary($householdId, BudgetScope::Month),
-            // Épica 5: avisos de obligaciones vencidas o próximas a vencer.
-            'recurringAlerts' => $this->recurring->alerts($householdId),
             // Épica 7: progreso de las metas de ahorro vigentes.
             'savingsGoals' => $savingsGoals,
             // Épica 8: deuda total y ahorro acumulado completan el resumen.
@@ -81,10 +75,6 @@ class DashboardController extends Controller
             // Reutiliza las metas ya cargadas: antes eran tres consultas a
             // `savings_goals` (listado + resumen + compromiso mensual).
             'savingsSummary' => $this->savingsGoals->summary($householdId, $savingsGoals),
-            // Épica 9: campanita del panel (null si el hogar los desactivó).
-            'reminderSummary' => $household->reminders_enabled
-                ? $this->reminders->cachedSummary($householdId)
-                : null,
             'totals' => $totals,
             'totalBalance' => $totalBalance,
             'byCategory' => $byCategory,
