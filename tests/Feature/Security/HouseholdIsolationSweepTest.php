@@ -71,12 +71,28 @@ class HouseholdIsolationSweepTest extends TestCase
         $this->intruso = User::factory()->create();
         app(HouseholdService::class)->createHousehold($this->intruso->id, 'Hogar Intruso');
 
-        $cuenta = Account::factory()->create(['household_id' => $hogar->id]);
+        // Nombres inconfundibles, no los de la factory. La factory sortea
+        // nombres reales ("Nequi", "Bancolombia", "Tarjeta banco") que también
+        // aparecen en textos legítimos de la app —la guía de Cuentas nombra las
+        // billeteras colombianas—, así que el assertDontSee de más abajo fallaba
+        // o pasaba según qué nombre tocara. Un centinela convierte esa prueba en
+        // una comprobación de aislamiento de verdad, no de coincidencia.
+        $cuenta = Account::factory()->create([
+            'household_id' => $hogar->id,
+            'name' => 'CUENTA-DEL-HOGAR-AJENO',
+        ]);
         $categoria = Category::where('household_id', $hogar->id)->first()
             ?? Category::factory()->create(['household_id' => $hogar->id]);
-        $deuda = Debt::factory()->create(['household_id' => $hogar->id, 'status' => 'active']);
+        $deuda = Debt::factory()->create([
+            'household_id' => $hogar->id,
+            'status' => 'active',
+            'name' => 'DEUDA-DEL-HOGAR-AJENO',
+        ]);
         $meta = SavingsGoal::factory()->create(['household_id' => $hogar->id, 'status' => 'active']);
-        $otraCuenta = Account::factory()->create(['household_id' => $hogar->id]);
+        $otraCuenta = Account::factory()->create([
+            'household_id' => $hogar->id,
+            'name' => 'OTRA-CUENTA-DEL-HOGAR-AJENO',
+        ]);
 
         $this->ajeno = [
             'household' => $hogar,
