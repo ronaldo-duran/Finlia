@@ -12,6 +12,14 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.37.2] - 2026-09-16 — Despliegue sin ruido
+
+### Corregido
+- **La campanita del navbar ya no da error tras un despliegue.** El resumen de recordatorios se cachea diez minutos, y un tag podía dejar en la caché un formato anterior al que espera el código nuevo; los primeros minutos las páginas autenticadas devolvían un 500 hasta que ese valor se refrescaba. Ahora la vista tolera esa forma vieja sin romper.
+
+### Cambiado
+- **El despliegue purga la caché de aplicación entre `migrate` y `optimize`.** Antes solo se reconstruían las cachés de framework (config, rutas, vistas): las claves de `Cache::` sobrevivían al tag con el esquema anterior. También queda registrado en `docs/DEPLOYMENT.md` para el procedimiento manual.
+
 ## [0.37.1] - 2026-09-16 — Editar deuda en página propia
 
 ### Cambiado
