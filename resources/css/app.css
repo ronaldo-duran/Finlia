@@ -1114,3 +1114,228 @@ a { color: var(--finlia-primary); }
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.03em;
 }
+
+/*
+|------------------------------------------------------------------------------
+| Guías de pantalla (ADR-0045)
+|------------------------------------------------------------------------------
+| Un halo sobre el elemento que se explica y un globo al lado. El halo NO es
+| un recorte: es una caja transparente con una sombra enorme, que oscurece
+| todo lo demás de una vez. Por eso lleva pointer-events:none — su sombra
+| cubre la pantalla entera y, sin eso, se comería todos los clics; quien los
+| recoge es `.tour-fondo`, que está debajo.
+|
+| Motor: resources/js/tour.js. Contenido: config/tours.php.
+*/
+.tour-layer {
+    position: fixed;
+    inset: 0;
+    /* Por encima de todo lo de la app: navbar pegajosa, barra inferior, FAB
+       y los modales de Bootstrap (1055). Una guía y un modal no coinciden
+       nunca, pero si algún día pasara, el que manda tiene que ser la guía. */
+    z-index: 1090;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .18s ease, visibility .18s;
+}
+
+.tour-layer.tour-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* El motor esconde piezas con el atributo `hidden` (viñetas vacías, «Atrás»
+   en el primer paso). Sin esto, cualquier `display` propio le ganaría. */
+.tour-layer [hidden] {
+    display: none !important;
+}
+
+.tour-fondo {
+    position: absolute;
+    inset: 0;
+}
+
+.tour-foco {
+    position: fixed;
+    border-radius: var(--finlia-radius-sm);
+    box-shadow: 0 0 0 9999px rgba(8, 20, 25, .62);
+    outline: 2px solid var(--finlia-accent);
+    outline-offset: 0;
+    pointer-events: none;
+    /* Sin transición de geometría a propósito. El halo se recoloca en cada
+       fotograma de scroll; con una transición de 0.22s nunca alcanza el
+       destino —cada fotograma la reinicia— y acaba cientos de píxeles por
+       detrás del elemento que debería estar señalando. Pegado al elemento es
+       además lo que hace que se lea como parte de la página y no como un
+       adorno flotando encima. */
+}
+
+/* Sin elemento que iluminar (intro y cierre), el fondo se oscurece entero.
+   La clase la pone el motor: con `:has()` sería una línea menos, pero de este
+   selector depende que los pasos centrados se vean, y no vale arriesgarlo a
+   que el navegador lo soporte. */
+.tour-layer.tour-sin-foco .tour-fondo {
+    background: rgba(8, 20, 25, .62);
+}
+
+.tour-globo {
+    position: fixed;
+    width: min(360px, calc(100vw - 24px));
+    background: var(--finlia-surface-solid);
+    color: var(--finlia-text);
+    border: 1px solid var(--finlia-border);
+    border-radius: var(--finlia-radius);
+    box-shadow: 0 24px 48px -20px rgba(8, 20, 25, .55);
+    padding: 1rem 1.1rem 0.9rem;
+    /* Misma razón que el halo: sigue al scroll, no se anima. */
+}
+
+.tour-globo:focus {
+    outline: none;
+}
+
+/* Móvil: hoja pegada a un borde. Sube arriba cuando lo iluminado está en la
+   mitad inferior — si no, el globo taparía justo lo que se está señalando. */
+.tour-globo.tour-hoja {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-radius: var(--finlia-radius) var(--finlia-radius) 0 0;
+    padding-bottom: calc(0.9rem + var(--finlia-safe-bottom));
+}
+
+.tour-globo.tour-hoja.tour-hoja-arriba {
+    top: 0;
+    bottom: auto;
+    border-radius: 0 0 var(--finlia-radius) var(--finlia-radius);
+    padding-bottom: 0.9rem;
+    padding-top: calc(0.9rem + env(safe-area-inset-top, 0px));
+}
+
+.tour-cabecera {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: .5rem;
+}
+
+.tour-etiqueta {
+    font-size: .68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--finlia-primary);
+    background: rgba(var(--finlia-primary-rgb), .1);
+    border-radius: 999px;
+    padding: .18rem .55rem;
+}
+
+/* Cobre solo cuando de verdad hay algo nuevo que contar: es el acento que la
+   marca reserva para lo que merece la mirada (docs/BRAND.md). */
+.tour-etiqueta.es-novedad {
+    color: var(--finlia-accent);
+    background: rgba(var(--finlia-accent-rgb), .14);
+}
+
+.tour-progreso {
+    font-size: .75rem;
+    color: var(--finlia-text-muted);
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+}
+
+.tour-cerrar {
+    background: none;
+    border: 0;
+    color: var(--finlia-text-muted);
+    line-height: 1;
+    padding: .25rem;
+    border-radius: 999px;
+}
+
+.tour-cerrar:hover {
+    color: var(--finlia-text);
+    background: rgba(var(--finlia-primary-rgb), .08);
+}
+
+.tour-titulo {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 .35rem;
+}
+
+.tour-cuerpo {
+    font-size: .9rem;
+    line-height: 1.5;
+    color: var(--finlia-text-muted);
+    margin: 0;
+}
+
+.tour-lista {
+    list-style: none;
+    margin: .6rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: .3rem;
+    font-size: .85rem;
+    color: var(--finlia-text-muted);
+}
+
+.tour-lista li {
+    padding-left: 1rem;
+    position: relative;
+}
+
+.tour-lista li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .55em;
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--finlia-primary);
+}
+
+.tour-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-top: .9rem;
+}
+
+.tour-acciones {
+    display: flex;
+    gap: .4rem;
+    margin-left: auto;
+}
+
+.tour-silenciar {
+    background: none;
+    border: 0;
+    padding: 0;
+    font-size: .78rem;
+    color: var(--finlia-text-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.tour-silenciar:hover {
+    color: var(--finlia-text);
+}
+
+/* Lo único que se anima es la aparición de la capa; quien pidió menos
+   movimiento no ve ni eso (el motor también deja de desplazar con scroll
+   suave — ver `sinAnimacion` en resources/js/tour.js). */
+.tour-layer.tour-sin-animacion {
+    transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tour-layer {
+        transition: none;
+    }
+}

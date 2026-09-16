@@ -110,7 +110,7 @@
             ['label' => 'Ahorro en metas', 'value' => $savingsSummary['total_saved'], 'icon' => 'bi-piggy-bank', 'tone' => 'finlia'],
         ];
     @endphp
-    <div class="row g-2 g-md-3 mb-4">
+    <div class="row g-2 g-md-3 mb-4" data-tour="panel-resumen">
         @foreach ($kpis as $kpi)
             <div class="col-6 col-xl-4">
                 <div class="card h-100 border-0">

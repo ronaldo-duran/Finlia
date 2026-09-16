@@ -253,6 +253,82 @@
                 </div>
             </div>
 
+            {{-- ===================== Guías de la app ===================== --}}
+            {{-- Aquí está el «volver a ver los tutoriales» (ADR-0045). Vive en
+                 el perfil y no en el menú principal a propósito: es un ajuste
+                 que se busca cuando hace falta, no un destino más. El acceso
+                 rápido a la guía de la pantalla en la que estás está en el
+                 menú del avatar. --}}
+            <div class="card border-0">
+                <div class="card-header border-0 bg-transparent d-flex flex-wrap justify-content-between align-items-center gap-2 fw-semibold">
+                    <span><i class="bi bi-compass me-1"></i> Guías de la app</span>
+                    <form method="POST" action="{{ route('tours.preference') }}" class="flex-shrink-0">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="enabled" value="{{ $user->tours_enabled ? '0' : '1' }}">
+                        <button type="submit" class="btn btn-sm {{ $user->tours_enabled ? 'btn-outline-secondary' : 'btn-finlia' }}">
+                            {{ $user->tours_enabled ? 'No mostrarlas más' : 'Volver a mostrarlas' }}
+                        </button>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        La primera vez que entras a una pantalla, Finlia te explica en pocos pasos
+                        qué puedes hacer ahí. Nunca más de una por sesión, y siempre se pueden saltar.
+                        Cuando haya algo nuevo, verás <strong>solo lo nuevo</strong> — no la guía otra vez.
+                    </p>
+
+                    @unless ($user->tours_enabled)
+                        <div class="alert alert-secondary d-flex align-items-start gap-2 py-2 px-3 small" role="status">
+                            <i class="bi bi-eye-slash mt-1 flex-shrink-0"></i>
+                            <span>
+                                Las guías están apagadas: no aparecerán solas. Puedes seguir viéndolas
+                                una por una desde esta lista.
+                            </span>
+                        </div>
+                    @endunless
+
+                    <ul class="list-group list-group-flush mb-3">
+                        @foreach ($tours as $guia)
+                            <li class="list-group-item bg-transparent px-0 d-flex align-items-start gap-3">
+                                <span class="rounded-3 bg-finlia-subtle text-finlia d-flex align-items-center justify-content-center flex-shrink-0"
+                                      style="width:36px;height:36px;">
+                                    <i class="bi {{ $guia['icon'] }}"></i>
+                                </span>
+                                <div class="min-w-0 flex-grow-1">
+                                    <div class="fw-semibold">
+                                        {{ $guia['title'] }}
+                                        @if ($guia['seen'] && $guia['pending'] > 0)
+                                            <span class="badge rounded-pill ms-1"
+                                                  style="background:rgba(var(--finlia-accent-rgb),.14);color:var(--finlia-accent);">Novedades</span>
+                                        @elseif (! $guia['seen'])
+                                            <span class="badge rounded-pill text-bg-light text-muted ms-1">Sin ver</span>
+                                        @endif
+                                    </div>
+                                    <div class="small text-muted">{{ $guia['summary'] }}</div>
+                                </div>
+                                {{-- ?guia= abre la guía nada más cargar la pantalla, entera.
+                                     Lo entiende el middleware ShareActiveTour. --}}
+                                <a href="{{ route($guia['link'], ['guia' => $guia['key']]) }}"
+                                   class="btn btn-sm btn-outline-finlia flex-shrink-0">Ver</a>
+                            </li>
+                        @endforeach
+                    </ul>
+
+                    <form method="POST" action="{{ route('tours.destroy') }}"
+                          data-confirm="Las guías volverán a aparecer solas la próxima vez que entres a cada pantalla. ¿Continuar?">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Volver a verlas desde el principio
+                        </button>
+                    </form>
+                    <div class="form-text mt-2">
+                        Borra el registro de las que ya viste y vuelve a encenderlas si estaban apagadas.
+                    </div>
+                </div>
+            </div>
+
             {{-- ===================== Zona de peligro — eliminar cuenta ===================== --}}
             <div class="card border-0 border-danger-subtle">
                 <div class="card-header border-0 bg-transparent fw-semibold text-danger-emphasis">

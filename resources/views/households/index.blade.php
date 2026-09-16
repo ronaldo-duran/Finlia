@@ -25,7 +25,7 @@
             </div>
         </div>
     @else
-        <div class="row g-3">
+        <div class="row g-3" data-tour="households-list">
             @foreach ($households as $household)
                 @php
                     $isActive = $household->id === $activeHouseholdId;

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAccountActive;
 use App\Http\Middleware\EnsureTermsAccepted;
+use App\Http\Middleware\ShareActiveTour;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -27,9 +28,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // aplica al grupo de rutas privadas con sesión + correo verificado.
         // Bloqueo de cuentas en suspensión (Plan 05, ADR-0033). Se aplica al
         // mismo grupo para que los rutas de suspensión/reactivación queden fuera.
+        // Guía de la pantalla actual (ADR-0045). Va en el grupo de rutas
+        // privadas y no en 'web': solo ahí hay pantallas con guía, y así no
+        // paga el peaje ni la landing ni el login.
         $middleware->alias([
             'terms.current' => EnsureTermsAccepted::class,
             'account.active' => EnsureAccountActive::class,
+            'tour' => ShareActiveTour::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

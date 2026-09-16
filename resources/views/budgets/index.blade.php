@@ -22,7 +22,7 @@
     </div>
 
     {{-- Selector de período: esta semana / este mes / próximo mes. --}}
-    <div class="chip-row mb-4" role="group" aria-label="Período consultado">
+    <div class="chip-row mb-4" role="group" aria-label="Período consultado" data-tour="budgets-period">
         @foreach (\App\Enums\BudgetScope::cases() as $option)
             <a href="{{ route('budgets.index', ['periodo' => $option->value]) }}"
                class="chip {{ $scope === $option ? 'active' : '' }}"
@@ -258,7 +258,7 @@
     @endif
 
     {{-- Detalle por categoría --}}
-    <div class="card border-0 mb-4">
+    <div class="card border-0 mb-4" data-tour="budgets-list">
         <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center fw-semibold">
             <span><i class="bi bi-list-check me-1"></i> Por categoría · {{ $monthLabel }}</span>
             @if ($summary['prorated'])

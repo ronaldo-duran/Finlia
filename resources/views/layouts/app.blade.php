@@ -90,6 +90,19 @@
                                     <i class="bi bi-person me-1"></i> Mi perfil
                                 </a>
                             </li>
+                            {{-- Guía de la pantalla actual (ADR-0045). Solo
+                                 aparece donde hay una; el catálogo completo
+                                 está en /perfil. El motor lo engancha por
+                                 data-tour-open: sin JS no se pinta el botón
+                                 muerto, se queda sin más. --}}
+                            @if (($finliaTour ?? null) && $finliaTour['payload'])
+                                <li>
+                                    <button type="button" class="dropdown-item" data-tour-open>
+                                        <i class="bi bi-compass me-1"></i>
+                                        Guía de esta pantalla
+                                    </button>
+                                </li>
+                            @endif
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
@@ -251,6 +264,7 @@
     @auth
         @include('layouts.partials.mobile-bottom-nav')
         @include('layouts.partials.fab')
+        @include('layouts.partials.tour')
     @endauth
 
     {{-- ======= Modal de confirmación genérico =======

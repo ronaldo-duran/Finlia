@@ -17,7 +17,7 @@
         <h1 class="h3 mb-0"><i class="bi bi-credit-card-2-front me-2"></i>Deudas</h1>
         <div class="d-flex flex-wrap align-items-center gap-2 w-100 w-sm-auto">
             @if ($summary['count'] > 0)
-                <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2">
+                <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2" data-tour="debts-commitment">
                     @money($summary['monthly_commitment'])/mes comprometidos
                 </span>
             @endif
@@ -72,7 +72,7 @@
 
             {{-- Estrategia de pago --}}
             @if ($debts->count() > 1)
-                <div class="card border-0 mb-3"><div class="card-body">
+                <div class="card border-0 mb-3" data-tour="debts-strategy"><div class="card-body">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                         <div>
                             <div class="fw-semibold"><i class="bi bi-sort-down me-1"></i>Orden sugerido</div>
@@ -93,7 +93,7 @@
             {{-- Listado --}}
             @forelse ($debts as $debt)
                 @php $projection = $projections[$debt->id] ?? null; @endphp
-                <div class="card border-0 mb-2"><div class="card-body">
+                <div class="card border-0 mb-2" data-tour="debts-list"><div class="card-body">
                     <div class="d-flex justify-content-between align-items-start gap-2">
                         <div class="flex-grow-1">
                             <a href="{{ route('debts.show', $debt) }}" class="text-decoration-none">
