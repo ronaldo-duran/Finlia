@@ -88,16 +88,23 @@ class RecurringExpenseController extends Controller
     /**
      * "Marcar pagado": registra el gasto real (si tiene cuenta) y avanza la
      * próxima fecha, sin duplicar la obligación en el cálculo.
+     *
+     * El modal de confirmación ofrece dos caminos: "Sí, registrar y avanzar"
+     * (`register=1`, por defecto) y "Solo avanzar fecha" (`register=0`, para
+     * cuando el usuario ya pagó por fuera de Finlia).
      */
     public function markPaid(Request $request, RecurringExpense $recurringExpense): RedirectResponse
     {
         $this->authorize('markPaid', $recurringExpense);
 
-        $expense = $this->recurring->markAsPaid($recurringExpense, $request->user());
+        $register = $request->boolean('register', true);
+        $expense = $this->recurring->markAsPaid($recurringExpense, $request->user(), null, $register);
 
-        $status = $expense !== null
-            ? __('Pago de ":name" registrado y próxima fecha avanzada.', ['name' => $recurringExpense->name])
-            : __('":name" marcado como pagado. Como no tiene cuenta asociada, registra el gasto desde “Registrar gasto” si quieres verlo en movimientos.', ['name' => $recurringExpense->name]);
+        $status = match (true) {
+            $expense !== null => __('Pago de ":name" registrado y próxima fecha avanzada.', ['name' => $recurringExpense->name]),
+            ! $register => __('":name" marcado como pagado sin registrar movimiento. La próxima fecha avanzó.', ['name' => $recurringExpense->name]),
+            default => __('":name" marcado como pagado. Vincúlale una cuenta si quieres que el próximo pago se registre solo.', ['name' => $recurringExpense->name]),
+        };
 
         return redirect()
             ->route('recurring-expenses.index')

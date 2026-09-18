@@ -195,14 +195,16 @@
                                             @endif
                                         </div>
                                         <div class="d-flex gap-1 flex-shrink-0">
-                                            <form method="POST" action="{{ route('recurring-expenses.mark-paid', $item['id']) }}"
-                                                  data-confirm="¿Registrar el pago de «{{ $item['name'] }}» (@money($item['amount'])) y avanzar la próxima fecha?">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-icon text-success"
-                                                        aria-label="Marcar pagado" title="Marcar pagado">
-                                                    <i class="bi bi-check2-circle"></i>
-                                                </button>
-                                            </form>
+                                            <button type="button" class="btn btn-sm btn-icon text-success"
+                                                    aria-label="Marcar pagado" title="Marcar pagado"
+                                                    data-bs-toggle="modal" data-bs-target="#markPaidModal"
+                                                    data-action="{{ route('recurring-expenses.mark-paid', $item['id']) }}"
+                                                    data-name="{{ $item['name'] }}"
+                                                    data-amount="{{ money($item['amount']) }}"
+                                                    data-date="{{ $item['next_date']->format('d/m/Y') }}"
+                                                    data-has-account="{{ $item['has_account'] ? '1' : '0' }}">
+                                                <i class="bi bi-check2-circle"></i>
+                                            </button>
                                             <button type="button" class="btn btn-sm btn-icon" aria-label="Editar"
                                                     data-bs-toggle="modal" data-bs-target="#editRecurringModal"
                                                     data-id="{{ $edit->id }}"
@@ -354,6 +356,8 @@
             </div>
         </div>
     </div>
+
+    @include('recurring-expenses._mark-paid-modal')
 @endsection
 
 @push('scripts')
