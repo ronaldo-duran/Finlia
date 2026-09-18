@@ -12,6 +12,12 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.37.3] - 2026-09-17 — «Marcar pagado» sin ambigüedad
+
+### Cambiado
+- **Marcar un gasto recurrente como pagado ahora ofrece tres caminos claros**, en lugar de un sí/no que a veces prometía registrar un movimiento y otras solo avanzaba la fecha en silencio. El check —desde `/gastos-recurrentes` o desde el listado de `/recordatorios`— abre un modal propio con «Sí, registrar y avanzar», «Solo avanzar fecha» (para cuando ya lo pagaste por fuera de Finlia) y «Cancelar».
+- **Si el recurrente no tiene cuenta asociada** el modal lo dice y enlaza a «Registrar gasto» para el pago manual, en lugar de aparentar que sí lo registraría.
+
 ## [0.37.2] - 2026-09-16 — Despliegue sin ruido
 
 ### Corregido
