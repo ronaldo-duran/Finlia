@@ -177,7 +177,11 @@ class ReminderService
                 $recurring->next_date,
                 $today,
                 $recurring->frequency->shortLabel($recurring->frequency_interval),
-            ))
+            ) + [
+                // La vista lo usa para el modal de "marcar pagado":
+                // sin cuenta no puede registrar movimiento automático.
+                'has_account' => $recurring->account_id !== null,
+            ])
             // toBase(): sin esto el map devuelve Eloquent\Collection y el
             // merge() unificado exige modelos Eloquent (no arrays).
             ->toBase();

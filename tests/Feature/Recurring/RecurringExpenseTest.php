@@ -257,6 +257,35 @@ class RecurringExpenseTest extends TestCase
         $this->assertSame('2027-11-15', $item->fresh()->next_date->toDateString());
     }
 
+    public function test_marcar_pagado_con_register_0_solo_avanza_fecha_aunque_tenga_cuenta(): void
+    {
+        // Caso "ya lo pagué por fuera de Finlia": tiene cuenta asociada pero
+        // el usuario NO quiere que se registre el movimiento.
+        [$owner, $household] = $this->setupHousehold();
+        $account = Account::factory()->create([
+            'household_id' => $household->id,
+            'initial_balance' => 2000000,
+            'current_balance' => 2000000,
+        ]);
+        $item = $household->recurringExpenses()->create([
+            'name' => 'Arriendo', 'amount' => 1200000,
+            'frequency' => Frequency::Monthly->value,
+            'next_date' => now()->startOfMonth()->addDays(4)->toDateString(),
+            'account_id' => $account->id,
+        ]);
+
+        $this->actingAs($owner)
+            ->post(route('recurring-expenses.mark-paid', $item), ['register' => '0'])
+            ->assertRedirect(route('recurring-expenses.index'));
+
+        $this->assertDatabaseCount('expenses', 0);
+        $this->assertSame('2000000.00', (string) $account->fresh()->current_balance);
+        $this->assertSame(
+            $item->next_date->copy()->addMonthNoOverflow()->toDateString(),
+            $item->fresh()->next_date->toDateString(),
+        );
+    }
+
     // ===== Aislamiento multi-hogar (amenaza #1 — IDOR) =====
 
     public function test_usuario_ajeno_no_puede_editar_recurrente_de_otro_hogar(): void

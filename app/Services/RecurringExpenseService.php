@@ -239,17 +239,21 @@ class RecurringExpenseService
      * Si el recurrente no tiene cuenta asociada no se puede registrar el
      * gasto (expenses.account_id es obligatorio): solo avanza la fecha y
      * devuelve null. El usuario registra el pago a mano desde /gastos.
+     *
+     * `$registerMovement = false` cubre el caso "ya lo pagué por fuera de
+     * Finlia": solo avanza la próxima fecha, sin tocar cuentas.
      */
     public function markAsPaid(
         RecurringExpense $recurring,
         User $user,
         ?CarbonInterface $paidAt = null,
+        bool $registerMovement = true,
     ): ?Expense {
-        return DB::transaction(function () use ($recurring, $user, $paidAt): ?Expense {
+        return DB::transaction(function () use ($recurring, $user, $paidAt, $registerMovement): ?Expense {
             $expense = null;
             $date = Carbon::parse($paidAt ?? Carbon::now(config('app.timezone')))->toDateString();
 
-            if ($recurring->account_id !== null) {
+            if ($registerMovement && $recurring->account_id !== null) {
                 $expense = $this->movements->createExpense([
                     'account_id' => $recurring->account_id,
                     'category_id' => $recurring->category_id,

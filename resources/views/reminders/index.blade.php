@@ -134,14 +134,16 @@
                                                 {{-- La acción depende del origen: la vista enlaza,
                                                      el servicio no conoce rutas (ADR-0010). --}}
                                                 @if ($item['source'] === App\Enums\ReminderSource::RecurringExpense)
-                                                    <form method="POST" action="{{ route('recurring-expenses.mark-paid', $item['id']) }}"
-                                                          data-confirm="¿Registrar el pago de «{{ $item['title'] }}» y avanzar la próxima fecha?">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-sm btn-icon text-success"
-                                                                aria-label="Marcar pagado" title="Marcar pagado">
-                                                            <i class="bi bi-check2-circle"></i>
-                                                        </button>
-                                                    </form>
+                                                    <button type="button" class="btn btn-sm btn-icon text-success"
+                                                            aria-label="Marcar pagado" title="Marcar pagado"
+                                                            data-bs-toggle="modal" data-bs-target="#markPaidModal"
+                                                            data-action="{{ route('recurring-expenses.mark-paid', $item['id']) }}"
+                                                            data-name="{{ $item['title'] }}"
+                                                            data-amount="{{ $item['amount'] !== null ? money($item['amount']) : '' }}"
+                                                            data-date="{{ $item['due_date']->format('d/m/Y') }}"
+                                                            data-has-account="{{ !empty($item['has_account']) ? '1' : '0' }}">
+                                                        <i class="bi bi-check2-circle"></i>
+                                                    </button>
                                                 @elseif ($item['source'] === App\Enums\ReminderSource::Debt)
                                                     <a href="{{ route('debts.show', $item['id']) }}" class="btn btn-sm btn-icon"
                                                        aria-label="Registrar pago de la deuda" title="Registrar pago">
@@ -286,6 +288,8 @@
             </div>
         </div>
     </div>
+
+    @include('recurring-expenses._mark-paid-modal')
 @endsection
 
 @push('scripts')
