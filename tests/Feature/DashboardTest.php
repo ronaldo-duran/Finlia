@@ -2,6 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AccountType;
+use App\Enums\SavingsGoalStatus;
+use App\Models\Account;
+use App\Models\SavingsGoal;
 use App\Models\User;
 use App\Services\HouseholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,5 +79,41 @@ class DashboardTest extends TestCase
             ->get(route('home'))
             ->assertOk()
             ->assertSee('¿Cuánto puedes gastar hoy', false);
+    }
+
+    /**
+     * Con mucho apartado en metas y poco saldo libre, el hero cae en
+     * `status = short` y tiene que enseñar el desglose (saldo, apartado en
+     * metas, compromisos) para que el faltante no parezca sacado de la manga.
+     */
+    public function test_el_hero_muestra_el_desglose_cuando_falta_plata(): void
+    {
+        $user = User::factory()->create();
+        $household = app(HouseholdService::class)->createHousehold($user->id, 'Mi hogar');
+
+        Account::factory()->create([
+            'household_id' => $household->id,
+            'type' => AccountType::Bank->value,
+            'initial_balance' => 100000,
+            'current_balance' => 100000,
+            'is_active' => true,
+        ]);
+        SavingsGoal::factory()->create([
+            'household_id' => $household->id,
+            'name' => 'Fondo de emergencia',
+            'target_amount' => 5000000,
+            'current_amount' => 500000,
+            'status' => SavingsGoalStatus::Active->value,
+            'monthly_commitment' => null,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('Te falta plata antes de tu próximo pago');
+        $response->assertSee('data-testid="liquidity-breakdown"', false);
+        $response->assertSee('Saldo en cuentas');
+        $response->assertSee('Apartado en metas');
+        $response->assertSee('Te faltan');
     }
 }
