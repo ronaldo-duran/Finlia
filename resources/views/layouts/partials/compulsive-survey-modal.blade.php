@@ -101,11 +101,24 @@
     </div>
 
     @push('scripts')
+    {{--
+        Se espera a DOMContentLoaded porque `@vite` emite `<script type="module">`,
+        que es deferred: el bundle que expone `window.bootstrap` no ha corrido cuando
+        este script inline se ejecuta durante el parsing. `DOMContentLoaded` dispara
+        DESPUÉS de los módulos deferred, con `window.bootstrap` ya disponible.
+    --}}
     <script>
         (function () {
-            var modalEl = document.getElementById('compulsiveSurveyModal');
-            if (!modalEl || !window.bootstrap) return;
-            window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            function abrir() {
+                var modalEl = document.getElementById('compulsiveSurveyModal');
+                if (!modalEl || !window.bootstrap) return;
+                window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', abrir);
+            } else {
+                abrir();
+            }
         })();
     </script>
     @endpush
