@@ -66,9 +66,10 @@
                                     <div>
                                         <input type="radio" class="btn-check" name="mood" id="mood_{{ $case->value }}"
                                                value="{{ $case->value }}" required>
-                                        <label class="btn btn-outline-secondary btn-sm" for="mood_{{ $case->value }}"
-                                               title="{{ $case->label() }}">
-                                            <span style="font-size: 1.3rem;">{{ $case->emoji() }}</span>
+                                        <label class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1"
+                                               for="mood_{{ $case->value }}" title="{{ $case->label() }}">
+                                            <i class="bi {{ $case->iconClass() }} fs-5"></i>
+                                            <span class="d-none d-sm-inline small">{{ $case->label() }}</span>
                                         </label>
                                     </div>
                                 @endforeach

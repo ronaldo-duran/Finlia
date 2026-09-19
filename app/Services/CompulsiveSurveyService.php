@@ -30,6 +30,12 @@ use App\Models\User;
  */
 class CompulsiveSurveyService
 {
+    /**
+     * Distancia por defecto entre el registro y el seguimiento — cuánto tiempo
+     * después de la compra se le vuelve a preguntar al usuario cómo se siente.
+     */
+    public const FOLLOW_UP_DAYS = 30;
+
     public function __construct(private readonly SubscriptionService $subscriptions) {}
 
     /**
@@ -81,6 +87,40 @@ class CompulsiveSurveyService
         $response->kind = $kind;
         $response->mood = $mood;
         $response->trigger = $trigger;
+
+        // Snapshot demográfico: se congela al momento de la respuesta. `birth_date`
+        // puede ser null (perfil incompleto) — entonces la edad también lo es;
+        // el género se copia tal cual (string, validado por `Gender` en el
+        // formulario de perfil).
+        $response->age_years = $user->age();
+        $response->gender = $user->gender;
+
+        // Se agenda una cita de seguimiento sólo al crear la respuesta: si el
+        // formulario se reenvía en el mismo instante, el `due_at` original
+        // sobrevive. `null` en las columnas de respuesta significa "pendiente".
+        if (! $response->exists) {
+            $response->follow_up_due_at = now()->addDays(self::FOLLOW_UP_DAYS);
+        }
+
+        $response->save();
+
+        return $response;
+    }
+
+    /**
+     * Registra la respuesta al seguimiento (a los ~30 días de la compra).
+     * `regret` y `note` son opcionales — la única obligación es el `moodAfter`.
+     */
+    public function answerFollowUp(
+        CompulsiveSurveyResponse $response,
+        CompulsiveMood $moodAfter,
+        ?bool $regret = null,
+        ?string $note = null,
+    ): CompulsiveSurveyResponse {
+        $response->mood_after = $moodAfter;
+        $response->follow_up_regret = $regret;
+        $response->follow_up_note = $note;
+        $response->follow_up_answered_at = now();
         $response->save();
 
         return $response;

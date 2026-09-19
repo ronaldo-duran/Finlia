@@ -6,7 +6,8 @@ namespace App\Enums;
 
 /**
  * "¿Cómo te sientes ahora?" — paso 3 del árbol. Escala de 1 a 5 en
- * emojis; se guarda por valor entero para permitir promedios.
+ * iconos Bootstrap (mismo lenguaje visual que el resto de la app);
+ * se guarda por valor entero para permitir promedios.
  */
 enum CompulsiveMood: int
 {
@@ -16,14 +17,19 @@ enum CompulsiveMood: int
     case Happy = 4;
     case VeryHappy = 5;
 
-    public function emoji(): string
+    /**
+     * Clase Bootstrap Icons que representa el ánimo. Se dibuja con
+     * `<i class="bi {{ $mood->iconClass() }}"></i>`. Se prefieren los
+     * variantes `-fill` para que en Bootstrap 5 tengan mejor peso visual.
+     */
+    public function iconClass(): string
     {
         return match ($this) {
-            self::VerySad => '😔',
-            self::Sad => '😐',
-            self::Neutral => '🙂',
-            self::Happy => '😄',
-            self::VeryHappy => '🤩',
+            self::VerySad => 'bi-emoji-frown',
+            self::Sad => 'bi-emoji-expressionless',
+            self::Neutral => 'bi-emoji-neutral',
+            self::Happy => 'bi-emoji-smile',
+            self::VeryHappy => 'bi-emoji-laughing',
         };
     }
 

@@ -12,14 +12,12 @@ use Illuminate\Support\Facades\DB;
 /**
  * Seed base y grandfather de la Épica 12.
  *
- * 1) Crea los planes `free` y `premium` con sus features/limits actuales.
- *    Los precios de v0.39 (COP): mensual $9.900, anual $79.000 (escenario A).
- * 2) Toda `households` existente arranca con una `subscription` `active` al
- *    plan free. Los límites se enforzan hacia adelante (crear/invitar),
- *    NUNCA hacia atrás (docs/DECISIONS.md ADR de la Épica 12).
- *
- * Esta migración es un backfill idempotente: usa `updateOrInsert` sobre
- * `plans.slug` y `firstOrCreate`-style sobre `subscriptions.household_id`.
+ * Laravel corre cada migración una sola vez (registro en la tabla `migrations`),
+ * así que aquí no hay guardas de "si ya existe" — se inserta directo. Los
+ * planes `free` y `premium` nacen con sus features/limits actuales y toda
+ * `households` existente estrena una `subscription` `active` al plan Free.
+ * Los límites se enforzan hacia adelante (crear/invitar), NUNCA hacia atrás
+ * (docs/DECISIONS.md ADR-0046).
  */
 return new class extends Migration
 {
@@ -36,15 +34,11 @@ return new class extends Migration
         ];
 
         $premiumFeatures = [
-            // v0.39: rieles listos, features aún no encendidas.
-            // Se activan una a una en versiones posteriores (chat IA con BYOK,
-            // PDF de reportes, autoconocimiento). Cada feature `true` que se
-            // añada aquí queda automáticamente disponible para Premium.
             PlanFeature::PdfReports->value => false,
             PlanFeature::ChatAi->value => false,
             PlanFeature::CompulsiveInsights->value => false,
             PlanFeature::ExtendedHistory->value => false,
-            PlanFeature::UnlimitedSurveys->value => true, // única encendida en v0.39
+            PlanFeature::UnlimitedSurveys->value => true,
         ];
 
         $freeLimits = [
@@ -59,54 +53,47 @@ return new class extends Migration
             PlanLimit::CompulsiveSurveysPerMonth->value => null,
         ];
 
-        DB::table('plans')->updateOrInsert(
-            ['slug' => PlanSlug::Free->value],
-            [
-                'name' => 'Gratis',
-                'price_monthly' => null,
-                'price_yearly' => null,
-                'features' => json_encode($freeFeatures),
-                'limits' => json_encode($freeLimits),
-                'is_active' => true,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-        );
+        $freePlanId = DB::table('plans')->insertGetId([
+            'slug' => PlanSlug::Free->value,
+            'name' => 'Gratis',
+            'price_monthly' => null,
+            'price_yearly' => null,
+            'features' => json_encode($freeFeatures),
+            'limits' => json_encode($freeLimits),
+            'is_active' => true,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
 
-        DB::table('plans')->updateOrInsert(
-            ['slug' => PlanSlug::Premium->value],
-            [
-                'name' => 'Premium',
-                'price_monthly' => 9900.00,
-                'price_yearly' => 79000.00,
-                'features' => json_encode($premiumFeatures),
-                'limits' => json_encode($premiumLimits),
-                'is_active' => true,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-        );
-
-        $freePlanId = DB::table('plans')->where('slug', PlanSlug::Free->value)->value('id');
+        DB::table('plans')->insert([
+            'slug' => PlanSlug::Premium->value,
+            'name' => 'Premium',
+            'price_monthly' => 9900.00,
+            'price_yearly' => 79000.00,
+            'features' => json_encode($premiumFeatures),
+            'limits' => json_encode($premiumLimits),
+            'is_active' => true,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
 
         // Grandfather: todo hogar existente arranca en Free ACTIVO.
         $householdIds = DB::table('households')->pluck('id');
+        $rows = $householdIds->map(fn ($id) => [
+            'household_id' => $id,
+            'plan_id' => $freePlanId,
+            'status' => SubscriptionStatus::Active->value,
+            'started_at' => $now,
+            'renews_at' => null,
+            'ends_at' => null,
+            'canceled_at' => null,
+            'reason' => 'Backfill v0.39',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ])->all();
 
-        foreach ($householdIds as $householdId) {
-            DB::table('subscriptions')->updateOrInsert(
-                ['household_id' => $householdId],
-                [
-                    'plan_id' => $freePlanId,
-                    'status' => SubscriptionStatus::Active->value,
-                    'started_at' => $now,
-                    'renews_at' => null,
-                    'ends_at' => null,
-                    'canceled_at' => null,
-                    'reason' => 'Backfill v0.39',
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ],
-            );
+        if ($rows !== []) {
+            DB::table('subscriptions')->insert($rows);
         }
     }
 

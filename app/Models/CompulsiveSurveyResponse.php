@@ -9,6 +9,7 @@ use App\Enums\CompulsiveMood;
 use App\Enums\CompulsivePlanned;
 use App\Enums\CompulsiveTrigger;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -29,7 +30,22 @@ class CompulsiveSurveyResponse extends Model
             'kind' => CompulsiveKind::class,
             'mood' => CompulsiveMood::class,
             'trigger' => CompulsiveTrigger::class,
+            'follow_up_due_at' => 'datetime',
+            'follow_up_answered_at' => 'datetime',
+            'mood_after' => CompulsiveMood::class,
+            'follow_up_regret' => 'boolean',
         ];
+    }
+
+    /**
+     * Respuestas cuya cita de seguimiento ya venció y aún no contestaron.
+     */
+    public function scopePendingFollowUp(Builder $query): Builder
+    {
+        return $query
+            ->whereNotNull('follow_up_due_at')
+            ->where('follow_up_due_at', '<=', now())
+            ->whereNull('follow_up_answered_at');
     }
 
     public function household(): BelongsTo
