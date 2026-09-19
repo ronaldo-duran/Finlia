@@ -205,6 +205,9 @@ Route::group($enLaApp + ['middleware' => 'auth'], function () {
     // Aviso "revisa tu correo" + reenvío con throttle por usuario.
     Route::get('verificar-correo', [EmailVerificationController::class, 'notice'])
         ->name('verification.notice');
+    Route::get('verificar-correo/estado', [EmailVerificationController::class, 'status'])
+        ->name('verification.status')
+        ->middleware('throttle:60,1');
     Route::post('verificar-correo/reenviar', [EmailVerificationController::class, 'resend'])
         ->name('verification.send')
         ->middleware('throttle:verification');

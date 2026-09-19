@@ -20,13 +20,27 @@
         <ul class="mb-0 ps-3">
             <li>Revisa la carpeta de <strong>spam</strong> o promociones.</li>
             <li>El enlace vence en una hora; puedes pedir uno nuevo.</li>
+            <li>Si lo abres en otro dispositivo, esta pantalla se actualizará sola.</li>
         </ul>
     </div>
+
+    <form id="verified-check" method="GET" action="{{ route('verification.status') }}"
+          data-verified-check
+          data-dashboard-url="{{ route('dashboard') }}">
+        <div class="d-grid mb-2">
+            <button type="submit" class="btn btn-finlia py-2">
+                <i class="bi bi-check2-circle me-1"></i> Ya verifiqué mi correo
+            </button>
+        </div>
+        <div class="small text-muted text-center mb-3" data-verified-hint aria-live="polite">
+            Comprobamos automáticamente cada pocos segundos.
+        </div>
+    </form>
 
     <form method="POST" action="{{ route('verification.send') }}">
         @csrf
         <div class="d-grid">
-            <button type="submit" class="btn btn-finlia py-2">
+            <button type="submit" class="btn btn-outline-secondary py-2">
                 <i class="bi bi-arrow-repeat me-1"></i> Reenviar enlace
             </button>
         </div>
@@ -47,3 +61,64 @@
         </form>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        (function () {
+            var form = document.querySelector('[data-verified-check]');
+            if (!form) return;
+            var statusUrl = form.getAttribute('action');
+            var dashboardUrl = form.getAttribute('data-dashboard-url');
+            var hint = form.querySelector('[data-verified-hint]');
+            var stopped = false;
+
+            function goToDashboard() {
+                stopped = true;
+                window.location.assign(dashboardUrl);
+            }
+
+            function check(manual) {
+                return fetch(statusUrl, {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (data) {
+                        if (data && data.verified) {
+                            goToDashboard();
+                            return true;
+                        }
+                        if (manual && hint) {
+                            hint.textContent = 'Aún no vemos la verificación. Abre el enlace desde tu correo y vuelve a pulsar.';
+                        }
+                        return false;
+                    })
+                    .catch(function () {
+                        if (manual && hint) {
+                            hint.textContent = 'No pudimos comprobar ahora. Revisa tu conexión y pulsa de nuevo.';
+                        }
+                        return false;
+                    });
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                check(true);
+            });
+
+            function tick() {
+                if (stopped) return;
+                if (document.visibilityState === 'visible') {
+                    check(false);
+                }
+                window.setTimeout(tick, 4000);
+            }
+            window.setTimeout(tick, 4000);
+
+            document.addEventListener('visibilitychange', function () {
+                if (!stopped && document.visibilityState === 'visible') check(false);
+            });
+        })();
+    </script>
+@endpush

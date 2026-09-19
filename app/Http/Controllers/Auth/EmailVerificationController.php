@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\HouseholdService;
 use Illuminate\Auth\Events\Verified;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -86,6 +87,20 @@ class EmailVerificationController extends Controller
             ->with('status', $joinedName !== null
                 ? __('Correo confirmado: ya formas parte de ":name". Inicia sesión para entrar.', ['name' => $joinedName])
                 : __('Correo confirmado. Ya puedes iniciar sesión.'));
+    }
+
+    /**
+     * Estado de verificación del usuario autenticado (JSON).
+     *
+     * Lo consume el poll de la vista "Revisa tu correo" cuando la
+     * verificación ocurre en otro dispositivo y el navegador de origen
+     * queda atascado en el aviso.
+     */
+    public function status(Request $request): JsonResponse
+    {
+        return response()->json([
+            'verified' => (bool) $request->user()?->hasVerifiedEmail(),
+        ]);
     }
 
     /**

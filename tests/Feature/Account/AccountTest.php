@@ -55,6 +55,24 @@ class AccountTest extends TestCase
         $this->assertSame('150000.00', (string) $account->current_balance);
     }
 
+    public function test_creacion_al_vuelo_desde_gasto_devuelve_json(): void
+    {
+        [$owner] = $this->setupHousehold();
+
+        $this->actingAs($owner)
+            ->postJson(route('accounts.store'), [
+                'name' => 'Nequi',
+                'type' => 'cash',
+                'initial_balance' => 0,
+                'currency' => 'COP',
+            ])
+            ->assertStatus(201)
+            ->assertJsonStructure(['id', 'name'])
+            ->assertJson(['name' => 'Nequi']);
+
+        $this->assertDatabaseHas('accounts', ['name' => 'Nequi']);
+    }
+
     public function test_creacion_valida_campos_obligatorios(): void
     {
         [$owner] = $this->setupHousehold();

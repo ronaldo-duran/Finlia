@@ -7,12 +7,14 @@ use App\Enums\DebtPaymentType;
 use App\Enums\DebtStatus;
 use App\Enums\DebtType;
 use App\Models\Account;
+use App\Models\Category;
 use App\Models\Debt;
 use App\Models\DebtPayment;
 use App\Models\Household;
 use App\Models\User;
 use App\Services\DebtService;
 use App\Services\HouseholdService;
+use Database\Seeders\CategorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -93,6 +95,29 @@ class DebtTest extends TestCase
             // El aviso de aproximación ya no se esconde dentro de la proyección:
             // vive en su propio bloque, visible sobre las cifras.
             ->assertSee('Los valores son aproximados');
+    }
+
+    public function test_el_detalle_preselecciona_la_categoria_deudas_en_el_pago(): void
+    {
+        [$owner, $household] = $this->setupHousehold();
+        $this->seed(CategorySeeder::class);
+        $debt = $this->debtFor($household);
+
+        $deudas = Category::whereNull('household_id')
+            ->where('name', 'Deudas')
+            ->first();
+        $this->assertNotNull($deudas, 'La categoría "Deudas" global debe existir tras el seeder.');
+
+        $html = $this->actingAs($owner)
+            ->get(route('debts.show', $debt))
+            ->assertOk()
+            ->getContent();
+
+        // Blade renderiza @selected como el atributo `selected` en el <option>.
+        $this->assertMatchesRegularExpression(
+            '/<option[^>]*value="'.$deudas->id.'"[^>]*\sselected[^>]*>\s*Deudas\s*<\/option>/',
+            $html,
+        );
     }
 
     public function test_el_detalle_de_una_cuenta_tarjeta_muestra_el_bloque_de_tarjeta(): void
