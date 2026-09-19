@@ -14,7 +14,7 @@ use Illuminate\Support\ServiceProvider;
  * funcionando: la clase no existe, el registro se salta y el núcleo AGPL
  * corre solo, sirviendo todo lo gratuito.
  *
- * Hoy este provider no registra funciones Premium — la Épica 12 v0.38
+ * Hoy este provider no registra funciones Premium — la Épica 12 v0.39
  * pone rieles, no funciones. Cuando llegue una (chat IA, PDF Premium,
  * autoconocimiento avanzado) se ata aquí, no en el núcleo.
  */

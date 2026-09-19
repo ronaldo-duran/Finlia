@@ -12,7 +12,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 
 /**
- * Otorga Premium a un hogar sin pasarela (Épica 12, v0.38).
+ * Otorga Premium a un hogar sin pasarela (Épica 12, v0.39).
  *
  * Antes de v0.41 (Wompi), esta es la vía real de activación: se corre desde
  * cron / SSH cuando alguien paga a mano (transferencia, Nequi, contacto

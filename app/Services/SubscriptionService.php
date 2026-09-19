@@ -17,7 +17,7 @@ use DomainException;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Rieles de monetización (Épica 12, v0.38).
+ * Rieles de monetización (Épica 12, v0.39).
  *
  * Seam (ADR-0010): NO depende de la capa HTTP. Recibe modelos/valores
  * explícitos y devuelve resultados. Toda comprobación de plan/feature/límite
@@ -91,7 +91,7 @@ class SubscriptionService
     /**
      * Cambia el plan efectivo del hogar a Premium hasta la fecha dada.
      *
-     * Sin pasarela (v0.38): esto lo dispara el comando artisan
+     * Sin pasarela (v0.39): esto lo dispara el comando artisan
      * `finlia:grant-premium`. La `reason` queda registrada para auditoría.
      */
     public function grantPremium(

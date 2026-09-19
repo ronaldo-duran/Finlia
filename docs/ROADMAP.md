@@ -22,6 +22,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 12 | Monetización y modelo SaaS | 🟡 | 2, 11 |
 | 13 | Portafolio profesional | 🟢 | 11 |
 | 14 | API REST para app móvil (futura) | 🔴 | 3, 11 |
+| 15 | Cuentas por cobrar | 🔴 | 3, 6, 9 |
 
 > 🔧 **Serie de blindaje de cuentas** (`planes/`, 2026-08): seis planes acordados con el
 > producto **antes** de la Épica 10 — verificación de correo, perfil (contraseña y
@@ -111,8 +112,8 @@ Auditoría de seguridad completa, privacy, DB (índices, FK, DECIMAL), tests de 
 
 Se entrega por versiones incrementales, no como una única entrega ([ADR-0046](DECISIONS.md#adr-0046)):
 
-- **v0.38 — Rieles freemium**. `plans` y `subscriptions` con features/limits en JSON, `SubscriptionService` como puerta única, comandos `finlia:grant-premium`/`revoke-premium`, provider condicional en `ee/`, pantalla `/perfil → Plan`, y el **árbol de decisión de compras** con tope Free (5/mes) para acumular dataset. Grandfather activo: los hogares actuales no pierden nada. **Sin pasarela y sin funciones Premium encendidas** salvo la excepción del tope de encuestas — los rieles quedan listos para todo lo demás.
-- **v0.39 — Chat IA con BYOK** (aplazada, exige decisiones). El usuario configura su propio proveedor y llave; Finlia no paga inferencia. Consentimiento explícito de Ley 1581 antes de encender.
+- **v0.39 — Rieles freemium**. `plans` y `subscriptions` con features/limits en JSON, `SubscriptionService` como puerta única, comandos `finlia:grant-premium`/`revoke-premium`, provider condicional en `ee/`, pantalla `/perfil → Plan`, y el **árbol de decisión de compras** con tope Free (5/mes) para acumular dataset. Grandfather activo: los hogares actuales no pierden nada. **Sin pasarela y sin funciones Premium encendidas** salvo la excepción del tope de encuestas — los rieles quedan listos para todo lo demás.
+- **Chat IA con BYOK** (versión pendiente, aplazada — exige decisiones). El usuario configura su propio proveedor y llave; Finlia no paga inferencia. Consentimiento explícito de Ley 1581 antes de encender.
 - **v0.41 — Pasarela Wompi** (Colombia). Suscripciones mensuales y anuales, webhooks, y CTA activo en `/perfil → Plan`. Se abre cuando la operación comercial (RUT, cuenta Wompi de comercio, activación de "Suscripciones recurrentes") esté lista.
 
 Autorización siempre en backend: la comprobación de plan/feature/limit vive en `SubscriptionService`, y una Policy/Form Request llega antes ([SECURITY §8](SECURITY.md#8-monetización-premium--backend-es-la-fuente-de-verdad)). Publicidad **fuera del alcance** de esta épica por decisión de producto — un Free con anuncios contradice "Free sigue siendo útil de verdad".
@@ -130,6 +131,9 @@ Dos correcciones que salieron de la propia revisión:
 
 ### Épica 14 — API REST para app móvil (futura)
 > Sin fichero de épica todavía. Se desarrolla cuando la web esté en producción. Añade `routes/api.php` + **Sanctum** (tokens para móvil) + API Resources/Controllers que **reutilizan los mismos `app/Services/`, Form Requests y Policies** del web (ver [ADR-0010](DECISIONS.md#adr-0010)). Solo es barata si la lógica quedó bien aislada desde las épicas 2-9.
+
+### Épica 15 — Cuentas por cobrar
+> Ficha en [`scrum/epics/15-cuentas-por-cobrar.md`](../scrum/epics/15-cuentas-por-cobrar.md). Registrar que alguien le debe dinero al hogar, con fecha tentativa de cobro, edición, posposición y registro del ingreso al cobrar. Espejo estructural de la Épica 6 (deudas) — mismo patrón de Service + payments + integración con recordatorios (ADR-0028). Se abre después del lanzamiento público en LinkedIn.
 
 ---
 

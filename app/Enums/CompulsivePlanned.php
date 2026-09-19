@@ -6,7 +6,7 @@ namespace App\Enums;
 
 /**
  * "¿Este gasto lo tenías previsto?" — paso 1 del árbol de decisión de
- * compras (Épica 12, v0.38).
+ * compras (Épica 12, v0.39).
  */
 enum CompulsivePlanned: string
 {

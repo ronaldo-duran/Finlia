@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
  * Seed base y grandfather de la Épica 12.
  *
  * 1) Crea los planes `free` y `premium` con sus features/limits actuales.
- *    Los precios de v0.38 (COP): mensual $9.900, anual $79.000 (escenario A).
+ *    Los precios de v0.39 (COP): mensual $9.900, anual $79.000 (escenario A).
  * 2) Toda `households` existente arranca con una `subscription` `active` al
  *    plan free. Los límites se enforzan hacia adelante (crear/invitar),
  *    NUNCA hacia atrás (docs/DECISIONS.md ADR de la Épica 12).
@@ -36,7 +36,7 @@ return new class extends Migration
         ];
 
         $premiumFeatures = [
-            // v0.38: rieles listos, features aún no encendidas.
+            // v0.39: rieles listos, features aún no encendidas.
             // Se activan una a una en versiones posteriores (chat IA con BYOK,
             // PDF de reportes, autoconocimiento). Cada feature `true` que se
             // añada aquí queda automáticamente disponible para Premium.
@@ -44,7 +44,7 @@ return new class extends Migration
             PlanFeature::ChatAi->value => false,
             PlanFeature::CompulsiveInsights->value => false,
             PlanFeature::ExtendedHistory->value => false,
-            PlanFeature::UnlimitedSurveys->value => true, // única encendida en v0.38
+            PlanFeature::UnlimitedSurveys->value => true, // única encendida en v0.39
         ];
 
         $freeLimits = [
@@ -102,7 +102,7 @@ return new class extends Migration
                     'renews_at' => null,
                     'ends_at' => null,
                     'canceled_at' => null,
-                    'reason' => 'Backfill v0.38',
+                    'reason' => 'Backfill v0.39',
                     'created_at' => $now,
                     'updated_at' => $now,
                 ],
@@ -112,7 +112,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::table('subscriptions')->where('reason', 'Backfill v0.38')->delete();
+        DB::table('subscriptions')->where('reason', 'Backfill v0.39')->delete();
         DB::table('plans')->whereIn('slug', [PlanSlug::Free->value, PlanSlug::Premium->value])->delete();
     }
 };

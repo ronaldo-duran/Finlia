@@ -75,7 +75,7 @@ class SubscriptionServiceTest extends TestCase
         $household = $this->makeHousehold();
         $service = app(SubscriptionService::class);
 
-        // v0.38: solo `unlimited_surveys` viene encendida en Premium.
+        // v0.39: solo `unlimited_surveys` viene encendida en Premium.
         $this->assertFalse($service->hasFeature($household, PlanFeature::UnlimitedSurveys));
 
         $service->grantPremium($household, now()->addMonth(), 'Prueba');

@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 /**
- * Valida las 4 respuestas del árbol de decisión (Épica 12, v0.38).
+ * Valida las 4 respuestas del árbol de decisión (Épica 12, v0.39).
  * La autorización la resuelve la Policy sobre `Expense`.
  */
 class StoreCompulsiveSurveyRequest extends FormRequest

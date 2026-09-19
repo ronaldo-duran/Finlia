@@ -9,7 +9,7 @@ use App\Services\SubscriptionService;
 use Illuminate\Console\Command;
 
 /**
- * Devuelve un hogar al plan Free (Épica 12, v0.38).
+ * Devuelve un hogar al plan Free (Épica 12, v0.39).
  * Ejemplo: php artisan finlia:revoke-premium --household=17 --reason="Fin de prueba"
  */
 class RevokePremium extends Command

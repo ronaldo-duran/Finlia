@@ -37,7 +37,7 @@ class HouseholdService
 
     /**
      * Crea un hogar y vincula al creador como administrador (owner).
-     * También le asigna la suscripción Free (Épica 12, v0.38) — para que el
+     * También le asigna la suscripción Free (Épica 12, v0.39) — para que el
      * gate de features/limits siempre encuentre fila.
      */
     public function createHousehold(

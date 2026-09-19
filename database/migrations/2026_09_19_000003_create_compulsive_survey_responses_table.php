@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Respuestas al árbol de decisión de compras (Épica 12, v0.38).
+ * Respuestas al árbol de decisión de compras (Épica 12, v0.39).
  *
  * Se dispara con probabilidad (backend) al registrar un gasto candidato.
  * La data queda para autoconocimiento (feature Premium futura) y para

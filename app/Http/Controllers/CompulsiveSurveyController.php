@@ -14,7 +14,7 @@ use App\Services\CompulsiveSurveyService;
 use Illuminate\Http\RedirectResponse;
 
 /**
- * Endpoint del árbol de decisión de compras (Épica 12, v0.38).
+ * Endpoint del árbol de decisión de compras (Épica 12, v0.39).
  * El modal vive en el layout y se abre con `session('compulsive_survey_expense_id')`.
  */
 class CompulsiveSurveyController extends Controller

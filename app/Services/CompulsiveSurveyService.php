@@ -14,7 +14,7 @@ use App\Models\Household;
 use App\Models\User;
 
 /**
- * Árbol de decisión de compras (Épica 12, v0.38).
+ * Árbol de decisión de compras (Épica 12, v0.39).
  *
  * Al registrar un gasto se ofrece el árbol con probabilidad configurable.
  * El objetivo es doble:

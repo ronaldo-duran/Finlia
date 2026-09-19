@@ -1466,26 +1466,26 @@ Al abrirse a forks, se endurece además la configuración del checkout. La acci�
 
 **Decisión.**
 
-1. **Dos planes canónicos, uno por hogar.** Tablas `plans` (features y limits como JSON) y `subscriptions` (un registro por `household_id`). Cada hogar arranca con una `subscription` `active` al plan `free`. El plan Premium existe en el catálogo con precios comprometidos (COP $9.900/mes, $79.000/año), aunque en v0.38 aún no se puede comprar por pasarela.
+1. **Dos planes canónicos, uno por hogar.** Tablas `plans` (features y limits como JSON) y `subscriptions` (un registro por `household_id`). Cada hogar arranca con una `subscription` `active` al plan `free`. El plan Premium existe en el catálogo con precios comprometidos (COP $9.900/mes, $79.000/año), aunque en v0.39 aún no se puede comprar por pasarela.
 2. **La comprobación siempre en backend.** `SubscriptionService::hasFeature()`, `::withinLimit()` y `::canUserCreateHousehold()` son el único camino. Nunca se lee un flag del cliente, y el frontend solo oculta UI: la Policy y el Form Request llegan primero. Coherente con [SECURITY §8](SECURITY.md#8-monetización-premium--backend-es-la-fuente-de-verdad) y [AGENTS.md §2.7](../AGENTS.md).
 3. **Grandfather activo por diseño.** `withinLimit()` chequea la acción (crear/invitar), NUNCA el estado. Un usuario que ya administra 3 hogares antes de la Épica 12 conserva los 3; un hogar con 5 miembros conserva los 5. Solo se bloquea la próxima creación/invitación si excede el tope de su plan actual. No se pide nunca "bajar" nada.
 4. **El plan es del hogar, pero un límite puede ser del usuario.** `HouseholdsCreated` (Free: 1) se evalúa contra el conjunto de hogares que administra el usuario. Un usuario con **al menos un hogar Premium vigente** puede crear tantos hogares como quiera, porque la Premium activa "reboza" al usuario. Es un compromiso pragmático que evita duplicar la noción de plan a nivel de `users`.
-5. **Puerta condicional a `ee/` desde `AppServiceProvider::register()`.** `if (class_exists(\Finlia\Ee\EeServiceProvider::class))` y punto. El namespace se registra en `composer.json` con PSR-4, y en v0.38 el provider vive vacío: rieles listos, cero funciones Premium encendidas. Borrar `ee/src` es literalmente eliminar 20 líneas de código y la app sigue arrancando; se verifica con un test que asegura el registro cuando la clase existe.
+5. **Puerta condicional a `ee/` desde `AppServiceProvider::register()`.** `if (class_exists(\Finlia\Ee\EeServiceProvider::class))` y punto. El namespace se registra en `composer.json` con PSR-4, y en v0.39 el provider vive vacío: rieles listos, cero funciones Premium encendidas. Borrar `ee/src` es literalmente eliminar 20 líneas de código y la app sigue arrancando; se verifica con un test que asegura el registro cuando la clase existe.
 6. **Activación manual sin pasarela** con `finlia:grant-premium` y `finlia:revoke-premium`. Todo cambio queda en la fila (`reason`, `ends_at`) para auditoría. No hay "premium para siempre por accidente" — la ausencia de `--until` da por defecto 1 mes.
 7. **Árbol de decisión de compras como palanca Freemium temprana.** Al registrar un gasto, con probabilidad configurable (default 15 %) y bajo cupo mensual, se ofrece un modal de 4 preguntas: previsto, tipo (necesidad/gusto/capricho/emergencia), ánimo y disparador. **5 respuestas al mes en Free, ilimitadas en Premium.** La data se acumula para futuros insights (feature Premium `compulsive_insights`) y para dataset de ML sin comprometer el flujo normal de registro de gastos. Los usuarios Free ven la app completa; solo pierden profundidad, no funcionalidad.
-8. **Precio comprometido en el catálogo, pantalla `/perfil → Plan` muestra estado y CTA "próximamente".** La v0.38 no cobra: la pantalla es informativa y prepara el terreno para v0.41.
+8. **Precio comprometido en el catálogo, pantalla `/perfil → Plan` muestra estado y CTA "próximamente".** La v0.39 no cobra: la pantalla es informativa y prepara el terreno para v0.41.
 
 **Alternativas descartadas.**
 
 - **Plan por usuario en vez de por hogar.** Simpler para el chequeo del límite `HouseholdsCreated`, pero rompe el modelo multi-tenant que ha ordenado 10 épicas. El dueño paga por su hogar; los miembros no pagan de nuevo por ser invitados. La opción actual conserva esa promesa.
 - **Deshabilitar Free totalmente al superar el límite.** Contrario a la premisa del ADR — no se rompen usuarios en producción.
 - **Ads como parte de Free.** El requisito del roadmap original de la Épica 12 lo pedía "no invasivo". Se descartó a propósito: la publicidad rompería "Free sigue siendo útil de verdad" y desalinea el negocio con el usuario. Si aparecen, es una decisión aparte con su propio ADR.
-- **Chat IA y auto-import bancario en la v0.38.** Requieren decisiones (BYOK vs proveedor propio, política de Google Play, coste de CASA) y por eso se posponen a versiones dedicadas.
+- **Chat IA y auto-import bancario en la v0.39.** Requieren decisiones (BYOK vs proveedor propio, política de Google Play, coste de CASA) y por eso se posponen a versiones dedicadas.
 
 **Consecuencias y mitigaciones.**
 
 - **La suscripción vive en el hogar**, no en el usuario. Esto hace `SubscriptionService` inyectable por el `HouseholdService` y desacopla el cálculo del plan del estado de sesión ([ADR-0010](#adr-0010)).
-- **Rieles sin pasarela** implica que la única forma de cobrar en v0.38 es fuera del app (transferencia, contacto). Se acepta como estado temporal hasta v0.41.
+- **Rieles sin pasarela** implica que la única forma de cobrar en v0.39 es fuera del app (transferencia, contacto). Se acepta como estado temporal hasta v0.41.
 - **El chequeo del segundo hogar es a nivel de `User`**: si un usuario administra tanto un hogar Premium como Free, el chequeo lo trata como Premium. Es lo esperado y refuerza el argumento de que Premium se compra "en un hogar" pero desbloquea al dueño.
 - **El JSON de `features`/`limits`** hace fácil añadir nuevos: un enum + una entrada en el seeder. Añadir una feature no toca migraciones.
 - **`SubscriptionService::planFor()` cae automáticamente a Free** si la suscripción expiró o está `canceled`/`past_due`, sin cron: la caducidad es una fecha, no un job. Menos superficie que un job de renovación.

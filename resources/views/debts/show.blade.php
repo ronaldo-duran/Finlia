@@ -229,11 +229,11 @@
                                 <div class="form-text">Si eliges una cuenta, se registra el gasto y baja su saldo.</div>
                             </div>
                             <div class="col-12">
-                                <label for="pay_category" class="form-label small fw-semibold">Categoría <span class="text-muted fw-normal">(opcional)</span></label>
+                                <label for="pay_category" class="form-label small fw-semibold">Categoría <span class="text-muted fw-normal">(editable)</span></label>
                                 <select name="category_id" id="pay_category" class="form-select">
                                     <option value="">Sin categoría</option>
                                     @foreach ($categories as $category)
-                                        <option value="{{ $category->id }}" @selected((int) old('category_id') === $category->id)>
+                                        <option value="{{ $category->id }}" @selected((int) old('category_id', $defaultCategoryId ?? null) === $category->id)>
                                             {{ $category->name }}
                                         </option>
                                     @endforeach

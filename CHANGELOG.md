@@ -12,7 +12,7 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
-## [0.38.0] - 2026-09-19 — Rieles de monetización
+## [0.39.0] - 2026-09-19 — Rieles de monetización
 
 Arranca la Épica 12 en modo freemium: **la app gratuita no se degrada**. Los usuarios existentes conservan cada hogar y cada persona que ya tenían; los nuevos topes solo se aplican al crear un nuevo hogar o invitar a un tercero. Todavía no hay pasarela ni funciones Premium encendidas — esta versión pone los rieles para que las próximas los usen ([ADR-0046](docs/DECISIONS.md#adr-0046)).
 
@@ -31,8 +31,19 @@ Arranca la Épica 12 en modo freemium: **la app gratuita no se degrada**. Los us
 
 ### Documentación
 - **ADR-0046 nuevo**. Detalla la filosofía freemium con grandfather, la puerta condicional a `ee/`, por qué no hay pasarela todavía y por qué la publicidad queda fuera del alcance.
-- `docs/ROADMAP.md`: Épica 12 pasa a 🟡 con el plan de entregas incrementales (v0.38 rieles → v0.39 chat IA → v0.41 pasarela).
+- `docs/ROADMAP.md`: Épica 12 pasa a 🟡 con el plan de entregas incrementales (v0.39 rieles → chat IA con BYOK → pasarela Wompi).
 - `docs/DATA_MODEL.md`: tablas `plans`, `subscriptions` y `compulsive_survey_responses` documentadas con sus tipos reales.
+
+## [0.38.0] - 2026-09-19 — Retoques antes de LinkedIn
+
+### Añadido
+- **La pantalla «Revisa tu correo» se desatasca sola.** Cuando alguien se registra desde el computador y abre el enlace de verificación en el móvil, el navegador de origen ya no se queda mirando esa pantalla en blanco: comprueba en segundo plano si la verificación ya ocurrió y, en cuanto es así, entra al panel. Un botón **«Ya verifiqué mi correo»** hace la misma comprobación al pulsar, por si el navegador tiene JS bloqueado o la red se cortó.
+- **Crear una cuenta al vuelo desde el formulario de gasto.** Junto al selector de cuentas aparece un enlace «+ Nueva cuenta» que abre un modal con los mínimos (nombre, tipo, moneda y saldo inicial). Al guardar, la cuenta queda seleccionada sin recargar la página ni perder lo que llevabas escrito.
+- **Épica 15 · Cuentas por cobrar** — abierta en el ROADMAP con su ficha en `scrum/epics/15-cuentas-por-cobrar.md`. Módulo simétrico al de deudas: registrar que alguien le debe dinero al hogar, con fecha tentativa de cobro, edición, posposición y registro del ingreso al recibir el pago. Se implementa después del lanzamiento público.
+
+### Cambiado
+- **El pago de una deuda preselecciona la categoría «Deudas»**, pero deja el selector editable. Antes había que elegirla a mano en cada abono.
+- **Al elegir «Deudas» como categoría de un gasto suelto** aparece un aviso en línea que enlaza al flujo de pago de deuda, para no registrar el mismo pago dos veces. Sigue permitiendo guardar el gasto (hay pagos legítimos con categoría «Deudas» que no corresponden a una deuda registrada).
 
 ## [0.37.3] - 2026-09-17 — «Marcar pagado» sin ambigüedad
 

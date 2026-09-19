@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 /**
- * Árbol de decisión de compras (Épica 12, v0.38): disparo, tope Free y persistencia.
+ * Árbol de decisión de compras (Épica 12, v0.39): disparo, tope Free y persistencia.
  */
 class CompulsiveSurveyTest extends TestCase
 {

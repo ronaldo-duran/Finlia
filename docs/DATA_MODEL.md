@@ -524,8 +524,8 @@ Gmail/Yahoo (devuelve 204). Idempotente y por hogar.
 | id | | |
 | slug | string(40), unique | `App\Enums\PlanSlug`: `free`, `premium` |
 | name | string(60) | Nombre humano ("Gratis", "Premium") |
-| price_monthly | decimal(15,2), nullable | v0.38: null en Free, 9900 en Premium |
-| price_yearly | decimal(15,2), nullable | v0.38: null en Free, 79000 en Premium |
+| price_monthly | decimal(15,2), nullable | v0.39: null en Free, 9900 en Premium |
+| price_yearly | decimal(15,2), nullable | v0.39: null en Free, 79000 en Premium |
 | features | json | mapa `feature→bool` (llaves de `App\Enums\PlanFeature`) |
 | limits | json | mapa `limit→int|null` (llaves de `App\Enums\PlanLimit`) |
 | is_active | boolean | |
@@ -546,7 +546,7 @@ Gmail/Yahoo (devuelve 204). Idempotente y por hogar.
 
 Índices: `(household_id, status)` y unique `(household_id)`.
 
-### `compulsive_survey_responses` (Épica 12, v0.38)
+### `compulsive_survey_responses` (Épica 12, v0.39)
 | Campo | Tipo | Notas |
 |---|---|---|
 | id, household_id | FK cascade | |

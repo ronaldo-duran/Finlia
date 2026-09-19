@@ -11,7 +11,7 @@ namespace App\Enums;
  * hogar ([docs/SECURITY.md §8](../../docs/SECURITY.md), [AGENTS.md §2.7](../../AGENTS.md)).
  * Un flag del cliente NO desbloquea nada.
  *
- * v0.38 deja el enum listo pero ninguna feature Premium está activada
+ * v0.39 deja el enum listo pero ninguna feature Premium está activada
  * todavía: se encienden en versiones siguientes (chat IA con BYOK, PDF
  * de reportes, autoconocimiento avanzado…). Añadir una nueva feature es
  * añadir un caso aquí y una entrada en el mapa `features` del seeder.

@@ -1,5 +1,5 @@
 {{--
-    Árbol de decisión de compras (Épica 12, v0.38).
+    Árbol de decisión de compras (Épica 12, v0.39).
 
     Se abre si `session('compulsive_survey_expense_id')` está seteado — que
     ocurre en `ExpenseController::store` con la probabilidad y el cupo del

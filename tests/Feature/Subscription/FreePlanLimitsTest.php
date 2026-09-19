@@ -12,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Enforcement de los límites del plan Free (Épica 12, v0.38).
+ * Enforcement de los límites del plan Free (Épica 12, v0.39).
  * Grandfather: el chequeo aplica al crear/invitar, no al estado histórico.
  */
 class FreePlanLimitsTest extends TestCase

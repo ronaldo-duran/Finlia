@@ -16,7 +16,7 @@ use Tests\TestCase;
  * `php artisan about`. Este test cubre el contrato mínimo:
  *   1. La clase existe con el namespace acordado.
  *   2. Está registrada en la app cuando existe.
- *   3. NO expone bindings públicos en v0.38 (rieles sin funciones).
+ *   3. NO expone bindings públicos en v0.39 (rieles sin funciones).
  */
 class EeProviderBoundaryTest extends TestCase
 {

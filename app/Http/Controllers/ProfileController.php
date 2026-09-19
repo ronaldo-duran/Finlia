@@ -37,9 +37,9 @@ class ProfileController extends Controller
 
     /**
      * Pantalla /perfil/plan: el plan del hogar activo, con cuánto uso lleva
-     * en cada límite y el CTA de Premium (Épica 12, v0.38).
+     * en cada límite y el CTA de Premium (Épica 12, v0.39).
      *
-     * En v0.38 no hay pasarela — el CTA solo explica el estado. La activación
+     * En v0.39 no hay pasarela — el CTA solo explica el estado. La activación
      * se hace por artisan `finlia:grant-premium`; en v0.41 aterriza Wompi y
      * el botón despierta.
      */

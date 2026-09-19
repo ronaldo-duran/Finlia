@@ -11,7 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Pantalla /perfil/plan (Épica 12, v0.38).
+ * Pantalla /perfil/plan (Épica 12, v0.39).
  */
 class ProfilePlanTest extends TestCase
 {

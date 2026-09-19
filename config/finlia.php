@@ -18,10 +18,10 @@ return [
 
     // Versión actual del software (fuente de verdad; sincronizar con package.json
     // y CHANGELOG.md al publicar cada versión).
-    'version' => '0.38.0',
+    'version' => '0.39.0',
 
     /*
-    | Encuesta de compras (Épica 12, v0.38).
+    | Encuesta de compras (Épica 12, v0.39).
     |
     | Al registrar un gasto, con probabilidad `probability_percent` se le
     | ofrece al usuario contestar el árbol de decisión (planificado, tipo,
