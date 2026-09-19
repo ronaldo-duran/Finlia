@@ -92,16 +92,26 @@ class DebtController extends Controller
 
         $household = active_household();
 
+        $categories = Category::forHousehold($household->id)
+            ->where('type', CategoryType::Expense->value)
+            ->orderBy('name')
+            ->get();
+
+        // Preselección "Deudas" en el formulario de pago (WhatsApp
+        // 2026-09-16): la categoría es global del seeder, pero el hogar
+        // puede haberla renombrado o eliminado, así que match case-insensitive
+        // y con fallback nulo si no existe.
+        $defaultCategoryId = $categories
+            ->first(fn ($c) => mb_strtolower($c->name) === 'deudas')?->id;
+
         return view('debts.show', [
             'debt' => $debt->load('account'),
             'payments' => $debt->payments()->with('expense')->orderByDesc('date')->orderByDesc('id')->get(),
             'refinancings' => $debt->refinancings()->orderByDesc('start_date')->get(),
             'projection' => $this->debts->projectPayoff($debt),
             'accounts' => $household->accounts()->orderBy('name')->get(),
-            'categories' => Category::forHousehold($household->id)
-                ->where('type', CategoryType::Expense->value)
-                ->orderBy('name')
-                ->get(),
+            'categories' => $categories,
+            'defaultCategoryId' => $defaultCategoryId,
         ]);
     }
 
