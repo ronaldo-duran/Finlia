@@ -34,6 +34,10 @@ class CompulsiveSurveyTest extends TestCase
         parent::setUp();
         // Determinismo: en tests el árbol se ofrece siempre que haya cupo.
         Config::set('finlia.compulsive_survey.probability_percent', 100);
+        // Estos tests verifican los topes Free y el corte por cupo mensual,
+        // así que el flag "Premium para todos" debe apagarse aquí — los
+        // rieles se ejercitan como si el catálogo comercial ya estuviera vivo.
+        Config::set('finlia.subscription.premium_for_all', false);
     }
 
     private function makeSetup(): array

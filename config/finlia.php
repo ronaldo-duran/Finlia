@@ -33,6 +33,23 @@ return [
     ],
 
     /*
+    | Rieles de monetización (Épica 12, v0.39).
+    |
+    | `premium_for_all` mantiene los rieles quietos: mientras esté encendido,
+    | `SubscriptionService::planFor()` devuelve Premium para todos los hogares
+    | y los topes Free (1 hogar, 2 personas, 5 encuestas) no se aplican.
+    | Se apaga cuando se definan precio y catálogo de funciones Premium; los
+    | usuarios con Premium concedido a mano por `finlia:grant-premium`
+    | conservan su plan y el resto revierte al comportamiento Free.
+    */
+    'subscription' => [
+        'premium_for_all' => filter_var(
+            env('FINLIA_PREMIUM_FOR_ALL', true),
+            FILTER_VALIDATE_BOOLEAN,
+        ),
+    ],
+
+    /*
     | Dominios (ADR pendiente de la landing).
     |
     | Finlia se sirve desde dos hosts: el sitio público (finlia.online) y la

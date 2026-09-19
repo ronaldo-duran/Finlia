@@ -9,15 +9,27 @@ use App\Models\User;
 use App\Services\HouseholdService;
 use App\Services\SubscriptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 /**
  * Enforcement de los límites del plan Free (Épica 12, v0.39).
  * Grandfather: el chequeo aplica al crear/invitar, no al estado histórico.
+ *
+ * Los rieles arrancan en modo "Premium para todos" (config
+ * `finlia.subscription.premium_for_all`). Estos tests apagan ese flag
+ * para verificar que el enforcement real sigue en pie el día que se
+ * defina el catálogo Premium y se apague el flag globalmente.
  */
 class FreePlanLimitsTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Config::set('finlia.subscription.premium_for_all', false);
+    }
 
     public function test_free_no_permite_crear_un_segundo_hogar(): void
     {

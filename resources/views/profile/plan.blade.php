@@ -5,6 +5,7 @@
 
     @php
         $isPremium = $plan->slug === \App\Enums\PlanSlug::Premium->value;
+        $premiumForAll = $premiumForAll ?? false;
     @endphp
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
@@ -34,7 +35,11 @@
                                     <span class="badge bg-secondary-subtle text-secondary ms-1">Gratis</span>
                                 @endif
                             </h2>
-                            @if ($subscription?->ends_at)
+                            @if ($premiumForAll)
+                                <p class="text-muted small mb-0">
+                                    Mientras Finlia termina de definir qué lleva Premium, todo el mundo lo tiene abierto.
+                                </p>
+                            @elseif ($subscription?->ends_at)
                                 <p class="text-muted small mb-0">
                                     Vence el {{ $subscription->ends_at->format('d/m/Y') }}.
                                 </p>

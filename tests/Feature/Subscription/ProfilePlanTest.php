@@ -8,14 +8,25 @@ use App\Models\User;
 use App\Services\HouseholdService;
 use App\Services\SubscriptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 /**
  * Pantalla /perfil/plan (Épica 12, v0.39).
+ *
+ * La app arranca con `premium_for_all` encendido; estos tests observan el
+ * comportamiento real de la pantalla apagándolo, salvo el que confirma
+ * que con el flag encendido todos ven Premium.
  */
 class ProfilePlanTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Config::set('finlia.subscription.premium_for_all', false);
+    }
 
     public function test_muestra_plan_free_al_hogar_recien_creado(): void
     {
@@ -49,5 +60,19 @@ class ProfilePlanTest extends TestCase
         $this->actingAs($user)
             ->get(route('profile.plan'))
             ->assertRedirect(route('households.create'));
+    }
+
+    public function test_premium_for_all_abre_premium_a_todos(): void
+    {
+        Config::set('finlia.subscription.premium_for_all', true);
+
+        $user = User::factory()->create();
+        app(HouseholdService::class)->createHousehold($user->id, 'Hogar');
+
+        $this->actingAs($user)
+            ->get(route('profile.plan'))
+            ->assertOk()
+            ->assertSeeText('Premium')
+            ->assertSeeText('Mientras Finlia termina de definir qué lleva Premium');
     }
 }

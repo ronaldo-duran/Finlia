@@ -14,11 +14,21 @@ use App\Models\User;
 use App\Services\HouseholdService;
 use App\Services\SubscriptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 class SubscriptionServiceTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Estos tests ejercitan los rieles como si el catálogo Premium ya
+        // estuviera vivo. La app corre con `premium_for_all` encendido; aquí
+        // se apaga para observar el comportamiento real de Free/Premium.
+        Config::set('finlia.subscription.premium_for_all', false);
+    }
 
     private function makeHousehold(): Household
     {
@@ -126,5 +136,20 @@ class SubscriptionServiceTest extends TestCase
 
         // grant no crea otra fila: la actualiza.
         $this->assertSame(1, Subscription::where('household_id', $household->id)->count());
+    }
+
+    public function test_premium_for_all_devuelve_premium_para_todo_hogar(): void
+    {
+        Config::set('finlia.subscription.premium_for_all', true);
+
+        $household = $this->makeHousehold();
+        $service = app(SubscriptionService::class);
+
+        // Hogar recién creado (suscripción Free en DB) pero con el flag encendido
+        // el plan efectivo es Premium: no aplica el tope Free.
+        $this->assertSame(PlanSlug::Premium->value, $service->planFor($household)->slug);
+        $this->assertTrue($service->canUserCreateHousehold($household->owner));
+        $this->assertTrue($service->canInviteMember($household));
+        $this->assertTrue($service->canAskCompulsiveSurvey($household));
     }
 }

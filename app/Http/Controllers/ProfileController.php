@@ -77,6 +77,7 @@ class ProfileController extends Controller
             'plan' => $plan,
             'subscription' => $subscription,
             'usage' => $usage,
+            'premiumForAll' => $this->subscriptions->premiumForAll(),
         ]);
     }
 

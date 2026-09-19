@@ -14,6 +14,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use DomainException;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -42,6 +43,13 @@ class SubscriptionService
             return $this->planCache[$household->id];
         }
 
+        // Rieles quietos: mientras `subscription.premium_for_all` esté encendido,
+        // todos los hogares corren en Premium indefinidamente. Se apaga cuando
+        // el catálogo Premium tenga precio y funciones definidas.
+        if ($this->premiumForAll()) {
+            return $this->planCache[$household->id] = $this->requirePremiumPlan();
+        }
+
         $subscription = $this->activeSubscription($household);
         $slug = $subscription?->isCurrentlyActive()
             ? $subscription->plan->slug
@@ -50,6 +58,14 @@ class SubscriptionService
         $plan = Plan::firstWhere('slug', $slug) ?? $this->requireFreePlan();
 
         return $this->planCache[$household->id] = $plan;
+    }
+
+    /**
+     * ¿Está activo el interruptor "todos en Premium mientras no haya precio"?
+     */
+    public function premiumForAll(): bool
+    {
+        return (bool) Config::get('finlia.subscription.premium_for_all', false);
     }
 
     /**
@@ -145,6 +161,10 @@ class SubscriptionService
      */
     public function canUserCreateHousehold(User $user): bool
     {
+        if ($this->premiumForAll()) {
+            return true;
+        }
+
         $owned = $user->ownedHouseholds()->with(['subscription.plan'])->get();
 
         $hasPremium = $owned->contains(function (Household $h): bool {
@@ -240,5 +260,11 @@ class SubscriptionService
     {
         return Plan::firstWhere('slug', PlanSlug::Free->value)
             ?? throw new DomainException('El plan Free no existe. Corre las migraciones.');
+    }
+
+    private function requirePremiumPlan(): Plan
+    {
+        return Plan::firstWhere('slug', PlanSlug::Premium->value)
+            ?? throw new DomainException('El plan Premium no existe. Corre las migraciones.');
     }
 }
