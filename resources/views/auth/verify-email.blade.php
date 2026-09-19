@@ -20,13 +20,31 @@
         <ul class="mb-0 ps-3">
             <li>Revisa la carpeta de <strong>spam</strong> o promociones.</li>
             <li>El enlace vence en una hora; puedes pedir uno nuevo.</li>
+            <li>Si lo abres en otro dispositivo, esta pantalla se actualizará sola.</li>
         </ul>
     </div>
+
+    {{-- Botón "Ya verifiqué mi correo": doble puerta con el poll de JS. Si el
+         usuario abre el enlace en el móvil, esta pantalla del PC comprueba
+         cada 4 s si ya está verificado y redirige sola. El botón es el
+         fallback manual cuando el poll falla (JS bloqueado, red intermitente). --}}
+    <form id="verified-check" method="GET" action="{{ route('verification.status') }}"
+          data-verified-check
+          data-dashboard-url="{{ route('dashboard') }}">
+        <div class="d-grid mb-2">
+            <button type="submit" class="btn btn-finlia py-2">
+                <i class="bi bi-check2-circle me-1"></i> Ya verifiqué mi correo
+            </button>
+        </div>
+        <div class="small text-muted text-center mb-3" data-verified-hint aria-live="polite">
+            Comprobamos automáticamente cada pocos segundos.
+        </div>
+    </form>
 
     <form method="POST" action="{{ route('verification.send') }}">
         @csrf
         <div class="d-grid">
-            <button type="submit" class="btn btn-finlia py-2">
+            <button type="submit" class="btn btn-outline-secondary py-2">
                 <i class="bi bi-arrow-repeat me-1"></i> Reenviar enlace
             </button>
         </div>
@@ -47,3 +65,72 @@
         </form>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        // Poll de verificación desde otro dispositivo: el registro suele
+        // ocurrir en el PC y la persona abre el enlace en el móvil; sin
+        // esto, la pestaña del PC se queda congelada.
+        (function () {
+            var form = document.querySelector('[data-verified-check]');
+            if (!form) return;
+            var statusUrl = form.getAttribute('action');
+            var dashboardUrl = form.getAttribute('data-dashboard-url');
+            var hint = form.querySelector('[data-verified-hint]');
+            var stopped = false;
+
+            function goToDashboard() {
+                stopped = true;
+                window.location.assign(dashboardUrl);
+            }
+
+            function check(manual) {
+                return fetch(statusUrl, {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (data) {
+                        if (data && data.verified) {
+                            goToDashboard();
+                            return true;
+                        }
+                        if (manual && hint) {
+                            hint.textContent = 'Aún no vemos la verificación. Abre el enlace desde tu correo y vuelve a pulsar.';
+                        }
+                        return false;
+                    })
+                    .catch(function () {
+                        if (manual && hint) {
+                            hint.textContent = 'No pudimos comprobar ahora. Revisa tu conexión y pulsa de nuevo.';
+                        }
+                        return false;
+                    });
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                check(true);
+            });
+
+            // Poll cada 4 s mientras la pestaña esté visible: 60 checks/min
+            // encaja con el throttle del endpoint y con una sesión típica
+            // esperando el correo.
+            function tick() {
+                if (stopped) return;
+                if (document.visibilityState === 'visible') {
+                    check(false);
+                }
+                window.setTimeout(tick, 4000);
+            }
+            window.setTimeout(tick, 4000);
+
+            // Vuelve del segundo plano (el usuario cambió al correo y regresó):
+            // comprueba de inmediato, no espera al siguiente ciclo.
+            document.addEventListener('visibilitychange', function () {
+                if (!stopped && document.visibilityState === 'visible') check(false);
+            });
+        })();
+    </script>
+@endpush

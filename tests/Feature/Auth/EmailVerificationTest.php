@@ -184,6 +184,41 @@ class EmailVerificationTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    // ---- Estado (poll de la pantalla de aviso) ----
+
+    public function test_estado_devuelve_false_para_usuario_sin_verificar(): void
+    {
+        $user = User::factory()->unverified()->create();
+
+        $this->actingAs($user)
+            ->getJson(route('verification.status'))
+            ->assertOk()
+            ->assertJson(['verified' => false]);
+    }
+
+    public function test_estado_devuelve_true_tras_verificarse_desde_otro_dispositivo(): void
+    {
+        // Escenario reportado (WhatsApp 2026-09-16): la PC pregunta por el
+        // estado mientras la verificación acaba de suceder en el móvil.
+        $user = User::factory()->unverified()->create();
+
+        // "El móvil" abre el enlace y marca el correo verificado.
+        $this->get($this->signedUrl($user));
+        $this->assertNotNull($user->fresh()->email_verified_at);
+
+        // "La PC" seguía autenticada; el poll debe verlo verificado.
+        $this->actingAs($user->fresh())
+            ->getJson(route('verification.status'))
+            ->assertOk()
+            ->assertJson(['verified' => true]);
+    }
+
+    public function test_estado_exige_sesion(): void
+    {
+        $this->getJson(route('verification.status'))
+            ->assertRedirect(route('login'));
+    }
+
     // ---- Contenido del correo ----
 
     public function test_correo_renderiza_en_espanol(): void
