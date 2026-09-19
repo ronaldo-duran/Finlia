@@ -8,18 +8,20 @@ use App\Enums\CompulsiveKind;
 use App\Enums\CompulsiveMood;
 use App\Enums\CompulsivePlanned;
 use App\Enums\CompulsiveTrigger;
+use App\Models\Budget;
 use App\Models\CompulsiveSurveyResponse;
 use App\Models\Expense;
 use App\Models\Household;
 use App\Models\User;
 
 /**
- * Árbol de decisión de compras (Épica 12, v0.39).
+ * Árbol de decisión de compras (Épica 12).
  *
- * Al registrar un gasto se ofrece el árbol con probabilidad configurable.
- * El objetivo es doble:
- *   - dar al usuario un espejo sobre por qué compra (autoconocimiento);
- *   - acumular un dataset para ML futuro.
+ * Se ofrece el árbol SÓLO cuando el gasto no cabe en el presupuesto del mes
+ * — un gasto imprevisto es donde la pregunta tiene sentido; sobre uno
+ * planeado no hay nada que reflexionar. El azar sale del disparo: la señal
+ * es la ausencia de un `Budget` para (categoría del gasto, año y mes del
+ * gasto). Siempre es opcional (el modal se puede cerrar sin responder).
  *
  * Freemium: 5 respuestas al mes en Free (feature `unlimited_surveys`
  * apagada), ilimitadas en Premium. Sin cupo, no se ofrece más.
@@ -44,10 +46,16 @@ class CompulsiveSurveyService
      * Reglas:
      *   1. El hogar debe tener cupo (freemium/Premium — via SubscriptionService).
      *   2. El gasto no debe haber sido encuestado ya (unique).
-     *   3. Probabilidad `probability_percent` (config/finlia.php).
+     *   3. El gasto NO tiene un presupuesto de esa categoría para su mes —
+     *      es decir, es imprevisto respecto a lo planeado.
+     *   4. Kill switch global `finlia.compulsive_survey.enabled` (default true).
      */
     public function shouldOffer(Household $household, Expense $expense): bool
     {
+        if (! config('finlia.compulsive_survey.enabled', true)) {
+            return false;
+        }
+
         if (! $this->subscriptions->canAskCompulsiveSurvey($household)) {
             return false;
         }
@@ -56,12 +64,32 @@ class CompulsiveSurveyService
             return false;
         }
 
-        $probability = max(0, min(100, (int) config('finlia.compulsive_survey.probability_percent', 15)));
-        if ($probability === 0) {
-            return false;
+        return $this->isUnbudgeted($household, $expense);
+    }
+
+    /**
+     * ¿Este gasto queda fuera del presupuesto planeado del hogar?
+     *
+     * Se consulta la tabla `budgets` por (household, category, año, mes) del
+     * gasto. Un gasto sin categoría se trata como imprevisto por definición.
+     * El presupuesto total del mes (`category_id` NULL) no cuenta como
+     * "planeado para esta categoría": si el usuario definió un total pero
+     * no un renglón para la categoría del gasto, sigue siendo imprevisto.
+     */
+    private function isUnbudgeted(Household $household, Expense $expense): bool
+    {
+        if ($expense->category_id === null) {
+            return true;
         }
 
-        return random_int(1, 100) <= $probability;
+        $date = $expense->date ?? now();
+
+        return ! Budget::query()
+            ->where('household_id', $household->id)
+            ->where('category_id', $expense->category_id)
+            ->where('year', $date->year)
+            ->where('month', $date->month)
+            ->exists();
     }
 
     /**

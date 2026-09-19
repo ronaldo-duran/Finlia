@@ -21,15 +21,16 @@ return [
     'version' => '0.39.0',
 
     /*
-    | Encuesta de compras (Épica 12, v0.39).
+    | Encuesta de compras (Épica 12).
     |
-    | Al registrar un gasto, con probabilidad `probability_percent` se le
-    | ofrece al usuario contestar el árbol de decisión (planificado, tipo,
-    | ánimo, disparador). Los tests fuerzan el valor a 100 para observar el
-    | comportamiento sin lidiar con azar.
+    | Se ofrece el árbol cuando un gasto queda FUERA del presupuesto planeado
+    | del mes (categoría sin `Budget` para su año/mes). El azar no participa
+    | en el disparo: la señal es la ausencia de plan. `enabled` es el kill
+    | switch global — apagarlo desactiva todo el disparo para el hogar sin
+    | tocar la lógica de `Budget`.
     */
     'compulsive_survey' => [
-        'probability_percent' => (int) env('FINLIA_COMPULSIVE_SURVEY_PROBABILITY', 15),
+        'enabled' => filter_var(env('FINLIA_COMPULSIVE_SURVEY_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
     /*

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Subscription;
 
+use App\Enums\BudgetPeriod;
 use App\Enums\CategoryType;
 use App\Enums\CompulsiveKind;
 use App\Enums\CompulsiveMood;
 use App\Enums\CompulsivePlanned;
 use App\Enums\CompulsiveTrigger;
 use App\Models\Account;
+use App\Models\Budget;
 use App\Models\Category;
 use App\Models\CompulsiveSurveyResponse;
 use App\Models\Expense;
@@ -23,7 +25,8 @@ use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 /**
- * Árbol de decisión de compras (Épica 12, v0.39): disparo, tope Free y persistencia.
+ * Árbol de decisión de compras (Épica 12): disparo por gasto imprevisto,
+ * tope Free y persistencia.
  */
 class CompulsiveSurveyTest extends TestCase
 {
@@ -32,8 +35,6 @@ class CompulsiveSurveyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Determinismo: en tests el árbol se ofrece siempre que haya cupo.
-        Config::set('finlia.compulsive_survey.probability_percent', 100);
         // Estos tests verifican los topes Free y el corte por cupo mensual,
         // así que el flag "Premium para todos" debe apagarse aquí — los
         // rieles se ejercitan como si el catálogo comercial ya estuviera vivo.
@@ -70,12 +71,64 @@ class CompulsiveSurveyTest extends TestCase
         ]);
     }
 
-    public function test_should_offer_devuelve_true_bajo_cupo_y_probabilidad_100(): void
+    public function test_should_offer_true_para_gasto_imprevisto(): void
     {
         [$user, $household] = $this->makeSetup();
         $expense = $this->makeExpense($household, $user);
 
+        // La categoría del gasto NO tiene presupuesto para su mes.
         $this->assertTrue(app(CompulsiveSurveyService::class)->shouldOffer($household, $expense));
+    }
+
+    public function test_should_offer_false_cuando_hay_presupuesto_para_la_categoria_del_mes(): void
+    {
+        [$user, $household] = $this->makeSetup();
+        $expense = $this->makeExpense($household, $user);
+
+        // Presupuesto de la misma categoría para el mes del gasto:
+        // el gasto ya estaba planeado, así que no hay nada que preguntar.
+        (new Budget)->forceFill([
+            'household_id' => $household->id,
+            'category_id' => $expense->category_id,
+            'amount' => 500000,
+            'period' => BudgetPeriod::Monthly->value,
+            'year' => $expense->date->year,
+            'month' => $expense->date->month,
+        ])->save();
+
+        $this->assertFalse(app(CompulsiveSurveyService::class)->shouldOffer($household, $expense));
+    }
+
+    public function test_should_offer_true_cuando_el_presupuesto_es_de_otra_categoria(): void
+    {
+        [$user, $household] = $this->makeSetup();
+        $expense = $this->makeExpense($household, $user);
+
+        // Presupuesto para OTRA categoría — el gasto sigue siendo imprevisto.
+        $otra = Category::factory()->create([
+            'household_id' => $household->id,
+            'type' => CategoryType::Expense->value,
+        ]);
+        (new Budget)->forceFill([
+            'household_id' => $household->id,
+            'category_id' => $otra->id,
+            'amount' => 500000,
+            'period' => BudgetPeriod::Monthly->value,
+            'year' => $expense->date->year,
+            'month' => $expense->date->month,
+        ])->save();
+
+        $this->assertTrue(app(CompulsiveSurveyService::class)->shouldOffer($household, $expense));
+    }
+
+    public function test_kill_switch_apaga_el_disparo(): void
+    {
+        Config::set('finlia.compulsive_survey.enabled', false);
+
+        [$user, $household] = $this->makeSetup();
+        $expense = $this->makeExpense($household, $user);
+
+        $this->assertFalse(app(CompulsiveSurveyService::class)->shouldOffer($household, $expense));
     }
 
     public function test_free_agotado_no_ofrece_mas_encuestas(): void

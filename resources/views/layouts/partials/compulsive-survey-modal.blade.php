@@ -19,14 +19,15 @@
                     @csrf
                     <div class="modal-header">
                         <h1 class="h5 modal-title" id="compulsiveSurveyModalLabel">
-                            <i class="bi bi-lightbulb me-1"></i> Un momento contigo
+                            <i class="bi bi-lightbulb me-1"></i> Un gasto fuera del presupuesto
                         </h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Saltar"></button>
                     </div>
                     <div class="modal-body">
                         <p class="text-muted small mb-3">
-                            Cuatro preguntas rapidísimas sobre el gasto que acabas de registrar.
-                            Nos ayudan a mostrarte con el tiempo un espejo de tus compras. Puedes saltar en cualquier momento.
+                            Este gasto no cabe en ningún presupuesto planeado para su categoría este mes.
+                            Cuatro preguntas rapidísimas ahora, y a los 30 días te preguntamos cómo te
+                            sientes con esa compra. Todo es opcional — puedes saltar en cualquier momento.
                         </p>
 
                         <div class="mb-3">
