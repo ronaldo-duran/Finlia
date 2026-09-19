@@ -265,6 +265,7 @@
         @include('layouts.partials.mobile-bottom-nav')
         @include('layouts.partials.fab')
         @include('layouts.partials.tour')
+        @include('layouts.partials.compulsive-survey-modal')
     @endauth
 
     {{-- ======= Modal de confirmación genérico =======

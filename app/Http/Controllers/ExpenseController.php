@@ -11,6 +11,7 @@ use App\Models\Account;
 use App\Models\Category;
 use App\Models\Expense;
 use App\Services\BudgetCalculatorService;
+use App\Services\CompulsiveSurveyService;
 use App\Services\MovementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ class ExpenseController extends Controller
     public function __construct(
         private readonly MovementService $movements,
         private readonly BudgetCalculatorService $budgets,
+        private readonly CompulsiveSurveyService $surveys,
     ) {}
 
     public function create(Request $request): View|RedirectResponse
@@ -45,11 +47,19 @@ class ExpenseController extends Controller
     {
         $this->authorize('create', Expense::class);
 
-        $this->movements->createExpense(
+        $household = active_household();
+        $expense = $this->movements->createExpense(
             $request->validatedData(),
-            active_household(),
+            $household,
             $request->user(),
         );
+
+        // Épica 12: árbol de decisión de compras. Con probabilidad y cupo,
+        // el modal aparece en la siguiente pantalla vía `session()->flash`.
+        // La sesión almacena solo el id — la vista pide el gasto al abrir.
+        if ($this->surveys->shouldOffer($household, $expense)) {
+            session()->flash('compulsive_survey_expense_id', $expense->id);
+        }
 
         return redirect()
             ->route('dashboard')

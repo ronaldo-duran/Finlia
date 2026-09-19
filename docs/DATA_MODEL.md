@@ -522,26 +522,45 @@ Gmail/Yahoo (devuelve 204). Idempotente y por hogar.
 | Campo | Tipo | Notas |
 |---|---|---|
 | id | | |
-| name | string | free, premium |
-| slug | string, unique | |
-| price_monthly | decimal(15,2) | |
-| price_yearly | decimal(15,2) | |
-| features | json | mapa feature→bool |
-| limits | json | mapa límite→int (max_households, max_members, …) |
+| slug | string(40), unique | `App\Enums\PlanSlug`: `free`, `premium` |
+| name | string(60) | Nombre humano ("Gratis", "Premium") |
+| price_monthly | decimal(15,2), nullable | v0.39: null en Free, 9900 en Premium |
+| price_yearly | decimal(15,2), nullable | v0.39: null en Free, 79000 en Premium |
+| features | json | mapa `feature→bool` (llaves de `App\Enums\PlanFeature`) |
+| limits | json | mapa `limit→int|null` (llaves de `App\Enums\PlanLimit`) |
 | is_active | boolean | |
 | timestamps | | |
 
 ### `subscriptions`
 | Campo | Tipo | Notas |
 |---|---|---|
-| id, household_id | | |
-| plan_id | FK | |
-| status | string | active, canceled, past_due, trialing |
-| started_at | timestamp | |
-| ends_at | timestamp, null | |
+| id, household_id | FK cascade, **unique** | Una fila por hogar |
+| plan_id | FK restrict | |
+| status | string(20) | `App\Enums\SubscriptionStatus`: `active`, `trialing`, `canceled`, `past_due` |
+| started_at | timestamp, null | |
+| renews_at | timestamp, null | Preparado para v0.41 (pasarela) |
+| ends_at | timestamp, null | Fin real del plan concedido |
+| canceled_at | timestamp, null | |
+| reason | string(200), null | Motivo humano legible (auditoría) |
 | timestamps | | |
 
-> La verificación de límites/features **siempre en backend** (ver [SECURITY.md](SECURITY.md)).
+Índices: `(household_id, status)` y unique `(household_id)`.
+
+### `compulsive_survey_responses` (Épica 12, v0.39)
+| Campo | Tipo | Notas |
+|---|---|---|
+| id, household_id | FK cascade | |
+| user_id | FK cascade | Quién respondió |
+| expense_id | FK cascade, **unique** | Un gasto se encuesta una sola vez |
+| planned | string(10) | `App\Enums\CompulsivePlanned` |
+| kind | string(15) | `App\Enums\CompulsiveKind` |
+| mood | tinyint 1..5 | `App\Enums\CompulsiveMood` |
+| trigger | string(20) | `App\Enums\CompulsiveTrigger` |
+| timestamps | | |
+
+Índices: `(household_id, created_at)` para el conteo mensual.
+
+> La verificación de límites/features **siempre en backend** ([SECURITY §8](SECURITY.md#8-monetización-premium--backend-es-la-fuente-de-verdad)). Grandfather: `SubscriptionService::withinLimit()` compara la ACCIÓN (crear/invitar) contra el tope, nunca el estado ([ADR-0046](DECISIONS.md#adr-0046)).
 
 ---
 

@@ -8,13 +8,17 @@ use App\Http\Requests\Household\StoreHouseholdRequest;
 use App\Http\Requests\Household\UpdateHouseholdRequest;
 use App\Models\Household;
 use App\Services\HouseholdService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class HouseholdController extends Controller
 {
-    public function __construct(private readonly HouseholdService $service) {}
+    public function __construct(
+        private readonly HouseholdService $service,
+        private readonly SubscriptionService $subscriptions,
+    ) {}
 
     /**
      * Lista los hogares del usuario (selector).
@@ -32,13 +36,25 @@ class HouseholdController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View|RedirectResponse
     {
+        if (! $this->subscriptions->canUserCreateHousehold($request->user())) {
+            return redirect()
+                ->route('households.index')
+                ->with('status', __('Tu plan gratuito permite un solo hogar. Pasa a Premium para crear más.'));
+        }
+
         return view('households.create');
     }
 
     public function store(StoreHouseholdRequest $request): RedirectResponse
     {
+        if (! $this->subscriptions->canUserCreateHousehold($request->user())) {
+            return redirect()
+                ->route('households.index')
+                ->with('status', __('Tu plan gratuito permite un solo hogar. Pasa a Premium para crear más.'));
+        }
+
         $data = $request->validatedData();
 
         $household = $this->service->createHousehold(
