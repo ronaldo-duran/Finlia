@@ -57,9 +57,6 @@ class AccountTest extends TestCase
 
     public function test_creacion_al_vuelo_desde_gasto_devuelve_json(): void
     {
-        // Modal "+ Nueva cuenta" del form de gasto (WhatsApp 2026-09-16): el
-        // frontend hace POST con Accept: application/json y espera {id,name}
-        // para inyectarlos en el <select> sin recargar.
         [$owner] = $this->setupHousehold();
 
         $this->actingAs($owner)

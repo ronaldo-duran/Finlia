@@ -126,7 +126,7 @@ Dos correcciones que salieron de la propia revisión:
 > Sin fichero de épica todavía. Se desarrolla cuando la web esté en producción. Añade `routes/api.php` + **Sanctum** (tokens para móvil) + API Resources/Controllers que **reutilizan los mismos `app/Services/`, Form Requests y Policies** del web (ver [ADR-0010](DECISIONS.md#adr-0010)). Solo es barata si la lógica quedó bien aislada desde las épicas 2-9.
 
 ### Épica 15 — Cuentas por cobrar
-> Ficha en [`scrum/epics/15-cuentas-por-cobrar.md`](../scrum/epics/15-cuentas-por-cobrar.md). Reportada por un usuario real vía WhatsApp el 2026-09-16: registrar que alguien le debe dinero al hogar, con fecha tentativa de cobro, edición, posposición y registro del ingreso al cobrar. Espejo estructural de la Épica 6 (deudas) — mismo patrón de Service + payments + integración con recordatorios (ADR-0028). Se abre después del lanzamiento público en LinkedIn.
+> Ficha en [`scrum/epics/15-cuentas-por-cobrar.md`](../scrum/epics/15-cuentas-por-cobrar.md). Registrar que alguien le debe dinero al hogar, con fecha tentativa de cobro, edición, posposición y registro del ingreso al cobrar. Espejo estructural de la Épica 6 (deudas) — mismo patrón de Service + payments + integración con recordatorios (ADR-0028). Se abre después del lanzamiento público en LinkedIn.
 
 ---
 

@@ -198,15 +198,11 @@ class EmailVerificationTest extends TestCase
 
     public function test_estado_devuelve_true_tras_verificarse_desde_otro_dispositivo(): void
     {
-        // Escenario reportado (WhatsApp 2026-09-16): la PC pregunta por el
-        // estado mientras la verificación acaba de suceder en el móvil.
         $user = User::factory()->unverified()->create();
 
-        // "El móvil" abre el enlace y marca el correo verificado.
         $this->get($this->signedUrl($user));
         $this->assertNotNull($user->fresh()->email_verified_at);
 
-        // "La PC" seguía autenticada; el poll debe verlo verificado.
         $this->actingAs($user->fresh())
             ->getJson(route('verification.status'))
             ->assertOk()

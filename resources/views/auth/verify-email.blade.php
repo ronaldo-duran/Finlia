@@ -24,10 +24,6 @@
         </ul>
     </div>
 
-    {{-- Botón "Ya verifiqué mi correo": doble puerta con el poll de JS. Si el
-         usuario abre el enlace en el móvil, esta pantalla del PC comprueba
-         cada 4 s si ya está verificado y redirige sola. El botón es el
-         fallback manual cuando el poll falla (JS bloqueado, red intermitente). --}}
     <form id="verified-check" method="GET" action="{{ route('verification.status') }}"
           data-verified-check
           data-dashboard-url="{{ route('dashboard') }}">
@@ -68,9 +64,6 @@
 
 @push('scripts')
     <script>
-        // Poll de verificación desde otro dispositivo: el registro suele
-        // ocurrir en el PC y la persona abre el enlace en el móvil; sin
-        // esto, la pestaña del PC se queda congelada.
         (function () {
             var form = document.querySelector('[data-verified-check]');
             if (!form) return;
@@ -114,9 +107,6 @@
                 check(true);
             });
 
-            // Poll cada 4 s mientras la pestaña esté visible: 60 checks/min
-            // encaja con el throttle del endpoint y con una sesión típica
-            // esperando el correo.
             function tick() {
                 if (stopped) return;
                 if (document.visibilityState === 'visible') {
@@ -126,8 +116,6 @@
             }
             window.setTimeout(tick, 4000);
 
-            // Vuelve del segundo plano (el usuario cambió al correo y regresó):
-            // comprueba de inmediato, no espera al siguiente ciclo.
             document.addEventListener('visibilitychange', function () {
                 if (!stopped && document.visibilityState === 'visible') check(false);
             });

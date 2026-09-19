@@ -92,11 +92,9 @@ class EmailVerificationController extends Controller
     /**
      * Estado de verificación del usuario autenticado (JSON).
      *
-     * Lo consume el poll de la vista "Revisa tu correo": cuando el usuario
-     * confirma el correo desde otro dispositivo (registro en PC → clic en el
-     * móvil, patrón de Vanessa Vélez, WhatsApp 2026-09-16), el navegador de
-     * origen queda atascado en el aviso. El poll y el botón "Ya verifiqué"
-     * comparten este endpoint.
+     * Lo consume el poll de la vista "Revisa tu correo" cuando la
+     * verificación ocurre en otro dispositivo y el navegador de origen
+     * queda atascado en el aviso.
      */
     public function status(Request $request): JsonResponse
     {

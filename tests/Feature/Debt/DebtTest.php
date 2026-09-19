@@ -99,8 +99,6 @@ class DebtTest extends TestCase
 
     public function test_el_detalle_preselecciona_la_categoria_deudas_en_el_pago(): void
     {
-        // Mejora reportada por WhatsApp 2026-09-16: al abrir el pago de una
-        // deuda, la categoría "Deudas" viene ya seleccionada, pero editable.
         [$owner, $household] = $this->setupHousehold();
         $this->seed(CategorySeeder::class);
         $debt = $this->debtFor($household);

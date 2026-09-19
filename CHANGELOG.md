@@ -17,7 +17,7 @@ reciente de este archivo.
 ### Añadido
 - **La pantalla «Revisa tu correo» se desatasca sola.** Cuando alguien se registra desde el computador y abre el enlace de verificación en el móvil, el navegador de origen ya no se queda mirando esa pantalla en blanco: comprueba en segundo plano si la verificación ya ocurrió y, en cuanto es así, entra al panel. Un botón **«Ya verifiqué mi correo»** hace la misma comprobación al pulsar, por si el navegador tiene JS bloqueado o la red se cortó.
 - **Crear una cuenta al vuelo desde el formulario de gasto.** Junto al selector de cuentas aparece un enlace «+ Nueva cuenta» que abre un modal con los mínimos (nombre, tipo, moneda y saldo inicial). Al guardar, la cuenta queda seleccionada sin recargar la página ni perder lo que llevabas escrito.
-- **Épica 15 · Cuentas por cobrar** — abierta en el ROADMAP con su ficha en `scrum/epics/15-cuentas-por-cobrar.md`. Módulo simétrico al de deudas: registrar que alguien le debe dinero al hogar, con fecha tentativa de cobro, edición, posposición y registro del ingreso al recibir el pago. Reportada por un usuario real vía WhatsApp; se implementa después del lanzamiento público.
+- **Épica 15 · Cuentas por cobrar** — abierta en el ROADMAP con su ficha en `scrum/epics/15-cuentas-por-cobrar.md`. Módulo simétrico al de deudas: registrar que alguien le debe dinero al hogar, con fecha tentativa de cobro, edición, posposición y registro del ingreso al recibir el pago. Se implementa después del lanzamiento público.
 
 ### Cambiado
 - **El pago de una deuda preselecciona la categoría «Deudas»**, pero deja el selector editable. Antes había que elegirla a mano en cada abono.

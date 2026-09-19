@@ -97,10 +97,6 @@ class DebtController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Preselección "Deudas" en el formulario de pago (WhatsApp
-        // 2026-09-16): la categoría es global del seeder, pero el hogar
-        // puede haberla renombrado o eliminado, así que match case-insensitive
-        // y con fallback nulo si no existe.
         $defaultCategoryId = $categories
             ->first(fn ($c) => mb_strtolower($c->name) === 'deudas')?->id;
 

@@ -51,11 +51,6 @@ class AccountController extends Controller
         // current_balance = initial_balance (sin movimientos aún). ADR-0012.
         $this->balances->recompute($account);
 
-        // Creación al vuelo desde el formulario de gasto/ingreso (WhatsApp
-        // 2026-09-16): un modal en la vista de gasto abre el mismo form y
-        // hace POST aquí con Accept: application/json — devuelve la cuenta
-        // creada para inyectarla en el <select> sin recargar. El flujo web
-        // sigue devolviendo el redirect de siempre.
         if ($request->wantsJson()) {
             return response()->json([
                 'id' => $account->id,

@@ -56,10 +56,6 @@
     </select>
     @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
 
-    {{-- Aviso al elegir "Deudas": el pago de deuda tiene flujo propio (Épica 6).
-         Se muestra por JS al seleccionar; oculto por defecto para que no
-         estorbe. No bloquea el envío: hay gastos legítimos de "Deudas" sin
-         deuda registrada (intereses de préstamos informales). --}}
     @if ($debtsCategoryId)
         <div class="alert alert-info small mt-2 d-none" data-debts-hint role="note">
             <i class="bi bi-info-circle me-1"></i>
@@ -77,9 +73,6 @@
     <div class="col-md-6">
         <div class="d-flex align-items-baseline justify-content-between mb-1">
             <label for="account_id" class="form-label fw-semibold mb-0">Cuenta / medio de pago</label>
-            {{-- Creación al vuelo (WhatsApp 2026-09-16): evita interrumpir el
-                 registro del gasto para ir a "Cuentas → Nueva". El botón se
-                 conecta con el modal al final de este partial. --}}
             <button type="button" class="btn btn-link btn-sm p-0 text-finlia fw-semibold"
                     data-bs-toggle="modal" data-bs-target="#quickAccountModal">
                 <i class="bi bi-plus-lg"></i> Nueva cuenta
@@ -118,10 +111,8 @@
     </div>
 </details>
 
-{{-- Modal "Nueva cuenta" reutilizado por Mejora 1. Se despliega desde el
-     botón "+ Nueva cuenta" junto al <select> de cuentas. Va fuera del <form>
-     externo (Bootstrap monta el modal al final del <body>), así que no
-     provoca form anidado. --}}
+{{-- Modal "Nueva cuenta": se empuja al @stack('modals') del layout para
+     no anidarse dentro del <form> del gasto. --}}
 @push('modals')
     <div class="modal fade" id="quickAccountModal" tabindex="-1" aria-labelledby="quickAccountModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -227,7 +218,6 @@
                     });
                 });
 
-                // Aviso "categoría Deudas" — enlace al flujo de pago de deuda.
                 var categorySelect = document.getElementById('category_id');
                 var debtsHint = document.querySelector('[data-debts-hint]');
                 if (categorySelect && debtsHint) {
@@ -239,9 +229,6 @@
                     refresh();
                 }
 
-                // Modal "+ Nueva cuenta": crea vía AJAX, añade la opción al
-                // <select> de cuentas y la selecciona. El backend responde
-                // JSON (Accept: application/json) o RedirectResponse (form web).
                 var form = document.getElementById('quickAccountForm');
                 var modalEl = document.getElementById('quickAccountModal');
                 var accountSelect = document.getElementById('account_id');

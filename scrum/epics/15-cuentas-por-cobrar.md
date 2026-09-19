@@ -2,10 +2,9 @@
 
 > Estado: 🔴 No iniciada · Dependencias: **3** (cuentas/gastos/ingresos), **6** (patrón deudas), **9** (recordatorios).
 >
-> Reportada por usuario real vía WhatsApp el **2026-09-16**. Simétrica a la
-> Épica 6 (deudas): en lugar de "yo debo", **"me deben"**. Sin esto, la app
-> responde bien la pregunta "cuánto puedo gastar" pero se queda ciega ante el
-> dinero comprometido a favor del hogar.
+> Simétrica a la Épica 6 (deudas): en lugar de "yo debo", **"me deben"**.
+> Sin esto, la app responde bien la pregunta "cuánto puedo gastar" pero se
+> queda ciega ante el dinero comprometido a favor del hogar.
 
 ## Alcance
 
@@ -13,12 +12,12 @@ Un módulo para registrar que **alguien le debe dinero al hogar**, seguirle el
 rastro, cobrarlo y — cuando entra el pago — registrar el ingreso sin doble
 captura.
 
-Casos de uso reportados:
+Casos de uso:
 
-- Un amigo me pidió prestado, quiero saber cuánto me debe y cuándo prometió pagar.
-- Le facturé un trabajo a un cliente y espera 15 días para pagarme.
-- Un familiar me está pagando una deuda por cuotas y quiero verlas todas.
-- Necesito posponer la fecha de cobro sin perder el histórico.
+- Un amigo pidió prestado; saber cuánto debe y cuándo prometió pagar.
+- Se facturó un trabajo a un cliente que paga a 15 días.
+- Un tercero paga una deuda por cuotas y hay que verlas todas.
+- Posponer la fecha de cobro sin perder el histórico.
 
 ## Modelo de datos
 
