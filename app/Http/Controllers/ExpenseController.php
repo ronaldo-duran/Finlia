@@ -94,15 +94,26 @@ class ExpenseController extends Controller
     {
         $householdId = active_household_id();
 
+        $categories = Category::forHousehold($householdId)
+            ->where('type', CategoryType::Expense->value)
+            ->orderBy('name')
+            ->get();
+
+        // Aviso en línea cuando el usuario elige "Deudas" en un gasto suelto:
+        // el pago de una deuda registrada va por su propio flujo (Épica 6);
+        // registrar aquí y allí es contar el gasto dos veces (WhatsApp
+        // 2026-09-16). El id se resuelve por nombre porque la categoría
+        // "Deudas" es global del seeder y sobrevive al renombrado del hogar.
+        $debtsCategoryId = $categories
+            ->first(fn ($c) => mb_strtolower($c->name) === 'deudas')?->id;
+
         return [
             'accounts' => Account::where('household_id', $householdId)
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(),
-            'categories' => Category::forHousehold($householdId)
-                ->where('type', CategoryType::Expense->value)
-                ->orderBy('name')
-                ->get(),
+            'categories' => $categories,
+            'debtsCategoryId' => $debtsCategoryId,
         ];
     }
 }

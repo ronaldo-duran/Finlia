@@ -8,6 +8,7 @@ use App\Http\Requests\Account\StoreAccountRequest;
 use App\Http\Requests\Account\UpdateAccountRequest;
 use App\Models\Account;
 use App\Services\AccountBalanceService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -41,7 +42,7 @@ class AccountController extends Controller
         return view('accounts.create');
     }
 
-    public function store(StoreAccountRequest $request): RedirectResponse
+    public function store(StoreAccountRequest $request): RedirectResponse|JsonResponse
     {
         $this->authorize('create', Account::class);
 
@@ -49,6 +50,18 @@ class AccountController extends Controller
 
         // current_balance = initial_balance (sin movimientos aún). ADR-0012.
         $this->balances->recompute($account);
+
+        // Creación al vuelo desde el formulario de gasto/ingreso (WhatsApp
+        // 2026-09-16): un modal en la vista de gasto abre el mismo form y
+        // hace POST aquí con Accept: application/json — devuelve la cuenta
+        // creada para inyectarla en el <select> sin recargar. El flujo web
+        // sigue devolviendo el redirect de siempre.
+        if ($request->wantsJson()) {
+            return response()->json([
+                'id' => $account->id,
+                'name' => $account->name,
+            ], 201);
+        }
 
         return redirect()
             ->route('accounts.index')

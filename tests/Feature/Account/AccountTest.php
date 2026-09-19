@@ -55,6 +55,27 @@ class AccountTest extends TestCase
         $this->assertSame('150000.00', (string) $account->current_balance);
     }
 
+    public function test_creacion_al_vuelo_desde_gasto_devuelve_json(): void
+    {
+        // Modal "+ Nueva cuenta" del form de gasto (WhatsApp 2026-09-16): el
+        // frontend hace POST con Accept: application/json y espera {id,name}
+        // para inyectarlos en el <select> sin recargar.
+        [$owner] = $this->setupHousehold();
+
+        $this->actingAs($owner)
+            ->postJson(route('accounts.store'), [
+                'name' => 'Nequi',
+                'type' => 'cash',
+                'initial_balance' => 0,
+                'currency' => 'COP',
+            ])
+            ->assertStatus(201)
+            ->assertJsonStructure(['id', 'name'])
+            ->assertJson(['name' => 'Nequi']);
+
+        $this->assertDatabaseHas('accounts', ['name' => 'Nequi']);
+    }
+
     public function test_creacion_valida_campos_obligatorios(): void
     {
         [$owner] = $this->setupHousehold();
