@@ -23,6 +23,7 @@ use App\Services\AccountBalanceService;
 use App\Services\DebtService;
 use App\Services\HouseholdService;
 use App\Services\SavingsGoalService;
+use App\Services\SubscriptionService;
 use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -72,6 +73,15 @@ class DatabaseSeeder extends Seeder
         $household = app(HouseholdService::class)->createHousehold(
             ownerId: $demo->id,
             name: 'Hogar Demo',
+        );
+
+        // El hogar demo va en Premium para que los E2E ejerciten la app sin
+        // tropezarse con los topes Free (1 hogar por usuario, 2 personas por
+        // hogar). También refleja el caso "cliente Premium" en desarrollo.
+        app(SubscriptionService::class)->grantPremium(
+            $household,
+            now()->addYear(),
+            'Demo seed (Épica 12): usuario y hogar Premium para desarrollo y E2E.',
         );
 
         // Segundo usuario invitado como miembro.
