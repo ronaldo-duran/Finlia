@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['name', 'owner_id', 'currency', 'timezone', 'reminders_enabled'])]
@@ -134,6 +135,18 @@ class Household extends Model
     public function transfers(): HasMany
     {
         return $this->hasMany(Transfer::class);
+    }
+
+    // ---- Épica 12: suscripción del hogar a un plan ----
+
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class);
+    }
+
+    public function compulsiveSurveyResponses(): HasMany
+    {
+        return $this->hasMany(CompulsiveSurveyResponse::class);
     }
 
     /**

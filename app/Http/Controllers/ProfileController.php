@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanLimit;
 use App\Http\Requests\Profile\DeleteAccountRequest;
 use App\Http\Requests\Profile\UpdateEmailRequest;
 use App\Http\Requests\Profile\UpdatePasswordRequest;
@@ -11,6 +12,7 @@ use App\Http\Requests\Profile\UpdateProfileRequest;
 use App\Models\User;
 use App\Services\AccountDeletionService;
 use App\Services\ProfileService;
+use App\Services\SubscriptionService;
 use App\Services\TourService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +32,53 @@ class ProfileController extends Controller
         private readonly ProfileService $service,
         private readonly AccountDeletionService $deletionService,
         private readonly TourService $tours,
+        private readonly SubscriptionService $subscriptions,
     ) {}
+
+    /**
+     * Pantalla /perfil/plan: el plan del hogar activo, con cuánto uso lleva
+     * en cada límite y el CTA de Premium (Épica 12, v0.38).
+     *
+     * En v0.38 no hay pasarela — el CTA solo explica el estado. La activación
+     * se hace por artisan `finlia:grant-premium`; en v0.41 aterriza Wompi y
+     * el botón despierta.
+     */
+    public function plan(Request $request): View|RedirectResponse
+    {
+        $user = $request->user();
+        $this->authorize('update', $user);
+
+        $household = active_household();
+        if ($household === null) {
+            return redirect()->route('households.create');
+        }
+
+        $plan = $this->subscriptions->planFor($household);
+        $subscription = $this->subscriptions->activeSubscription($household);
+
+        $usage = [
+            'households' => [
+                'limit' => $plan->limit(PlanLimit::HouseholdsCreated),
+                'used' => $user->ownedHouseholds()->count(),
+            ],
+            'members' => [
+                'limit' => $plan->limit(PlanLimit::MembersPerHousehold),
+                'used' => $household->members()->count(),
+            ],
+            'surveys' => [
+                'limit' => $plan->limit(PlanLimit::CompulsiveSurveysPerMonth),
+                'used' => $this->subscriptions->compulsiveSurveysUsedThisMonth($household),
+            ],
+        ];
+
+        return view('profile.plan', [
+            'user' => $user,
+            'household' => $household,
+            'plan' => $plan,
+            'subscription' => $subscription,
+            'usage' => $usage,
+        ]);
+    }
 
     /**
      * Pantalla /perfil: datos, contraseña y correo (con su pendiente).

@@ -11,6 +11,7 @@ use App\Models\SavingsGoal;
 use App\Models\SavingsGoalContribution;
 use App\Observers\ReminderSummaryCacheObserver;
 use App\Services\ReminderService;
+use Finlia\Ee\EeServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Http\Client\Factory;
@@ -42,6 +43,13 @@ class AppServiceProvider extends ServiceProvider
                 timeout: 3,
             ),
         );
+
+        // Punto único de contacto del núcleo con `ee/` (ADR-0042, Épica 12).
+        // Registro condicional para que borrar el directorio deje la app
+        // funcionando: sin la clase, no hay provider Premium que cargar.
+        if (class_exists(EeServiceProvider::class)) {
+            $this->app->register(EeServiceProvider::class);
+        }
     }
 
     /**

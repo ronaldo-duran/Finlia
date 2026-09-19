@@ -12,6 +12,9 @@
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
         <h1 class="h3 mb-0"><i class="bi bi-person-circle me-2"></i>Mi perfil</h1>
+        <a href="{{ route('profile.plan') }}" class="btn btn-sm btn-outline-primary" data-tour="profile-plan">
+            <i class="bi bi-stars me-1"></i> Tu plan
+        </a>
     </div>
     <p class="text-muted mb-4">
         Tu cuenta de Finlia: datos personales, contraseña y correo. Estos datos son tuyos y no se

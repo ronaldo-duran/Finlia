@@ -18,7 +18,19 @@ return [
 
     // Versión actual del software (fuente de verdad; sincronizar con package.json
     // y CHANGELOG.md al publicar cada versión).
-    'version' => '0.37.3',
+    'version' => '0.38.0',
+
+    /*
+    | Encuesta de compras (Épica 12, v0.38).
+    |
+    | Al registrar un gasto, con probabilidad `probability_percent` se le
+    | ofrece al usuario contestar el árbol de decisión (planificado, tipo,
+    | ánimo, disparador). Los tests fuerzan el valor a 100 para observar el
+    | comportamiento sin lidiar con azar.
+    */
+    'compulsive_survey' => [
+        'probability_percent' => (int) env('FINLIA_COMPULSIVE_SURVEY_PROBABILITY', 15),
+    ],
 
     /*
     | Dominios (ADR pendiente de la landing).

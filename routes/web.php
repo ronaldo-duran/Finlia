@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CompulsiveSurveyController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CreditCardController;
 use App\Http\Controllers\DashboardController;
@@ -245,6 +246,7 @@ Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', '
     // Preferencia del USUARIO, no del hogar: vive fuera del multi-tenant.
     // Solo alcanza al propio autenticado (UserPolicy), nunca por ID de URL.
     Route::get('perfil', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('perfil/plan', [ProfileController::class, 'plan'])->name('profile.plan');
     Route::put('perfil/datos', [ProfileController::class, 'update'])->name('profile.update');
     // Re-autenticación (current_password) + revocación de otras sesiones.
     Route::put('perfil/contrasena', [ProfileController::class, 'updatePassword'])
@@ -321,6 +323,11 @@ Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', '
     Route::get('gastos/{expense}/editar', [ExpenseController::class, 'edit'])->name('expenses.edit');
     Route::put('gastos/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
     Route::delete('gastos/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+    // Árbol de decisión de compras (Épica 12, v0.38). El modal aparece
+    // aleatoriamente tras registrar un gasto; el envío guarda la respuesta.
+    Route::post('gastos/{expense}/encuesta', [CompulsiveSurveyController::class, 'store'])
+        ->name('expenses.survey.store')
+        ->middleware('throttle:60,1');
 
     // Altas y edición de ingresos.
     Route::get('ingresos/crear', [IncomeController::class, 'create'])->name('incomes.create');
