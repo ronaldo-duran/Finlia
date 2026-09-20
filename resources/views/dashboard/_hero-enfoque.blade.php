@@ -29,10 +29,12 @@
     </div>
     <div class="hero-figure" data-testid="available-money-amount">@money($heroAmount)</div>
 
+    <x-liquidity-breakdown :liquidity="$liquidity" />
+
     <p class="text-muted small mb-0 mt-2" data-testid="available-money-horizon">
         @switch($liquidity['status'])
             @case('short')
-                Es lo que te falta para cubrir los pagos que vencen antes del {{ $liquidity['payday']->format('d/m/Y') }}.
+                Cubre tus metas apartadas y los compromisos que vencen antes del {{ $liquidity['payday']->format('d/m/Y') }}.
                 @break
             @case('over_plan')
                 Este mes ya gastaste más de lo que esperas recibir.

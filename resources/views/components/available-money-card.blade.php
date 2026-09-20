@@ -65,8 +65,9 @@
                 @endif
             </p>
         @elseif ($liquidity['status'] === 'short')
-            <p class="text-danger-emphasis small mb-0">
-                Tu saldo no cubre los pagos que vencen antes del {{ $liquidity['payday']->format('d/m/Y') }}.
+            <x-liquidity-breakdown :liquidity="$liquidity" />
+            <p class="text-danger-emphasis small mb-0 mt-2">
+                Tu saldo no cubre tus metas apartadas y los compromisos que vencen antes del {{ $liquidity['payday']->format('d/m/Y') }}.
             </p>
         @elseif ($liquidity['status'] === 'over_plan')
             <p class="text-danger-emphasis small mb-0">
