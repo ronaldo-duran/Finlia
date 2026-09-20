@@ -44,15 +44,22 @@ class CompulsiveSurveyService
      * ¿Se le ofrece el árbol al usuario justo después de registrar el gasto?
      *
      * Reglas:
-     *   1. El hogar debe tener cupo (freemium/Premium — via SubscriptionService).
-     *   2. El gasto no debe haber sido encuestado ya (unique).
-     *   3. El gasto NO tiene un presupuesto de esa categoría para su mes —
+     *   1. Kill switch global `finlia.compulsive_survey.enabled` (default true).
+     *   2. Al usuario no se le ha mostrado el modal hoy — tope de uno por día
+     *      para no volverlo ruido; el usuario opcional se ignora en las pruebas
+     *      de servicio que sólo ejercitan las reglas de negocio.
+     *   3. El hogar debe tener cupo (freemium/Premium — via SubscriptionService).
+     *   4. El gasto no debe haber sido encuestado ya (unique).
+     *   5. El gasto NO tiene un presupuesto de esa categoría para su mes —
      *      es decir, es imprevisto respecto a lo planeado.
-     *   4. Kill switch global `finlia.compulsive_survey.enabled` (default true).
      */
-    public function shouldOffer(Household $household, Expense $expense): bool
+    public function shouldOffer(Household $household, Expense $expense, ?User $actor = null): bool
     {
         if (! config('finlia.compulsive_survey.enabled', true)) {
+            return false;
+        }
+
+        if ($actor !== null && $this->alreadyShownToday($actor)) {
             return false;
         }
 
@@ -65,6 +72,29 @@ class CompulsiveSurveyService
         }
 
         return $this->isUnbudgeted($household, $expense);
+    }
+
+    /**
+     * Marca que al usuario se le acaba de mostrar el modal — se llama desde el
+     * controlador tras hacer `session()->flash(...)`. El servicio no toca
+     * `session()` ni `Auth::` (ADR-0010): recibe el usuario y actualiza su
+     * columna sin más.
+     */
+    public function markShownToday(User $actor): void
+    {
+        $actor->compulsive_survey_last_shown_at = now();
+        $actor->save();
+    }
+
+    /**
+     * ¿Al usuario ya se le mostró el modal hoy? "Hoy" es el día calendario
+     * local — dos compras en la misma tarde no traen dos modales, pero al día
+     * siguiente el árbol vuelve a estar disponible.
+     */
+    private function alreadyShownToday(User $actor): bool
+    {
+        return $actor->compulsive_survey_last_shown_at !== null
+            && $actor->compulsive_survey_last_shown_at->isToday();
     }
 
     /**

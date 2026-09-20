@@ -26,6 +26,7 @@ class CategorySeeder extends Seeder
         'Deudas' => '#64748b',
         'Servicios' => '#0ea5e9',
         'Compras' => '#f97316',
+        'Gasto hormiga' => '#d97706',
         'Otros' => '#94a3b8',
     ];
 

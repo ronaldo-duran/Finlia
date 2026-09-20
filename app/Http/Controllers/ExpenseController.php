@@ -48,17 +48,20 @@ class ExpenseController extends Controller
         $this->authorize('create', Expense::class);
 
         $household = active_household();
+        $user = $request->user();
         $expense = $this->movements->createExpense(
             $request->validatedData(),
             $household,
-            $request->user(),
+            $user,
         );
 
-        // Épica 12: árbol de decisión de compras. Con probabilidad y cupo,
-        // el modal aparece en la siguiente pantalla vía `session()->flash`.
-        // La sesión almacena solo el id — la vista pide el gasto al abrir.
-        if ($this->surveys->shouldOffer($household, $expense)) {
+        // Épica 12: árbol de decisión de compras. El modal se ofrece cuando
+        // el gasto queda fuera del presupuesto planeado y con tope de uno por
+        // día por usuario, para que dos compras seguidas no lo conviertan en
+        // ruido. `session()->flash` sólo lleva el id — la vista pide el gasto.
+        if ($this->surveys->shouldOffer($household, $expense, $user)) {
             session()->flash('compulsive_survey_expense_id', $expense->id);
+            $this->surveys->markShownToday($user);
         }
 
         return redirect()

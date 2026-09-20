@@ -131,6 +131,55 @@ class CompulsiveSurveyTest extends TestCase
         $this->assertFalse(app(CompulsiveSurveyService::class)->shouldOffer($household, $expense));
     }
 
+    public function test_no_muestra_modal_dos_veces_el_mismo_dia(): void
+    {
+        [$user, $household] = $this->makeSetup();
+        $expense = $this->makeExpense($household, $user);
+
+        $service = app(CompulsiveSurveyService::class);
+        $service->markShownToday($user);
+
+        $this->assertFalse($service->shouldOffer($household, $expense, $user->fresh()));
+    }
+
+    public function test_muestra_modal_de_nuevo_al_dia_siguiente(): void
+    {
+        [$user, $household] = $this->makeSetup();
+        $expense = $this->makeExpense($household, $user);
+
+        // Simula un modal mostrado ayer — ya pasó el día calendario, el árbol
+        // vuelve a estar disponible.
+        $user->compulsive_survey_last_shown_at = now()->subDay();
+        $user->save();
+
+        $service = app(CompulsiveSurveyService::class);
+        $this->assertTrue($service->shouldOffer($household, $expense, $user->fresh()));
+    }
+
+    public function test_al_ofrecer_el_modal_se_marca_el_dia(): void
+    {
+        [$user, $household] = $this->makeSetup();
+        $category = Category::factory()->create([
+            'household_id' => $household->id,
+            'type' => CategoryType::Expense->value,
+        ]);
+        $account = Account::factory()->create([
+            'household_id' => $household->id,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)->post(route('expenses.store'), [
+            'amount' => 15000,
+            'date' => now()->toDateString(),
+            'category_id' => $category->id,
+            'account_id' => $account->id,
+            'description' => 'Test',
+            'payment_method' => 'cash',
+        ])->assertSessionHas('compulsive_survey_expense_id');
+
+        $this->assertNotNull($user->fresh()->compulsive_survey_last_shown_at);
+    }
+
     public function test_free_agotado_no_ofrece_mas_encuestas(): void
     {
         [$user, $household] = $this->makeSetup();
