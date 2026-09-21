@@ -18,7 +18,37 @@ return [
 
     // Versión actual del software (fuente de verdad; sincronizar con package.json
     // y CHANGELOG.md al publicar cada versión).
-    'version' => '0.38.0',
+    'version' => '0.39.0',
+
+    /*
+    | Encuesta de compras (Épica 12).
+    |
+    | Se ofrece el árbol cuando un gasto queda FUERA del presupuesto planeado
+    | del mes (categoría sin `Budget` para su año/mes). El azar no participa
+    | en el disparo: la señal es la ausencia de plan. `enabled` es el kill
+    | switch global — apagarlo desactiva todo el disparo para el hogar sin
+    | tocar la lógica de `Budget`.
+    */
+    'compulsive_survey' => [
+        'enabled' => filter_var(env('FINLIA_COMPULSIVE_SURVEY_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+    ],
+
+    /*
+    | Rieles de monetización (Épica 12, v0.39).
+    |
+    | `premium_for_all` mantiene los rieles quietos: mientras esté encendido,
+    | `SubscriptionService::planFor()` devuelve Premium para todos los hogares
+    | y los topes Free (1 hogar, 2 personas, 5 encuestas) no se aplican.
+    | Se apaga cuando se definan precio y catálogo de funciones Premium; los
+    | usuarios con Premium concedido a mano por `finlia:grant-premium`
+    | conservan su plan y el resto revierte al comportamiento Free.
+    */
+    'subscription' => [
+        'premium_for_all' => filter_var(
+            env('FINLIA_PREMIUM_FOR_ALL', true),
+            FILTER_VALIDATE_BOOLEAN,
+        ),
+    ],
 
     /*
     | Dominios (ADR pendiente de la landing).

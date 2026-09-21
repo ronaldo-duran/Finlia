@@ -12,6 +12,29 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.39.0] - 2026-09-19 — Rieles de monetización
+
+Arranca la Épica 12 en modo freemium: **la app gratuita no se degrada**. Los usuarios existentes conservan cada hogar y cada persona que ya tenían; los nuevos topes solo se aplican al crear un nuevo hogar o invitar a un tercero. Todavía no hay pasarela ni funciones Premium encendidas — esta versión pone los rieles para que las próximas los usen ([ADR-0046](docs/DECISIONS.md#adr-0046)).
+
+### Añadido
+- **Concepto de plan por hogar**. Cada hogar tiene una suscripción a un plan (Gratis o Premium). El plan controla qué funciones puede usar y qué límites tiene; la comprobación siempre pasa por el servidor, nunca por un flag del navegador.
+- **Plan gratuito con topes suaves**: **1 hogar por usuario** y **2 personas por hogar**. Suficiente para una gran mayoría de usos familiares y, cuando toca subir de plan, se avisa con un mensaje claro que enlaza a `/perfil → Plan`.
+- **Todo el mundo entra a Premium mientras se define el catálogo comercial**. La v0.39 pone los rieles pero deja el interruptor `finlia.subscription.premium_for_all` encendido: nadie encuentra topes en el uso y la pantalla `Perfil → Plan` explica que Premium está abierto mientras Finlia termina de decidir qué llevará y a qué precio. El día que ese día llegue, se apaga el interruptor y el enforcement descrito abajo entra en vigor sin desplegar código nuevo. Precio comprometido cuando se apague: **$9.900/mes o $79.000/año** (COP).
+- **Pantalla `Perfil → Plan`**: qué plan tiene tu hogar, cuánto llevas usado en cada límite (hogares creados, miembros, encuestas del mes) y el CTA de Premium con la explicación honesta de por qué existe.
+- **Árbol de decisión de compras**. Al registrar un gasto que **no cabe en el presupuesto del mes** aparece un mini-cuestionario de 4 preguntas: si el gasto lo tenías previsto, cómo lo llamarías (necesidad/gusto/capricho/emergencia), cómo te sientes ahora (escala de 5 con iconos del sistema de diseño) y qué lo disparó (estrés/alegría/aburrimiento/necesidad real/presión social/promoción/otro). El disparo depende de la señal, no del azar: si la categoría del gasto NO tiene una fila en `budgets` para ese año y mes, se ofrece la encuesta; si la tiene, no. Se puede saltar en cualquier momento y **el modal solo aparece si hay cupo en el mes** (5 respuestas al mes en Gratis, sin tope en Premium). La respuesta guarda además la **edad al momento** (derivada de la fecha de nacimiento) y el **género declarado en el perfil** como snapshot histórico: sirven como capas de análisis para el autoconocimiento y para el dataset de ML futuro.
+- **Seguimiento de la compra a los 30 días**. Cada respuesta al árbol agenda una cita de revisión un mes después. En `Perfil → Compras a revisar` se listan las citas vencidas del usuario y se le pregunta cómo se siente con esa compra ahora (misma escala 1..5), si se arrepiente y una nota opcional. Cierra la conversación consigo mismo y da la primera fuente para medir la diferencia entre "cómo me sentí al comprarlo" y "cómo me siento ahora". El seguimiento es opcional — no se recuerda ni se cobra por saltárselo.
+- **`ee/` con puerta condicional**. El directorio comercial ([ADR-0042](docs/DECISIONS.md#adr-0042)) estrena su `EeServiceProvider` vacío; se registra desde el núcleo con `class_exists(...)` para que borrar `ee/src` deje la app arrancando. En esta versión aún no expone funciones — es preparación para chat con IA, PDF de reportes y demás.
+- **Activación manual sin pasarela**: `php artisan finlia:grant-premium --household=ID --until=YYYY-MM-DD --reason="..."` da Premium hasta la fecha indicada. `finlia:revoke-premium --household=ID` vuelve a Gratis. Toda concesión guarda su motivo y su fecha de expiración.
+
+### Cambiado
+- **Crear un hogar y enviar invitaciones ahora consulta el plan del hogar** antes de aceptar la acción. En Gratis, ambos flujos muestran un mensaje humano ("Tu plan gratuito permite un solo hogar / hasta 2 personas por hogar. Pasa a Premium para invitar a más") en lugar de un error genérico. Los usuarios que ya tenían más hogares o más personas no ven ningún cambio hasta que intenten sumar otro.
+- **`HouseholdService::createHousehold` recibe ahora el `SubscriptionService` inyectado** y crea la suscripción Gratis del hogar en la misma transacción — nadie queda sin fila de plan.
+
+### Documentación
+- **ADR-0046 nuevo**. Detalla la filosofía freemium con grandfather, la puerta condicional a `ee/`, por qué no hay pasarela todavía y por qué la publicidad queda fuera del alcance.
+- `docs/ROADMAP.md`: Épica 12 pasa a 🟡 con el plan de entregas incrementales (v0.39 rieles → chat IA con BYOK → pasarela Wompi).
+- `docs/DATA_MODEL.md`: tablas `plans`, `subscriptions` y `compulsive_survey_responses` documentadas con sus tipos reales.
+
 ## [0.38.0] - 2026-09-19 — Retoques antes de LinkedIn
 
 ### Añadido

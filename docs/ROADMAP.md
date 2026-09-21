@@ -19,7 +19,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 9 | Recordatorios y notificaciones | 🟢 | 5, 6, 7 |
 | 10 | UX mobile y PWA | 🟢 | 3 (y resto) |
 | 11 | Hardening, tests y producción | 🟡 | Todas |
-| 12 | Monetización y modelo SaaS | 🔴 | 2, 11 |
+| 12 | Monetización y modelo SaaS | 🟡 | 2, 11 |
 | 13 | Portafolio profesional | 🟢 | 11 |
 | 14 | API REST para app móvil (futura) | 🔴 | 3, 11 |
 | 15 | Cuentas por cobrar | 🔴 | 3, 6, 9 |
@@ -110,8 +110,15 @@ Auditoría de seguridad completa, privacy, DB (índices, FK, DECIMAL), tests de 
 >
 > Ya verificado **sin** problema en esa revisión (no re-auditar): índices cubren todas las queries calientes (`(household_id, date)`, `(household_id, category_id)`, `(household_id, status)`, etc.), dinero siempre `DECIMAL(15,2)`, FKs con `onDelete` explícito, eager loading correcto en el resto de listados, vistas sin queries en bucles y lista larga paginada.
 
-### Épica 12 — Monetización y SaaS
-`plans`, `subscriptions`, features/limits. Plan gratuito útil; Premium futuro (más hogares, PDF, multi-moneda, etc.). Puntos de publicidad no invasiva. Autorización de features en backend.
+### Épica 12 — Monetización y SaaS 🟡
+
+Se entrega por versiones incrementales, no como una única entrega ([ADR-0046](DECISIONS.md#adr-0046)):
+
+- **v0.39 — Rieles freemium quietos, Premium abierto para todos**. `plans` y `subscriptions` con features/limits en JSON, `SubscriptionService` como puerta única, comandos `finlia:grant-premium`/`revoke-premium`, provider condicional en `ee/`, pantalla `/perfil → Plan`, y el **árbol de decisión de compras** (5/mes cuando el enforcement esté encendido) para acumular dataset. La v0.39 arranca con el interruptor `finlia.subscription.premium_for_all` **encendido**: los rieles están, los topes NO se aplican, todo el mundo corre en Premium indefinidamente hasta que se defina el catálogo real. Grandfather activo cuando el flag se apague: los hogares actuales no pierden nada al hacerlo. **Sin pasarela y sin funciones Premium exclusivas encendidas todavía.**
+- **Chat IA con BYOK** (versión pendiente, aplazada — exige decisiones). El usuario configura su propio proveedor y llave; Finlia no paga inferencia. Consentimiento explícito de Ley 1581 antes de encender.
+- **v0.41 — Pasarela Wompi** (Colombia). Suscripciones mensuales y anuales, webhooks, y CTA activo en `/perfil → Plan`. Se abre cuando la operación comercial (RUT, cuenta Wompi de comercio, activación de "Suscripciones recurrentes") esté lista.
+
+Autorización siempre en backend: la comprobación de plan/feature/limit vive en `SubscriptionService`, y una Policy/Form Request llega antes ([SECURITY §8](SECURITY.md#8-monetización-premium--backend-es-la-fuente-de-verdad)). Publicidad **fuera del alcance** de esta épica por decisión de producto — un Free con anuncios contradice "Free sigue siendo útil de verdad".
 
 ### Épica 13 — Portafolio profesional ✅
 README con **problema, solución y "Why this project?"**, seis capturas de la app en móvil (`docs/img/`, regenerables con `npm run screenshots`) y una tabla de **tecnologías demostradas** que dice qué se resolvió con cada pieza, no solo cuál se usó. Los diagramas de **capas** y de **flujo de registrar un gasto** pasan de ASCII a **Mermaid** en [ARCHITECTURE.md](ARCHITECTURE.md), junto al ER que ya existía en [DATA_MODEL.md](DATA_MODEL.md).
