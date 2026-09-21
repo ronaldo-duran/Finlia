@@ -17,12 +17,15 @@ test.describe('Panel (dashboard)', () => {
 
   test('la navegación lateral lleva a los módulos de las épicas 2 y 3', async ({ page }) => {
     const nav = page.locator('aside .nav-link');
+    // Regex anclado: sin él, 'Cuentas' también casaría con 'Cuentas por
+    // cobrar' (Épica 15) y el locator estricto encontraría dos elementos.
+    const exact = (label: string) => new RegExp(`^\\s*${label}\\s*$`);
 
     for (const item of ['Panel', 'Hogares', 'Cuentas', 'Movimientos', 'Categorías']) {
-      await expect(nav.filter({ hasText: item })).toBeVisible();
+      await expect(nav.filter({ hasText: exact(item) })).toBeVisible();
     }
 
-    await nav.filter({ hasText: 'Cuentas' }).click();
+    await nav.filter({ hasText: exact('Cuentas') }).click();
     await expect(page).toHaveURL(/\/cuentas$/);
   });
 
