@@ -112,20 +112,23 @@
 </details>
 
 {{-- Modal "Nueva cuenta": se empuja al @stack('modals') del layout para
-     no anidarse dentro del <form> del gasto. --}}
+     no anidarse dentro del <form> del gasto. El <form> envuelve todo el
+     modal-content (header, body y footer) para que el botón submit del pie
+     dispare submit sin depender del atributo HTML `form=`, que en algunos
+     navegadores móviles se comía el click cuando el botón vivía fuera. --}}
 @push('modals')
     <div class="modal fade" id="quickAccountModal" tabindex="-1" aria-labelledby="quickAccountModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-bold" id="quickAccountModalLabel">
-                        <i class="bi bi-plus-circle text-finlia me-1"></i> Nueva cuenta
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="quickAccountForm" novalidate data-endpoint="{{ route('accounts.store') }}">
-                        @csrf
+                <form id="quickAccountForm" novalidate data-endpoint="{{ route('accounts.store') }}">
+                    @csrf
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title fw-bold" id="quickAccountModalLabel">
+                            <i class="bi bi-plus-circle text-finlia me-1"></i> Nueva cuenta
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
                         <div class="mb-3">
                             <label for="quick_account_name" class="form-label fw-semibold">Nombre</label>
                             <input type="text" name="name" id="quick_account_name" class="form-control"
@@ -161,17 +164,17 @@
                         </div>
                         <input type="hidden" name="is_active" value="1">
                         <div class="alert alert-danger small d-none mt-3" data-form-error></div>
-                    </form>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" form="quickAccountForm" class="btn btn-finlia">
-                        <span data-submit-label><i class="bi bi-check-lg me-1"></i> Crear y usar</span>
-                        <span data-submit-spinner class="d-none">
-                            <span class="spinner-border spinner-border-sm me-1"></span> Creando…
-                        </span>
-                    </button>
-                </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-finlia">
+                            <span data-submit-label><i class="bi bi-check-lg me-1"></i> Crear y usar</span>
+                            <span data-submit-spinner class="d-none">
+                                <span class="spinner-border spinner-border-sm me-1"></span> Creando…
+                            </span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -233,7 +236,7 @@
                 var modalEl = document.getElementById('quickAccountModal');
                 var accountSelect = document.getElementById('account_id');
                 if (form && modalEl && accountSelect) {
-                    var submitBtn = document.querySelector('button[form="quickAccountForm"]');
+                    var submitBtn = form.querySelector('button[type="submit"]');
                     var submitLabel = form.querySelector('[data-submit-label]');
                     var submitSpinner = form.querySelector('[data-submit-spinner]');
                     var formError = form.querySelector('[data-form-error]');
@@ -282,7 +285,7 @@
                                     accountSelect.appendChild(opt);
                                     accountSelect.dispatchEvent(new Event('change', { bubbles: true }));
                                     form.reset();
-                                    bootstrap.Modal.getInstance(modalEl)?.hide();
+                                    window.bootstrap?.Modal.getInstance(modalEl)?.hide();
                                 } else if (r.status === 422 && r.body.errors) {
                                     showFieldErrors(r.body.errors);
                                 } else {

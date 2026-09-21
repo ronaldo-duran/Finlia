@@ -12,6 +12,11 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.39.1] - 2026-09-21 — Guardar sí guarda
+
+### Corregido
+- **El modal «+ Nueva cuenta» del formulario de gasto ahora sí crea la cuenta al pulsar «Crear y usar».** El botón vivía en el pie del modal, fuera del `<form>`, atado a él por el atributo HTML `form="…"`; en algunos navegadores móviles ese atributo no dispara el envío. El formulario ahora envuelve todo el contenido del modal, con el botón dentro, para que el submit funcione en todos los navegadores.
+
 ## [0.39.0] - 2026-09-19 — Rieles de monetización
 
 Arranca la Épica 12 en modo freemium: **la app gratuita no se degrada**. Los usuarios existentes conservan cada hogar y cada persona que ya tenían; los nuevos topes solo se aplican al crear un nuevo hogar o invitar a un tercero. Todavía no hay pasarela ni funciones Premium encendidas — esta versión pone los rieles para que las próximas los usen ([ADR-0046](docs/DECISIONS.md#adr-0046)).
