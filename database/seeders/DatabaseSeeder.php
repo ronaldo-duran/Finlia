@@ -9,6 +9,7 @@ use App\Enums\DebtPaymentType;
 use App\Enums\DebtType;
 use App\Enums\Frequency;
 use App\Enums\HouseholdRole;
+use App\Enums\ReceivablePaymentType;
 use App\Enums\SavingsGoalContributionType;
 use App\Enums\SavingsGoalPriority;
 use App\Models\Account;
@@ -22,6 +23,7 @@ use App\Models\User;
 use App\Services\AccountBalanceService;
 use App\Services\DebtService;
 use App\Services\HouseholdService;
+use App\Services\ReceivableService;
 use App\Services\SavingsGoalService;
 use App\Services\SubscriptionService;
 use Carbon\Carbon;
@@ -175,6 +177,7 @@ class DatabaseSeeder extends Seeder
         $this->seedBudgets($household, $expenseCategories, $incomeCategories);
         $this->seedRecurringExpenses($household, $accounts);
         $this->seedDebts($household, $accounts);
+        $this->seedReceivables($household);
         $this->seedSavingsGoals($household);
         $this->seedReminders($household);
     }
@@ -374,6 +377,42 @@ class DatabaseSeeder extends Seeder
             'term_months' => 24,
             'due_day' => 5,
             'start_date' => $now->copy()->subMonth()->toDateString(),
+        ]);
+    }
+
+    /**
+     * Cuentas por cobrar FALSAS (Épica 15): un préstamo personal a un
+     * amigo con un cobro parcial y un trabajo facturado próximo a cobrar,
+     * para que el módulo se estrene con datos coherentes.
+     */
+    private function seedReceivables(Household $household): void
+    {
+        $service = app(ReceivableService::class);
+        $now = Carbon::now(config('app.timezone'));
+        $owner = $household->owner;
+
+        $prestamo = $service->createReceivable($household, [
+            'debtor_name' => 'Amigo de demostración',
+            'name' => 'Préstamo personal',
+            'description' => 'Le adelanté plata para arreglos.',
+            'original_amount' => 600000,
+            'due_date' => $now->copy()->addWeeks(2)->toDateString(),
+        ]);
+
+        // Un cobro parcial ya recibido (200.000 de 600.000): el saldo se recalcula solo.
+        $service->registerPayment($prestamo, [
+            'amount' => 200000,
+            'date' => $now->copy()->subDays(10)->toDateString(),
+            'type' => ReceivablePaymentType::Received->value,
+            'notes' => 'Primer abono',
+        ], $owner);
+
+        $service->createReceivable($household, [
+            'debtor_name' => 'Cliente Empresa X',
+            'name' => 'Trabajo facturado',
+            'description' => 'Consultoría de un día.',
+            'original_amount' => 850000,
+            'due_date' => $now->copy()->addWeek()->toDateString(),
         ]);
     }
 

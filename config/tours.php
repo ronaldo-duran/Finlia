@@ -298,6 +298,41 @@ return [
 
     /*
     |----------------------------------------------------------------------
+    | Cuentas por cobrar (Épica 15)
+    |----------------------------------------------------------------------
+    */
+    'cuentas-por-cobrar' => [
+        'title' => 'Cuentas por cobrar',
+        'icon' => 'bi-inbox-fill',
+        'summary' => 'Llevar la cuenta del dinero que te deben a ti y a tu hogar.',
+        'route' => 'receivables.index',
+        'link' => 'receivables.index',
+        'version' => 1,
+        'auto' => true,
+        'steps' => [
+            [
+                'since' => 1,
+                'anchor' => null,
+                'title' => 'Lo que te deben',
+                'body' => 'Registra cualquier dinero comprometido a tu favor: un préstamo a un amigo, un trabajo facturado o un adelanto pendiente.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => '[data-tour="receivables-list"]',
+                'title' => 'Cobros y saldo pendiente',
+                'body' => 'Entra a una cuenta para registrar los cobros. Si eliges una cuenta destino, el ingreso se anota solo y sube ese saldo.',
+            ],
+            [
+                'since' => 1,
+                'anchor' => null,
+                'title' => 'Recordatorios automáticos',
+                'body' => 'Ponerle una **fecha tentativa de cobro** hace que aparezca en tu página de recordatorios cuando se acerque.',
+            ],
+        ],
+    ],
+
+    /*
+    |----------------------------------------------------------------------
     | Metas de ahorro
     |----------------------------------------------------------------------
     */

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Enums\ReceivableStatus;
 use App\Models\Household;
+use App\Models\Receivable;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -65,6 +67,11 @@ class FunnelMetrics extends Command
             && CarbonImmutable::parse($ultimoGasto[$user->id])->gte($user->created_at->copy()->addDays(7)),
         )->count();
 
+        // Épica 15: dinero comprometido a favor de los hogares (con saldo > 0).
+        $receivablesOpen = Receivable::whereIn('status', ReceivableStatus::outstandingValues())
+            ->where('current_balance', '>', 0);
+        $totalPorCobrar = (float) (clone $receivablesOpen)->sum('current_balance');
+
         $this->table(['Métrica', 'Valor'], [
             ['Registros', $registrados],
             ['Verificados', $verificados.' ('.$this->porcentaje($verificados, $registrados).')'],
@@ -73,6 +80,8 @@ class FunnelMetrics extends Command
             ['Activos 7 días después de registrarse', $activos.' de '.$cohorte->count()],
             ['Eliminaciones pedidas (en suspensión)', $reales()->whereNotNull('deletion_requested_at')->count()],
             ['Cuentas ya eliminadas', User::query()->where('email', 'like', 'deleted+%')->count()],
+            ['Cuentas por cobrar con saldo > 0', $receivablesOpen->count()],
+            ['Total por cobrar (todos los hogares)', number_format($totalPorCobrar, 2, ',', '.')],
         ]);
 
         return self::SUCCESS;

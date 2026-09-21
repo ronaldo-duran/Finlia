@@ -8,6 +8,7 @@ use App\Enums\ReminderSource;
 use App\Enums\ReminderStatus;
 use App\Models\Debt;
 use App\Models\DebtPayment;
+use App\Models\Receivable;
 use App\Models\RecurringExpense;
 use App\Models\Reminder;
 use App\Models\SavingsGoal;
@@ -66,6 +67,7 @@ class ReminderService
         return $this->fromRecurring($householdId, $today)
             ->merge($this->fromDebts($householdId, $today))
             ->merge($this->fromGoals($householdId, $today))
+            ->merge($this->fromReceivables($householdId, $today))
             ->merge($this->fromCustoms($householdId, $today))
             ->sortBy(fn (array $item) => $item['due_date']->getTimestamp())
             ->values();
@@ -242,6 +244,32 @@ class ReminderService
                 $goal->target_date,
                 $today,
                 'Llevas '.$goal->progressPercent().'% del objetivo',
+            ))
+            ->toBase();
+    }
+
+    /**
+     * Cuentas por cobrar vigentes con fecha tentativa (Épica 15). Cuando
+     * la fecha pasa sin cobro, el ítem sube a "vencido" con la misma
+     * regla que las deudas y los gastos recurrentes.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function fromReceivables(int $householdId, Carbon $today): Collection
+    {
+        return Receivable::where('household_id', $householdId)
+            ->outstanding()
+            ->whereNotNull('due_date')
+            ->orderBy('due_date')
+            ->get()
+            ->map(fn (Receivable $receivable) => $this->item(
+                ReminderSource::Receivable,
+                $receivable->id,
+                $receivable->name,
+                (float) $receivable->current_balance,
+                $receivable->due_date,
+                $today,
+                'Debes cobrar a '.$receivable->debtor_name,
             ))
             ->toBase();
     }

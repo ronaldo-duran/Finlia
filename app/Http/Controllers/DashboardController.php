@@ -8,6 +8,7 @@ use App\Enums\BudgetScope;
 use App\Services\BudgetCalculatorService;
 use App\Services\DebtService;
 use App\Services\MovementSummaryService;
+use App\Services\ReceivableService;
 use App\Services\SavingsGoalService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +22,7 @@ class DashboardController extends Controller
         private readonly BudgetCalculatorService $budgets,
         private readonly SavingsGoalService $savingsGoals,
         private readonly DebtService $debts,
+        private readonly ReceivableService $receivables,
     ) {}
 
     /**
@@ -72,6 +74,8 @@ class DashboardController extends Controller
             'savingsGoals' => $savingsGoals,
             // Épica 8: deuda total y ahorro acumulado completan el resumen.
             'debtSummary' => $this->debts->summary($householdId),
+            // Épica 15: dinero por cobrar, comprometido a favor del hogar.
+            'receivableSummary' => $this->receivables->summary($householdId),
             // Reutiliza las metas ya cargadas: antes eran tres consultas a
             // `savings_goals` (listado + resumen + compromiso mensual).
             'savingsSummary' => $this->savingsGoals->summary($householdId, $savingsGoals),

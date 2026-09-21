@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Models\Debt;
 use App\Models\DebtPayment;
 use App\Models\Household;
+use App\Models\Receivable;
+use App\Models\ReceivablePayment;
 use App\Models\RecurringExpense;
 use App\Models\Reminder;
 use App\Models\SavingsGoal;
@@ -88,6 +90,8 @@ class AppServiceProvider extends ServiceProvider
             Debt::class,
             DebtPayment::class,
             Household::class,
+            Receivable::class,
+            ReceivablePayment::class,
             RecurringExpense::class,
             Reminder::class,
             SavingsGoal::class,
