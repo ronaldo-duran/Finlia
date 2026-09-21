@@ -30,6 +30,11 @@ Cierra la Épica 15 con el módulo simétrico al de deudas: registrar que alguie
 - `docs/ROADMAP.md`: Épica 15 pasa a 🟢 con el detalle real de la entrega.
 - `docs/DATA_MODEL.md`: tablas `receivables` y `receivable_payments` documentadas, diagrama actualizado.
 
+## [0.39.1] - 2026-09-21 — Guardar sí guarda
+
+### Corregido
+- **El modal «+ Nueva cuenta» del formulario de gasto ahora sí crea la cuenta al pulsar «Crear y usar».** El botón vivía en el pie del modal, fuera del `<form>`, atado a él por el atributo HTML `form="…"`; en algunos navegadores móviles ese atributo no dispara el envío. El formulario ahora envuelve todo el contenido del modal, con el botón dentro, para que el submit funcione en todos los navegadores.
+
 ## [0.39.0] - 2026-09-19 — Rieles de monetización
 
 Arranca la Épica 12 en modo freemium: **la app gratuita no se degrada**. Los usuarios existentes conservan cada hogar y cada persona que ya tenían; los nuevos topes solo se aplican al crear un nuevo hogar o invitar a un tercero. Todavía no hay pasarela ni funciones Premium encendidas — esta versión pone los rieles para que las próximas los usen ([ADR-0046](docs/DECISIONS.md#adr-0046)).

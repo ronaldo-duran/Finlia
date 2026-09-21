@@ -35,6 +35,22 @@ class ExpenseTest extends TestCase
         $this->get(route('expenses.create'))->assertRedirect(route('login'));
     }
 
+    public function test_el_modal_de_nueva_cuenta_encierra_su_boton_submit(): void
+    {
+        [$owner] = $this->setupWithAccount();
+
+        $html = $this->actingAs($owner)
+            ->get(route('expenses.create'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<form id="quickAccountForm"[^>]*>[\s\S]*<button[^>]*type="submit"[^>]*>[\s\S]*<\/form>/',
+            $html,
+            'El submit del modal "Nueva cuenta" debe vivir DENTRO de <form id="quickAccountForm"> — si vive fuera y depende del atributo `form=`, algunos móviles no disparan el submit.',
+        );
+    }
+
     public function test_usuario_puede_registrar_un_gasto_y_el_saldo_baja(): void
     {
         [$owner, , $account, $category] = $this->setupWithAccount();
