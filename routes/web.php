@@ -335,5 +335,3 @@ Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', '
     Route::post('recordatorios/{reminder}/completar', [ReminderController::class, 'complete'])
         ->name('reminders.complete');
 });
-
-// Comentario de prueba para verificar que el CI lo rechaza 🚀
