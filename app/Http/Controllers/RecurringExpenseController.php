@@ -27,7 +27,6 @@ class RecurringExpenseController extends Controller
     {
         $household = active_household();
 
-        // Defensivo: un usuario autenticado siempre tiene hogar (ADR-0011).
         if ($household === null) {
             return redirect()->route('households.create');
         }

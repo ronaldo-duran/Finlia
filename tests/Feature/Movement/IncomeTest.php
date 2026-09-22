@@ -49,7 +49,6 @@ class IncomeTest extends TestCase
 
         $income = Income::first();
         $this->assertSame('500000.00', (string) $income->amount);
-        // Saldo = inicial + ingreso (ADR-0012).
         $this->assertSame('600000.00', (string) $account->fresh()->current_balance);
     }
 
@@ -79,8 +78,6 @@ class IncomeTest extends TestCase
             'date' => now()->format('Y-m-d'),
         ])->assertSessionHasErrors('category_id');
     }
-
-    // ===== Aislamiento multi-hogar (amenaza #1 — IDOR) =====
 
     public function test_usuario_ajeno_no_puede_editar_ingreso_de_otro_hogar(): void
     {

@@ -13,14 +13,12 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            // household_id NULL = categoría global (seed). Propia del hogar en caso contrario.
             $table->foreignId('household_id')->nullable()->constrained('households')->nullOnDelete();
             $table->string('name');
-            // Tipo (App\Enums\CategoryType): income | expense.
             $table->string('type');
-            $table->string('color', 7)->nullable(); // #RRGGBB para gráficos
+            $table->string('color', 7)->nullable();
             $table->string('icon')->nullable();
-            $table->boolean('is_default')->default(false); // true para las del seed global
+            $table->boolean('is_default')->default(false);
             $table->timestamps();
 
             $table->index(['household_id', 'type']);

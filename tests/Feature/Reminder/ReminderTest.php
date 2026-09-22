@@ -29,8 +29,6 @@ class ReminderTest extends TestCase
         return [$owner, $household];
     }
 
-    // ===== Acceso y CRUD =====
-
     public function test_guest_es_redirigido_al_login(): void
     {
         $this->get(route('reminders.index'))->assertRedirect(route('login'));
@@ -86,8 +84,6 @@ class ReminderTest extends TestCase
         $this->actingAs($owner)->post(route('reminders.store'), [
             'title' => '',
             'due_date' => '',
-            // Semanal no es una repetición válida para un aviso suelto:
-            // eso es un gasto recurrente de la Épica 5.
             'frequency' => 'weekly',
         ])->assertSessionHasErrors(['title', 'due_date', 'frequency']);
     }
@@ -125,8 +121,6 @@ class ReminderTest extends TestCase
         $this->assertDatabaseMissing('reminders', ['id' => $reminder->id]);
     }
 
-    // ===== Atender =====
-
     public function test_atender_un_suelto_lo_completa_y_no_genera_gasto(): void
     {
         [$owner, $household] = $this->setupHousehold();
@@ -138,9 +132,7 @@ class ReminderTest extends TestCase
             ->post(route('reminders.complete', $reminder))
             ->assertRedirect(route('reminders.index'));
 
-        // El cast del modelo devuelve el enum, no el string crudo.
         $this->assertSame(ReminderStatus::Completed, $reminder->fresh()->status);
-        // Un recordatorio es un aviso, no un movimiento (ADR-0027).
         $this->assertSame(0, $household->expenses()->count());
     }
 
@@ -160,8 +152,6 @@ class ReminderTest extends TestCase
         $this->assertSame(ReminderStatus::Pending, $reminder->fresh()->status);
     }
 
-    // ===== Interruptor del hogar =====
-
     public function test_el_administrador_puede_desactivar_los_recordatorios(): void
     {
         [$owner, $household] = $this->setupHousehold();
@@ -175,7 +165,6 @@ class ReminderTest extends TestCase
             'reminders_enabled' => false,
         ]);
 
-        // Con el interruptor apagado, la página no lista obligaciones.
         $this->actingAs($owner)
             ->get(route('reminders.index'))
             ->assertOk()
@@ -199,13 +188,10 @@ class ReminderTest extends TestCase
         ]);
     }
 
-    // ===== Preferencia de digest por correo (ADR-0028) =====
-
     public function test_miembro_puede_activar_y_desactivar_su_resumen_por_correo(): void
     {
         [$owner, $household] = $this->setupHousehold();
 
-        // Opt-in: nace desactivado, cada quien lo prende.
         $this->actingAs($owner)->put(route('reminders.email'), [
             'reminders_email' => '1',
         ])->assertRedirect(route('reminders.index'));
@@ -249,17 +235,12 @@ class ReminderTest extends TestCase
 
     public function test_usuario_sin_hogar_es_llevado_a_crear_uno(): void
     {
-        // Sin hogar no hay preferencia que tocar: mismo patrón que el
-        // interruptor (redirect, no 403). La escritura siempre usa el pivote
-        // del propio usuario en su hogar activo: no hay vector cruzado.
         $sinHogar = User::factory()->create();
 
         $this->actingAs($sinHogar)
             ->put(route('reminders.email'), ['reminders_email' => '1'])
             ->assertRedirect(route('households.create'));
     }
-
-    // ===== Aislamiento multi-hogar =====
 
     public function test_usuario_de_otro_hogar_no_puede_operar_un_recordatorio_ajeno(): void
     {
@@ -288,8 +269,6 @@ class ReminderTest extends TestCase
 
     public function test_miembro_de_dos_hogares_con_el_otro_activo_recibe_403(): void
     {
-        // El caso de ADR-0019: es miembro de ambos, pero el hogar ACTIVO
-        // decide sobre cuál puede operar.
         $user = User::factory()->create();
         $service = app(HouseholdService::class);
         $hogarA = $service->createHousehold($user->id, 'Hogar A');
@@ -299,7 +278,6 @@ class ReminderTest extends TestCase
             'title' => 'De A', 'due_date' => '2026-11-20',
         ]);
 
-        // Hogar B activo: el recordatorio de A no se puede tocar.
         $this->withSession(['household_id' => $hogarB->id])
             ->actingAs($user)
             ->put(route('reminders.update', $reminder), [
@@ -307,9 +285,6 @@ class ReminderTest extends TestCase
             ])
             ->assertForbidden();
 
-        // Con su hogar A activo, sí. active_household() cachea el hogar por
-        // petición en el contenedor y en tests la app persiste entre
-        // peticiones: hay que olvidar la instancia para que re-resuelva.
         $this->app->forgetInstance('finlia.active_household');
         $this->withSession(['household_id' => $hogarA->id])
             ->actingAs($user)

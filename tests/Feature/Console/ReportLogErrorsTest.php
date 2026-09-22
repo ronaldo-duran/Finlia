@@ -43,7 +43,6 @@ class ReportLogErrorsTest extends TestCase
     {
         file_put_contents($this->log, "[2026-09-14 10:00:00] production.ERROR: Error viejo\n");
 
-        // Primera corrida: marca el punto de partida y no reporta el historial.
         $this->artisan('finlia:report-errors')->assertSuccessful();
         $this->assertCount(0, $this->enviados());
 
@@ -68,7 +67,6 @@ class ReportLogErrorsTest extends TestCase
         $this->assertStringNotContainsString('Error viejo', $texto);
         $this->assertStringNotContainsString('todo bien', $texto);
 
-        // Nada nuevo desde la última corrida: silencio.
         $this->artisan('finlia:report-errors')->assertSuccessful();
         $this->assertCount(1, $this->enviados());
     }
@@ -77,8 +75,6 @@ class ReportLogErrorsTest extends TestCase
     {
         $this->marcarInicio();
 
-        // Una QueryException tal como la escribe Laravel: el mensaje y el contexto
-        // llevan el SQL con los valores sustituidos.
         $sql = 'insert into users (email, amount) values (ana@gmail.com, 1250000.00)';
         $this->anadir(
             "[2026-09-14 12:00:00] production.ERROR: SQLSTATE[23000]: Duplicate entry 'ana@gmail.com' for key 'users_email_unique' (Connection: mysql, SQL: {$sql}) "
@@ -102,7 +98,6 @@ class ReportLogErrorsTest extends TestCase
         file_put_contents($this->log, "[2026-09-14 09:00:00] production.INFO: arranque\n");
         $this->artisan('finlia:report-errors')->assertSuccessful();
 
-        // Otro archivo (rotado o borrado a mano), con el error antes de la marca vieja.
         file_put_contents($this->log, implode("\n", [
             '[2026-09-15 00:00:01] production.ERROR: Fallo tras la rotación []',
             '[2026-09-15 00:00:02] production.INFO: '.str_repeat('relleno ', 20),
@@ -118,7 +113,6 @@ class ReportLogErrorsTest extends TestCase
     {
         $this->marcarInicio();
 
-        // La línea todavía se está escribiendo: sin salto de línea.
         file_put_contents($this->log, '[2026-09-14 13:00:00] production.ERROR: Fallo largo []', FILE_APPEND);
         $this->artisan('finlia:report-errors')->assertSuccessful();
         $this->assertCount(0, $this->enviados());

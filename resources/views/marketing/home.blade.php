@@ -1,7 +1,4 @@
 @php
-    // Una sola fuente para el acordeón y para los datos estructurados: si se
-    // escriben dos veces, tarde o temprano dicen cosas distintas y el buscador
-    // acaba mostrando una respuesta que la página ya no da.
     $preguntas = [
         [
             'p' => '¿Finlia se conecta a mi banco?',
@@ -84,27 +81,20 @@
 
 @section('content')
 
-    {{-- ------------------------------------------------------------------ Hero --}}
     <section class="hero-marketing">
         <div class="container">
-            {{-- g-4 y no g-5: con gutter de 3rem el margen negativo de la fila (-24px)
-                 supera al padding del .container (12px) y la página desborda a lo
-                 ancho en móvil. El aire de escritorio lo pone el padding de la sección. --}}
             <div class="row align-items-center g-4 g-lg-5 gx-lg-5">
                 <div class="col-12 col-lg-7">
                     <p class="etiqueta-seccion">Finanzas personales y familiares</p>
-
                     <h1 class="titular">
                         ¿Cuánto puedes gastar hoy
                         <span class="resaltado">sin quedar&nbsp;mal a fin de mes?</span>
                     </h1>
-
                     <p class="entradilla">
                         El saldo del banco no lo sabe. No sabe que el arriendo sale el día 5,
                         que la cuota de la tarjeta ya está comprometida, ni que estás juntando
                         para el viaje. <strong>Finlia sí.</strong>
                     </p>
-
                     <div class="d-flex flex-wrap gap-3 mb-4">
                         <a href="{{ route('register') }}" class="btn btn-finlia btn-lg px-4">
                             Empezar gratis
@@ -113,23 +103,14 @@
                             Ver cómo funciona
                         </a>
                     </div>
-
                     <ul class="lista-ventajas list-unstyled mb-0">
                         <li><i class="bi bi-check-circle-fill"></i> Gratis, sin tarjeta de crédito</li>
                         <li><i class="bi bi-check-circle-fill"></i> No pedimos las claves de tu banco</li>
                         <li><i class="bi bi-check-circle-fill"></i> En pesos y en español</li>
                     </ul>
                 </div>
-
-                {{-- Solo en escritorio: en un teléfono, la foto de un teléfono no
-                     añade nada y empuja el contenido real fuera de la primera
-                     pantalla. La prueba visual la da la tira de capturas. --}}
                 <div class="col-lg-5 d-none d-lg-block">
                     <div class="marco-telefono">
-                        {{-- Presupuestos y no el Panel: esta pantalla abre con la
-                             cifra que promete la landing, mientras que el Panel
-                             abre con dos avisos de obligaciones próximas — dos
-                             alarmas apiladas contradicen el mensaje de la página. --}}
                         <img src="{{ asset('img/capturas/dinero-disponible.png') }}"
                              width="390" height="844" loading="lazy"
                              alt="Finlia en un celular, mostrando cuánto dinero queda disponible para los días que restan del mes, junto a lo gastado y lo ya comprometido.">
@@ -138,8 +119,6 @@
             </div>
         </div>
     </section>
-
-    {{-- -------------------------------------------------------------- Problema --}}
     <section class="seccion seccion-alterna">
         <div class="container">
             <div class="row justify-content-center text-center">
@@ -152,7 +131,6 @@
                     </p>
                 </div>
             </div>
-
             <div class="row g-4 mt-2">
                 @foreach ([
                     ['bi-calendar-x', 'Lo que ya tiene dueño', 'Arriendo, servicios, matrículas y seguros que todavía no se han cobrado, pero se van a cobrar.'],
@@ -170,15 +148,12 @@
             </div>
         </div>
     </section>
-
-    {{-- ---------------------------------------------------------- Cómo funciona --}}
     <section id="como-funciona" class="seccion">
         <div class="container">
             <div class="text-center mb-5">
                 <p class="etiqueta-seccion">Cómo funciona</p>
                 <h2 class="titulo-seccion">Tres pasos, y ya sabes a qué atenerte</h2>
             </div>
-
             <div class="row g-4">
                 @foreach ([
                     ['1', 'Dinos qué tienes y cuándo te pagan', 'El saldo de tus cuentas hoy y el día en que te llega la plata. Con eso la cifra es real desde el primer día, sin meses de historial.'],
@@ -194,21 +169,8 @@
                     </div>
                 @endforeach
             </div>
-
-            {{-- Resta vertical y no en línea: es como se hace una cuenta en
-                 papel, y en una fila las cifras no se pueden comparar de un
-                 vistazo.
-
-                 Los importes son redondos y a propósito NO se atan a los de la
-                 captura: la demo se resiembra con historial aleatorio y con la
-                 fecha del día, así que cualquier cifra que copiara de ahí
-                 quedaría descuadrada al siguiente `migrate:fresh --seed`.
-
-                 Parte del saldo, no de los ingresos esperados (ADR-0040): el
-                 sueldo que aún no llega no se puede gastar. --}}
             <div class="formula-card mt-5">
                 <p class="rotulo-formula">La cuenta que hace Finlia</p>
-
                 <dl class="cuenta">
                     <div class="linea">
                         <dt>Saldo en tus cuentas hoy</dt>
@@ -234,7 +196,6 @@
                         <dd>$ 50.000</dd>
                     </div>
                 </dl>
-
                 <p class="nota-cuenta mb-0">
                     Ejemplo con cifras de demostración. Lo que esperas cobrar no se suma
                     hasta que llega: si el pago se atrasa, la cifra sigue siendo real.
@@ -243,8 +204,6 @@
             </div>
         </div>
     </section>
-
-    {{-- -------------------------------------------------------------- Funciones --}}
     <section id="funciones" class="seccion seccion-alterna">
         <div class="container">
             <div class="text-center mb-5">
@@ -272,15 +231,12 @@
             </div>
         </div>
     </section>
-
-    {{-- --------------------------------------------------------------- Capturas --}}
     <section class="seccion">
         <div class="container">
             <div class="text-center mb-5">
                 <p class="etiqueta-seccion">Por dentro</p>
                 <h2 class="titulo-seccion">Pensada para el celular, no encogida para él</h2>
             </div>
-
             <div class="tira-capturas">
                 @foreach ([
                     ['panel.png', 'Panel de Finlia con el saludo, las obligaciones próximas y el resumen del mes.', 'Tu mes de un vistazo'],
@@ -298,14 +254,12 @@
         </div>
     </section>
 
-    {{-- -------------------------------------------------------------- Preguntas --}}
     <section id="preguntas" class="seccion seccion-alterna">
         <div class="container">
             <div class="text-center mb-5">
                 <p class="etiqueta-seccion">Preguntas</p>
                 <h2 class="titulo-seccion">Lo que todo el mundo pregunta</h2>
             </div>
-
             <div class="row justify-content-center">
                 <div class="col-12 col-lg-8">
                     @foreach ($preguntas as $i => $faq)
@@ -318,8 +272,6 @@
             </div>
         </div>
     </section>
-
-    {{-- ------------------------------------------------------------- CTA final --}}
     <section class="cta-final">
         <div class="container text-center">
             <h2 class="titulo-seccion mb-3">Empieza este mes</h2>
@@ -332,5 +284,4 @@
             </p>
         </div>
     </section>
-
 @endsection

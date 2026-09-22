@@ -51,7 +51,6 @@ class AccountTest extends TestCase
         $account = Account::where('name', 'Efectivo')->firstOrFail();
 
         $this->assertSame('150000.00', (string) $account->initial_balance);
-        // current_balance = initial + 0 movimientos (ADR-0012).
         $this->assertSame('150000.00', (string) $account->current_balance);
     }
 
@@ -130,8 +129,6 @@ class AccountTest extends TestCase
 
         $this->assertDatabaseMissing('accounts', ['id' => $account->id]);
     }
-
-    // ===== Aislamiento multi-hogar (amenaza #1 — IDOR) =====
 
     public function test_usuario_ajeno_no_puede_ver_cuenta_de_otro_hogar(): void
     {

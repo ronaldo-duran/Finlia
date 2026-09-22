@@ -22,12 +22,9 @@ return new class extends Migration
     {
         Schema::create('terms_versions', function (Blueprint $table) {
             $table->id();
-            // Identificador legible y estable, p. ej. "2026-09-v1".
             $table->string('version', 30)->unique();
             $table->string('title', 150);
-            // Texto completo de la versión (se muestra en pantalla, con scroll).
             $table->longText('content');
-            // Resumen opcional de "qué cambió" respecto a la anterior.
             $table->text('change_summary')->nullable();
             $table->timestamp('published_at');
             $table->timestamps();

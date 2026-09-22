@@ -5,7 +5,6 @@
     $icon = $isIncome ? 'bi-arrow-down-left' : ($isTransfer ? 'bi-arrow-left-right' : 'bi-arrow-up-right');
     $tint = $m['category_color'] ?? null;
 
-    // Transferencias: tinte de marca neutral (no ingreso ni gasto).
     if ($isTransfer) {
         $tint = null;
         $iconBg = 'rgba(var(--finlia-primary-rgb), .10)';
@@ -28,8 +27,6 @@
             <div class="fw-semibold text-truncate">
                 {{ $m['description'] ?: ($isIncome ? 'Ingreso' : ($isTransfer ? 'Transferencia' : 'Gasto')) }}
             </div>
-            {{-- Sin text-truncate: en móvil ocultaba la fecha.
-                 Prefiere envolver a perder información. --}}
             <div class="small text-muted">
                 @if (!$isTransfer)
                     {{ $m['category_name'] }}

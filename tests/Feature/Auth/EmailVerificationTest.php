@@ -23,9 +23,6 @@ class EmailVerificationTest extends TestCase
     {
         parent::setUp();
 
-        // phpunit usa MAIL_MAILER=array (transport "falso", ADR-0015): el
-        // envío se salta con él. Los tests de correo declaran un transporte
-        // real y Mail::fake() hace de SMTP.
         config(['mail.default' => 'smtp']);
     }
 
@@ -36,8 +33,6 @@ class EmailVerificationTest extends TestCase
             'hash' => sha1($user->email),
         ]);
     }
-
-    // ---- Registro ----
 
     public function test_registro_envia_el_correo_de_verificacion(): void
     {
@@ -55,8 +50,6 @@ class EmailVerificationTest extends TestCase
 
         Mail::assertSent(VerifyEmailMail::class, fn ($mail) => $mail->hasTo('maria@ejemplo.com'));
     }
-
-    // ---- Bloqueo hasta verificar ----
 
     public function test_usuario_sin_verificar_es_redirigido_al_aviso(): void
     {
@@ -92,8 +85,6 @@ class EmailVerificationTest extends TestCase
             ->assertOk();
     }
 
-    // ---- Enlace firmado ----
-
     public function test_enlace_valido_confirma_y_deja_entrar(): void
     {
         $user = User::factory()->unverified()->create();
@@ -107,7 +98,6 @@ class EmailVerificationTest extends TestCase
 
     public function test_enlace_valido_funciona_sin_sesion(): void
     {
-        // Click desde el buzón en otro dispositivo/navegador.
         $user = User::factory()->unverified()->create();
 
         $this->get($this->signedUrl($user))
@@ -120,7 +110,6 @@ class EmailVerificationTest extends TestCase
     {
         $user = User::factory()->unverified()->create();
 
-        // URL a mano: firma ausente (el middleware 'signed' responde 403).
         $this->get("/verificar-correo/{$user->id}/".sha1($user->email))
             ->assertForbidden();
 
@@ -140,8 +129,6 @@ class EmailVerificationTest extends TestCase
 
         $this->assertNull($user->fresh()->email_verified_at);
     }
-
-    // ---- Reenvío ----
 
     public function test_reenvio_vuelve_a_enviar_el_enlace(): void
     {
@@ -166,7 +153,6 @@ class EmailVerificationTest extends TestCase
                 ->assertRedirect();
         }
 
-        // 4.º dentro del mismo minuto: 429 (límite 3/min por usuario).
         $this->actingAs($user)
             ->post(route('verification.send'))
             ->assertStatus(429);
@@ -183,8 +169,6 @@ class EmailVerificationTest extends TestCase
 
         Mail::assertNothingSent();
     }
-
-    // ---- Estado (poll de la pantalla de aviso) ----
 
     public function test_estado_devuelve_false_para_usuario_sin_verificar(): void
     {
@@ -214,8 +198,6 @@ class EmailVerificationTest extends TestCase
         $this->getJson(route('verification.status'))
             ->assertRedirect(route('login'));
     }
-
-    // ---- Contenido del correo ----
 
     public function test_correo_renderiza_en_espanol(): void
     {

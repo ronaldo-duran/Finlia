@@ -1,4 +1,3 @@
-{{-- Versión en texto plano (mejor entregabilidad, clientes sin HTML). --}}
 Confirma tu nuevo correo en {{ $appName }}
 
 Hola {{ $userName }}, se pidió mover la cuenta de {{ $appName }} a este correo ({{ $newEmail }}). Confírmalo aquí para completar el cambio:

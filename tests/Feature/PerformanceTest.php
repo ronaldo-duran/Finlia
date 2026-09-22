@@ -105,7 +105,6 @@ class PerformanceTest extends TestCase
 
         $queries = $this->countQueries(fn () => $this->actingAs($user)->get('/dashboard')->assertOk());
 
-        // Antes: 50.
         $this->assertLessThanOrEqual(40, $queries, "El panel gastó {$queries} consultas.");
     }
 
@@ -115,7 +114,6 @@ class PerformanceTest extends TestCase
 
         $queries = $this->countQueries(fn () => $this->actingAs($user)->get('/reportes')->assertOk());
 
-        // Antes: 28.
         $this->assertLessThanOrEqual(25, $queries, "Reportes gastó {$queries} consultas.");
     }
 
@@ -123,13 +121,10 @@ class PerformanceTest extends TestCase
     {
         [$user, , $account] = $this->seedHousehold();
 
-        // La vista recorre 10 ingresos y 10 gastos leyendo `category?->name`:
-        // sin eager loading serían ~20 consultas extra por PK.
         $queries = $this->countQueries(
             fn () => $this->actingAs($user)->get("/cuentas/{$account->id}")->assertOk()
         );
 
-        // Antes: 22.
         $this->assertLessThanOrEqual(16, $queries, "El detalle de cuenta gastó {$queries} consultas.");
     }
 

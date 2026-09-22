@@ -1,6 +1,5 @@
 @props(['liquidity'])
 
-{{-- Hasta cuándo tiene que alcanzar la cifra de hoy (ADR-0040). Recibe `liquidity`. --}}
 @if ($liquidity['payday_known'])
     Hasta tu pago del {{ $liquidity['payday']->format('d/m/Y') }}
     @if ($liquidity['days'] === 1)

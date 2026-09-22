@@ -26,7 +26,6 @@ test.describe('Guías de pantalla', () => {
     await expect(globo).toBeVisible();
     await expect(page.locator('.tour-progreso')).toHaveText(/^1 de \d+$/);
 
-    // El segundo paso señala un elemento, así que enciende el halo.
     await globo.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.locator('.tour-progreso')).toHaveText(/^2 de \d+$/);
     await expect(page.locator('.tour-foco')).toBeVisible();
@@ -34,9 +33,6 @@ test.describe('Guías de pantalla', () => {
     await page.locator('.tour-cerrar').click();
     await expect(globo).toBeHidden();
 
-    // La prueba que importa: el fondo de la guía captura los clics a propósito,
-    // así que cerrarla tiene que devolver la página. Esta es exactamente la
-    // regresión que tumbó el CI la primera vez.
     await page.locator('.avatar-btn').click();
     await expect(page.getByRole('link', { name: 'Mi perfil' })).toBeVisible();
   });
@@ -52,7 +48,6 @@ test.describe('Guías de pantalla', () => {
   });
 
   test('el menú del avatar ofrece la guía de la pantalla actual', async ({ page }) => {
-    // Sin `?guia=`: la del Panel ya la vio el setup, así que no debe saltar sola.
     await page.goto('/dashboard');
     await expect(page.locator('.tour-globo')).toBeHidden();
 
@@ -73,16 +68,13 @@ test.describe('Guías de pantalla', () => {
 
     const opacidad = () => page.locator('#fabContainer').evaluate((el) => getComputedStyle(el).opacity);
 
-    // Bajar la página lo esconde: eso es lo normal y no cambia.
     await page.mouse.wheel(0, 800);
     await expect.poll(opacidad).toBe('0');
 
-    // Con la guía abierta vuelve, porque hay un paso que lo señala.
     await page.locator('.avatar-btn').click();
     await page.locator('[data-tour-open]').click();
     await expect.poll(opacidad).toBe('1');
 
-    // Y al cerrarla vuelve a obedecer al scroll.
     await page.keyboard.press('Escape');
     await expect.poll(opacidad).toBe('0');
   });
@@ -98,8 +90,6 @@ test.describe('Guías de pantalla', () => {
     const desdeArriba = await totalDePasos();
     await page.keyboard.press('Escape');
 
-    // Abierta con el «+» ya escondido: su paso no puede descartarse por
-    // invisible, porque la propia guía lo devuelve a la vista.
     await page.mouse.wheel(0, 800);
     await page.locator('.avatar-btn').click();
     await page.locator('[data-tour-open]').click();
@@ -114,7 +104,6 @@ test.describe('Guías de pantalla', () => {
     await expect(tarjeta).toBeVisible();
     await expect(tarjeta.getByRole('button', { name: 'Volver a verlas desde el principio' })).toBeVisible();
 
-    // Sin fijar cuántas son: el catálogo crece con cada funcionalidad nueva.
     const verlas = tarjeta.getByRole('link', { name: 'Ver' });
     await expect(verlas).not.toHaveCount(0);
 

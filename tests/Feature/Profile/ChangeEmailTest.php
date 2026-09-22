@@ -23,9 +23,6 @@ class ChangeEmailTest extends TestCase
     {
         parent::setUp();
 
-        // phpunit usa MAIL_MAILER=array (transport falso, ADR-0015): el
-        // envío se salta con él. Los tests de correo declaran un transporte
-        // real y Mail::fake() hace de SMTP.
         config(['mail.default' => 'smtp']);
     }
 
@@ -34,9 +31,6 @@ class ChangeEmailTest extends TestCase
      */
     private function requestChange(User $user, string $newEmail): string
     {
-        // from() fija la URL previa: el controlador responde back() a /perfil.
-        // Cambiar el correo exige re-autenticación (current_password): es el
-        // primer paso de un secuestro de cuenta.
         $this->actingAs($user)
             ->from(route('profile.edit'))
             ->put(route('profile.email.update'), [
@@ -55,8 +49,6 @@ class ChangeEmailTest extends TestCase
         return (string) basename((string) $confirmUrl);
     }
 
-    // ---- Solicitud ----
-
     public function test_pide_el_cambio_y_el_correo_queda_pendiente(): void
     {
         Mail::fake();
@@ -68,10 +60,10 @@ class ChangeEmailTest extends TestCase
         $this->assertSame(64, strlen($token));
 
         $fresh = $user->fresh();
-        $this->assertSame('viejo@ejemplo.com', $fresh->email); // no cambia aún
+        $this->assertSame('viejo@ejemplo.com', $fresh->email);
         $this->assertSame('nuevo@ejemplo.com', $fresh->pending_email);
         $this->assertNotNull($fresh->pending_email_token);
-        $this->assertNotSame($token, $fresh->pending_email_token); // hash, no el token público
+        $this->assertNotSame($token, $fresh->pending_email_token);
         $this->assertSame($verificadoAntes->toDateTimeString(), $fresh->email_verified_at->toDateTimeString());
     }
 
@@ -122,8 +114,6 @@ class ChangeEmailTest extends TestCase
         Mail::fake();
         $user = User::factory()->create(['email' => 'viejo@ejemplo.com']);
 
-        // Sin contraseña actual: una sesión robada no debe poder arrancar el
-        // secuestro de cuenta (cambiar correo → reset de contraseña).
         $this->actingAs($user)
             ->put(route('profile.email.update'), ['email' => 'nuevo@ejemplo.com'])
             ->assertSessionHasErrors('current_password');
@@ -131,7 +121,6 @@ class ChangeEmailTest extends TestCase
         $this->assertNull($user->fresh()->pending_email);
         Mail::assertNothingSent();
 
-        // Con la contraseña equivocada, tampoco.
         $this->actingAs($user)
             ->put(route('profile.email.update'), ['email' => 'nuevo@ejemplo.com', 'current_password' => 'incorrecta'])
             ->assertSessionHasErrors('current_password');
@@ -152,12 +141,9 @@ class ChangeEmailTest extends TestCase
 
         $this->assertNotSame($primerToken, $segundoToken);
 
-        // Solo el último enlace queda vivo: el hash del primero ya no está.
         $this->assertNotSame($primerHash, $user->fresh()->pending_email_token);
         Mail::assertSent(ConfirmEmailChangeMail::class, 2);
     }
-
-    // ---- Confirmación ----
 
     public function test_token_valido_confirma_cambia_y_verifica(): void
     {
@@ -171,12 +157,11 @@ class ChangeEmailTest extends TestCase
 
         $fresh = $user->fresh();
         $this->assertSame('nuevo@ejemplo.com', $fresh->email);
-        $this->assertNotNull($fresh->email_verified_at); // verificado por construcción
+        $this->assertNotNull($fresh->email_verified_at);
         $this->assertNull($fresh->pending_email);
         $this->assertNull($fresh->pending_email_token);
         $this->assertNull($fresh->pending_email_requested_at);
 
-        // La pierna antifraude: aviso a la bandeja ANTIGUA.
         Mail::assertSent(EmailChangedNoticeMail::class, fn ($mail) => $mail->hasTo('viejo@ejemplo.com'));
     }
 
@@ -186,7 +171,6 @@ class ChangeEmailTest extends TestCase
         $user = User::factory()->create(['email' => 'viejo@ejemplo.com']);
         $token = $this->requestChange($user, 'nuevo@ejemplo.com');
 
-        // Click desde la bandeja nueva en otro navegador: sin sesión.
         $this->post(route('logout'))->assertRedirect(route('login'));
         $this->assertGuest();
 
@@ -208,7 +192,7 @@ class ChangeEmailTest extends TestCase
 
         $fresh = $user->fresh();
         $this->assertSame('viejo@ejemplo.com', $fresh->email);
-        $this->assertNotNull($fresh->pending_email); // el pendiente sigue vivo
+        $this->assertNotNull($fresh->pending_email);
         Mail::assertNotSent(EmailChangedNoticeMail::class);
     }
 
@@ -226,7 +210,7 @@ class ChangeEmailTest extends TestCase
 
         $fresh = $user->fresh();
         $this->assertSame('viejo@ejemplo.com', $fresh->email);
-        $this->assertNull($fresh->pending_email); // vencido = limpio
+        $this->assertNull($fresh->pending_email);
         Mail::assertNotSent(EmailChangedNoticeMail::class);
     }
 
@@ -236,7 +220,6 @@ class ChangeEmailTest extends TestCase
         $user = User::factory()->create(['email' => 'viejo@ejemplo.com']);
         $token = $this->requestChange($user, 'codiciado@ejemplo.com');
 
-        // Carrera: otra cuenta verificó ese correo mientras el enlace viajaba.
         User::factory()->create(['email' => 'codiciado@ejemplo.com']);
 
         $this->get(route('profile.email.confirm', ['token' => $token]))
@@ -254,9 +237,6 @@ class ChangeEmailTest extends TestCase
         $user = User::factory()->create(['email' => 'viejo@ejemplo.com']);
         $token = $this->requestChange($user, 'fantasma@ejemplo.com');
 
-        // Fantasma (Plan 01): registro sin verificar con ese correo — inerte
-        // por construcción. Confirmar el enlace prueba la bandeja mejor que
-        // el registro probó nada: el fantasma se reclama.
         $ghost = User::factory()->unverified()->create(['email' => 'fantasma@ejemplo.com']);
         $ghostHousehold = app(HouseholdService::class)->createHousehold($ghost->id, 'Mi hogar');
 
@@ -274,8 +254,6 @@ class ChangeEmailTest extends TestCase
         $user = User::factory()->create(['email' => 'viejo@ejemplo.com']);
         $household = app(HouseholdService::class)->createHousehold($user->id, 'Mi hogar');
 
-        // Opt-in del digest (Épica 9): la preferencia es del pivote, no del
-        // correo — debe sobrevivir al cambio de dirección.
         $household->members()->updateExistingPivot($user->id, ['reminders_email' => true]);
 
         $token = $this->requestChange($user, 'nuevo@ejemplo.com');
@@ -285,8 +263,6 @@ class ChangeEmailTest extends TestCase
             $user->fresh()->households()->where('households.id', $household->id)->first()->pivot->reminders_email,
         );
     }
-
-    // ---- Contenido de los correos ----
 
     public function test_correo_de_confirmacion_renderiza_en_espanol(): void
     {

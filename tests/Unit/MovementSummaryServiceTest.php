@@ -72,8 +72,6 @@ class MovementSummaryServiceTest extends TestCase
         [$householdId, $accountId] = $this->setupHouseholdWithAccount();
         $today = Carbon::now()->format('Y-m-d');
 
-        // 8 categorías con montos decrecientes: Cat 1 = 80.000 … Cat 8 = 10.000.
-        // Top 5 se queda con Cat 1-5; "Otras" = Cat 6+7+8 = 60.000.
         foreach (range(1, 8) as $n) {
             $cat = Category::create([
                 'name' => "Cat {$n}", 'type' => CategoryType::Expense->value,
@@ -96,7 +94,6 @@ class MovementSummaryServiceTest extends TestCase
             top: 5,
         );
 
-        // Top 5 + "Otras" = 6 filas; el resto sumado y en gris neutro.
         $this->assertCount(6, $rows);
         $this->assertSame('Cat 1', $rows[0]['name']);
         $this->assertSame('Cat 5', $rows[4]['name']);
@@ -120,7 +117,6 @@ class MovementSummaryServiceTest extends TestCase
             top: 5,
         );
 
-        // Una sola categoría: no aparece una fila "Otras" vacía.
         $this->assertCount(1, $rows);
         $this->assertSame('Comida', $rows[0]['name']);
     }

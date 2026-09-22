@@ -45,7 +45,6 @@ class TermsController extends Controller
 
         abort_if($versions->isEmpty(), 404);
 
-        // Fecha de aceptación por versión, solo del usuario autenticado.
         $accepted = $request->user()
             ?->acceptedTerms()
             ->get()
@@ -83,7 +82,6 @@ class TermsController extends Controller
             return redirect()->route('dashboard');
         }
 
-        // Última versión aceptada, para contextualizar "qué cambió".
         $lastAccepted = $request->user()->acceptedTerms()
             ->with('termsVersion')
             ->latest('accepted_at')

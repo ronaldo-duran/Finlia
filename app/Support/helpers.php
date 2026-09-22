@@ -37,8 +37,6 @@ if (! function_exists('percent')) {
 
         $formatted = number_format($value, $decimals, ',', '.');
 
-        // Solo con decimales: con `$decimals === 0` el separador de miles es
-        // un punto y recortar ceros rompería "1.200" → "1.2".
         if ($decimals > 0) {
             $formatted = rtrim(rtrim($formatted, '0'), ',');
         }
@@ -65,14 +63,12 @@ if (! function_exists('active_household')) {
         $household = null;
 
         if ($user) {
-            // Si hay uno guardado en sesión y sigue siendo válido, se usa.
             $sessionHouseholdId = Session::get('household_id');
 
             if ($sessionHouseholdId) {
                 $household = $user->households()->find($sessionHouseholdId);
             }
 
-            // Si no, se toma el primero del usuario y se persiste en sesión.
             if (! $household) {
                 $household = $user->households()->first();
 

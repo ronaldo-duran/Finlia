@@ -20,7 +20,6 @@
             aplicables.
         </p>
 
-        {{-- 1. Responsable --}}
         <h2 class="h6 fw-bold mt-4 mb-2">1. Quién responde por tus datos</h2>
         <p>
             El responsable del tratamiento es <strong>Ronaldo Durán</strong>, persona natural
@@ -30,7 +29,6 @@
             <a href="{{ route('contact.create') }}">formulario de contacto</a>.
         </p>
 
-        {{-- 2. Qué guardamos --}}
         <h2 class="h6 fw-bold mt-4 mb-2">2. Qué datos guardamos</h2>
         <p>
             Finlia guarda exclusivamente los datos que tú registras:
@@ -46,7 +44,6 @@
             cuentas bancarias. Todo lo que hay en la aplicación lo escribiste tú.
         </p>
 
-        {{-- 3. Finalidades --}}
         <h2 class="h6 fw-bold mt-4 mb-2">3. Para qué los usamos</h2>
         <p>
             Tus datos se usan únicamente para:
@@ -64,7 +61,6 @@
             venderlos y no los cedemos a terceros con fines comerciales.
         </p>
 
-        {{-- 4. Encargados --}}
         <h2 class="h6 fw-bold mt-4 mb-2">4. Con quién se comparten</h2>
         <p>
             No vendemos ni compartimos tus datos con terceros con fines comerciales. Para que el
@@ -85,7 +81,6 @@
             Ningún usuario puede ver los datos de un hogar al que no pertenece.
         </p>
 
-        {{-- 5. Derechos --}}
         <h2 class="h6 fw-bold mt-4 mb-2">5. Tus derechos y cómo ejercerlos</h2>
         <p>
             Como titular de los datos tienes derecho a conocerlos, actualizarlos y rectificarlos;
@@ -107,7 +102,6 @@
             prórroga, te informamos el motivo y la fecha en que responderemos.
         </p>
 
-        {{-- 6. Portabilidad --}}
         <h2 class="h6 fw-bold mt-4 mb-2">6. Portabilidad — descarga tus datos</h2>
         <p>
             Desde tu perfil (<a href="{{ route('profile.edit') }}">perfil → Exportar mis datos</a>) puedes descargar en cualquier momento un archivo ZIP con:
@@ -121,7 +115,6 @@
             La exportación está acotada al hogar activo (si tienes varios, puedes cambiar de hogar y repetir). No incluye datos personales de otros miembros.
         </p>
 
-        {{-- 7. Eliminación --}}
         <h2 class="h6 fw-bold mt-4 mb-2">7. Eliminación de tu cuenta</h2>
         <p>
             Puedes solicitar la eliminación desde tu perfil. Al hacerlo:
@@ -139,7 +132,6 @@
             consentimiento, y por el tiempo que esa obligación exija.
         </p>
 
-        {{-- 8. Seguridad --}}
         <h2 class="h6 fw-bold mt-4 mb-2">8. Cómo protegemos tus datos</h2>
         <ul>
             <li>Todo el tráfico viaja cifrado por HTTPS.</li>
@@ -153,7 +145,6 @@
             personales, te lo comunicaremos y lo reportaremos a la autoridad conforme a la ley.
         </p>
 
-        {{-- 9. Retiro del software --}}
         <h2 class="h6 fw-bold mt-4 mb-2">9. Si Finlia dejara de operar</h2>
         <ul>
             <li>Avisamos con al menos <strong>90 días</strong> de antelación por correo a todos los usuarios activos.</li>
@@ -167,13 +158,11 @@
             información, descárgala tú.
         </p>
 
-        {{-- 10. Migración --}}
         <h2 class="h6 fw-bold mt-4 mb-2">10. Migración a otra herramienta</h2>
         <p>
             El formato de exportación está documentado en el <code>README.txt</code> de cada ZIP. Los CSV usan separador <code>;</code>, codificación UTF-8 con BOM, fechas <code>DD/MM/AAAA</code> y montos con coma decimal — compatible con Excel, LibreOffice Calc y Google Sheets. El <code>finlia.json</code> incluye la misma información en formato estructurado apto para importar en cualquier herramienta que soporte JSON.
         </p>
 
-        {{-- 11. Cambios --}}
         <h2 class="h6 fw-bold mt-4 mb-2">11. Cambios en esta política</h2>
         <p>
             Si cambiamos esta política actualizaremos la fecha del encabezado. Cuando el cambio
@@ -182,7 +171,6 @@
             usando la aplicación.
         </p>
 
-        {{-- Contacto --}}
         <h2 class="h6 fw-bold mt-4 mb-2">Preguntas</h2>
         <p>
             Si tienes dudas sobre tus datos, escríbenos a

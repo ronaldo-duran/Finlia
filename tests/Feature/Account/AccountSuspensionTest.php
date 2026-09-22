@@ -26,10 +26,6 @@ class AccountSuspensionTest extends TestCase
 {
     use RefreshDatabase;
 
-    // -----------------------------------------------------------------------
-    // Middleware y navegación
-    // -----------------------------------------------------------------------
-
     public function test_cuenta_activa_puede_acceder_al_dashboard(): void
     {
         $user = User::factory()->create();
@@ -72,10 +68,6 @@ class AccountSuspensionTest extends TestCase
             ->assertRedirect(route('dashboard'));
     }
 
-    // -----------------------------------------------------------------------
-    // Reactivación
-    // -----------------------------------------------------------------------
-
     public function test_reactivar_cuenta_limpia_deletion_requested_at(): void
     {
         $user = User::factory()->create();
@@ -99,10 +91,6 @@ class AccountSuspensionTest extends TestCase
 
         $this->assertNull($user->fresh()->deletion_requested_at);
     }
-
-    // -----------------------------------------------------------------------
-    // Solicitud de eliminación (ProfileController)
-    // -----------------------------------------------------------------------
 
     public function test_solicitud_de_eliminacion_requiere_autenticacion(): void
     {
@@ -156,10 +144,6 @@ class AccountSuspensionTest extends TestCase
         });
     }
 
-    // -----------------------------------------------------------------------
-    // Reglas de purga
-    // -----------------------------------------------------------------------
-
     public function test_purga_anonimiza_usuario_miembro(): void
     {
         $owner = User::factory()->create();
@@ -208,7 +192,6 @@ class AccountSuspensionTest extends TestCase
         app(AccountDeletionService::class)->purge($owner);
 
         $this->assertEquals($member->id, $household->fresh()->owner_id);
-        // El hogar persiste.
         $this->assertNotNull(Household::find($household->id));
     }
 
@@ -219,8 +202,6 @@ class AccountSuspensionTest extends TestCase
         $owner->save();
         $household = app(HouseholdService::class)->createHousehold($owner->id, 'Hogar Compartido');
 
-        // El único otro miembro está suspendido, pero DENTRO de su ventana de
-        // reactivación de 30 días (ADR-0033): puede volver y recuperar el hogar.
         $member = User::factory()->create();
         $member->deletion_requested_at = now()->subDays(5);
         $member->save();
@@ -231,8 +212,6 @@ class AccountSuspensionTest extends TestCase
 
         app(AccountDeletionService::class)->purge($owner);
 
-        // El hogar NO se destruye: la titularidad se transfiere al miembro
-        // reactivable y su historial financiero se conserva.
         $this->assertNotNull(Household::find($household->id), 'El hogar no debe borrarse mientras un miembro siga reactivable.');
         $this->assertEquals($member->id, $household->fresh()->owner_id);
     }
@@ -244,8 +223,6 @@ class AccountSuspensionTest extends TestCase
         $owner->save();
         $household = app(HouseholdService::class)->createHousehold($owner->id, 'Hogar Doble Vencido');
 
-        // El otro miembro también venció su ventana: será purgado igualmente,
-        // así que no cuenta como superviviente → cascada.
         $member = User::factory()->create();
         $member->deletion_requested_at = now()->subDays(31);
         $member->save();
@@ -271,10 +248,6 @@ class AccountSuspensionTest extends TestCase
         $this->assertNull(User::find($user->id));
     }
 
-    // -----------------------------------------------------------------------
-    // Digest excluye cuentas suspendidas
-    // -----------------------------------------------------------------------
-
     public function test_digest_no_se_envia_a_miembro_suspendido(): void
     {
         config(['mail.default' => 'smtp']);
@@ -284,7 +257,6 @@ class AccountSuspensionTest extends TestCase
         $household = app(HouseholdService::class)->createHousehold($owner->id, 'Hogar X');
         $household->update(['reminders_enabled' => true]);
 
-        // Recordatorio vencido para generar urgentes.
         $household->reminders()->create([
             'title' => 'Pago',
             'amount' => 100000,

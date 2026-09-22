@@ -100,8 +100,6 @@ class MonthKeyExpressionTest extends TestCase
             ->limit(1)
             ->get();
 
-        // Sin filas la consulta igual se ejecuta: lo que se prueba es que el
-        // motor acepta la expresión, no que haya datos.
         $this->assertNotNull($fila);
     }
 }

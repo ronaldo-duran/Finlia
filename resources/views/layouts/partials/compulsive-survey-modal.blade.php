@@ -1,14 +1,6 @@
-{{--
-    Árbol de decisión de compras (Épica 12, v0.39).
-
-    Se abre si `session('compulsive_survey_expense_id')` está seteado — que
-    ocurre en `ExpenseController::store` con la probabilidad y el cupo del
-    hogar. Cuatro preguntas cortas de opción única, con opción de saltar.
---}}
 @php
     $surveyExpenseId = session('compulsive_survey_expense_id');
 @endphp
-
 @if ($surveyExpenseId)
     <div class="modal fade" id="compulsiveSurveyModal" tabindex="-1"
          aria-labelledby="compulsiveSurveyModalLabel" aria-hidden="true"
@@ -29,7 +21,6 @@
                             Cuatro preguntas rapidísimas ahora, y a los 30 días te preguntamos cómo te
                             sientes con esa compra. Todo es opcional — puedes saltar en cualquier momento.
                         </p>
-
                         <div class="mb-3">
                             <label class="form-label fw-semibold small">¿Este gasto lo tenías previsto?</label>
                             <div class="d-flex flex-wrap gap-2">
@@ -44,7 +35,6 @@
                                 @endforeach
                             </div>
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label fw-semibold small">¿Cómo lo llamarías?</label>
                             <div class="d-flex flex-wrap gap-2">
@@ -59,7 +49,6 @@
                                 @endforeach
                             </div>
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label fw-semibold small">¿Cómo te sientes ahora?</label>
                             <div class="d-flex flex-wrap gap-2">
@@ -76,7 +65,6 @@
                                 @endforeach
                             </div>
                         </div>
-
                         <div class="mb-1">
                             <label class="form-label fw-semibold small">¿Qué lo disparó?</label>
                             <select name="trigger" class="form-select form-select-sm" required>
@@ -99,14 +87,7 @@
             </div>
         </div>
     </div>
-
     @push('scripts')
-    {{--
-        Se espera a DOMContentLoaded porque `@vite` emite `<script type="module">`,
-        que es deferred: el bundle que expone `window.bootstrap` no ha corrido cuando
-        este script inline se ejecuta durante el parsing. `DOMContentLoaded` dispara
-        DESPUÉS de los módulos deferred, con `window.bootstrap` ya disponible.
-    --}}
     <script>
         (function () {
             function abrir() {

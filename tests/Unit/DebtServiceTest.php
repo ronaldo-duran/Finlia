@@ -44,11 +44,8 @@ class DebtServiceTest extends TestCase
         ]);
     }
 
-    // ---- Saldo derivado (ADR-0020) ----
-
     public function test_el_saldo_es_el_monto_original_menos_los_pagos(): void
     {
-        // El ejemplo exacto de la épica: 4.800.000 − 800.000 = 4.000.000.
         $debt = $this->debt(['original_amount' => 4800000, 'current_balance' => 4800000]);
 
         $this->service->registerPayment($debt, [
@@ -79,7 +76,6 @@ class DebtServiceTest extends TestCase
     {
         $debt = $this->debt(['original_amount' => 100000, 'current_balance' => 100000]);
 
-        // Sobrepago: 150.000 sobre una deuda de 100.000.
         $this->service->registerPayment($debt, [
             'amount' => 150000,
             'date' => now()->toDateString(),
@@ -114,8 +110,6 @@ class DebtServiceTest extends TestCase
     {
         $debt = $this->debt(['original_amount' => 1000000, 'current_balance' => 1000000]);
 
-        // Pago anterior a la refinanciación: ya está incorporado en el saldo
-        // refinanciado, así que NO debe volver a restarse.
         $this->service->registerPayment($debt, [
             'amount' => 200000,
             'date' => now()->subMonths(2)->toDateString(),
@@ -133,10 +127,8 @@ class DebtServiceTest extends TestCase
         $debt->refresh();
         $this->assertSame('900000.00', $debt->current_balance);
         $this->assertSame(DebtStatus::Refinanced, $debt->status);
-        // Las nuevas condiciones se copian a la deuda.
         $this->assertSame('45000.00', $debt->planned_payment);
 
-        // Un pago posterior sí resta del nuevo saldo.
         $this->service->registerPayment($debt, [
             'amount' => 45000,
             'date' => now()->toDateString(),
@@ -145,8 +137,6 @@ class DebtServiceTest extends TestCase
 
         $this->assertSame('855000.00', $debt->fresh()->current_balance);
     }
-
-    // ---- Proyección ----
 
     public function test_proyecta_el_fin_de_una_deuda_sin_intereses(): void
     {
@@ -170,7 +160,7 @@ class DebtServiceTest extends TestCase
         $debt = $this->debt([
             'original_amount' => 1000000,
             'current_balance' => 1000000,
-            'interest_rate' => 24, // 2 % mensual
+            'interest_rate' => 24,
             'planned_payment' => 100000,
         ]);
 
@@ -183,7 +173,6 @@ class DebtServiceTest extends TestCase
 
     public function test_una_cuota_que_no_cubre_intereses_no_termina_nunca(): void
     {
-        // 2 % mensual sobre 1.000.000 son 20.000 de intereses; la cuota es menor.
         $debt = $this->debt([
             'original_amount' => 1000000,
             'current_balance' => 1000000,
@@ -221,13 +210,10 @@ class DebtServiceTest extends TestCase
         $this->assertFalse($projection['never_ends']);
     }
 
-    // ---- Resumen y estrategias ----
-
     public function test_el_resumen_suma_saldo_y_compromiso_mensual(): void
     {
         $this->debt(['original_amount' => 1000000, 'current_balance' => 600000, 'planned_payment' => 50000]);
         $this->debt(['original_amount' => 500000, 'current_balance' => 500000, 'planned_payment' => 30000]);
-        // Pagada: no cuenta.
         $this->debt(['original_amount' => 200000, 'current_balance' => 0, 'planned_payment' => 10000, 'status' => DebtStatus::Paid]);
 
         $summary = $this->service->summary($this->household->id);
@@ -260,8 +246,6 @@ class DebtServiceTest extends TestCase
         $this->assertSame(500000.0, $this->service->summary($this->household->id)['total_balance']);
     }
 
-    // ---- Seam del dinero disponible (ADR-0014) ----
-
     public function test_las_cuotas_pendientes_del_periodo_cuentan_como_comprometido(): void
     {
         $this->debt([
@@ -287,7 +271,6 @@ class DebtServiceTest extends TestCase
             'due_day' => 15,
         ]);
 
-        // Pago dentro del mismo mes de la cuota.
         $this->service->registerPayment($debt, [
             'amount' => 120000,
             'date' => '2026-03-10',
@@ -300,14 +283,13 @@ class DebtServiceTest extends TestCase
             Carbon::parse('2026-03-31'),
         );
 
-        // Sin esta resta, pagar bajaría el "puedes gastar" dos veces.
         $this->assertSame(0.0, $committed);
     }
 
     public function test_la_ultima_cuota_no_supera_el_saldo_que_queda(): void
     {
         $this->debt([
-            'current_balance' => 30000, // queda menos que la cuota
+            'current_balance' => 30000,
             'planned_payment' => 120000,
             'due_day' => 15,
         ]);
@@ -346,7 +328,6 @@ class DebtServiceTest extends TestCase
             'due_day' => 31,
         ]);
 
-        // Febrero de 2026 tiene 28 días: la cuota debe caer el 28, no perderse.
         $committed = $this->service->committedInRange(
             $this->household->id,
             Carbon::parse('2026-02-01'),
@@ -374,8 +355,6 @@ class DebtServiceTest extends TestCase
         $this->assertSame(0.0, $committed);
     }
 
-    // ---- Evolución temporal (Épica 8, gráfico de reportes) ----
-
     public function test_la_evolucion_baja_el_saldo_en_los_meses_con_pago(): void
     {
         $debt = $this->debt([
@@ -384,7 +363,6 @@ class DebtServiceTest extends TestCase
             'start_date' => now()->subMonthsNoOverflow(6)->startOfMonth()->toDateString(),
         ]);
 
-        // Dos cuotas: hace 2 meses y hace 1 (día 15 de cada uno).
         foreach ([2, 1] as $monthsAgo) {
             $debt->payments()->forceCreate([
                 'household_id' => $this->household->id,
@@ -397,8 +375,6 @@ class DebtServiceTest extends TestCase
 
         $points = $this->service->balanceEvolution($this->household->id, 4);
 
-        // 4 puntos, del más antiguo al más reciente. El corte es a fin de
-        // mes, así que la cuota del día 15 ya cuenta en ese mes.
         $this->assertCount(4, $points);
         $this->assertSame(1000000.0, $points[0]['balance']);
         $this->assertSame(750000.0, $points[1]['balance']);
@@ -411,7 +387,7 @@ class DebtServiceTest extends TestCase
         $this->debt([
             'original_amount' => 800000,
             'current_balance' => 800000,
-            'start_date' => now()->startOfMonth()->toDateString(), // nació este mes
+            'start_date' => now()->startOfMonth()->toDateString(),
         ]);
 
         $points = $this->service->balanceEvolution($this->household->id, 3);
@@ -429,7 +405,6 @@ class DebtServiceTest extends TestCase
             'start_date' => now()->subMonthsNoOverflow(5)->startOfMonth()->toDateString(),
         ]);
 
-        // Refinanciada hace 2 meses con saldo de 1.800.000.
         $this->service->registerRefinancing($debt, [
             'refinanced_balance' => 1800000,
             'interest_rate' => 20.0,
@@ -440,8 +415,6 @@ class DebtServiceTest extends TestCase
 
         $points = $this->service->balanceEvolution($this->household->id, 4);
 
-        // Antes de la refinanciación la línea base era el original; desde su
-        // fecha, el saldo parte de 1.800.000.
         $this->assertSame(2000000.0, $points[0]['balance']);
         $this->assertSame(1800000.0, $points[1]['balance']);
         $this->assertSame(1800000.0, $points[2]['balance']);

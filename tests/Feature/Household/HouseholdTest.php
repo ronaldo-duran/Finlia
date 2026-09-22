@@ -66,7 +66,6 @@ class HouseholdTest extends TestCase
             'name' => 'Hogar Nuevo',
             'owner_id' => $user->id,
         ]);
-        // El creador queda vinculado como administrador.
         $this->assertDatabaseHas('household_user', [
             'household_id' => $household->id,
             'user_id' => $user->id,
@@ -149,8 +148,6 @@ class HouseholdTest extends TestCase
         $this->assertDatabaseHas('households', ['owner_id' => $user->id, 'name' => 'Mi hogar']);
         $this->assertDatabaseHas('household_user', ['user_id' => $user->id, 'role' => 'owner']);
     }
-
-    // ===== Aislamiento multi-hogar (amenaza #1 — IDOR) =====
 
     public function test_usuario_ajeno_no_puede_ver_hogar_de_otro(): void
     {

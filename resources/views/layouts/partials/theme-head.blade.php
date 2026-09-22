@@ -1,9 +1,3 @@
-{{--
-    Anti-FOUC + bootstrap del tema (claro/oscuro).
-    Se incluye en <head> ANTES de @vite: fija data-bs-theme desde
-    localStorage (o prefers-color-scheme) antes del primer paint,
-    evitando el flash claro→oscuro al recargar.
---}}
 <script>
     (function () {
         var t = localStorage.getItem('finlia-theme');

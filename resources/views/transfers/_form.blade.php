@@ -1,11 +1,6 @@
-{{--
-    Formulario de transferencia entre cuentas (Épica 10, ADR-0035).
-    Usado tanto en create como en edit.
---}}
 @php
     $isEdit = isset($transfer);
 @endphp
-
 @if ($errors->any())
     <div class="alert alert-danger mb-3">
         <ul class="mb-0 ps-3">
@@ -15,8 +10,6 @@
         </ul>
     </div>
 @endif
-
-{{-- Origen → Destino --}}
 <div class="row g-3 mb-3">
     <div class="col-12 col-md-6">
         <label class="form-label fw-semibold" for="from_account_id">
@@ -49,8 +42,6 @@
         </select>
     </div>
 </div>
-
-{{-- Monto y fecha --}}
 <div class="row g-3 mb-3">
     <div class="col-12 col-md-6">
         <label class="form-label fw-semibold" for="amount">
@@ -74,8 +65,6 @@
                max="{{ now()->format('Y-m-d') }}" required>
     </div>
 </div>
-
-{{-- Descripción --}}
 <div class="mb-3">
     <label class="form-label" for="description">
         <i class="bi bi-chat-left-text me-1"></i>Descripción <span class="text-muted">(opcional)</span>
@@ -85,8 +74,6 @@
            placeholder="Ej. Paso de ahorros a nómina"
            maxlength="200">
 </div>
-
-{{-- Notas (secundario, oculto por defecto) --}}
 <details {{ old('notes', $isEdit && $transfer->notes ? 'open' : '') !== '' ? 'open' : '' }}>
     <summary class="text-muted small mb-2" style="cursor: pointer;">Más detalles</summary>
     <div class="mb-3 mt-2">

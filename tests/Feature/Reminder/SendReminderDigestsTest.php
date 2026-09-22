@@ -29,15 +29,11 @@ class SendReminderDigestsTest extends TestCase
     {
         parent::setUp();
 
-        // phpunit usa MAIL_MAILER=array (transport "falso", ADR-0015): el
-        // comando se salta el envío con él. Los tests de envío declaran un
-        // transporte real y Mail::fake() hace de SMTP.
         config(['mail.default' => 'smtp']);
 
         $this->owner = User::factory()->create();
         $this->household = app(HouseholdService::class)->createHousehold($this->owner->id, 'Hogar A');
 
-        // Aviso vencido: garantiza "urgentes" para el digest.
         $this->household->reminders()->create([
             'title' => 'Tecnomecánica',
             'amount' => 250000,
@@ -72,8 +68,6 @@ class SendReminderDigestsTest extends TestCase
 
     public function test_no_envia_a_miembros_sin_correo_verificado(): void
     {
-        // Plan 01: nunca correos periódicos a direcciones sin confirmar —
-        // pueden ser de otra persona (anti-squatting).
         Mail::fake();
 
         $sinVerificar = User::factory()->unverified()->create();
@@ -114,7 +108,6 @@ class SendReminderDigestsTest extends TestCase
         Mail::fake();
         $this->optIn($this->owner);
 
-        // Todo queda "más adelante": ni vencidas ni próximas.
         $this->household->reminders()->create([
             'title' => 'Impuesto predial',
             'due_date' => now()->addMonths(3)->toDateString(),
@@ -163,8 +156,6 @@ class SendReminderDigestsTest extends TestCase
 
     public function test_con_transporte_de_desarrollo_no_envia(): void
     {
-        // Desarrollo y tests usan log/array: no hay bandeja real detrás,
-        // así que el digest no corre (misma regla que las invitaciones).
         Mail::fake();
         config(['mail.default' => 'array']);
         $this->optIn($this->owner);
@@ -173,7 +164,6 @@ class SendReminderDigestsTest extends TestCase
 
         Mail::assertNothingSent();
 
-        // Y el pivote no se marca: no se "gasta" el envío del día.
         $this->assertNull(
             $this->household->members()->where('user_id', $this->owner->id)->value('last_reminder_digest_at'),
         );
@@ -181,8 +171,6 @@ class SendReminderDigestsTest extends TestCase
 
     public function test_el_correo_se_renderiza_con_los_urgentes(): void
     {
-        // Renderiza HTML y texto de verdad: caza errores de Blade que un
-        // assertSent no toca (interpolaciones rotas, variables faltantes).
         $reminders = app(ReminderService::class);
         $baja = URL::temporarySignedRoute('reminders.unsubscribe', now()->addDays(60), [
             'user' => $this->owner->id,
@@ -199,8 +187,6 @@ class SendReminderDigestsTest extends TestCase
         $this->assertStringContainsString('Tecnomecánica', $html);
         $this->assertStringContainsString('Vencida hace 2 días', $html);
         $this->assertStringContainsString(route('reminders.index'), $html);
-        // La baja queda a un click, firmada por usuario+hogar. Blade escapa
-        // los & de la query a &amp;: se compara la versión escapada.
         $this->assertStringContainsString(e($baja), $html);
     }
 }

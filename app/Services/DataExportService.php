@@ -76,8 +76,6 @@ class DataExportService
             ? $categories->get($id)->name
             : '';
 
-        // ---- filas por entidad ----
-
         $accountRows = $accounts->map(fn ($a) => [
             'id' => $a->id,
             'nombre' => $a->name,

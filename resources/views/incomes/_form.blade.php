@@ -10,10 +10,6 @@
     $prefill = $income === null ? request()->query() : [];
 @endphp
 
-{{-- 1. Valor: input real (validación nativa intacta) con tipografía grande.
-     type="text" + data-money-input: type="number" no admite el punto de
-     miles ("1.234.567"); resources/js/app.js formatea en vivo y reescribe
-     a un numérico plano justo antes de enviar (ver FinliaMoney). --}}
 <div class="mb-3 text-center">
     <label for="amount" class="form-label fw-semibold text-uppercase small text-muted">Valor</label>
     <input
@@ -34,8 +30,6 @@
     @enderror
     <div class="form-text">Monto en COP. Usa la coma para decimales.</div>
 </div>
-
-{{-- 2. Categoría: chips de acceso rápido + selector completo. --}}
 <div class="mb-3">
     <label class="form-label fw-semibold">Categoría</label>
     @php $selectedCategoryId = old('category_id', $income?->category_id ?? ($prefill['category_id'] ?? null)); @endphp
@@ -55,22 +49,17 @@
     </select>
     @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
 </div>
-
 <div class="row g-3">
-    {{-- 3. Cuenta --}}
     <div class="col-md-6">
         <x-form-select label="Cuenta" name="account_id" :options="$accounts"
                        valueKey="id" labelKey="name" :selected="$income?->account_id"
                        placeholder="Selecciona una cuenta" required
                        smartSelect="income_account" />
     </div>
-    {{-- 4. Fecha --}}
     <div class="col-md-6">
         <x-form-input label="Fecha" name="date" type="date" :value="old('date', $income?->date?->format('Y-m-d') ?? ($prefill['date'] ?? date('Y-m-d')))" required />
     </div>
 </div>
-
-{{-- 5. Descripción --}}
 <x-form-input label="Descripción" name="description" :value="$income?->description ?? ($prefill['description'] ?? null)" placeholder="Ej: Pago quincenal" />
 
 <details class="mb-3" @if(old('source') || $income?->source || old('notes') || $income?->notes || ! empty($prefill['source'])) open @endif>
@@ -84,22 +73,18 @@
         </div>
     </div>
 </details>
-
 @once
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                // Sincronizado en ambos sentidos: ver expenses/_form.blade.php.
                 document.querySelectorAll('[data-category-chips]').forEach(function (row) {
                     var select = row.closest('form')?.querySelector('#category_id');
                     if (!select) return;
-
                     function syncChips(value) {
                         row.querySelectorAll('.chip').forEach(function (c) {
                             c.classList.toggle('active', c.getAttribute('data-category-value') === value);
                         });
                     }
-
                     row.querySelectorAll('[data-category-value]').forEach(function (chip) {
                         chip.addEventListener('click', function () {
                             select.value = chip.getAttribute('data-category-value');

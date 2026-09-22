@@ -43,9 +43,6 @@ class SubscriptionService
             return $this->planCache[$household->id];
         }
 
-        // Rieles quietos: mientras `subscription.premium_for_all` esté encendido,
-        // todos los hogares corren en Premium indefinidamente. Se apaga cuando
-        // el catálogo Premium tenga precio y funciones definidas.
         if ($this->premiumForAll()) {
             return $this->planCache[$household->id] = $this->requirePremiumPlan();
         }

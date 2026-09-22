@@ -29,6 +29,7 @@ Eres el **implementador de épicas** de Finlia. Sigues estrictamente [CLAUDE.md]
 
 ## Reglas inquebrantables (de AGENTS.md / SECURITY.md)
 
+- **Comentarios: solo PHPDoc.** Prohibidos `//`, `#`, bloques `/* */` que no sean PHPDoc (incluidas las cabeceras banner de `routes/`), `{{-- --}}` en Blade, comentarios en JS/CSS, código comentado y `TODO`/`FIXME`. Prohibidos los emojis en código y en copia de UI o de consola. El "por qué" va al PHPDoc de la clase, a un ADR de [docs/DECISIONS.md](../../docs/DECISIONS.md) o a un test con nombre descriptivo. Detalle en [AGENTS.md §1.1](../../AGENTS.md).
 - **Aislamiento por hogar**: nunca `Model::find($id)` suelto. Usa `$household->recurso()->findOrFail($id)` + Policy. Nunca aceptes `household_id` del cliente.
 - **Dinero**: `DECIMAL(15,2)`, cast `decimal:2`. Nunca FLOAT.
 - **Fillable** en cada modelo; nunca `$guarded = []`.

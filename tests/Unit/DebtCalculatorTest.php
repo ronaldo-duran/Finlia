@@ -20,7 +20,6 @@ class DebtCalculatorTest extends TestCase
 
     public function test_la_tasa_anual_se_convierte_a_mensual_equivalente(): void
     {
-        // (1 + 0,285)^(1/12) − 1 = 2,1116 %, no 28,5/12 = 2,375 %.
         $this->assertEqualsWithDelta(0.021116, $this->calc->monthlyRate(28.5), 0.000001);
         $this->assertSame(0.0, $this->calc->monthlyRate(0));
         $this->assertSame(0.0, $this->calc->monthlyRate(null));
@@ -28,7 +27,6 @@ class DebtCalculatorTest extends TestCase
 
     public function test_sin_intereses_la_cuota_es_el_reparto_del_monto(): void
     {
-        // El caso reportado: 10.000.000 al 0 % en 120 cuotas.
         $this->assertSame(83333.34, $this->calc->installment(10000000, 0, 120));
     }
 
@@ -64,7 +62,6 @@ class DebtCalculatorTest extends TestCase
 
     public function test_una_cuota_que_no_cubre_intereses_no_termina_nunca(): void
     {
-        // 24 % E.A. sobre 1.000.000 son ~18.100 al mes de interés.
         $r = $this->calc->payOff(1000000, 24, 15000);
 
         $this->assertTrue($r['never_ends']);

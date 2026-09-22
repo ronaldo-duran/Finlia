@@ -53,7 +53,6 @@ class UiRegressionTest extends TestCase
 
         $inexistentes = [];
         foreach ($usados as $icono => $donde) {
-            // `bi-` suelto es el prefijo de la clase base, no un icono.
             if ($icono !== 'bi' && ! isset($existentes[$icono])) {
                 $inexistentes[] = $icono.' ('.str_replace(base_path().'/', '', $donde).')';
             }
@@ -69,14 +68,9 @@ class UiRegressionTest extends TestCase
      */
     public function test_el_mes_de_la_proyeccion_sale_en_espanol_aunque_la_app_este_en_ingles(): void
     {
-        // Se fuerza el escenario del usuario: aplicación en inglés.
         $this->app->setLocale('en');
         Carbon::setLocale('en');
 
-        // Nombres fijos y no de Faker: el navbar pinta el nombre del usuario en
-        // todas las páginas, y Faker genera "August Schuppe", "June Blick" o
-        // "Domenic Mayer" — que hacían fallar este test una de cada cien veces
-        // sin que hubiera nada roto.
         $owner = User::factory()->create(['name' => 'Persona de prueba']);
         $household = app(HouseholdService::class)->createHousehold($owner->id, 'Hogar A');
         $debt = Debt::factory()->create([
@@ -86,12 +80,8 @@ class UiRegressionTest extends TestCase
             'original_amount' => 1200000,
             'current_balance' => 1200000,
             'interest_rate' => 0,
-            'planned_payment' => 100000, // 12 cuotas exactas
+            'planned_payment' => 100000,
             'minimum_payment' => null,
-            // Fija, no la aleatoria de la factory: con una fecha de inicio al
-            // azar la deuda podía salir ya saldada, la proyección no se
-            // renderizaba y el test se quedaba sin sujeto, pasando siempre
-            // mirara lo que mirara.
             'start_date' => Carbon::now()->subMonth()->toDateString(),
             'due_day' => 15,
         ]);
@@ -102,8 +92,6 @@ class UiRegressionTest extends TestCase
         foreach ([route('debts.show', $debt), route('debts.index')] as $url) {
             $html = $this->actingAs($owner)->get($url)->assertOk()->getContent();
 
-            // Sin esta comprobación el test es decorativo: si la proyección
-            // deja de pintarse no hay ningún mes que revisar, y todo "pasa".
             $this->assertStringContainsString(
                 'terminarías hacia',
                 $html,
@@ -111,8 +99,6 @@ class UiRegressionTest extends TestCase
             );
 
             foreach ($meses as $mesIngles) {
-                // Palabra completa: buscando la subcadena, un usuario llamado
-                // "Augusto" o una entidad "Mayer" contaban como mes en inglés.
                 $this->assertDoesNotMatchRegularExpression(
                     '/\b'.$mesIngles.'\b/',
                     $html,

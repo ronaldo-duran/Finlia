@@ -43,8 +43,6 @@ class DebtTest extends TestCase
         return Debt::factory()->create(['household_id' => $household->id, ...$attributes]);
     }
 
-    // ===== Acceso =====
-
     public function test_guest_es_redirigido_al_login(): void
     {
         $this->get(route('debts.index'))->assertRedirect(route('login'));
@@ -64,8 +62,8 @@ class DebtTest extends TestCase
             ->get(route('debts.index'))
             ->assertOk()
             ->assertSee('Tarjeta Ahorros')
-            ->assertSee('4.000.000,00')  // deuda total
-            ->assertSee('800.000,00');   // pago mensual comprometido
+            ->assertSee('4.000.000,00')
+            ->assertSee('800.000,00');
     }
 
     public function test_el_detalle_muestra_historial_y_proyeccion(): void
@@ -90,10 +88,8 @@ class DebtTest extends TestCase
             ->get(route('debts.show', $debt))
             ->assertOk()
             ->assertSee('Crédito moto')
-            ->assertSee('800.000,00')            // saldo tras el abono
-            ->assertSee('Abono extra')           // historial
-            // El aviso de aproximación ya no se esconde dentro de la proyección:
-            // vive en su propio bloque, visible sobre las cifras.
+            ->assertSee('800.000,00')
+            ->assertSee('Abono extra')
             ->assertSee('Los valores son aproximados');
     }
 
@@ -113,7 +109,6 @@ class DebtTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        // Blade renderiza @selected como el atributo `selected` en el <option>.
         $this->assertMatchesRegularExpression(
             '/<option[^>]*value="'.$deudas->id.'"[^>]*\sselected[^>]*>\s*Deudas\s*<\/option>/',
             $html,
@@ -132,7 +127,6 @@ class DebtTest extends TestCase
             ->get(route('accounts.show', $account))
             ->assertOk()
             ->assertSee('Datos de la tarjeta')
-            // El aviso de seguridad es parte del producto, no decoración.
             ->assertSee('nunca te pedirá el número completo', false);
     }
 
@@ -144,11 +138,9 @@ class DebtTest extends TestCase
         foreach (['?estrategia[]=x', '?estrategia=inventada', '?estrategia='] as $query) {
             $this->actingAs($owner)
                 ->get(route('debts.index').$query)
-                ->assertOk(); // cae a la estrategia por defecto, no a un 500
+                ->assertOk();
         }
     }
-
-    // ===== CRUD =====
 
     public function test_usuario_puede_registrar_una_deuda(): void
     {
@@ -166,7 +158,6 @@ class DebtTest extends TestCase
             'household_id' => $household->id,
             'name' => 'Préstamo moto',
             'original_amount' => 6000000.00,
-            // El saldo arranca en la línea base, no lo teclea el usuario.
             'current_balance' => 6000000.00,
             'status' => DebtStatus::Active->value,
         ]);
@@ -176,12 +167,11 @@ class DebtTest extends TestCase
     {
         [$owner, $household] = $this->setupHousehold();
 
-        // Intento de mass assignment sobre un campo derivado (ADR-0020).
         $this->actingAs($owner)->post(route('debts.store'), [
             'name' => 'Intento',
             'type' => DebtType::Loan->value,
             'original_amount' => 1000000,
-            'current_balance' => 1, // debe ignorarse
+            'current_balance' => 1,
         ]);
 
         $this->assertSame('1000000.00', Debt::firstWhere('name', 'Intento')->current_balance);
@@ -211,7 +201,6 @@ class DebtTest extends TestCase
             ->delete(route('debts.destroy', $debt))
             ->assertRedirect(route('debts.index'));
 
-        // Borrado lógico: el historial financiero se conserva.
         $this->assertSoftDeleted('debts', ['id' => $debt->id]);
     }
 
@@ -220,14 +209,12 @@ class DebtTest extends TestCase
         [$owner] = $this->setupHousehold();
 
         $this->actingAs($owner)->post(route('debts.store'), [
-            'name' => 'X',            // muy corto
-            'type' => 'inventado',    // fuera del enum
-            'original_amount' => 0,   // debe ser > 0
-            'due_day' => 45,          // fuera de rango
+            'name' => 'X',
+            'type' => 'inventado',
+            'original_amount' => 0,
+            'due_day' => 45,
         ])->assertSessionHasErrors(['name', 'type', 'original_amount', 'due_day']);
     }
-
-    // ===== Plazo en cuotas y compromiso de pago (ADR-0022) =====
 
     public function test_el_fin_previsto_se_calcula_desde_inicio_mas_cuotas(): void
     {
@@ -241,7 +228,6 @@ class DebtTest extends TestCase
             'term_months' => 24,
         ])->assertRedirect();
 
-        // 31/01 + 24 meses debe caer el 31/01, no desbordar a marzo.
         $this->assertSame('2028-01-31', Debt::firstWhere('name', 'Crédito moto')->end_date->toDateString());
     }
 
@@ -263,7 +249,6 @@ class DebtTest extends TestCase
     {
         [$owner, $household] = $this->setupHousehold();
 
-        // Una tarjeta a 240 cuotas no tiene sentido: el tope es 100.
         $this->actingAs($owner)->post(route('debts.store'), [
             'name' => 'Tarjeta larga',
             'type' => DebtType::CreditCard->value,
@@ -271,7 +256,6 @@ class DebtTest extends TestCase
             'term_months' => 240,
         ])->assertSessionHasErrors('term_months');
 
-        // Ese mismo plazo sí es normal en un hipotecario (tope 480).
         $this->actingAs($owner)->post(route('debts.store'), [
             'name' => 'Casa',
             'type' => DebtType::Mortgage->value,
@@ -286,7 +270,6 @@ class DebtTest extends TestCase
     {
         [$owner] = $this->setupHousehold();
 
-        // type[]=x haría que input() devuelva un array.
         $this->actingAs($owner)->post(route('debts.store'), [
             'name' => 'Manipulada',
             'type' => ['credit_card'],
@@ -304,7 +287,7 @@ class DebtTest extends TestCase
             'type' => DebtType::CreditCard->value,
             'original_amount' => 1000000,
             'minimum_payment' => 100000,
-            'planned_payment' => 50000, // menos que el mínimo exigido
+            'planned_payment' => 50000,
         ])->assertSessionHasErrors('planned_payment');
     }
 
@@ -332,23 +315,18 @@ class DebtTest extends TestCase
             'current_balance' => 1000000,
         ]);
 
-        // Lo que sale del bolsillo es el plan, no el mínimo.
         $this->assertSame(400000.0, $debt->monthlyCommitment());
         $this->assertTrue($debt->paysAboveMinimum());
     }
-
-    // ===== Simulador y coherencia (ADR-0023) =====
 
     public function test_el_alta_vive_en_su_propia_pantalla_y_el_panel_solo_tiene_el_boton(): void
     {
         [$owner, $household] = $this->setupHousehold();
 
-        // El panel ya no lleva el formulario incrustado, solo el acceso.
         $panel = $this->actingAs($owner)->get(route('debts.index'))->assertOk();
         $panel->assertSee(route('debts.create'), false);
         $panel->assertDontSee('name="original_amount"', false);
 
-        // Y el formulario está en su pantalla.
         $this->actingAs($owner)->get(route('debts.create'))
             ->assertOk()
             ->assertSee('name="original_amount"', false)
@@ -359,7 +337,6 @@ class DebtTest extends TestCase
     {
         [$owner, $household] = $this->setupHousehold();
 
-        // Sin JavaScript el campo llega vacío: lo deriva el servidor.
         $this->actingAs($owner)->post(route('debts.store'), [
             'name' => 'Sin cuota escrita',
             'type' => DebtType::Loan->value,
@@ -376,7 +353,6 @@ class DebtTest extends TestCase
     {
         [$owner, $household] = $this->setupHousehold();
 
-        // Una entidad puede cobrar seguros encima de la cuota teórica.
         $this->actingAs($owner)->post(route('debts.store'), [
             'name' => 'Con seguro',
             'type' => DebtType::Loan->value,
@@ -409,7 +385,6 @@ class DebtTest extends TestCase
         $response->assertSessionHasErrors('minimum_payment');
         $this->assertDatabaseMissing('debts', ['name' => 'Imposible']);
 
-        // El mensaje dice cuánto haría falta, no solo que está mal.
         $this->assertStringContainsString(
             '83.333',
             session('errors')->first('minimum_payment'),
@@ -420,7 +395,6 @@ class DebtTest extends TestCase
     {
         [$owner] = $this->setupHousehold();
 
-        // 24 % E.A. sobre 1.000.000 son ~18.100 al mes solo de intereses.
         $this->actingAs($owner)->post(route('debts.store'), [
             'name' => 'Nunca baja',
             'type' => DebtType::CreditCard->value,
@@ -463,7 +437,6 @@ class DebtTest extends TestCase
 
         $debt = Debt::firstWhere('name', 'Cuadrada');
 
-        // Si el simulador dice 36 cuotas, la proyección no puede decir otra cosa.
         $this->assertSame(36, app(DebtService::class)->projectPayoff($debt)['months']);
     }
 
@@ -493,17 +466,12 @@ class DebtTest extends TestCase
 
         $html = $this->actingAs($owner)->get(route('debts.show', $debt))->assertOk()->getContent();
 
-        // El campo obligatorio se llama «cuota mensual» desde ADR-0022: el
-        // tipo de pago equivalente no puede seguir llamándose de otra forma.
         $this->assertStringContainsString('Cuota mensual', $html);
         $this->assertStringNotContainsString('Cuota pactada', $html);
 
-        // El valor guardado no cambia: renombrar la etiqueta no migra datos.
         $this->assertSame('scheduled', DebtPaymentType::Scheduled->value);
         $this->assertSame('Cuota mensual', DebtPaymentType::Scheduled->label());
     }
-
-    // ===== Pagos =====
 
     public function test_registrar_un_pago_baja_el_saldo(): void
     {
@@ -536,9 +504,7 @@ class DebtTest extends TestCase
             'account_id' => $account->id,
         ])->assertRedirect();
 
-        // Baja la deuda…
         $this->assertSame('700000.00', $debt->fresh()->current_balance);
-        // …y baja el saldo real de la cuenta (ADR-0021).
         $this->assertSame('1700000.00', $account->fresh()->current_balance);
         $this->assertDatabaseHas('expenses', [
             'household_id' => $household->id,
@@ -572,8 +538,6 @@ class DebtTest extends TestCase
 
         $this->assertSame('1000000.00', $debt->fresh()->current_balance);
         $this->assertSame('2000000.00', $account->fresh()->current_balance);
-        // Los movimientos se borran de forma lógica (DATA_MODEL): la fila
-        // queda como historial, pero ya no cuenta para el saldo.
         $this->assertSoftDeleted('expenses', ['amount' => 300000.00]);
     }
 
@@ -596,13 +560,10 @@ class DebtTest extends TestCase
         $debtB = $this->debtFor($household);
         $payment = DebtPayment::factory()->forDebt($debtB)->create();
 
-        // El pago es del hogar (pasa la policy), pero no de esta deuda.
         $this->actingAs($owner)
             ->delete(route('debts.payments.destroy', [$debtA, $payment]))
             ->assertNotFound();
     }
-
-    // ===== Refinanciación =====
 
     public function test_registrar_una_refinanciacion_cambia_la_linea_base(): void
     {
@@ -626,8 +587,6 @@ class DebtTest extends TestCase
             'refinanced_balance' => 850000.00,
         ]);
     }
-
-    // ===== Tarjetas (ADR-0002) =====
 
     public function test_se_pueden_guardar_los_datos_de_una_tarjeta(): void
     {
@@ -672,7 +631,6 @@ class DebtTest extends TestCase
             'type' => AccountType::CreditCard->value,
         ]);
 
-        // Aunque lleguen en la petición, no existen columnas donde guardarlos.
         $this->actingAs($owner)->put(route('accounts.credit-card.update', $account), [
             'credit_limit' => 3000000,
             'card_number' => '4111111111111111',
@@ -689,17 +647,12 @@ class DebtTest extends TestCase
     public function test_el_nombre_de_la_deuda_no_puede_escapar_del_javascript_en_linea(): void
     {
         [$owner, $household] = $this->setupHousehold();
-        // Carga clásica de XSS en contexto JS: cierra el literal y ejecuta.
         $debt = $this->debtFor($household, ['name' => "x');alert(1);//"]);
 
         $html = $this->actingAs($owner)->get(route('debts.show', $debt))->getContent();
 
-        // El nombre debe viajar como DATO (atributo data-confirm), nunca
-        // dentro de un manejador en línea: ahí el navegador decodifica las
-        // entidades antes de compilar el JS y la comilla cerraría el literal.
         $this->assertMatchesRegularExpression('/data-confirm="[^"]*Eliminar la deuda/', $html);
 
-        // Ningún manejador en línea puede llevar datos del usuario.
         preg_match_all('/\son(?:submit|click)="([^"]*)"/', $html, $m);
         foreach ($m[1] as $handler) {
             $this->assertStringNotContainsString(
@@ -709,8 +662,6 @@ class DebtTest extends TestCase
             );
         }
     }
-
-    // ===== Aislamiento entre hogares (amenaza #1) =====
 
     public function test_usuario_no_ve_deudas_de_otro_hogar(): void
     {

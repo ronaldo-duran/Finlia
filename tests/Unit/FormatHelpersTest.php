@@ -41,20 +41,16 @@ class FormatHelpersTest extends TestCase
     public static function porcentajes(): array
     {
         return [
-            // Los enteros no arrastran decimales (mismo criterio que @money).
             'entero sin decimales' => [80, 1, '80 %'],
             'cero' => [0, 1, '0 %'],
             'null se trata como cero' => [null, 1, '0 %'],
             'un decimal' => [332.4, 1, '332,4 %'],
             'redondea al decimal pedido' => [0.05, 1, '0,1 %'],
 
-            // Tasas de interés: hasta 3 decimales, sin ceros de relleno.
             'tasa con un decimal' => [12.5, 3, '12,5 %'],
             'tasa con dos decimales' => [12.75, 3, '12,75 %'],
             'tasa entera' => [13, 3, '13 %'],
 
-            // El separador de miles no debe confundirse con el decimal al
-            // recortar ceros: "1.200" no puede quedar en "1.2".
             'miles sin decimales' => [1200, 3, '1.200 %'],
             'miles con decimales' => [1200.5, 3, '1.200,5 %'],
         ];
@@ -68,7 +64,6 @@ class FormatHelpersTest extends TestCase
 
     public function test_percent_equivale_al_formateo_manual_que_reemplaza(): void
     {
-        // Antes cada vista repetía esta expresión para las tasas de interés.
         $manual = fn (float $rate): string => str_replace(
             '.', ',', rtrim(rtrim(number_format($rate, 3, '.', ''), '0'), '.')
         ).' %';

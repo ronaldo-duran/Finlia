@@ -1,44 +1,15 @@
-/*
-|----------------------------------------------------------------------
-| Finlia — Gráficos (Chart.js)
-|----------------------------------------------------------------------
-| Entrada Vite independiente (cargada solo en pantallas con gráficos).
-| Lee los datos desde un <script type="application/json"
-| id="finlia-chart-data"> inyectado por el servidor y dibuja:
-|
-|  Panel (/dashboard):
-|   - #trendChart    : barras ingresos vs gastos (6 meses)
-|   - #categoryChart : doughnut de gastos por categoría (mes)
-|
-|  Reportes (/reportes, Épica 8):
-|   - #reportTrendChart   : barras ingresos vs gastos por mes del período
-|   - #reportCategoryChart: doughnut de gastos por categoría del período
-|   - #reportBalanceChart : línea del balance mensual
-|   - #reportDebtChart    : línea del saldo de deuda a cierre de mes
-|   - #reportGoalsChart   : barras horizontales del progreso de metas
-|
-| Solo se ejecutan los gráficos cuyos <canvas> existen en la página.
-*/
-
 import Chart from 'chart.js/auto';
-
 const source = document.getElementById('finlia-chart-data');
 const data = source ? JSON.parse(source.textContent) : null;
-
-// Paleta consistente con la marca (CSS --finlia-primary) y derivados.
 const INCOME_COLOR = '#0b3f44';
 const EXPENSE_COLOR = '#e35d6a';
-const DEBT_COLOR = '#b4544e';       // --finlia-danger
-const SAVED_COLOR = '#2f7d5f';      // --finlia-success
+const DEBT_COLOR = '#b4544e';
+const SAVED_COLOR = '#2f7d5f';
 const REMAINING_COLOR = 'rgba(11, 63, 68, 0.12)';
-
 const currency = (value) =>
     '$ ' + Number(value).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-
 const legendBottom = { position: 'bottom', labels: { usePointStyle: true, boxWidth: 10 } };
-
 if (data) {
-    // ============ Panel ============
 
     const trendEl = document.getElementById('trendChart');
     if (trendEl) {
@@ -64,7 +35,6 @@ if (data) {
             },
         });
     }
-
     const categoryEl = document.getElementById('categoryChart');
     if (categoryEl && data.expensesByCategory.amounts.length) {
         new Chart(categoryEl, {
@@ -89,9 +59,6 @@ if (data) {
             },
         });
     }
-
-    // ============ Reportes (Épica 8) ============
-
     const reportTrendEl = document.getElementById('reportTrendChart');
     if (reportTrendEl && data.reportTrend) {
         new Chart(reportTrendEl, {
@@ -116,7 +83,6 @@ if (data) {
             },
         });
     }
-
     const reportCategoryEl = document.getElementById('reportCategoryChart');
     if (reportCategoryEl && data.reportCategory && data.reportCategory.amounts.length) {
         new Chart(reportCategoryEl, {
@@ -141,7 +107,6 @@ if (data) {
             },
         });
     }
-
     const reportBalanceEl = document.getElementById('reportBalanceChart');
     if (reportBalanceEl && data.reportBalance) {
         new Chart(reportBalanceEl, {
@@ -171,7 +136,6 @@ if (data) {
             },
         });
     }
-
     const reportDebtEl = document.getElementById('reportDebtChart');
     if (reportDebtEl && data.reportDebt) {
         new Chart(reportDebtEl, {
@@ -201,7 +165,6 @@ if (data) {
             },
         });
     }
-
     const reportGoalsEl = document.getElementById('reportGoalsChart');
     if (reportGoalsEl && data.reportGoals && data.reportGoals.labels.length) {
         new Chart(reportGoalsEl, {

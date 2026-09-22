@@ -36,8 +36,6 @@ return new class extends Migration
             $table->string('reason', 200)->nullable();
             $table->timestamps();
 
-            // Un solo registro activo por hogar: consultas siempre acotadas
-            // por (household_id, status).
             $table->index(['household_id', 'status']);
             $table->unique('household_id');
         });

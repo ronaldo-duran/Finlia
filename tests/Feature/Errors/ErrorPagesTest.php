@@ -54,8 +54,6 @@ class ErrorPagesTest extends TestCase
      */
     public function test_el_modo_mantenimiento_prerenderiza_la_503(): void
     {
-        // El HTML pre-renderizado viaja en `framework/down`; `maintenance.php`
-        // es solo el interruptor que lo sirve desde `public/index.php`.
         $archivo = storage_path('framework/down');
 
         try {
@@ -66,7 +64,6 @@ class ErrorPagesTest extends TestCase
             $this->assertStringContainsString('Estamos actualizando Finlia', $plantilla);
             $this->assertStringContainsString('503', $plantilla);
         } finally {
-            // Pase lo que pase, la aplicación no se queda en mantenimiento.
             Artisan::call('up');
         }
 

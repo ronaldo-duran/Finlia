@@ -44,7 +44,6 @@ class PasswordResetTest extends TestCase
             'email' => 'inexistente@ejemplo.com',
         ]);
 
-        // Mismo mensaje de éxito (no revela que el correo no existe).
         $response->assertSessionHas('status', __('passwords.sent'));
     }
 
@@ -74,7 +73,6 @@ class PasswordResetTest extends TestCase
         $response->assertRedirect(route('login'));
         $response->assertSessionHas('status');
 
-        // La contraseña nueva debe funcionar; la vieja, no.
         $this->assertTrue(Hash::check('nuevaClave456', $user->fresh()->password));
         $this->assertFalse(Hash::check('clave-anterior', $user->fresh()->password));
     }

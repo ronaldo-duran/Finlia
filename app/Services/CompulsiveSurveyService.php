@@ -135,9 +135,6 @@ class CompulsiveSurveyService
         CompulsiveMood $mood,
         CompulsiveTrigger $trigger,
     ): CompulsiveSurveyResponse {
-        // household_id se asigna directamente (fuera de mass assignment) para
-        // seguir la convención del proyecto: los `household_id` no llegan por
-        // fillable, los pone el service desde el hogar autenticado.
         $response = CompulsiveSurveyResponse::firstOrNew(['expense_id' => $expense->id]);
         $response->household_id = $household->id;
         $response->user_id = $user->id;
@@ -146,16 +143,9 @@ class CompulsiveSurveyService
         $response->mood = $mood;
         $response->trigger = $trigger;
 
-        // Snapshot demográfico: se congela al momento de la respuesta. `birth_date`
-        // puede ser null (perfil incompleto) — entonces la edad también lo es;
-        // el género se copia tal cual (string, validado por `Gender` en el
-        // formulario de perfil).
         $response->age_years = $user->age();
         $response->gender = $user->gender;
 
-        // Se agenda una cita de seguimiento sólo al crear la respuesta: si el
-        // formulario se reenvía en el mismo instante, el `due_at` original
-        // sobrevive. `null` en las columnas de respuesta significa "pendiente".
         if (! $response->exists) {
             $response->follow_up_due_at = now()->addDays(self::FOLLOW_UP_DAYS);
         }

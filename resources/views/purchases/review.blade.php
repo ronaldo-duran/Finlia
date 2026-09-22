@@ -27,7 +27,7 @@
                 @php
                     $expense = $response->expense;
                     $categoryName = $expense?->category?->name ?? 'Sin categoría';
-                    $moodBefore = $response->mood; // enum instance
+                    $moodBefore = $response->mood;
                 @endphp
 
                 <div class="card border-0">

@@ -18,11 +18,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('debt_id')->constrained('debts')->cascadeOnDelete();
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
-            // Saldo que queda refinanciado: nueva línea base.
             $table->decimal('refinanced_balance', 15, 2);
-            $table->decimal('interest_rate', 6, 3)->nullable(); // nueva tasa % anual
-            $table->unsignedSmallInteger('term_months')->nullable(); // nuevo plazo
-            $table->decimal('installment', 15, 2)->nullable();  // nueva cuota
+            $table->decimal('interest_rate', 6, 3)->nullable();
+            $table->unsignedSmallInteger('term_months')->nullable();
+            $table->decimal('installment', 15, 2)->nullable();
             $table->date('start_date');
             $table->text('notes')->nullable();
             $table->timestamps();

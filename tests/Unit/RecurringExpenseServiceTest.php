@@ -49,8 +49,6 @@ class RecurringExpenseServiceTest extends TestCase
         ]);
     }
 
-    // ===== Ahorro mensual necesario =====
-
     public function test_soat_anual_de_600_mil_exige_50_mil_mensuales(): void
     {
         $this->assertSame(50000.0, $this->service->monthlySavings($this->recurring()));
@@ -59,12 +57,12 @@ class RecurringExpenseServiceTest extends TestCase
     public function test_ahorro_mensual_por_frecuencia(): void
     {
         $cases = [
-            [Frequency::Weekly, 30000, 130000.0],      // 30.000 × 52 / 12
-            [Frequency::Biweekly, 200000, 400000.0],   // 200.000 × 24 / 12
-            [Frequency::Monthly, 300000, 300000.0],    // identidad
+            [Frequency::Weekly, 30000, 130000.0],
+            [Frequency::Biweekly, 200000, 400000.0],
+            [Frequency::Monthly, 300000, 300000.0],
             [Frequency::Quarterly, 900000, 300000.0],
             [Frequency::Semester, 600000, 100000.0],
-            [Frequency::Custom, 200000, 101388.89],    // 200.000 × (365/60) / 12
+            [Frequency::Custom, 200000, 101388.89],
         ];
 
         foreach ($cases as [$frequency, $amount, $expected]) {
@@ -80,13 +78,11 @@ class RecurringExpenseServiceTest extends TestCase
 
     public function test_total_mensual_solo_suma_activos(): void
     {
-        $this->recurring(['name' => 'SOAT']); // 50.000/mes
+        $this->recurring(['name' => 'SOAT']);
         $this->recurring(['name' => 'Pausado', 'is_active' => false]);
 
         $this->assertSame(50000.0, $this->service->totalMonthlySavings($this->household->id));
     }
-
-    // ===== Fechas: avance y años bisiestos =====
 
     public function test_mensual_desde_31_de_enero_cae_en_28_de_febrero(): void
     {
@@ -97,7 +93,6 @@ class RecurringExpenseServiceTest extends TestCase
 
     public function test_anual_desde_29_de_febrero_bisiesto_cae_en_28(): void
     {
-        // 2028 es bisiesto; +1 año sin desbordar no inventa un 29/feb/2029.
         $next = Frequency::Yearly->advance(Carbon::parse('2028-02-29'));
 
         $this->assertSame('2029-02-28', $next->toDateString());
@@ -123,8 +118,6 @@ class RecurringExpenseServiceTest extends TestCase
         $this->assertSame('2026-08-28', Frequency::Semester->advance(Carbon::parse('2026-02-28'))->toDateString());
     }
 
-    // ===== Próximas obligaciones =====
-
     public function test_upcoming_ordena_por_fecha_y_marca_vencidas(): void
     {
         $this->recurring(['name' => 'Futura', 'next_date' => '2026-09-10']);
@@ -148,16 +141,14 @@ class RecurringExpenseServiceTest extends TestCase
 
     public function test_alerts_solo_incluyen_ventana_y_vencidas(): void
     {
-        $this->recurring(['name' => 'Lejos', 'next_date' => '2026-12-15']);      // > 30 días
-        $this->recurring(['name' => 'Cerca', 'next_date' => '2026-09-20']);      // 24 días
+        $this->recurring(['name' => 'Lejos', 'next_date' => '2026-12-15']);
+        $this->recurring(['name' => 'Cerca', 'next_date' => '2026-09-20']);
         $this->recurring(['name' => 'Vencida', 'frequency' => Frequency::Monthly->value, 'next_date' => '2026-08-25']);
 
         $alerts = $this->service->alerts($this->household->id, Carbon::parse('2026-08-27'));
 
         $this->assertSame(['Vencida', 'Cerca'], $alerts->pluck('name')->all());
     }
-
-    // ===== Comprometido por ventana (seams del calculador) =====
 
     public function test_arriendo_mensual_cuenta_una_vez_y_va_en_fijos(): void
     {
@@ -179,7 +170,7 @@ class RecurringExpenseServiceTest extends TestCase
 
     public function test_obligacion_anual_en_la_ventana_va_en_recurring(): void
     {
-        $this->recurring(['next_date' => '2026-08-20']); // SOAT anual
+        $this->recurring(['next_date' => '2026-08-20']);
 
         $committed = $this->service->committedInRange(
             $this->household->id,
@@ -206,7 +197,6 @@ class RecurringExpenseServiceTest extends TestCase
 
     public function test_semanal_cuenta_todas_sus_ocurrencias_del_mes(): void
     {
-        // 3, 10, 17, 24 y 31 de agosto: cinco ocurrencias.
         $this->recurring([
             'name' => 'Mercado', 'amount' => 50000,
             'frequency' => Frequency::Weekly->value, 'next_date' => '2026-08-03',
@@ -223,7 +213,6 @@ class RecurringExpenseServiceTest extends TestCase
 
     public function test_vencida_cuenta_su_siguiente_ocurrencia_real(): void
     {
-        // Venció el 20/07 sin marcar pagado: en agosto cuenta la del día 20.
         $this->recurring([
             'name' => 'Arriendo', 'amount' => 1200000,
             'frequency' => Frequency::Monthly->value, 'next_date' => '2026-07-20',
@@ -274,8 +263,6 @@ class RecurringExpenseServiceTest extends TestCase
         $this->assertSame(0.0, $committed['total']);
     }
 
-    // ===== Marcar pagado =====
-
     public function test_marcar_pagado_registra_el_gasto_y_avanza_la_fecha(): void
     {
         $account = Account::factory()->create([
@@ -291,9 +278,7 @@ class RecurringExpenseServiceTest extends TestCase
         $this->assertSame(600000.0, (float) $expense->amount);
         $this->assertSame('2026-08-27', $expense->date->toDateString());
         $this->assertSame('SOAT (pago recurrente)', $expense->description);
-        // Saldo recomputado dentro de la transacción (ADR-0012).
         $this->assertSame(400000.0, (float) $account->fresh()->current_balance);
-        // Anual: 15/nov/2026 → 15/nov/2027.
         $this->assertSame('2027-11-15', $recurring->fresh()->next_date->toDateString());
     }
 
@@ -323,7 +308,6 @@ class RecurringExpenseServiceTest extends TestCase
 
         $this->service->markAsPaid($recurring, $this->owner, Carbon::parse('2026-08-27'));
 
-        // El gasto quedó registrado (una sola vez) y el comprometido bajó a cero.
         $this->assertSame(1, $this->household->expenses()->count());
         $this->assertSame(0.0, $this->service->committedInRange($this->household->id, $from, $to)['total']);
     }

@@ -93,7 +93,6 @@ class ReminderServiceTest extends TestCase
 
     public function test_la_deuda_con_pago_este_mes_avisa_la_cuota_del_siguiente(): void
     {
-        // forceCreate: current_balance es derivado (ADR-0020), no fillable.
         $debt = $this->household->debts()->forceCreate([
             'name' => 'Tarjeta Davivienda',
             'type' => DebtType::CreditCard->value,
@@ -103,7 +102,6 @@ class ReminderServiceTest extends TestCase
             'due_day' => 5,
             'status' => DebtStatus::Active->value,
         ]);
-        // Cuota de septiembre (día 5) ya pagada.
         $debt->payments()->forceCreate([
             'household_id' => $this->household->id,
             'amount' => 200000,
@@ -120,8 +118,6 @@ class ReminderServiceTest extends TestCase
 
     public function test_la_deuda_pagada_el_mismo_dia_del_vencimiento_avisa_el_mes_siguiente(): void
     {
-        // Bug histórico: pagar el día del vencimiento dejaba el aviso vivo,
-        // porque $due (hoy) >= $today devolvía la fecha aunque hubiera pago.
         $debt = $this->household->debts()->forceCreate([
             'name' => 'Tarjeta hoy',
             'type' => DebtType::CreditCard->value,
@@ -131,7 +127,6 @@ class ReminderServiceTest extends TestCase
             'due_day' => 15,
             'status' => DebtStatus::Active->value,
         ]);
-        // Pago registrado hoy (2026-09-15), justo el día del vencimiento.
         $debt->payments()->forceCreate([
             'household_id' => $this->household->id,
             'amount' => 200000,
@@ -186,8 +181,6 @@ class ReminderServiceTest extends TestCase
 
     public function test_la_meta_vencida_aparece_con_lo_que_falta_como_monto(): void
     {
-        // El ahorrado no se teclea: aporte real y current_amount derivado
-        // (ADR-0025), igual que haría el usuario desde la UI.
         $goal = $this->household->savingsGoals()->create([
             'name' => 'Viaje San Andrés',
             'target_amount' => 3000000,
@@ -270,21 +263,14 @@ class ReminderServiceTest extends TestCase
         $this->assertNotContains('Secreto de B', $titles);
     }
 
-    // ===== Resumen cacheado (campanita) =====
-
     public function test_el_resumen_cacheado_se_invalida_al_atender_un_aviso(): void
     {
-        // Fechas relativas: cachedSummary() deriva contra HOY real (no
-        // acepta referencia), así que el caso no puede acoplarse al $today
-        // fijo de los demás tests.
         $vencido = $this->reminder([
             'title' => 'SOAT', 'due_date' => now()->subDay()->toDateString(),
         ]);
 
         $this->assertSame(1, $this->service->cachedSummary($this->household->id)['overdue']);
 
-        // Sin la invalidación del observer, la segunda lectura devolvería
-        // el conteo cacheado (1) en lugar de recalcular.
         $this->service->complete($vencido);
 
         $this->assertSame(0, $this->service->cachedSummary($this->household->id)['overdue']);
@@ -302,7 +288,6 @@ class ReminderServiceTest extends TestCase
             'status' => DebtStatus::Active->value,
         ]);
 
-        // Día 5 de este mes ya pasó y no hay pago: la cuota está vencida.
         $this->assertSame(1, $this->service->cachedSummary($this->household->id)['overdue']);
 
         $debt->payments()->forceCreate([
@@ -311,7 +296,6 @@ class ReminderServiceTest extends TestCase
             'date' => now()->toDateString(),
         ]);
 
-        // Pagada la cuota del mes, el aviso pasa a la del siguiente.
         $this->assertSame(0, $this->service->cachedSummary($this->household->id)['overdue']);
     }
 }

@@ -42,8 +42,6 @@ class AcknowledgementTest extends TestCase
     {
         [$owner] = $this->setupConDeuda();
 
-        // La clave llega por URL: sin lista cerrada, cualquiera podría llenar
-        // la tabla de basura.
         $this->actingAs($owner)
             ->post(route('acknowledgements.store', 'lo-que-sea'))
             ->assertNotFound();
@@ -55,7 +53,6 @@ class AcknowledgementTest extends TestCase
     {
         [$owner, $debt] = $this->setupConDeuda();
 
-        // Antes: bloque completo con su botón.
         $this->actingAs($owner)->get(route('debts.index'))
             ->assertSee('Los valores son aproximados')
             ->assertSee('Entendido, no mostrar de nuevo');
@@ -64,7 +61,6 @@ class AcknowledgementTest extends TestCase
             ->post(route('acknowledgements.store', AcknowledgementKey::DebtEstimates->value))
             ->assertRedirect();
 
-        // Después: el aviso sigue, pero en una línea y sin botón.
         $panel = $this->actingAs($owner)->get(route('debts.index'))->assertOk();
         $panel->assertDontSee('Entendido, no mostrar de nuevo');
         $panel->assertSee('Los valores son aproximados y pueden variar según tu entidad.');
@@ -75,8 +71,6 @@ class AcknowledgementTest extends TestCase
         [$owner, $debt] = $this->setupConDeuda();
         $owner->acknowledge(AcknowledgementKey::DebtEstimates);
 
-        // En una app de finanzas la advertencia tiene que seguir junto a las
-        // cifras, en las tres pantallas.
         foreach ([route('debts.create'), route('debts.index'), route('debts.show', $debt)] as $url) {
             $this->actingAs($owner)->get($url)
                 ->assertOk()
@@ -102,7 +96,6 @@ class AcknowledgementTest extends TestCase
         [$owner, $debt] = $this->setupConDeuda();
         $owner->acknowledge(AcknowledgementKey::DebtEstimates);
 
-        // Otro miembro del mismo hogar lo lee por su cuenta.
         $otro = User::factory()->create();
         $debt->household->members()->attach($otro->id, [
             'role' => HouseholdRole::Member->value,
@@ -118,8 +111,6 @@ class AcknowledgementTest extends TestCase
         [$owner] = $this->setupConDeuda();
         $otro = User::factory()->create();
 
-        // El id sale del usuario autenticado, no de la petición: aunque se
-        // envíe user_id, se ignora.
         $this->actingAs($owner)->post(
             route('acknowledgements.store', AcknowledgementKey::DebtEstimates->value),
             ['user_id' => $otro->id],

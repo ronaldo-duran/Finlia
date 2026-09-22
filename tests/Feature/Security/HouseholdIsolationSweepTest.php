@@ -71,12 +71,6 @@ class HouseholdIsolationSweepTest extends TestCase
         $this->intruso = User::factory()->create();
         app(HouseholdService::class)->createHousehold($this->intruso->id, 'Hogar Intruso');
 
-        // Nombres inconfundibles, no los de la factory. La factory sortea
-        // nombres reales ("Nequi", "Bancolombia", "Tarjeta banco") que también
-        // aparecen en textos legítimos de la app —la guía de Cuentas nombra las
-        // billeteras colombianas—, así que el assertDontSee de más abajo fallaba
-        // o pasaba según qué nombre tocara. Un centinela convierte esa prueba en
-        // una comprobación de aislamiento de verdad, no de coincidencia.
         $cuenta = Account::factory()->create([
             'household_id' => $hogar->id,
             'name' => 'CUENTA-DEL-HOGAR-AJENO',
@@ -237,7 +231,6 @@ class HouseholdIsolationSweepTest extends TestCase
 
             $status = $this->actingAs($this->intruso)->call($metodo, $uri)->getStatusCode();
 
-            // Un 200 en una escritura ajena sería la acción completada.
             if ($status === 200) {
                 $ejecutadas[] = "{$metodo} {$uri} → 200";
             }
@@ -277,8 +270,6 @@ class HouseholdIsolationSweepTest extends TestCase
             'transfers' => Transfer::class,
             'debt_payments' => DebtPayment::class,
         ] as $etiqueta => $modelo) {
-            // `getRawOriginal()` + JSON: se comparan valores, no identidades
-            // de objetos (dos Carbon con la misma fecha son objetos distintos).
             $huella[$etiqueta] = $modelo::where('household_id', $hogarId)
                 ->orderBy('id')
                 ->get()

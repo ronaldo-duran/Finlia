@@ -35,9 +35,6 @@ class CompulsiveSurveyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Estos tests verifican los topes Free y el corte por cupo mensual,
-        // así que el flag "Premium para todos" debe apagarse aquí — los
-        // rieles se ejercitan como si el catálogo comercial ya estuviera vivo.
         Config::set('finlia.subscription.premium_for_all', false);
     }
 
@@ -51,9 +48,6 @@ class CompulsiveSurveyTest extends TestCase
 
     private function makeExpense(Household $household, User $user): Expense
     {
-        // El chequeo `unique('expense_id')` obliga a un ID real. Se hace por
-        // factory + ajuste manual para no depender del formulario en el test
-        // de servicio.
         $category = Category::factory()->create([
             'household_id' => $household->id,
             'type' => CategoryType::Expense->value,
@@ -76,7 +70,6 @@ class CompulsiveSurveyTest extends TestCase
         [$user, $household] = $this->makeSetup();
         $expense = $this->makeExpense($household, $user);
 
-        // La categoría del gasto NO tiene presupuesto para su mes.
         $this->assertTrue(app(CompulsiveSurveyService::class)->shouldOffer($household, $expense));
     }
 
@@ -85,8 +78,6 @@ class CompulsiveSurveyTest extends TestCase
         [$user, $household] = $this->makeSetup();
         $expense = $this->makeExpense($household, $user);
 
-        // Presupuesto de la misma categoría para el mes del gasto:
-        // el gasto ya estaba planeado, así que no hay nada que preguntar.
         (new Budget)->forceFill([
             'household_id' => $household->id,
             'category_id' => $expense->category_id,
@@ -104,7 +95,6 @@ class CompulsiveSurveyTest extends TestCase
         [$user, $household] = $this->makeSetup();
         $expense = $this->makeExpense($household, $user);
 
-        // Presupuesto para OTRA categoría — el gasto sigue siendo imprevisto.
         $otra = Category::factory()->create([
             'household_id' => $household->id,
             'type' => CategoryType::Expense->value,
@@ -147,8 +137,6 @@ class CompulsiveSurveyTest extends TestCase
         [$user, $household] = $this->makeSetup();
         $expense = $this->makeExpense($household, $user);
 
-        // Simula un modal mostrado ayer — ya pasó el día calendario, el árbol
-        // vuelve a estar disponible.
         $user->compulsive_survey_last_shown_at = now()->subDay();
         $user->save();
 
@@ -185,7 +173,6 @@ class CompulsiveSurveyTest extends TestCase
         [$user, $household] = $this->makeSetup();
         $service = app(CompulsiveSurveyService::class);
 
-        // Consume las 5 respuestas del mes.
         for ($i = 0; $i < 5; $i++) {
             $expense = $this->makeExpense($household, $user);
             $service->record(
@@ -272,7 +259,6 @@ class CompulsiveSurveyTest extends TestCase
         [$user, $household] = $this->makeSetup();
         $service = app(SubscriptionService::class);
 
-        // Cinco respuestas hace 2 meses.
         for ($i = 0; $i < 5; $i++) {
             $expense = $this->makeExpense($household, $user);
             (new CompulsiveSurveyResponse)->forceFill([
@@ -288,7 +274,6 @@ class CompulsiveSurveyTest extends TestCase
             ])->save();
         }
 
-        // El mes en curso está fresco: la próxima ronda cabe.
         $this->assertSame(0, $service->compulsiveSurveysUsedThisMonth($household));
         $this->assertTrue($service->canAskCompulsiveSurvey($household));
     }

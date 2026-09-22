@@ -40,8 +40,6 @@ class SavingsGoalServiceTest extends TestCase
         return app(SavingsGoalService::class);
     }
 
-    // ===== Aporte mensual recomendado =====
-
     public function test_el_aporte_recomendado_reparte_el_faltante_en_los_meses_que_quedan(): void
     {
         [$owner, $household] = $this->setupHousehold();
@@ -93,8 +91,6 @@ class SavingsGoalServiceTest extends TestCase
         $this->assertTrue($r['possible']);
     }
 
-    // ===== Seam `savings` del dinero disponible =====
-
     public function test_el_seam_suma_el_aporte_mensual_de_las_metas_activas(): void
     {
         [$owner, $household] = $this->setupHousehold();
@@ -127,11 +123,8 @@ class SavingsGoalServiceTest extends TestCase
             'type' => SavingsGoalContributionType::Deposit->value,
         ]);
 
-        // Faltan 100.000: eso compromete, no los 400.000 programados.
         $this->assertSame(100000.0, $this->service()->committedMonthly($household->id));
     }
-
-    // ===== Toggles de estado =====
 
     public function test_pausar_y_reactivar_cambian_el_estado(): void
     {

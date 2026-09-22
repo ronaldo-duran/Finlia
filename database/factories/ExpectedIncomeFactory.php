@@ -24,7 +24,7 @@ class ExpectedIncomeFactory extends Factory
             'household_id' => Household::factory(),
             'category_id' => null,
             'name' => fake()->randomElement(['Salario', 'Arriendo local', 'Freelance', 'Inversiones', 'Pensión']),
-            'amount' => fake()->numberBetween(8000, 60000) * 100, // montos COP realistas
+            'amount' => fake()->numberBetween(8000, 60000) * 100,
             'day_of_month' => fake()->numberBetween(1, 28),
             'is_active' => true,
             'notes' => null,

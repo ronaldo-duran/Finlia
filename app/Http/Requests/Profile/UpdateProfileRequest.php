@@ -20,7 +20,7 @@ class UpdateProfileRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // /perfil solo opera sobre el usuario autenticado (UserPolicy en el controlador)
+        return true;
     }
 
     /**

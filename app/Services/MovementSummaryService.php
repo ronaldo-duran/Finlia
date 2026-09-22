@@ -110,15 +110,13 @@ class MovementSummaryService
      */
     public function expensesByCategory(int $householdId, CarbonInterface $from, CarbonInterface $to, ?int $top = null): Collection
     {
-        // Se memoiza la lista completa; el plegado en "Otros" es sobre memoria,
-        // así que pedir el top-N no repite la consulta.
         $rows = $this->remember(
             $this->rangeKey('by-category', $householdId, $from, $to),
             fn (): Collection => DB::table('expenses')
                 ->leftJoin('categories', 'categories.id', '=', 'expenses.category_id')
                 ->selectRaw('categories.id as category_id, categories.name as name, categories.color as color, SUM(expenses.amount) as total')
                 ->where('expenses.household_id', $householdId)
-                ->whereNull('expenses.deleted_at') // soft-deleted fuera del cálculo
+                ->whereNull('expenses.deleted_at')
                 ->whereBetween('expenses.date', [$from, $to])
                 ->groupBy('categories.id', 'categories.name', 'categories.color')
                 ->orderByDesc('total')
@@ -153,8 +151,6 @@ class MovementSummaryService
             ->push([
                 'category_id' => null,
                 'name' => 'Otras',
-                // Gris neutro del sistema: "Otras" no compite con los
-                // colores reales de las categorías.
                 'color' => '#adb5bd',
                 'total' => (float) $rows->skip($top)->sum('total'),
             ]);
@@ -262,7 +258,6 @@ class MovementSummaryService
 
         return self::monthKeyFor(
             $connection->getDriverName(),
-            // Lo cita el grammar de la conexión: cada motor delimita distinto.
             $connection->getQueryGrammar()->wrap('date'),
         );
     }
@@ -314,19 +309,14 @@ class MovementSummaryService
     public function filtered(int $householdId, array $filters = [], ?int $limit = null, int $offset = 0): Collection
     {
         $type = $filters['type'] ?? null;
-        $limit ??= 20; // página por defecto de la lista; el llamador debe ser explícito
+        $limit ??= 20;
 
         $movements = collect();
-        // Para paginar la mezcla hay que traer offset+limit de CADA tabla:
-        // los rangos globales se intercalan con los de cada tipo.
         $fetch = $offset + $limit;
 
         if ($type === null || $type === 'income') {
             $this->applyFilters(Income::where('household_id', $householdId), $filters)
                 ->with(['category', 'account', 'user'])
-                // `date` es DATE (sin hora): sin desempate, los movimientos del
-                // mismo día quedan en un orden arbitrario y el recién creado
-                // puede caerse del LIMIT. created_at sí lleva hora.
                 ->orderByDesc('date')
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
@@ -346,8 +336,6 @@ class MovementSummaryService
                 ->each(fn (Expense $e) => $movements->push($this->normalize($e, 'expense')));
         }
 
-        // Las transferencias no tienen categoría: solo se muestran cuando no
-        // hay filtro de categoría y el tipo es null o 'transfer'.
         $includeTransfers = ($type === null || $type === 'transfer')
             && empty($filters['category_id']);
 
@@ -362,8 +350,6 @@ class MovementSummaryService
                 ->each(fn (Transfer $t) => $movements->push($this->normalizeTransfer($t)));
         }
 
-        // Se trae $fetch de cada tabla: al mezclarlas hay que reordenar con el
-        // mismo criterio y recortar otra vez, o el llamador recibe el doble.
         return $movements
             ->sortByDesc(fn (array $m) => $this->sortKey($m))
             ->skip($offset)
@@ -381,10 +367,6 @@ class MovementSummaryService
      */
     public function filteredPage(int $householdId, array $filters, int $offset, int $limit): array
     {
-        // Holgura extra en una sola consulta: la que hace falta para cerrar
-        // el día cortado y para saber si hay más páginas. 50 cubre de sobra
-        // lo que resta de un día a escala personal; si un día extremo la
-        // excede, solo ese grupo queda partido (cosmético, no pierde datos).
         $window = $this->filtered($householdId, $filters, $limit + 50, $offset);
 
         $page = $window->take($limit)->values();
@@ -400,8 +382,6 @@ class MovementSummaryService
                 ->values();
         }
 
-        // Más páginas: lo que quede del window, o que el window haya llenado
-        // el tope pedido (no se puede saber sin pedir otra página).
         $hasMore = $window->skip($page->count())->isNotEmpty() || $window->count() === $limit + 50;
 
         return [$page, $hasMore];
@@ -492,7 +472,6 @@ class MovementSummaryService
             'id' => $m->id,
             'amount' => (float) $m->amount,
             'date' => $m->date,
-            // Hora real de registro: `date` no la tiene (columna DATE).
             'registered_at' => $m->created_at,
             'description' => $m->description,
             'category_name' => $m->category?->name ?? 'Sin categoría',

@@ -62,8 +62,6 @@ class PasswordResetMailTest extends TestCase
 
     public function test_la_subcopia_del_boton_esta_traducida(): void
     {
-        // Es la cadena más frágil: su clave lleva un salto de línea y comillas
-        // escapadas. Si no coincide exactamente, sale en inglés sin avisar.
         $html = $this->renderResetMail();
 
         $this->assertStringContainsString('no funciona, copia y pega esta dirección', $html);

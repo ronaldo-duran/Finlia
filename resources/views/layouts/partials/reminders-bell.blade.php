@@ -22,10 +22,8 @@
             @if (! $bell['enabled'])
                 <li><span class="dropdown-item-text small text-muted">Desactivados en la configuración del hogar.</span></li>
             @elseif ($bell['attention'] === 0)
-                <li><span class="dropdown-item-text small text-muted">Nada urgente. Todo al día ✨</span></li>
+                <li><span class="dropdown-item-text small text-muted">Nada urgente. Todo al día</span></li>
             @else
-                {{-- `preview` puede no venir en el summary si la caché guarda
-                     una forma anterior tras un despliegue: no romper la campanita. --}}
                 @php $preview = $bell['preview'] ?? []; @endphp
                 @foreach ($preview as $item)
                     @php
@@ -48,7 +46,6 @@
                     </span></li>
                 @endif
             @endif
-
             <li><hr class="dropdown-divider"></li>
             <li>
                 <a class="dropdown-item" href="{{ route('reminders.index') }}">

@@ -47,7 +47,6 @@ return new class extends Migration
 
             $table->timestamps();
 
-            // Consultas frecuentes: lista de movimientos agrupada por fecha.
             $table->index(['household_id', 'date']);
         });
     }

@@ -15,7 +15,7 @@ class StoreHouseholdRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // cualquier usuario autenticado puede crear un hogar
+        return true;
     }
 
     /**

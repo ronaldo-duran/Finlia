@@ -2,115 +2,37 @@
 
 declare(strict_types=1);
 
-/*
-|----------------------------------------------------------------------
-| Configuración de Finlia
-|----------------------------------------------------------------------
-|
-| Constantes base de la aplicación. Mercado inicial: Colombia (COP).
-| El diseño no se acopla a una sola moneda; estos valores son la
-| referencia central que heredarán las próximas épicas (helper de
-| formato `@money`, etc. — se implementa en Épica 3).
-|
-*/
-
 return [
-
-    // Versión actual del software (fuente de verdad; sincronizar con package.json
-    // y CHANGELOG.md al publicar cada versión).
     'version' => '0.39.1',
-
-    /*
-    | Encuesta de compras (Épica 12).
-    |
-    | Se ofrece el árbol cuando un gasto queda FUERA del presupuesto planeado
-    | del mes (categoría sin `Budget` para su año/mes). El azar no participa
-    | en el disparo: la señal es la ausencia de plan. `enabled` es el kill
-    | switch global — apagarlo desactiva todo el disparo para el hogar sin
-    | tocar la lógica de `Budget`.
-    */
     'compulsive_survey' => [
         'enabled' => filter_var(env('FINLIA_COMPULSIVE_SURVEY_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
-    /*
-    | Rieles de monetización (Épica 12, v0.39).
-    |
-    | `premium_for_all` mantiene los rieles quietos: mientras esté encendido,
-    | `SubscriptionService::planFor()` devuelve Premium para todos los hogares
-    | y los topes Free (1 hogar, 2 personas, 5 encuestas) no se aplican.
-    | Se apaga cuando se definan precio y catálogo de funciones Premium; los
-    | usuarios con Premium concedido a mano por `finlia:grant-premium`
-    | conservan su plan y el resto revierte al comportamiento Free.
-    */
     'subscription' => [
         'premium_for_all' => filter_var(
             env('FINLIA_PREMIUM_FOR_ALL', true),
             FILTER_VALIDATE_BOOLEAN,
         ),
     ],
-
-    /*
-    | Dominios (ADR pendiente de la landing).
-    |
-    | Finlia se sirve desde dos hosts: el sitio público (finlia.online) y la
-    | aplicación (app.finlia.online). El reparto es de URLs, no de código: una
-    | sola app Laravel responde a los dos.
-    |
-    | Se separan porque una PWA instalada queda atada al origen desde el que
-    | se instaló. Mover la app de host más adelante le rompería el icono de la
-    | pantalla de inicio a cada usuario que la tenga puesta; mover el sitio de
-    | marketing, en cambio, es repuntar un DNS. Se deja quieto lo caro.
-    |
-    | En local ambos van vacíos: entonces las rutas no llevan restricción de
-    | dominio y todo responde en el mismo host, con la landing en «/».
-    */
     'domains' => [
         'marketing' => env('FINLIA_MARKETING_DOMAIN'),
         'app' => env('FINLIA_APP_DOMAIN'),
     ],
-
-    // Mercado / idioma por defecto.
     'market' => env('FINLIA_MARKET', 'CO'),
     'locale' => env('APP_FAKER_LOCALE', 'es_CO'),
 
-    /*
-    | Correo transaccional (ADR-0015).
-    |
-    | Finlia envía correo SOLO para lo estrictamente necesario: invitar a
-    | alguien al hogar y recuperar la contraseña. Nada de resúmenes,
-    | recordatorios ni marketing (esos son in-app). El correo es OPCIONAL:
-    | si no hay SMTP configurado la app sigue funcionando y la invitación
-    | se comparte con el enlace manual.
-    */
     'mail' => [
-        // Interruptor global del correo transaccional.
         'enabled' => env('FINLIA_MAIL_ENABLED', true),
-
-        // Transports que NO entregan a una bandeja real (desarrollo y tests).
-        // Con ellos la UI sigue mostrando el enlace manual como vía principal.
         'fake_transports' => ['log', 'array'],
     ],
-
-    /*
-    | Contacto.
-    |
-    | Buzón al que se avisa cuando alguien escribe desde el formulario público
-    | o reporta un error desde la aplicación. Vacío = los mensajes se guardan
-    | igual, pero no se avisa por correo: el registro nunca depende del SMTP.
-    */
     'contact' => [
         'inbox' => env('FINLIA_CONTACT_EMAIL'),
     ],
-
-    // Moneda por defecto (ISO 4217).
     'currency' => [
         'code' => env('FINLIA_CURRENCY_CODE', 'COP'),
         'symbol' => env('FINLIA_CURRENCY_SYMBOL', '$'),
-        // Formato colombiano: 1.000.000,00 (punto miles, coma decimales).
         'thousands_separator' => '.',
         'decimal_separator' => ',',
         'decimals' => 2,
     ],
-
 ];

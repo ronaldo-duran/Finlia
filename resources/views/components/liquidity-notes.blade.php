@@ -1,10 +1,5 @@
 @props(['liquidity'])
 
-{{--
-    Avisos que acompañan al "puedes gastar hoy" (ADR-0040): pagos esperados
-    que no han llegado y lo que falta configurar para que la cifra sea exacta.
-    Recibe el array `liquidity` de BudgetCalculatorService.
---}}
 @foreach ($liquidity['pending_incomes'] as $pending)
     <div class="small mt-3 d-flex gap-2" data-testid="pending-income">
         <i class="bi bi-hourglass-split"></i>
@@ -15,9 +10,6 @@
                 Tu pago «{{ $pending['name'] }}» del {{ $pending['date']->format('d/m/Y') }} aún no aparece.
             @endif
             Hasta que lo registres, la cifra solo cuenta con lo que ya tienes.
-            {{-- Prellena el formulario con lo que ya sabemos del ingreso previsto:
-                 el botón antes solo redirigía y obligaba a reescribir monto,
-                 descripción, fecha y categoría. --}}
             <a href="{{ route('incomes.create', [
                 'amount' => $pending['amount'],
                 'description' => $pending['name'],
@@ -28,7 +20,6 @@
         </div>
     </div>
 @endforeach
-
 @if (! $liquidity['has_accounts'])
     <div class="small mt-3 d-flex gap-2">
         <i class="bi bi-info-circle"></i>

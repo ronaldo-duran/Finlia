@@ -52,7 +52,6 @@ enum ReportPeriod: string
             self::LastMonth => $this->monthWindow($today->copy()->startOfMonth()->subMonth()),
             self::Last3Months => $this->rollingWindow($today, 3),
             self::Last6Months => $this->rollingWindow($today, 6),
-            // Año en curso a la fecha, contra el mismo tramo del año pasado.
             self::Year => [
                 'from' => $today->copy()->startOfYear(),
                 'to' => $today->copy()->endOfDay(),

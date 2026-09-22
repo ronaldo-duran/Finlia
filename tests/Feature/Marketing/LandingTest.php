@@ -100,8 +100,6 @@ class LandingTest extends TestCase
 
         $this->assertStringStartsWith('text/plain', $respuesta->headers->get('content-type'));
         $this->assertStringContainsString('# Finlia', $respuesta->getContent());
-        // El "qué NO hace" evita que un asistente afirme que Finlia se conecta
-        // al banco o da asesoría financiera.
         $this->assertStringContainsString('No se conecta a bancos', $respuesta->getContent());
     }
 

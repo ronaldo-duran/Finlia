@@ -1,4 +1,3 @@
-{{-- Versión en texto plano (mejora la entregabilidad y sirve en clientes sin HTML). --}}
 @if ($invitedByName){{ $invitedByName }} te invitó a unirte al hogar "{{ $householdName }}" en {{ $appName }}.@else Te invitaron a unirte al hogar "{{ $householdName }}" en {{ $appName }}.@endif
 
 Acepta la invitación aquí:

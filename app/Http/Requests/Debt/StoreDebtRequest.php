@@ -36,20 +36,13 @@ class StoreDebtRequest extends FormRequest
             'institution' => ['nullable', 'string', 'max:120'],
             'type' => ['required', Rule::enum(DebtType::class)],
             'original_amount' => ['required', 'numeric', 'min:0.01', 'max:9999999999999.99'],
-            // % efectivo anual. 0 es válido (préstamo familiar sin intereses).
             'interest_rate' => ['nullable', 'numeric', 'min:0', 'max:999.999'],
             'interest_rate_type' => ['nullable', Rule::enum(InterestRateType::class)],
-            // Cuota mínima: lo que EXIGE la entidad.
             'minimum_payment' => ['nullable', 'numeric', 'min:0', 'max:9999999999999.99'],
-            // Lo que el usuario PLANEA pagar: nunca por debajo del mínimo, o
-            // el plan sería incumplir (ADR-0022). La comparación solo aplica
-            // si hay mínimo declarado; si no, `gte` compararía contra null y
-            // rechazaría cualquier valor.
             'planned_payment' => array_filter([
                 'nullable', 'numeric', 'min:0', 'max:9999999999999.99',
                 $this->filled('minimum_payment') ? 'gte:minimum_payment' : null,
             ]),
-            // Número de cuotas, con tope según el tipo de deuda.
             'term_months' => ['nullable', 'integer', 'min:1', 'max:'.$this->maxTermMonths()],
             'due_day' => ['nullable', 'integer', 'between:1,31'],
             'start_date' => ['nullable', 'date', 'before:2100-01-01'],
@@ -87,9 +80,6 @@ class StoreDebtRequest extends FormRequest
      */
     private function maxTermMonths(): int
     {
-        // `type[]=x` haría que input() devuelva un array: castearlo a string
-        // emite un warning que Laravel convierte en 500 (mismo fallo que ya
-        // se corrigió en el panel de deudas).
         $requested = $this->input('type');
         $type = is_string($requested) ? DebtType::tryFrom($requested) : null;
 
@@ -113,8 +103,6 @@ class StoreDebtRequest extends FormRequest
 
             $calc = app(DebtCalculator::class);
 
-            // 1. La cuota tiene que cubrir al menos los intereses, o el saldo
-            //    sube en vez de bajar y la deuda no se acaba nunca.
             $interesMensual = $calc->firstMonthInterest($monto, $tasa);
 
             if ($minima !== null && $minima > 0.0 && $interesMensual > 0.0 && $minima <= $interesMensual) {
@@ -126,9 +114,6 @@ class StoreDebtRequest extends FormRequest
                 return;
             }
 
-            // 2. La cuota tiene que bastar para saldar el monto en el plazo
-            //    pactado. Se compara contra la cuota teórica con una holgura
-            //    del 1 % para no pelear por céntimos de redondeo.
             if ($monto === null || $cuotas === null || $minima === null || $minima <= 0.0) {
                 return;
             }

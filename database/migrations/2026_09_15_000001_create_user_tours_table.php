@@ -27,22 +27,12 @@ return new class extends Migration
         Schema::create('user_tours', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            // Clave del registro de config/tours.php. Se valida contra él
-            // antes de insertar: nunca llega libre desde la petición.
             $table->string('key', 40);
-            // Versión de la guía que el usuario ya vio. 0 no se guarda nunca
-            // (la ausencia de fila ya significa «no la ha visto»).
             $table->unsignedSmallInteger('version');
-            // Valor de App\Enums\TourStatus: terminada o saltada. No cambia el
-            // comportamiento —ambas cuentan como vista— pero distingue «la
-            // leyó» de «la cerró», que es justo lo que hay que medir para
-            // saber si una guía está mal escrita.
             $table->string('status', 12);
             $table->timestamp('seen_at');
             $table->timestamps();
 
-            // Una fila por usuario y guía: al revisitarla se actualiza, no se
-            // acumula historial. También acota el crecimiento de la tabla.
             $table->unique(['user_id', 'key']);
         });
     }

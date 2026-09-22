@@ -16,8 +16,6 @@
 ])
 
 @php
-    // El id puede diferir del name: en una misma página puede haber dos
-    // formularios con el mismo campo (p. ej. alta + modal de edición).
     $inputId = $id ?? $name;
 @endphp
 

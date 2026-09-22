@@ -59,9 +59,6 @@ class HouseholdService
                 'joined_at' => now(),
             ]);
 
-            // Épica 12: todo hogar arranca con suscripción Free vigente.
-            // Es idempotente — permite que llamar dos veces `createHousehold`
-            // no cree filas duplicadas.
             $this->subscriptions->ensureSubscription($household);
 
             return $household;
@@ -114,17 +111,12 @@ class HouseholdService
             ]);
         }
 
-        // Épica 12: freemium con tope de miembros. Grandfather activo — el
-        // chequeo aplica al invitar, no al estado histórico: hogares que ya
-        // tienen más miembros del tope siguen intactos, pero no se les puede
-        // sumar otro sin pasar a Premium.
         if (! $this->subscriptions->canInviteMember($household)) {
             throw ValidationException::withMessages([
                 'email' => __('Tu plan gratuito permite hasta 2 personas por hogar. Pasa a Premium para invitar a más.'),
             ]);
         }
 
-        // Revoca invitaciones previas pendientes para el mismo correo.
         $household->invitations()
             ->where('email', $email)
             ->where('status', InvitationStatus::Pending->value)
@@ -141,7 +133,6 @@ class HouseholdService
             'expires_at' => now()->addDays(self::INVITATION_TTL_DAYS),
         ]);
 
-        // Evita una consulta extra al construir el correo.
         $invitation->setRelation('household', $household);
 
         $emailSent = $this->sendInvitationEmail($invitation, $plainToken, $invitedByName);
@@ -170,7 +161,6 @@ class HouseholdService
                 new HouseholdInvitationMail($invitation, $plainToken, $invitedByName)
             );
         } catch (Throwable $e) {
-            // Nunca se loguea el token ni el enlace (docs/SECURITY.md §4).
             Log::warning('No se pudo enviar la invitación por correo.', [
                 'household_id' => $invitation->household_id,
                 'invitation_id' => $invitation->id,
@@ -330,9 +320,6 @@ class HouseholdService
             ]);
         }
 
-        // Épica 12: el hogar podría haber bajado a Free entre la invitación
-        // y la aceptación; sin cupo, no se acepta (el owner tiene que
-        // limpiar miembros o pasar a Premium).
         if (! $this->subscriptions->canInviteMember($invitation->household)) {
             throw ValidationException::withMessages([
                 'token' => __('El hogar ya no tiene cupo disponible en su plan. Pídele al administrador que renueve o suba de plan.'),

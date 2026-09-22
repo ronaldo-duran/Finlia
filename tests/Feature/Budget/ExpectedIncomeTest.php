@@ -26,8 +26,6 @@ class ExpectedIncomeTest extends TestCase
         return [$owner, $household];
     }
 
-    // ===== Acceso y CRUD =====
-
     public function test_guest_es_redirigido_al_login(): void
     {
         $this->get(route('expected-incomes.index'))->assertRedirect(route('login'));
@@ -44,7 +42,7 @@ class ExpectedIncomeTest extends TestCase
             ->assertOk()
             ->assertSee('Salario')
             ->assertSee('Arriendo')
-            ->assertSee('3.900.000,00'); // total mensual formateado en COP
+            ->assertSee('3.900.000,00');
     }
 
     public function test_usuario_puede_crear_un_ingreso_esperado(): void
@@ -80,7 +78,6 @@ class ExpectedIncomeTest extends TestCase
         $fresh = $item->fresh();
         $this->assertSame('Salario nuevo', $fresh->name);
         $this->assertSame('4000000.00', (string) $fresh->amount);
-        // El checkbox sin marcar debe desactivarlo, no ignorarse.
         $this->assertFalse($fresh->is_active);
     }
 
@@ -95,8 +92,6 @@ class ExpectedIncomeTest extends TestCase
 
         $this->assertDatabaseMissing('expected_incomes', ['id' => $item->id]);
     }
-
-    // ===== Validación =====
 
     public function test_nombre_y_monto_son_obligatorios(): void
     {
@@ -141,7 +136,7 @@ class ExpectedIncomeTest extends TestCase
         [, $otro] = $this->setupHousehold('Hogar B');
 
         $this->actingAs($owner)->post(route('expected-incomes.store'), [
-            'household_id' => $otro->id, // intento de inyección
+            'household_id' => $otro->id,
             'name' => 'Salario',
             'amount' => 100000,
         ]);
@@ -149,8 +144,6 @@ class ExpectedIncomeTest extends TestCase
         $this->assertDatabaseHas('expected_incomes', ['household_id' => $household->id]);
         $this->assertDatabaseMissing('expected_incomes', ['household_id' => $otro->id]);
     }
-
-    // ===== Aislamiento multi-hogar (amenaza #1 — IDOR) =====
 
     public function test_usuario_ajeno_no_puede_editar_ingreso_de_otro_hogar(): void
     {

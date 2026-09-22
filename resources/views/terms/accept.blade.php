@@ -27,16 +27,12 @@
         </div>
     @endif
 
-    {{-- Texto completo con scroll (no un enlace externo): lo que se acepta
-         está en la propia pantalla. --}}
     <div class="border rounded-3 bg-body-tertiary p-3 mb-4" style="max-height: 45vh; overflow-y: auto;">
         @foreach (explode("\n\n", $version->content) as $parrafo)
             <p class="small mb-3">{{ $parrafo }}</p>
         @endforeach
     </div>
 
-    {{-- Dos decisiones honestas, sin trampas oscuras: aceptar sigue; no
-         aceptar lleva a una pantalla de salida que NO destruye nada. --}}
     <form method="POST">
         @csrf
         <div class="d-grid mb-2">

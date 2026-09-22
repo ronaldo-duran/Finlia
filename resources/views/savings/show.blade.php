@@ -33,7 +33,6 @@
         <span class="badge {{ $goal->status->badgeClass() }} ms-auto">{{ $goal->status->label() }}</span>
     </div>
 
-    {{-- Cifra protagonista: lo ahorrado (UI_DESIGN §1.4) --}}
     <div class="card border-0 bg-finlia-subtle mb-3"><div class="card-body py-4">
         <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
             <div>
@@ -55,7 +54,6 @@
         </div>
     </div></div>
 
-    {{-- Recomendación (estimación) y avisos de estado --}}
     <div class="card border-0 mb-3" data-tour="goal-recommendation"><div class="card-body">
         @if ($recommendation['possible'] && $recommendation['amount'] > 0)
             <div class="fw-semibold">
@@ -79,7 +77,6 @@
         @endif
     </div></div>
 
-    {{-- Acciones de estado --}}
     @if (in_array($goal->status, [\App\Enums\SavingsGoalStatus::Active, \App\Enums\SavingsGoalStatus::Paused]))
         <div class="d-flex flex-wrap gap-2 mb-3">
             @if ($goal->status->value === 'active')
@@ -124,7 +121,6 @@
         </div>
     @endif
 
-    {{-- Registrar aporte o retiro (solo metas que los aceptan) --}}
     @if ($goal->status->acceptsContributions())
         <div class="card border-0 mb-3" data-tour="goal-contribution"><div class="card-body">
             <h2 class="h6 text-muted text-uppercase mb-3">Registrar movimiento</h2>
@@ -177,7 +173,6 @@
         </div></div>
     @endif
 
-    {{-- Historial --}}
     <h2 class="h6 text-muted text-uppercase mt-4 mb-2">Historial de movimientos</h2>
     @forelse ($contributions as $c)
         <div class="card border-0 mb-1"><div class="card-body py-2">

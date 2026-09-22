@@ -11,15 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Pivot: membresía de usuarios en hogares (multi-hogar por usuario).
         Schema::create('household_user', function (Blueprint $table) {
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('role')->default('member'); // owner | member → App\Enums\HouseholdRole
+            $table->string('role')->default('member');
             $table->timestamp('joined_at')->useCurrent();
             $table->timestamps();
 
-            // Clave primaria compuesta: un usuario pertenece una sola vez a cada hogar.
             $table->primary(['household_id', 'user_id']);
             $table->index('user_id');
         });

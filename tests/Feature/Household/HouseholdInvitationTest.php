@@ -54,8 +54,6 @@ class HouseholdInvitationTest extends TestCase
     {
         [$owner, $household] = $this->setupHousehold();
 
-        // La titularidad se decide por households.owner_id, no por el pivot:
-        // aceptar role=owner creaba un "administrador fantasma" sin poder real.
         $this->actingAs($owner)->post(route('households.invitations.store', $household), [
             'email' => 'amigo@finlia.test',
             'role' => 'owner',
@@ -94,7 +92,6 @@ class HouseholdInvitationTest extends TestCase
         [$invitation, $plainToken] = app(HouseholdService::class)
             ->inviteMember($household, 'inv@finlia.test', HouseholdRole::Member);
 
-        // El token plano no debe estar en la base de datos.
         $this->assertDatabaseMissing('household_invitations', ['token' => $plainToken]);
         $this->assertSame(hash('sha256', $plainToken), $invitation->fresh()->token);
     }

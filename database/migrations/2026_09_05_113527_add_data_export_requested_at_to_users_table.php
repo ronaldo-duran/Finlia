@@ -9,9 +9,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Plan 06 (ADR-0034): export asíncrono vía correo.
-            // null = sin solicitud pendiente; timestamp = exportación en cola.
-            // El cron lo limpia a null una vez enviado el correo.
             $table->timestamp('data_export_requested_at')->nullable()->after('deletion_requested_at');
         });
     }

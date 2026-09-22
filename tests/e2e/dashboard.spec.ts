@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { DEMO_USER } from './helpers';
 
-// La sesión del usuario demo llega por storageState (proyecto setup).
 test.describe('Panel (dashboard)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/dashboard');
@@ -57,15 +56,11 @@ test.describe('Panel (dashboard)', () => {
       const cajaContenedor = contenedor.getBoundingClientRect();
       const cajaBoton = boton.getBoundingClientRect();
 
-      // Esquina superior del contenedor: dentro de su caja, muy por encima
-      // del "+". Ahí no debería haber nada que capture el clic.
       const x = cajaContenedor.left + 4;
       const y = cajaContenedor.top + 4;
       const encima = document.elementFromPoint(x, y);
 
       return {
-        // Guarda: si algún día el contenedor dejara de ser más alto que el
-        // botón, este test pasaría sin comprobar nada.
         sobresalePorEncimaDelBoton: cajaContenedor.height - cajaBoton.height,
         loCaptura: contenedor === encima || contenedor.contains(encima),
         capturadoPor: encima ? encima.className || encima.tagName : null,
@@ -76,8 +71,6 @@ test.describe('Panel (dashboard)', () => {
     expect(medida!.sobresalePorEncimaDelBoton).toBeGreaterThan(20);
     expect(medida!.loCaptura, `el contenedor capturó el clic como: ${medida!.capturadoPor}`).toBe(false);
 
-    // Y el camino real para registrar, que desde que el panel no lleva
-    // botones propios es el único: abrir el "+" y elegir la acción.
     await page.getByRole('button', { name: 'Registrar movimiento' }).click();
     await page.getByRole('link', { name: 'Ingreso' }).click();
     await expect(page).toHaveURL(/\/ingresos\/crear$/);

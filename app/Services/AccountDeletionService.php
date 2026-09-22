@@ -39,8 +39,6 @@ class AccountDeletionService
             $user->deletion_requested_at = now();
             $user->save();
 
-            // Cancelar invitaciones pendientes de los hogares que administra.
-            // Los miembros que aún no aceptaron no quedan con un enlace roto.
             $user->ownedHouseholds()
                 ->with('invitations')
                 ->get()
@@ -51,8 +49,6 @@ class AccountDeletionService
                 });
         });
 
-        // Correo antifraude fuera de la transacción: un SMTP caído no debe
-        // revertir la suspensión (el usuario la pidió; el correo es extra).
         if (mail_is_deliverable()) {
             try {
                 Mail::to($user->email)->send(new AccountDeletionRequestedMail($user));
@@ -87,37 +83,24 @@ class AccountDeletionService
     public function purge(User $user): void
     {
         DB::transaction(function () use ($user): void {
-            // Procesar cada hogar donde el usuario es owner.
             $ownedHouseholds = Household::withTrashed()
                 ->where('owner_id', $user->id)
                 ->with(['members'])
                 ->get();
 
-            // Un miembro suspendido cuya ventana de 30 días aún no expira
-            // puede reactivarse y recuperar el hogar (ADR-0033); borrar el
-            // hogar mientras tanto violaría esa promesa. Solo cuentan como
-            // "perdidos" los suspendidos cuyo plazo ya venció (se purgarán).
             $reactivationCutoff = now()->subDays(self::SUSPENSION_DAYS);
 
             foreach ($ownedHouseholds as $household) {
                 $others = $household->members->where('id', '!=', $user->id);
 
-                // Miembros que SOBREVIVEN a esta purga: los activos y los
-                // suspendidos que todavía están dentro de su ventana.
                 $survivingMembers = $others->filter(
                     fn (User $m) => $m->deletion_requested_at === null
                         || $m->deletion_requested_at->greaterThanOrEqualTo($reactivationCutoff)
                 );
 
                 if ($survivingMembers->isEmpty()) {
-                    // Regla 2: nadie más sobrevive → cascade completo.
                     $this->deleteHouseholdCascade($household);
                 } else {
-                    // Regla 3: transferir. Se prefiere un miembro ACTIVO; si
-                    // todos los que sobreviven están suspendidos, se transfiere
-                    // al más antiguo igualmente y conserva sus datos hasta que
-                    // reactive (si nunca lo hace, su propia purga limpiará el
-                    // hogar más adelante).
                     $activeMembers = $survivingMembers->where('deletion_requested_at', null);
                     $pool = $activeMembers->isNotEmpty() ? $activeMembers : $survivingMembers;
 
@@ -128,21 +111,14 @@ class AccountDeletionService
                     $household->update(['owner_id' => $newOwner->id]);
                     $household->members()->updateExistingPivot($newOwner->id, ['role' => HouseholdRole::Owner->value]);
 
-                    // Retirar al usuario del hogar (sigue anonimizado más abajo).
                     $household->members()->detach($user->id);
 
                     $this->notifyNewOwner($newOwner, $household);
                 }
             }
 
-            // Retirar al usuario de todos los hogares restantes (los que
-            // administraba ya se resolvieron arriba). Se desvincula cualquier
-            // pivot, incluidos residuos de rol owner de invitaciones antiguas.
             $user->households()->detach();
 
-            // Regla 1: anonimizar el registro del usuario (preserva historial
-            // financiero — los movimientos conservan user_id pero no apuntan
-            // a persona identificable).
             $originalEmail = $user->email;
 
             $user->forceFill([
@@ -159,7 +135,6 @@ class AccountDeletionService
                 'email_verified_at' => null,
             ])->save();
 
-            // Limpiar sesiones activas.
             DB::table('sessions')->where('user_id', $user->id)->delete();
             DB::table('password_reset_tokens')->where('email', $originalEmail)->delete();
 
@@ -179,7 +154,6 @@ class AccountDeletionService
     public function purgeUnverified(User $user): void
     {
         DB::transaction(function () use ($user): void {
-            // El hogar personal se crea al registrarse; también se borra.
             $user->households()->get()->each(
                 fn (Household $h) => $this->deleteHouseholdCascade($h)
             );
@@ -200,8 +174,6 @@ class AccountDeletionService
      */
     private function deleteHouseholdCascade(Household $household): void
     {
-        // Las FK en migraciones tienen onDelete configurado; aun así
-        // desvinculamos explícitamente la tabla pivot.
         $household->members()->detach();
         $household->forceDelete();
     }

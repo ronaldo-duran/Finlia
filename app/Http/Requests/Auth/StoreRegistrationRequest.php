@@ -24,7 +24,7 @@ class StoreRegistrationRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return true; // ruta pública bajo middleware 'guest'
+        return true;
     }
 
     /**
@@ -64,10 +64,6 @@ class StoreRegistrationRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:120'],
-            // Un correo solo cuenta como tomado si está VERIFICADO. Un
-            // registro sin verificar es un fantasma que el propio registro
-            // reclama (anti-squatting, Plan 01): el dueño real del correo
-            // nunca ve "ya está registrado".
             'email' => [
                 'required',
                 'string',

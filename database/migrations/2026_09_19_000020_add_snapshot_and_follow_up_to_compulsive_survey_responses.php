@@ -35,8 +35,6 @@ return new class extends Migration
             $table->boolean('follow_up_regret')->nullable()->after('mood_after');
             $table->string('follow_up_note', 500)->nullable()->after('follow_up_regret');
 
-            // Índice para "compras pendientes de revisar" del hogar:
-            // filtra por household_id + follow_up_due_at <= now() + answered_at NULL.
             $table->index(['household_id', 'follow_up_due_at']);
         });
     }

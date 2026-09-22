@@ -8,7 +8,6 @@
         $isOwner = $household->owner_id === Auth::id();
     @endphp
 
-    {{-- Encabezado --}}
     <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
@@ -45,10 +44,8 @@
     </div>
 
     <div class="row g-3">
-        {{-- Columna principal: miembros + invitaciones --}}
         <div class="col-12 col-lg-8">
 
-            {{-- Enlace de invitación recién generado --}}
             @if (session('invitation_link'))
                 <div class="alert alert-success d-flex align-items-start gap-2 border-0 shadow-sm" role="alert">
                     <i class="bi bi-send-check-fill mt-1"></i>
@@ -76,7 +73,6 @@
                 </div>
             @endif
 
-            {{-- Enviar invitación (solo owner) --}}
             @if ($isOwner)
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-header border-0 bg-transparent fw-semibold" data-tour="household-invite">
@@ -106,7 +102,6 @@
                 </div>
             @endif
 
-            {{-- Miembros --}}
             <div class="card border-0 shadow-sm mb-3" data-tour="household-members">
                 <div class="card-header border-0 bg-transparent fw-semibold">
                     <i class="bi bi-people me-1"></i> Miembros
@@ -152,7 +147,6 @@
                 </div>
             </div>
 
-            {{-- Invitaciones enviadas (solo owner) --}}
             @if ($isOwner)
                 <div class="card border-0 shadow-sm">
                     <div class="card-header border-0 bg-transparent fw-semibold">
@@ -203,7 +197,6 @@
             @endif
         </div>
 
-        {{-- Columna lateral: resumen --}}
         <div class="col-12 col-lg-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -224,7 +217,6 @@
         </div>
     </div>
 
-    {{-- Modal de eliminación --}}
     @if ($isOwner)
         <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">

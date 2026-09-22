@@ -22,13 +22,10 @@ return new class extends Migration
         Schema::create('user_acknowledgements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            // Valor de App\Enums\AcknowledgementKey. Se valida contra el enum
-            // antes de insertar: la clave nunca llega libre desde la petición.
             $table->string('key', 60);
             $table->timestamp('acknowledged_at');
             $table->timestamps();
 
-            // Un acuse por usuario y aviso; también acota el crecimiento.
             $table->unique(['user_id', 'key']);
         });
     }

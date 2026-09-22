@@ -7,8 +7,6 @@
         'Ingresos' => 'income',
         'Transferencias' => 'transfer',
     ];
-    // El balance es de todo el filtro, no de la página visible (viene del
-    // Service en `filterTotals`): cargar más páginas no lo cambia.
     $filterBalance = $filterTotals['balance'];
     $hasAdvancedFilters = $filters['category_id'] || $filters['account_id'] || $filters['user_id'] || $filters['from'] || $filters['to'];
 @endphp
@@ -30,7 +28,6 @@
         </div>
     </div>
 
-    {{-- Chips de tipo + acceso a filtros avanzados --}}
     <div class="chip-row mb-3" data-tour="movements-filters">
         @foreach ($typeChips as $label => $value)
             <a href="{{ request()->fullUrlWithQuery(['type' => $value]) }}"
@@ -43,7 +40,6 @@
         </button>
     </div>
 
-    {{-- Filtros avanzados (categoría, cuenta, usuario, rango de fechas) --}}
     <div class="collapse {{ $hasAdvancedFilters ? 'show' : '' }}" id="filtrosAvanzados">
         <div class="card border-0 mb-3">
             <div class="card-body">
@@ -103,7 +99,6 @@
         </div>
     @endif
 
-    {{-- Lista agrupada por día, paginada con "Cargar más" --}}
     @if ($movements->isEmpty())
         <div class="card border-0">
             <div class="card-body text-center text-muted py-5">
@@ -117,9 +112,6 @@
         </div>
 
         <script>
-            // "Cargar más": pide la siguiente página de esta misma ruta (con
-            // los filtros actuales en la URL) y anexa los grupos que devuelve.
-            // Delegación sobre el contenedor: el botón se reemplaza en cada carga.
             (function () {
                 var lista = document.getElementById('lista-movimientos');
                 if (!lista) return;
@@ -146,7 +138,7 @@
                             lista.insertAdjacentHTML('beforeend', html);
                         })
                         .catch(function () {
-                            btn.disabled = false; // reintentar si falla la red
+                            btn.disabled = false;
                         });
                 });
             })();

@@ -1,8 +1,3 @@
-{{--
-    Confirmación de baja del digest (ADR-0028). Página autocontenida,
-    sin layout: el click llega desde el buzón y puede no haber sesión
-    (ni siquiera en este dispositivo). Mismo lenguaje visual del correo.
---}}
 <!DOCTYPE html>
 <html lang="es">
 <head>

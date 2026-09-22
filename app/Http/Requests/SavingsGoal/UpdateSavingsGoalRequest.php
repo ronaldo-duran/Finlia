@@ -30,8 +30,6 @@ class UpdateSavingsGoalRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'target_amount' => ['required', 'numeric', 'min:0.01', 'max:9999999999999.99'],
-            // En edición la fecha puede quedar en el pasado (el tiempo pasa);
-            // solo se pide que sea una fecha válida.
             'target_date' => ['nullable', 'date', 'before:2100-01-01'],
             'priority' => ['nullable', Rule::enum(SavingsGoalPriority::class)],
             'monthly_commitment' => ['nullable', 'numeric', 'min:0', 'max:9999999999999.99'],

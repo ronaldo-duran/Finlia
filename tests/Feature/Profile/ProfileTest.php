@@ -23,13 +23,8 @@ class ProfileTest extends TestCase
     {
         parent::setUp();
 
-        // phpunit usa MAIL_MAILER=array (transport falso, ADR-0015): el
-        // envío se salta con él. Los tests de correo declaran un transporte
-        // real y Mail::fake() hace de SMTP.
         config(['mail.default' => 'smtp']);
     }
-
-    // ---- Pantalla ----
 
     public function test_el_perfil_requiere_sesion(): void
     {
@@ -41,25 +36,19 @@ class ProfileTest extends TestCase
         $user = User::factory()->create(['name' => 'Ana Torres', 'email' => 'ana@ejemplo.com']);
         User::factory()->create(['email' => 'otro@ejemplo.com']);
 
-        // Aislamiento (Plan 02): /perfil no conoce IDs ajenos — solo existe
-        // el usuario autenticado; nada de otro puede aparecer aquí.
         $this->actingAs($user)
             ->get(route('profile.edit'))
             ->assertOk()
             ->assertSee('ana@ejemplo.com')
             ->assertSee('Ana Torres')
-            ->assertSee('Confirmado') // correo verificado por defecto del factory
+            ->assertSee('Confirmado')
             ->assertDontSee('otro@ejemplo.com');
     }
-
-    // ---- Datos ----
 
     public function test_actualiza_el_nombre(): void
     {
         $user = User::factory()->create(['name' => 'Nombre Viejo']);
 
-        // El formulario trae también la fecha (obligatoria desde el plan 04);
-        // el resto de datos personales tiene su propio archivo (PersonalDataTest).
         $this->actingAs($user)
             ->from(route('profile.edit'))
             ->put(route('profile.update'), [
@@ -82,13 +71,10 @@ class ProfileTest extends TestCase
         $this->assertSame($user->name, $user->fresh()->name);
     }
 
-    // ---- Contraseña ----
-
     public function test_la_contrasena_actual_es_obligatoria_y_valida(): void
     {
         $user = User::factory()->create(['password' => 'clave-correcta-1']);
 
-        // Sin la actual.
         $this->actingAs($user)
             ->put(route('profile.password.update'), [
                 'password' => 'nueva-clave-123',
@@ -96,7 +82,6 @@ class ProfileTest extends TestCase
             ])
             ->assertSessionHasErrors('current_password');
 
-        // Actual equivocada.
         $this->actingAs($user)
             ->put(route('profile.password.update'), [
                 'current_password' => 'clave-equivocada',
@@ -105,7 +90,6 @@ class ProfileTest extends TestCase
             ])
             ->assertSessionHasErrors('current_password');
 
-        // Nada cambió.
         $this->assertTrue(Hash::check('clave-correcta-1', $user->fresh()->password));
     }
 
@@ -131,7 +115,6 @@ class ProfileTest extends TestCase
         $this->assertTrue(Hash::check('nueva-clave-123', $user->fresh()->password));
         $this->assertFalse(Hash::check('clave-correcta-1', $user->fresh()->password));
 
-        // Aviso antifraude al correo vigente.
         Mail::assertSent(PasswordChangedMail::class, fn ($mail) => $mail->hasTo('ana@ejemplo.com'));
     }
 
@@ -148,7 +131,6 @@ class ProfileTest extends TestCase
             ])
             ->assertRedirect();
 
-        // El dispositivo que hizo el cambio no vuelve a iniciar sesión.
         $this->get(route('profile.edit'))->assertOk();
     }
 
@@ -168,18 +150,12 @@ class ProfileTest extends TestCase
             ])
             ->assertRedirect();
 
-        // logoutOtherDevices disparó la revocación de dispositivos.
         Event::assertDispatched(OtherDeviceLogout::class);
 
-        // La sesión de OTRO dispositivo quedó ligada al hash anterior
-        // (así la deja AuthenticateSession al pasar): al volver a tocar la
-        // app, el middleware la cierra porque el hash ya no coincide.
         $this->withSession(['password_hash_web' => $hashAnterior]);
 
         $this->get(route('profile.edit'))->assertRedirect(route('login'));
     }
-
-    // ---- Contenido de los correos ----
 
     public function test_correo_de_contrasena_renderiza_en_espanol(): void
     {

@@ -154,10 +154,6 @@ class ReminderService
         return true;
     }
 
-    // ---------------------------------------------------------------
-    // Fuentes derivadas
-    // ---------------------------------------------------------------
-
     /**
      * Gastos recurrentes activos: cada uno vence en su next_date (Épica 5).
      *
@@ -178,12 +174,8 @@ class ReminderService
                 $today,
                 $recurring->frequency->shortLabel($recurring->frequency_interval),
             ) + [
-                // La vista lo usa para el modal de "marcar pagado":
-                // sin cuenta no puede registrar movimiento automático.
                 'has_account' => $recurring->account_id !== null,
             ])
-            // toBase(): sin esto el map devuelve Eloquent\Collection y el
-            // merge() unificado exige modelos Eloquent (no arrays).
             ->toBase();
     }
 
@@ -205,8 +197,6 @@ class ReminderService
                 'debt' => $debt,
                 'due' => $this->nextDebtDueDate($debt, $today),
             ])
-            // Sin cuota conocida (ni planeada ni mínima) no hay obligación
-            // que avisar: el monto del aviso sería cero.
             ->filter(fn (array $entry) => $entry['due'] !== null
                 && $entry['debt']->monthlyCommitment() > 0)
             ->map(fn (array $entry) => $this->item(
@@ -269,7 +259,6 @@ class ReminderService
                     $reminder->frequency?->shortLabel(),
                 );
 
-                // Extras que la vista necesita para editar el aviso suelto.
                 return $item + [
                     'frequency_value' => $reminder->frequency?->value,
                     'notes' => $reminder->notes,
@@ -289,7 +278,6 @@ class ReminderService
         $cursor = $today->copy()->startOfMonth();
 
         for ($i = 0; $i < 3; $i++) {
-            // Un día 31 en un mes de 30 cae el último día del mes.
             $day = min((int) $debt->due_day, $cursor->daysInMonth);
             $due = $cursor->copy()->day($day)->startOfDay();
 

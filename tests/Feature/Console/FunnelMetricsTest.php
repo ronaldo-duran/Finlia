@@ -19,26 +19,20 @@ class FunnelMetricsTest extends TestCase
 
     public function test_calcula_el_embudo_sin_contar_las_cuentas_purgadas(): void
     {
-        // Registrada hace 10 días, gasta en dos días distintos y vuelve al octavo día.
         $ana = User::factory()->create(['created_at' => now()->subDays(10)]);
         $hogarDeAna = $this->gasto($ana, '2026-09-01', now()->subDays(10));
         $this->gasto($ana, '2026-09-02', now()->subDays(2));
 
-        // Miembro del hogar de Ana, gastó en dos días y luego se purgó: sus
-        // movimientos se conservan, pero ya no es un usuario del embudo.
         $beto = User::factory()->create(['email' => 'deleted+99@finlia.invalid']);
         $this->gasto($beto, '2026-09-03', now()->subDays(5), $hogarDeAna);
         $this->gasto($beto, '2026-09-04', now()->subDays(4), $hogarDeAna);
 
-        // Registrado hace 10 días, sin verificar y sin usar la app.
         User::factory()->unverified()->create(['created_at' => now()->subDays(10)]);
 
-        // Registrada ayer (fuera de la cohorte de 7 días): dos gastos el mismo día.
         $carla = User::factory()->create(['created_at' => now()->subDay()]);
         $this->gasto($carla, '2026-09-13', now());
         $this->gasto($carla, '2026-09-13', now());
 
-        // Pidió eliminarse y sigue en su ventana de suspensión.
         User::factory()->create(['deletion_requested_at' => now()]);
 
         $this->artisan('finlia:metrics')

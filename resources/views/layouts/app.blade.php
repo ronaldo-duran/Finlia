@@ -5,43 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @auth
-        {{-- household-id: usado por los selects inteligentes (Épica 10) para
-             aislar las preferencias de selección por hogar. --}}
         <meta name="household-id" content="{{ active_household_id() ?? '' }}">
     @endauth
-
     <title>{{ $title ?? 'Panel' }} · Finlia</title>
 
-    {{-- Identidad de marca (docs/BRAND.md): símbolo de puntos, sin cambios entre temas. --}}
     @include('layouts.partials.favicon')
 
-    {{-- PWA (Épica 10): manifest e icono de instalación. --}}
     <link rel="manifest" href="/manifest.webmanifest">
-    {{-- theme-color dinámico: se actualiza por JS al cambiar el tema (app.js). --}}
     <meta name="theme-color" content="#eef3f8" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0e1419" media="(prefers-color-scheme: dark)">
-    {{-- iOS: pantalla completa al agregar a inicio. --}}
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Finlia">
 
-    {{-- Anti-FOUC: fija el tema antes del primer paint --}}
     @include('layouts.partials.theme-head')
-
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="d-flex flex-column min-vh-100 @auth has-bottom-nav @endauth">
     @include('layouts.partials.progress-bar')
-
     @auth
-        {{-- Aviso de instalación en iOS: va antes de la navbar para que la
-             empuje hacia abajo en vez de taparla. El propio partial decide si
-             se muestra (solo iPhone/iPad, fuera de la app instalada y sin
-             haberlo descartado antes). --}}
         @include('layouts.partials.ios-install-banner')
     @endauth
-
-    {{-- ===================== Navbar (glass) ===================== --}}
     <nav class="navbar navbar-expand glass-nav sticky-top py-2">
         <div class="container-fluid">
             <div class="d-flex align-items-center gap-1">
@@ -50,29 +34,21 @@
                     <span>Finlia</span>
                 </a>
             </div>
-
             @auth
-                {{-- Selector de hogar activo --}}
                 <div class="d-none d-md-block">
                     @include('layouts.partials.household-selector')
                 </div>
             @endauth
-
-            {{-- Acciones a la derecha --}}
             <ul class="navbar-nav flex-row align-items-center gap-1">
                 @auth
-                    {{-- Recordatorios (Épica 9): campanita con conteo in-app --}}
-                    @include('layouts.partials.reminders-bell')
 
-                    {{-- Toggle de tema (claro/oscuro) --}}
+                    @include('layouts.partials.reminders-bell')
                     <li class="nav-item">
                         <button type="button" class="btn-icon" data-theme-toggle aria-label="Cambiar tema">
                             <i class="bi bi-sun-fill show-in-dark"></i>
                             <i class="bi bi-moon-stars-fill show-in-light"></i>
                         </button>
                     </li>
-
-                    {{-- Menú de usuario --}}
                     <li class="nav-item dropdown">
                         @php
                             $initials = collect(explode(' ', trim(Auth::user()->name)))
@@ -90,11 +66,6 @@
                                     <i class="bi bi-person me-1"></i> Mi perfil
                                 </a>
                             </li>
-                            {{-- Guía de la pantalla actual (ADR-0045). Solo
-                                 aparece donde hay una; el catálogo completo
-                                 está en /perfil. El motor lo engancha por
-                                 data-tour-open: sin JS no se pinta el botón
-                                 muerto, se queda sin más. --}}
                             @if (($finliaTour ?? null) && $finliaTour['payload'])
                                 <li>
                                     <button type="button" class="dropdown-item" data-tour-open>
@@ -117,11 +88,7 @@
             </ul>
         </div>
     </nav>
-
-    {{-- ===================== Cuerpo: sidebar + contenido ===================== --}}
     <div class="d-flex flex-grow-1">
-        {{-- Sidebar: offcanvas en móvil (se abre desde la derecha, como el botón
-             "Más" de la barra inferior que la activa), columna fija en escritorio --}}
         <aside class="offcanvas-lg offcanvas-end finlia-sidebar border-0"
                tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
             <div class="offcanvas-header d-lg-none">
@@ -132,15 +99,11 @@
             </div>
             <div class="offcanvas-body py-3 d-flex flex-column">
                 <ul class="nav flex-column">
-                    {{-- Panel, Movimientos y Presupuestos ya están en la barra inferior
-                         móvil: mostrarlos también aquí sería duplicar destino. Solo
-                         aparecen en el sidebar fijo de escritorio. --}}
                     <li class="d-none d-lg-block">
                         <a class="nav-link @if(request()->routeIs('dashboard'))active @endif" href="{{ route('dashboard') }}">
                             <i class="bi bi-speedometer2"></i> Panel
                         </a>
                     </li>
-
                     @auth
                         <li class="d-none d-lg-block">
                             <a class="nav-link @if(request()->routeIs('movements.*'))active @endif" href="{{ route('movements.index') }}">
@@ -197,11 +160,6 @@
                                 <i class="bi bi-house-heart"></i> Hogares
                             </a>
                         </li>
-
-                        {{-- Legal. En el pie también están, pero ahí quedan al
-                             final de un scroll largo y tapadas por la barra
-                             inferior en móvil: nadie vuelve a leer los términos
-                             si hay que cazarlos. --}}
                         <li><hr class="my-2 opacity-25"></li>
                         <li>
                             <a class="nav-link @if(request()->routeIs('terms.*'))active @endif" href="{{ route('terms.show') }}">
@@ -213,11 +171,6 @@
                                 <i class="bi bi-shield-check"></i> Tus datos
                             </a>
                         </li>
-                        {{-- Reportar un error también está en el pie, pero ahí solo
-                             se encuentra por casualidad: en móvil el pie queda tras
-                             un scroll largo y debajo de la barra inferior. Quien se
-                             topa con un fallo lo busca en el menú, no al final de
-                             la página. --}}
                         <li>
                             <a class="nav-link @if(request()->routeIs('bug-report.*'))active @endif" href="{{ route('bug-report.create') }}">
                                 <i class="bi bi-bug"></i> Reportar un error
@@ -225,30 +178,17 @@
                         </li>
                     @endauth
                 </ul>
-
                 @auth
-                    {{-- La versión, a la vista y no solo en el pie: es el primer dato
-                         que hace falta para entender un reporte, y quien reporta no
-                         debería tener que cazarla. mt-auto la empuja al final de la
-                         barra en escritorio; en móvil (offcanvas) queda tras la
-                         lista, sin hueco vacío por encima. --}}
                     <p class="small text-body-tertiary text-center mt-auto pt-3 mb-0" data-testid="app-version">
                         Finlia v{{ config('finlia.version') }}
                     </p>
                 @endauth
             </div>
         </aside>
-
-        {{-- Contenido principal.
-             min-w-0: sin él, main (flex item) hereda min-width:auto y no puede
-             encogerse por debajo del ancho intrínseco de su contenido, lo que
-             provoca scroll horizontal en móvil. --}}
         <main class="flex-grow-1 min-w-0 p-3 p-md-4">
             @yield('content')
         </main>
     </div>
-
-    {{-- ===================== Footer ===================== --}}
     <footer class="app-footer mt-auto py-3">
         <div class="container-fluid text-center small">
             Finlia · Finanzas familiares &middot;
@@ -260,18 +200,12 @@
             &copy; {{ date('Y') }}
         </div>
     </footer>
-
     @auth
         @include('layouts.partials.mobile-bottom-nav')
         @include('layouts.partials.fab')
         @include('layouts.partials.tour')
         @include('layouts.partials.compulsive-survey-modal')
     @endauth
-
-    {{-- ======= Modal de confirmación genérico =======
-         Usos: <form data-confirm="¿Estás seguro?">...</form>
-               <button data-confirm="¿Eliminar?" data-form="#miFormId">Eliminar</button>
-         El JS intercepta el submit y muestra este modal antes de dejarlo pasar. --}}
     <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow">
@@ -296,71 +230,50 @@
             </div>
         </div>
     </div>
-
     <script>
-    // Intercepta formularios con data-confirm y los pasa por el modal antes de enviar.
     (function () {
         var modalEl     = document.getElementById('confirmModal');
         var bodyEl      = document.getElementById('confirmModalBody');
         var okEl        = document.getElementById('confirmModalOk');
         var modal       = null;
         var pendingForm = null;
-
         function getModal() {
             if (!modal) modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
             return modal;
         }
-
-        // Envía saltándose el evento `submit`: HTMLFormElement.submit() no lo
-        // dispara, así que no vuelve a caer en este mismo interceptor.
         function reallySubmit(form) {
             HTMLFormElement.prototype.submit.call(form);
         }
-
         document.addEventListener('submit', function (e) {
             var form = e.target.closest && e.target.closest('form[data-confirm]');
             if (!form) return;
-
             var msg = form.getAttribute('data-confirm') || '¿Estás seguro?';
-
-            // Si Bootstrap no cargó, nunca dejamos el botón muerto: se degrada
-            // al diálogo nativo en lugar de bloquear la acción en silencio.
             if (!window.bootstrap) {
                 if (!window.confirm(msg)) e.preventDefault();
                 return;
             }
-
             e.preventDefault();
-            bodyEl.textContent = msg;   // textContent: el mensaje es dato, nunca HTML.
+            bodyEl.textContent = msg;
             pendingForm = form;
             getModal().show();
         }, true);
-
         okEl.addEventListener('click', function () {
             var form = pendingForm;
             pendingForm = null;
             getModal().hide();
             if (!form) return;
-
-            // reallySubmit() se salta el evento `submit`, así que el
-            // indicador de carga no se enciende solo: hay que pedirlo. Sin
-            // esto, borrar algo lento no daría ninguna señal.
             if (window.Finlia && window.Finlia.cargando) {
                 window.Finlia.cargando.ocuparFormulario(form);
             }
 
             reallySubmit(form);
         });
-
-        // Si se cierra sin confirmar, la acción queda descartada.
         modalEl.addEventListener('hidden.bs.modal', function () {
             pendingForm = null;
         });
     })();
     </script>
-
     @stack('modals')
-
     @stack('scripts')
 </body>
 </html>

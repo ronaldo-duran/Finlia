@@ -32,7 +32,6 @@ class StoreBudgetRequest extends FormRequest
         $householdId = active_household_id();
 
         return [
-            // NULL = presupuesto total del mes.
             'category_id' => [
                 'nullable',
                 Rule::exists('categories', 'id')->where(fn ($q) => $q
@@ -98,7 +97,6 @@ class StoreBudgetRequest extends FormRequest
     {
         $data = $this->validated();
         $data['category_id'] = $data['category_id'] ?? null;
-        // La periodicidad no la elige el usuario: la Épica 4 solo es mensual.
         $data['period'] = BudgetPeriod::Monthly->value;
 
         return $data;

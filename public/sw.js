@@ -12,7 +12,6 @@
 const CACHE_VERSION = 'finlia-v1';
 
 self.addEventListener('install', function (event) {
-    // Activa el SW sin esperar a que se cierre la pestaña anterior.
     self.skipWaiting();
 });
 
@@ -42,9 +41,7 @@ self.addEventListener('activate', function (event) {
  * página de fallback, sin tocar el resto de la app.
  */
 self.addEventListener('fetch', function (event) {
-    // Solo interceptamos peticiones de navegación GET al mismo origen.
     if (event.request.method !== 'GET') return;
     if (!event.request.url.startsWith(self.location.origin)) return;
 
-    // Dejamos pasar normalmente (network first implícito).
 });

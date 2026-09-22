@@ -18,8 +18,6 @@ class PersonalDataTest extends TestCase
 {
     use RefreshDatabase;
 
-    // ---- Pantalla ----
-
     public function test_el_perfil_muestra_la_seccion_de_datos_personales(): void
     {
         $user = User::factory()->create();
@@ -44,8 +42,6 @@ class PersonalDataTest extends TestCase
             ->assertSee('Valle del Cauca');
     }
 
-    // ---- Actualización ----
-
     public function test_actualiza_los_datos_personales(): void
     {
         $user = User::factory()->create(['birth_date' => '1980-01-01']);
@@ -68,7 +64,6 @@ class PersonalDataTest extends TestCase
 
     public function test_region_y_genero_son_opcionales_y_se_pueden_vaciar(): void
     {
-        // Minimización (Ley 1581): "prefiero no decirlo" = no almacenar nada.
         $user = User::factory()->create([
             'region' => ColombianRegion::Cundinamarca->value,
             'gender' => Gender::Male->value,
@@ -91,8 +86,6 @@ class PersonalDataTest extends TestCase
 
     public function test_usuario_heredado_completa_su_fecha_de_nacimiento(): void
     {
-        // La columna nació en NULL (usuarios anteriores al plan 04); el
-        // perfil exigido la completa.
         $user = User::factory()->create(['birth_date' => null]);
 
         $this->actingAs($user)
@@ -108,8 +101,6 @@ class PersonalDataTest extends TestCase
         $this->assertSame('1985-11-03', $user->refresh()->birth_date->toDateString());
     }
 
-    // ---- Validación ----
-
     public function test_la_fecha_de_nacimiento_es_obligatoria_en_el_perfil(): void
     {
         $user = User::factory()->create(['birth_date' => '1990-05-12']);
@@ -118,7 +109,6 @@ class PersonalDataTest extends TestCase
             ->put(route('profile.update'), ['name' => $user->name, 'birth_date' => ''])
             ->assertSessionHasErrors('birth_date');
 
-        // Nada cambió.
         $this->assertSame('1990-05-12', $user->refresh()->birth_date->toDateString());
     }
 
@@ -154,7 +144,7 @@ class PersonalDataTest extends TestCase
             ->put(route('profile.update'), [
                 'name' => $user->name,
                 'birth_date' => '1990-05-12',
-                'region' => 'bogota-norte', // fuera de la lista cerrada
+                'region' => 'bogota-norte',
             ])
             ->assertSessionHasErrors('region');
 
@@ -176,13 +166,8 @@ class PersonalDataTest extends TestCase
         $this->assertNull($user->refresh()->gender);
     }
 
-    // ---- Aislamiento ----
-
     public function test_actualizar_el_perfil_no_toca_a_otro_usuario(): void
     {
-        // /perfil no conoce IDs ajenos (Plan 02): solo opera sobre el
-        // autenticado. Este test clava el comportamiento para los datos
-        // demográficos también.
         $ana = User::factory()->create(['region' => ColombianRegion::Huila->value]);
         $beto = User::factory()->create(['region' => ColombianRegion::Meta->value]);
 
@@ -202,8 +187,6 @@ class PersonalDataTest extends TestCase
         $this->assertNotSame('Ana Nueva', $beto->refresh()->name);
     }
 
-    // ---- User::age() (derivado, nunca en columna) ----
-
     public function test_la_edad_se_calcula_desde_la_fecha_de_nacimiento(): void
     {
         Carbon::setTestNow('2026-08-30 12:00:00');
@@ -222,12 +205,8 @@ class PersonalDataTest extends TestCase
         }
     }
 
-    // ---- Listas cerradas ----
-
     public function test_la_lista_de_regiones_es_la_oficial_de_colombia(): void
     {
-        // 32 departamentos + Bogotá D.C. (subdivisión propia en
-        // ISO 3166-2:CO): 33 entradas, ordenadas para el select.
         $options = ColombianRegion::options();
 
         $this->assertCount(33, $options);
@@ -235,7 +214,6 @@ class PersonalDataTest extends TestCase
         $this->assertSame('Norte de Santander', $options['norte-de-santander']);
         $this->assertSame('Antioquia', $options[ColombianRegion::Antioquia->value]);
 
-        // Orden alfabético por etiqueta.
         $this->assertSame(array_values($options), array_values(collect($options)->sort()->all()));
     }
 }

@@ -96,8 +96,6 @@ class ProfileController extends Controller
             'pendingExpiresAt' => $user->pending_email_requested_at
                 ?->copy()
                 ->addMinutes(ProfileService::EMAIL_CHANGE_TTL_MINUTES),
-            // Catálogo de guías (ADR-0045): el sitio desde el que se vuelven
-            // a ver una por una, y donde se apagan del todo.
             'tours' => $this->tours->catalog($user),
         ]);
     }
@@ -124,10 +122,6 @@ class ProfileController extends Controller
 
         $this->service->changePassword($user, $password);
 
-        // Revoca las demás sesiones y las cookies de "recuérdame":
-        // logoutOtherDevices re-hashea la contraseña y AuthenticateSession
-        // compara ese hash en cada sesión (ADR-0030). La sesión actual
-        // sobrevive: no hay que volver a iniciar sesión.
         Auth::logoutOtherDevices($password);
 
         return back()->with('status', __('Contraseña actualizada. Cerramos las demás sesiones de tu cuenta.'));

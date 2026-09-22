@@ -1,8 +1,3 @@
-{{--
-    Digest diario de recordatorios — versión texto plano (ADR-0028).
-    Mismo contenido que digest.blade.php, sin HTML: algunos clientes y
-    lectores de pantalla prefieren esta parte.
---}}
 @php
     $partes = [];
     if ($summary['overdue'] > 0) {
@@ -14,7 +9,6 @@
 @endphp
 Hola: tienes {{ implode(' y ', $partes) }} en el hogar {{ $householdName }}.
 Esto es lo que pide atención:
-
 @foreach ($urgent as $item)
 @php
     $days = $item['days_remaining'];
@@ -27,13 +21,9 @@ Esto es lo que pide atención:
 * {{ $item['title'] }} — {{ $linea }}
   {{ $item['due_date']->format('d/m/Y') }} · {{ $item['source']->label() }}@if ($item['amount'] !== null) · $ {{ number_format($item['amount'], 0, ',', '.') }}@endif
 @endforeach
-
 Ver tus recordatorios: {{ $url }}
-
 Un aviso se apaga pagando, no leyendo este correo: aquí no se marca nada
 como leído ni cambia ningún dato.
-
 Como máximo un correo al día por hogar, y solo cuando tengas urgentes.
-
 Darte de baja: {{ $unsubscribeUrl }}
 (o en Recordatorios → Resumen por correo dentro de {{ $appName }})

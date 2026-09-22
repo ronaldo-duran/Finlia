@@ -39,7 +39,7 @@ class RevokePremium extends Command
         $reason = (string) ($this->option('reason') ?: 'Revocación manual');
         $subscriptions->revoke($household, $reason);
 
-        $this->info("✓ Hogar #{$household->id} ({$household->name}) → Free (razón: {$reason})");
+        $this->info("Hogar #{$household->id} ({$household->name}) → Free (razón: {$reason})");
 
         return self::SUCCESS;
     }

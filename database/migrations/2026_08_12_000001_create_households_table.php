@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('households', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            // Creador/admin del hogar.
             $table->foreignId('owner_id')->constrained('users')->cascadeOnDelete();
             $table->string('currency', 8)->default('COP');
             $table->string('timezone', 64)->default('America/Bogota');
