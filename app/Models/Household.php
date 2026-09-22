@@ -133,6 +133,16 @@ class Household extends Model
         return $this->hasMany(CompulsiveSurveyResponse::class);
     }
 
+    public function receivables(): HasMany
+    {
+        return $this->hasMany(Receivable::class);
+    }
+
+    public function receivablePayments(): HasMany
+    {
+        return $this->hasMany(ReceivablePayment::class);
+    }
+
     /**
      * Indica si un usuario es miembro del hogar.
      */

@@ -564,6 +564,47 @@ Gmail/Yahoo (devuelve 204). Idempotente y por hogar.
 
 ---
 
+## Épica 15 — Cuentas por cobrar
+
+### `receivables`
+| Campo | Tipo | Notas |
+|---|---|---|
+| id, household_id | FK cascade | Aislamiento por hogar |
+| debtor_name | string(120) | Texto libre — el deudor puede no estar en el sistema |
+| debtor_user_id | FK users nullOnDelete, null | Solo si el deudor es miembro del hogar |
+| name | string(120) | Concepto ("Préstamo personal", "Trabajo facturado") |
+| description | text, null | Detalle largo |
+| original_amount | decimal(15,2) | Lo que le deben al hogar |
+| current_balance | decimal(15,2) | Derivado (`ReceivableService::recomputeBalance`) |
+| currency | string(3) | ISO 4217, por defecto `COP` |
+| status | string | `App\Enums\ReceivableStatus`: `pending`, `partial`, `paid`, `written_off` |
+| due_date | date, null | Fecha tentativa de cobro (alimenta recordatorios) |
+| notes | text, null | |
+| timestamps + softDeletes | | Historial: no se destruye |
+
+Índices: `(household_id, status)`, `(household_id, due_date)`.
+
+### `receivable_payments`
+| Campo | Tipo | Notas |
+|---|---|---|
+| id, receivable_id | FK cascade | |
+| household_id | FK cascade | Denormalizado para acotar por hogar sin join |
+| account_id | FK accounts nullOnDelete, null | Cuenta donde entró el dinero (o null) |
+| income_id | FK incomes nullOnDelete, null | Ingreso real generado (ADR-0021 espejo) |
+| amount | decimal(15,2) | |
+| date | date | |
+| type | string | `App\Enums\ReceivablePaymentType`: `received`, `forgiven`, `adjustment` |
+| notes | text, null | |
+| timestamps | | |
+
+Índices: `(household_id, date)`, `(receivable_id, date)`.
+
+- **Saldo derivado** (ADR-0020 espejo): `current_balance = original_amount − Σ payments.amount`, recalculado en el Service, nunca tecleado.
+- **Ingreso automático** (ADR-0021 espejo): con `account_id` y `type=received`, el Service crea el `Income` real que sube el saldo de esa cuenta; condonaciones y ajustes reducen el saldo sin ingreso.
+- **Recordatorios**: cada `Receivable` con `due_date` entra en la lista unificada de `ReminderService` como una fuente derivada más (Épica 9, ADR-0028).
+
+---
+
 ## Mapa de relaciones (simplificado)
 
 ## Contacto y reportes de error
@@ -596,6 +637,7 @@ erDiagram
     households ||--o{ expected_incomes : "tiene"
     households ||--o{ recurring_expenses : "tiene"
     households ||--o{ debts : "tiene"
+    households ||--o{ receivables : "tiene"
     households ||--o{ savings_goals : "tiene"
     accounts ||--o{ incomes : "recibe"
     accounts ||--o{ expenses : "afecta"
@@ -603,6 +645,7 @@ erDiagram
     categories ||--o{ expenses : "clasifica"
     categories ||--o{ budgets : "limita"
     debts ||--o{ debt_payments : "registra"
+    receivables ||--o{ receivable_payments : "registra"
     savings_goals ||--o{ savings_goal_contributions : "registra"
 ```
 

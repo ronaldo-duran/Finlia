@@ -29,6 +29,8 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\MovementsController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReceivableController;
+use App\Http\Controllers\ReceivablePaymentController;
 use App\Http\Controllers\RecurringExpenseController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReportController;
@@ -280,6 +282,26 @@ Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', '
         ->name('debts.payments.destroy');
     Route::post('deudas/{debt}/refinanciacion', [DebtRefinancingController::class, 'store'])
         ->name('debts.refinancings.store');
+    Route::get('cuentas-por-cobrar', [ReceivableController::class, 'index'])
+        ->name('receivables.index');
+    Route::get('cuentas-por-cobrar/registrar', [ReceivableController::class, 'create'])
+        ->name('receivables.create');
+    Route::post('cuentas-por-cobrar', [ReceivableController::class, 'store'])
+        ->name('receivables.store');
+    Route::get('cuentas-por-cobrar/{receivable}', [ReceivableController::class, 'show'])
+        ->name('receivables.show');
+    Route::get('cuentas-por-cobrar/{receivable}/editar', [ReceivableController::class, 'edit'])
+        ->name('receivables.edit');
+    Route::put('cuentas-por-cobrar/{receivable}', [ReceivableController::class, 'update'])
+        ->name('receivables.update');
+    Route::delete('cuentas-por-cobrar/{receivable}', [ReceivableController::class, 'destroy'])
+        ->name('receivables.destroy');
+
+    Route::post('cuentas-por-cobrar/{receivable}/cobros', [ReceivablePaymentController::class, 'store'])
+        ->name('receivables.payments.store');
+    Route::delete('cuentas-por-cobrar/{receivable}/cobros/{payment}', [ReceivablePaymentController::class, 'destroy'])
+        ->name('receivables.payments.destroy');
+
     Route::put('cuentas/{account}/tarjeta', [CreditCardController::class, 'update'])
         ->name('accounts.credit-card.update');
     Route::delete('cuentas/{account}/tarjeta', [CreditCardController::class, 'destroy'])

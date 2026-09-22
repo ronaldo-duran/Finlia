@@ -17,6 +17,7 @@ enum ReminderSource: string
     case RecurringExpense = 'recurring_expense';
     case Debt = 'debt';
     case SavingsGoal = 'savings_goal';
+    case Receivable = 'receivable';
     case Custom = 'custom';
 
     public function label(): string
@@ -25,6 +26,7 @@ enum ReminderSource: string
             self::RecurringExpense => 'Gasto recurrente',
             self::Debt => 'Deuda',
             self::SavingsGoal => 'Meta de ahorro',
+            self::Receivable => 'Cuenta por cobrar',
             self::Custom => 'Recordatorio',
         };
     }
@@ -36,6 +38,7 @@ enum ReminderSource: string
             self::RecurringExpense => 'bi-arrow-repeat',
             self::Debt => 'bi-credit-card-2-front',
             self::SavingsGoal => 'bi-piggy-bank',
+            self::Receivable => 'bi-inbox-fill',
             self::Custom => 'bi-bell',
         };
     }

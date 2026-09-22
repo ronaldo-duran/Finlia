@@ -8,6 +8,7 @@ use App\Enums\BudgetScope;
 use App\Services\BudgetCalculatorService;
 use App\Services\DebtService;
 use App\Services\MovementSummaryService;
+use App\Services\ReceivableService;
 use App\Services\SavingsGoalService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +22,7 @@ class DashboardController extends Controller
         private readonly BudgetCalculatorService $budgets,
         private readonly SavingsGoalService $savingsGoals,
         private readonly DebtService $debts,
+        private readonly ReceivableService $receivables,
     ) {}
 
     /**
@@ -65,6 +67,7 @@ class DashboardController extends Controller
             'budgetSummary' => $this->budgets->summary($householdId, BudgetScope::Month),
             'savingsGoals' => $savingsGoals,
             'debtSummary' => $this->debts->summary($householdId),
+            'receivableSummary' => $this->receivables->summary($householdId),
             'savingsSummary' => $this->savingsGoals->summary($householdId, $savingsGoals),
             'totals' => $totals,
             'totalBalance' => $totalBalance,

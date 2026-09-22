@@ -62,6 +62,7 @@
             ['label' => 'Balance del mes', 'value' => $totals['balance'], 'icon' => 'bi-plus-slash-minus', 'tone' => 'finlia'],
             ['label' => 'Saldo en cuentas', 'value' => $totalBalance, 'icon' => 'bi-wallet2', 'tone' => 'finlia'],
             ['label' => 'Deuda total', 'value' => $debtSummary['total_balance'], 'icon' => 'bi-credit-card-2-front', 'tone' => 'finlia'],
+            ['label' => 'Por cobrar', 'value' => $receivableSummary['total_balance'], 'icon' => 'bi-inbox-fill', 'tone' => 'finlia'],
             ['label' => 'Ahorro en metas', 'value' => $savingsSummary['total_saved'], 'icon' => 'bi-piggy-bank', 'tone' => 'finlia'],
         ];
     @endphp

@@ -146,6 +146,11 @@
                             </a>
                         </li>
                         <li>
+                            <a class="nav-link @if(request()->routeIs('receivables.*'))active @endif" href="{{ route('receivables.index') }}">
+                                <i class="bi bi-inbox-fill"></i> Cuentas por cobrar
+                            </a>
+                        </li>
+                        <li>
                             <a class="nav-link @if(request()->routeIs('savings-goals.*'))active @endif" href="{{ route('savings-goals.index') }}">
                                 <i class="bi bi-piggy-bank"></i> Metas de ahorro
                             </a>

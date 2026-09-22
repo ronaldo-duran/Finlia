@@ -12,6 +12,24 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.40.0] - 2026-09-21 — Cuentas por cobrar
+
+Cierra la Épica 15 con el módulo simétrico al de deudas: registrar que alguien le debe dinero al hogar y llevarle la cuenta hasta que entra el pago. Sin esto la app respondía bien a "¿cuánto puedo gastar?" pero se quedaba ciega ante el dinero comprometido a favor del hogar.
+
+### Añadido
+- **Panel `/cuentas-por-cobrar`** con total pendiente, listado ordenado por fecha tentativa de cobro y bloque de cerradas. Cada tarjeta muestra deudor, concepto, saldo y progreso.
+- **Ficha por cuenta** con historial de cobros, formulario de cobro y edición para posponer la fecha sin borrar el rastro. El cobro puede ser "cobro recibido", "condonado" o "ajuste"; solo el primero, y si eliges cuenta destino, genera el **ingreso automático** que sube ese saldo (mismo patrón que el pago de deuda). Condonaciones y ajustes reducen el saldo sin ingreso real.
+- **Saldo derivado** (ADR-0020 espejo): `current_balance` se recalcula desde los cobros registrados, nunca se teclea. El estado se ajusta solo entre `pending`, `partial` y `paid`; `written_off` queda a mano del usuario.
+- **Recordatorios**: cada cuenta con `due_date` entra en la lista unificada de `/recordatorios` como una fuente derivada más (Épica 9). Cuando la fecha pasa sin cobro, el ítem se marca como vencido.
+- **Tarjeta "Por cobrar"** en el resumen del dashboard, al lado de "Deuda total". Enlace al módulo desde el sidebar y guía nueva en `config/tours.php` (`cuentas-por-cobrar`).
+- **Aislamiento por hogar**: policies `ReceivablePolicy` y `ReceivablePaymentPolicy` con el mismo trato que el resto de recursos financieros; los Form Requests acotan `account_id`, `category_id` y `debtor_user_id` al hogar activo.
+- **Métrica añadida a `finlia:metrics`**: cuentas por cobrar con saldo > 0 y total por cobrar acumulado.
+- **Seeder de demo** con un préstamo personal parcialmente cobrado y un trabajo facturado próximo, para que el módulo se estrene con datos coherentes.
+
+### Documentación
+- `docs/ROADMAP.md`: Épica 15 pasa a 🟢 con el detalle real de la entrega.
+- `docs/DATA_MODEL.md`: tablas `receivables` y `receivable_payments` documentadas, diagrama actualizado.
+
 ## [0.39.1] - 2026-09-21 — Guardar sí guarda
 
 ### Corregido

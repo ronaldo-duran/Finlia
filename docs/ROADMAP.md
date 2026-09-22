@@ -22,7 +22,7 @@ Estado: 🔴 No iniciada · 🟡 En progreso · 🟢 Completada
 | 12 | Monetización y modelo SaaS | 🟡 | 2, 11 |
 | 13 | Portafolio profesional | 🟢 | 11 |
 | 14 | API REST para app móvil (futura) | 🔴 | 3, 11 |
-| 15 | Cuentas por cobrar | 🔴 | 3, 6, 9 |
+| 15 | Cuentas por cobrar | 🟢 | 3, 6, 9 |
 
 > 🔧 **Serie de blindaje de cuentas** (`planes/`, 2026-08): seis planes acordados con el
 > producto **antes** de la Épica 10 — verificación de correo, perfil (contraseña y
@@ -135,7 +135,7 @@ Dos correcciones que salieron de la propia revisión:
 > Sin fichero de épica todavía. Se desarrolla cuando la web esté en producción. Añade `routes/api.php` + **Sanctum** (tokens para móvil) + API Resources/Controllers que **reutilizan los mismos `app/Services/`, Form Requests y Policies** del web (ver [ADR-0010](DECISIONS.md#adr-0010)). Solo es barata si la lógica quedó bien aislada desde las épicas 2-9.
 
 ### Épica 15 — Cuentas por cobrar
-> Ficha en [`scrum/epics/15-cuentas-por-cobrar.md`](../scrum/epics/15-cuentas-por-cobrar.md). Registrar que alguien le debe dinero al hogar, con fecha tentativa de cobro, edición, posposición y registro del ingreso al cobrar. Espejo estructural de la Épica 6 (deudas) — mismo patrón de Service + payments + integración con recordatorios (ADR-0028). Se abre después del lanzamiento público en LinkedIn.
+Espejo estructural de la Épica 6 (deudas), acotado por `household_id`. Migraciones `receivables` y `receivable_payments` con `DECIMAL(15,2)` y soft deletes; enums `ReceivableStatus` (pending/partial/paid/written_off) y `ReceivablePaymentType` (received/forgiven/adjustment). Un `ReceivableService` reúne alta, cobro, borrado de cobro y recomputo de saldo, y —cuando el tipo es "cobro recibido" y hay cuenta destino— crea el `Income` real por el mismo `MovementService` (ADR-0021 espejo). Policies `ReceivablePolicy` y `ReceivablePaymentPolicy` con la misma regla de aislamiento (`ChecksHouseholdAccess`). El módulo se engancha al motor de recordatorios (ADR-0028) como una fuente derivada más, con vencido/próximo según `due_date`; en el dashboard aparece la tarjeta "Por cobrar" y en el sidebar el enlace del módulo. Guía nueva en `config/tours.php` (`cuentas-por-cobrar`) y métrica añadida a `finlia:metrics`. Ficha original liberada al cerrar la épica: el histórico vive en [CHANGELOG.md](../CHANGELOG.md).
 
 ---
 
