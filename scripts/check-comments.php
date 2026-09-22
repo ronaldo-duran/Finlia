@@ -36,7 +36,7 @@ function archivos(): array
 
         foreach ($iterador as $archivo) {
             if ($archivo->isFile() && in_array($archivo->getExtension(), EXTENSIONES, true)) {
-                $encontrados[] = $archivo->getPathname();
+                $encontrados[] = $archivo->getRealPath();
             }
         }
     }
