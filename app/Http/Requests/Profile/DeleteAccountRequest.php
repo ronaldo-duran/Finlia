@@ -15,7 +15,7 @@ class DeleteAccountRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // La autorización es UserPolicy en el controlador.
+        return true;
     }
 
     /**

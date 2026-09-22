@@ -10,7 +10,7 @@ class TermsVersionSeeder extends Seeder
     /**
      * Publica la versión vigente de los términos y condiciones (Plan 03).
      *
-     * ⚠️ ESTA FILA NO SE EDITA JAMÁS. Cada aceptación de un usuario apunta a
+     * ESTA FILA NO SE EDITA JAMÁS. Cada aceptación de un usuario apunta a
      * una versión concreta y es prueba de consentimiento (ADR-0031): cambiar
      * el texto de una versión ya publicada destruiría esa prueba. Para
      * modificar los términos se publica OTRA versión — una fila nueva, con su

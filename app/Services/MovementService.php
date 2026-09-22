@@ -24,8 +24,6 @@ class MovementService
 {
     public function __construct(private readonly AccountBalanceService $balances) {}
 
-    // ---------------- Ingresos ----------------
-
     /**
      * @param  array<string, mixed>  $data  datos validados (sin household_id/user_id)
      */
@@ -70,8 +68,6 @@ class MovementService
             $this->balances->recompute($account);
         });
     }
-
-    // ---------------- Gastos ----------------
 
     /**
      * @param  array<string, mixed>  $data  datos validados (sin household_id/user_id)
@@ -118,8 +114,6 @@ class MovementService
         });
     }
 
-    // ---------------- Transferencias (ADR-0035) ----------------
-
     /**
      * @param  array<string, mixed>  $data  datos validados (sin household_id/user_id)
      */
@@ -145,7 +139,6 @@ class MovementService
     public function updateTransfer(Transfer $transfer, array $data): Transfer
     {
         return DB::transaction(function () use ($transfer, $data): Transfer {
-            // Cuentas afectadas: las nuevas y las anteriores.
             $affected = array_unique([
                 $transfer->from_account_id,
                 $transfer->to_account_id,

@@ -63,8 +63,6 @@ class BudgetCalculatorServiceTest extends TestCase
         ]);
     }
 
-    // ===== Caso vacío =====
-
     public function test_hogar_sin_datos_devuelve_el_plan_en_cero(): void
     {
         $summary = $this->summary();
@@ -78,8 +76,6 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->assertNull($summary['consumed_percent']);
         $this->assertNull($summary['level']);
     }
-
-    // ===== Plan: ingresos esperados =====
 
     public function test_ingresos_esperados_suman_solo_los_activos(): void
     {
@@ -98,7 +94,6 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->expectedIncome(3000000);
         $this->income(3000000, self::REFERENCE);
 
-        // Esperado 3M + registrado 3M ≠ 6M: es el mismo dinero.
         $this->assertSame(3000000.0, $this->summary()['expected_income']);
     }
 
@@ -120,18 +115,14 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->assertFalse($summary['has_expected_income']);
     }
 
-    // ===== Plan: lo que sobraría =====
-
     public function test_el_plan_resta_gastado_y_comprometido_pero_no_el_presupuesto(): void
     {
         $this->expectedIncome(3000000);
-        $this->budget(2000000);                       // presupuesto total del mes
-        $this->expense(500000, self::REFERENCE);      // ya gastado
+        $this->budget(2000000);
+        $this->expense(500000, self::REFERENCE);
 
         $summary = $this->summary();
 
-        // El presupuesto reparte lo que puedes gastar, no lo reduce (ADR-0040):
-        // queda como dato, fuera del comprometido.
         $this->assertSame(1500000.0, $summary['budget_remaining']);
         $this->assertSame(0.0, $summary['committed']['total']);
         $this->assertSame(2500000.0, $summary['plan_available']);
@@ -150,8 +141,8 @@ class BudgetCalculatorServiceTest extends TestCase
     public function test_recurrentes_rellenan_los_seams_de_fijos_y_obligaciones(): void
     {
         $this->expectedIncome(3000000);
-        $this->recurring('Arriendo', 1200000, Frequency::Monthly, '2026-03-20'); // fijo
-        $this->recurring('SOAT', 600000, Frequency::Yearly, '2026-03-25');       // obligación
+        $this->recurring('Arriendo', 1200000, Frequency::Monthly, '2026-03-20');
+        $this->recurring('SOAT', 600000, Frequency::Yearly, '2026-03-25');
 
         $summary = $this->summary();
 
@@ -163,9 +154,8 @@ class BudgetCalculatorServiceTest extends TestCase
     public function test_recurrentes_de_la_ventana_semana_solo_cuentan_si_ocurren_en_ella(): void
     {
         $this->expectedIncome(3000000);
-        // Semana del 9 al 15 de marzo de 2026 (referencia: 10/03).
-        $this->recurring('Arriendo', 1200000, Frequency::Monthly, '2026-03-20'); // fuera de la semana
-        $this->recurring('Mercado', 50000, Frequency::Weekly, '2026-03-12');     // dentro (12 y no más)
+        $this->recurring('Arriendo', 1200000, Frequency::Monthly, '2026-03-20');
+        $this->recurring('Mercado', 50000, Frequency::Weekly, '2026-03-12');
 
         $summary = $this->summary(BudgetScope::Week);
 
@@ -177,7 +167,6 @@ class BudgetCalculatorServiceTest extends TestCase
     {
         $this->expectedIncome(3000000);
         $recurring = $this->recurring('Arriendo', 1200000, Frequency::Monthly, '2026-03-20');
-        // "Marcar pagado" solo registra el gasto si hay cuenta asociada.
         $recurring->update(['account_id' => $this->account->id]);
 
         $this->assertSame(1200000.0, $this->summary()['committed']['fixed_expenses']);
@@ -186,8 +175,6 @@ class BudgetCalculatorServiceTest extends TestCase
         app(RecurringExpenseService::class)
             ->markAsPaid($recurring, $this->owner, Carbon::parse(self::REFERENCE));
 
-        // El gasto quedó registrado y salió del comprometido: mismo dinero,
-        // contado una sola vez.
         $summary = $this->summary();
         $this->assertSame(1200000.0, $summary['spent']);
         $this->assertSame(0.0, $summary['committed']['fixed_expenses']);
@@ -210,25 +197,21 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->assertSame(-500000.0, $this->summary()['plan_available']);
     }
 
-    // ===== Presupuesto total vs. por categoría (sin doble conteo) =====
-
     public function test_presupuesto_restante_toma_el_mayor_entre_total_y_categorias(): void
     {
-        $this->budget(2000000);                                   // total
+        $this->budget(2000000);
         $this->budget(800000, $this->category('Alimentación')->id);
         $this->budget(300000, $this->category('Transporte')->id);
 
         $summary = $this->summary();
 
-        // Total pendiente = 2.000.000; categorías pendientes = 1.100.000.
-        // Se toma el mayor, no la suma (2.000.000, no 3.100.000).
         $this->assertSame(2000000.0, $summary['budget_remaining']);
         $this->assertSame(2000000.0, $summary['budget_defined']);
     }
 
     public function test_si_las_categorias_superan_al_total_manda_la_suma_de_categorias(): void
     {
-        $this->budget(500000);                                       // total pequeño
+        $this->budget(500000);
         $this->budget(800000, $this->category('Alimentación')->id);
         $this->budget(300000, $this->category('Transporte')->id);
 
@@ -245,8 +228,6 @@ class BudgetCalculatorServiceTest extends TestCase
 
         $this->assertSame(0.0, $this->summary()['budget_remaining']);
     }
-
-    // ===== Alertas 80 % / 100 % =====
 
     public function test_categoria_al_80_por_ciento_genera_aviso(): void
     {
@@ -307,21 +288,19 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->assertSame(0.0, $rows[$transporte->id]['spent']);
     }
 
-    // ===== Días y ritmo de gasto =====
-
     public function test_dias_del_mes_en_curso(): void
     {
         $summary = $this->summary();
 
-        $this->assertSame(31, $summary['days_total']);   // marzo
+        $this->assertSame(31, $summary['days_total']);
         $this->assertSame(10, $summary['days_elapsed']);
-        $this->assertSame(22, $summary['days_remaining']); // incluye hoy
+        $this->assertSame(22, $summary['days_remaining']);
     }
 
     public function test_tendencia_marca_exceso_cuando_el_ritmo_se_dispara(): void
     {
         $this->budget(1000000);
-        $this->expense(900000, self::REFERENCE); // 90.000/día × 31 ≈ 2.790.000
+        $this->expense(900000, self::REFERENCE);
 
         $summary = $this->summary();
 
@@ -337,26 +316,22 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->assertSame('under', $this->summary()['trend']);
     }
 
-    // ===== Períodos: semana / mes / próximo mes =====
-
     public function test_la_semana_prorratea_el_presupuesto_mensual(): void
     {
         $categoria = $this->category('Alimentación');
-        $this->budget(3100000, $categoria->id); // 100.000 por día en un mes de 31
+        $this->budget(3100000, $categoria->id);
 
         $summary = $this->summary(BudgetScope::Week);
 
         $this->assertSame(7, $summary['days_total']);
         $this->assertTrue($summary['prorated']);
-        // 3.100.000 × 7/31 = 700.000
         $this->assertSame(700000.0, $summary['categories']->first()['budget']);
     }
 
     public function test_la_semana_solo_cuenta_los_gastos_de_esa_semana(): void
     {
-        // 2026-03-10 es martes: la semana va del 9 al 15 de marzo.
         $this->expense(50000, '2026-03-10');
-        $this->expense(80000, '2026-03-02'); // semana anterior
+        $this->expense(80000, '2026-03-02');
 
         $summary = $this->summary(BudgetScope::Week);
 
@@ -371,21 +346,20 @@ class BudgetCalculatorServiceTest extends TestCase
 
         $week = $this->summary(BudgetScope::Week)['liquidity'];
 
-        // La liquidez no depende de la ventana consultada: es la de hoy.
         $this->assertEquals($this->liquidity(), $week);
     }
 
     public function test_proximo_mes_usa_los_presupuestos_de_ese_mes(): void
     {
-        $this->budget(1000000, null, 2026, 3); // marzo
-        $this->budget(1500000, null, 2026, 4); // abril
+        $this->budget(1000000, null, 2026, 3);
+        $this->budget(1500000, null, 2026, 4);
 
         $summary = $this->summary(BudgetScope::NextMonth);
 
         $this->assertSame(2026, $summary['year']);
         $this->assertSame(4, $summary['month']);
         $this->assertSame(1500000.0, $summary['budget_defined']);
-        $this->assertSame(30, $summary['days_total']); // abril
+        $this->assertSame(30, $summary['days_total']);
         $this->assertSame(0, $summary['days_elapsed']);
         $this->assertSame(30, $summary['days_remaining']);
     }
@@ -393,23 +367,18 @@ class BudgetCalculatorServiceTest extends TestCase
     public function test_proximo_mes_es_una_proyeccion_sin_liquidez(): void
     {
         $this->expectedIncome(3000000);
-        $this->expense(900000, self::REFERENCE); // gasto de marzo, no de abril
+        $this->expense(900000, self::REFERENCE);
 
         $summary = $this->summary(BudgetScope::NextMonth);
 
         $this->assertSame(3000000.0, $summary['expected_income']);
         $this->assertSame(0.0, $summary['spent']);
         $this->assertSame(3000000.0, $summary['plan_available']);
-        // Nadie gasta hoy la plata de un mes que no ha empezado.
         $this->assertNull($summary['liquidity']);
     }
 
-    // ===== Liquidez: "puedes gastar hoy" (ADR-0040) =====
-
     public function test_antes_del_cobro_solo_cuenta_la_plata_que_tienes(): void
     {
-        // El caso que motivó ADR-0040: gana 3M, cobra el 15, hoy es 10 y
-        // tiene 100.000 en la cuenta.
         $this->setBalance(100000);
         $this->expectedIncome(3000000, day: 15);
 
@@ -417,7 +386,7 @@ class BudgetCalculatorServiceTest extends TestCase
 
         $this->assertSame('2026-03-15', $liquidity['payday']->toDateString());
         $this->assertSame('2026-03-14', $liquidity['until']->toDateString());
-        $this->assertSame(5, $liquidity['days']);                // 10, 11, 12, 13 y 14
+        $this->assertSame(5, $liquidity['days']);
         $this->assertSame(100000.0, $liquidity['available']);
         $this->assertSame(20000.0, $liquidity['daily_allowance']);
         $this->assertSame('ok', $liquidity['status']);
@@ -433,7 +402,7 @@ class BudgetCalculatorServiceTest extends TestCase
         $liquidity = $this->liquidity('2026-03-16');
 
         $this->assertSame('2026-04-15', $liquidity['payday']->toDateString());
-        $this->assertSame(30, $liquidity['days']);               // 16/03 al 14/04
+        $this->assertSame(30, $liquidity['days']);
         $this->assertSame(3100000.0, $liquidity['available']);
         $this->assertSame(103333.33, $liquidity['daily_allowance']);
         $this->assertSame([], $liquidity['pending_incomes']);
@@ -443,8 +412,8 @@ class BudgetCalculatorServiceTest extends TestCase
     {
         $this->setBalance(300000);
         $this->expectedIncome(3000000, day: 15);
-        $this->recurring('Internet', 100000, Frequency::Monthly, '2026-03-12');   // antes del cobro
-        $this->recurring('Arriendo', 1200000, Frequency::Monthly, '2026-03-20');  // después: lo cubre el salario
+        $this->recurring('Internet', 100000, Frequency::Monthly, '2026-03-12');
+        $this->recurring('Arriendo', 1200000, Frequency::Monthly, '2026-03-20');
 
         $liquidity = $this->liquidity();
 
@@ -459,13 +428,10 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->setBalance(1000000);
         $this->expectedIncome(3000000, day: 15);
 
-        // Registrada el 1.º, vencía el 5 y no se marcó pagada: se sigue debiendo.
         $this->travelTo(Carbon::parse('2026-03-01 09:00:00'));
         $this->recurring('Gimnasio', 90000, Frequency::Monthly, '2026-03-05');
         $this->travelTo(Carbon::parse(self::REFERENCE.' 12:00:00'));
 
-        // Registrada hoy con una fecha pasada: casi siempre es un pago que ya
-        // se hizo antes de empezar a usar Finlia.
         $this->recurring('Plan celular', 60000, Frequency::Monthly, '2026-03-05');
 
         $this->assertSame(90000.0, $this->liquidity()['reserved']['fixed_expenses']);
@@ -475,8 +441,8 @@ class BudgetCalculatorServiceTest extends TestCase
     {
         $this->setBalance(500000);
         $this->expectedIncome(3000000, day: 15);
-        $this->debt(dueDay: 12, installment: 150000);   // vence antes del cobro
-        $this->debt(dueDay: 25, installment: 400000);   // vence después
+        $this->debt(dueDay: 12, installment: 150000);
+        $this->debt(dueDay: 25, installment: 400000);
 
         $liquidity = $this->liquidity();
 
@@ -488,7 +454,7 @@ class BudgetCalculatorServiceTest extends TestCase
     {
         $this->setBalance(500000);
         $this->expectedIncome(3000000, day: 15);
-        $this->debt(dueDay: 5, installment: 150000);    // vencía el 5; la deuda se registró hoy
+        $this->debt(dueDay: 5, installment: 150000);
 
         $this->assertSame(0.0, $this->liquidity()['reserved']['debt']);
     }
@@ -505,7 +471,6 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->assertSame('Salario', $liquidity['pending_incomes'][0]['name']);
         $this->assertSame('2026-03-05', $liquidity['pending_incomes'][0]['date']->toDateString());
         $this->assertFalse($liquidity['pending_incomes'][0]['is_today']);
-        // Mientras no llegue, lo de hoy tiene que alcanzar hasta el cobro siguiente.
         $this->assertSame('2026-04-05', $liquidity['payday']->toDateString());
         $this->assertSame(26, $liquidity['days']);
         $this->assertSame(500000.0, $liquidity['available']);
@@ -525,7 +490,6 @@ class BudgetCalculatorServiceTest extends TestCase
 
     public function test_un_ingreso_configurado_despues_de_su_fecha_no_queda_pendiente(): void
     {
-        // Configurado hoy, cobra el 5: ese pago ya es parte del saldo inicial.
         $this->expectedIncome(3000000, day: 5);
 
         $this->assertSame([], $this->liquidity()['pending_incomes']);
@@ -543,8 +507,6 @@ class BudgetCalculatorServiceTest extends TestCase
 
     public function test_pago_adelantado_mueve_el_horizonte_al_cobro_siguiente(): void
     {
-        // Cobra el 12 pero le pagaron el 9: esa plata ya está en el saldo y
-        // tiene que alcanzar hasta el 12 de abril, no hasta pasado mañana.
         $this->expectedIncome(3000000, day: 12);
         $this->income(3000000, '2026-03-09');
         $this->setBalance(3200000);
@@ -574,7 +536,7 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->assertFalse($liquidity['has_expected_income']);
         $this->assertNull($liquidity['plan_limit']);
         $this->assertSame(22, $liquidity['days']);
-        $this->assertSame(22727.27, $liquidity['daily_allowance']); // 500.000 / 22
+        $this->assertSame(22727.27, $liquidity['daily_allowance']);
     }
 
     public function test_dos_quincenas_iguales_se_turnan(): void
@@ -590,7 +552,6 @@ class BudgetCalculatorServiceTest extends TestCase
 
     public function test_un_ingreso_menor_no_acorta_el_horizonte(): void
     {
-        // Si el arriendo que cobra se atrasa, no puede dejar al hogar corto.
         $this->expectedIncome(3000000, day: 20, name: 'Salario');
         $this->expectedIncome(200000, day: 12, name: 'Arriendo del garaje');
 
@@ -607,7 +568,6 @@ class BudgetCalculatorServiceTest extends TestCase
 
         $liquidity = $this->liquidity();
 
-        // Los aportes no mueven cuentas (ADR-0025): esa plata sigue en el saldo.
         $this->assertSame(200000.0, $liquidity['set_aside']);
         $this->assertSame(300000.0, $liquidity['available']);
     }
@@ -617,7 +577,6 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->expectedIncome(3000000, day: 15);
         $this->goal(commitment: 280000);
 
-        // Ciclo del 15/02 al 15/03 (28 días); faltan 5: 280.000 × 5/28.
         $this->assertSame(50000.0, $this->liquidity()['reserved']['savings']);
     }
 
@@ -639,23 +598,21 @@ class BudgetCalculatorServiceTest extends TestCase
 
     public function test_mucha_plata_en_cuentas_la_limita_el_plan_del_mes(): void
     {
-        // Ahorros fuera de una meta o un salario adelantado no pueden
-        // convertirse en "gasta 4 millones al día".
         $this->setBalance(20000000);
         $this->expectedIncome(2200000, day: 15);
 
         $liquidity = $this->liquidity();
 
         $this->assertSame('plan', $liquidity['limited_by']);
-        $this->assertSame(500000.0, $liquidity['plan_limit']);       // 2.200.000 / 22 × 5
+        $this->assertSame(500000.0, $liquidity['plan_limit']);
         $this->assertSame(500000.0, $liquidity['available']);
         $this->assertSame(100000.0, $liquidity['daily_allowance']);
     }
 
     public function test_una_tarjeta_de_credito_solo_resta(): void
     {
-        $this->card(5000000);    // cupo: plata prestada, no suma
-        $this->card(-300000);    // lo que se debe en la tarjeta sí resta
+        $this->card(5000000);
+        $this->card(-300000);
 
         $this->assertSame(200000.0, $this->liquidity()['current_balance']);
     }
@@ -685,8 +642,6 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->assertSame(0.0, $liquidity['daily_allowance']);
     }
 
-    // ===== Aislamiento entre hogares =====
-
     public function test_no_mezcla_datos_de_otro_hogar(): void
     {
         $intruso = User::factory()->create();
@@ -714,8 +669,6 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->assertSame(0.0, $summary['liquidity']['set_aside']);
         $this->assertFalse($summary['liquidity']['payday_known']);
     }
-
-    // ===== Helpers =====
 
     /**
      * @return array<string, mixed>

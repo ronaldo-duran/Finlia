@@ -20,17 +20,14 @@ return new class extends Migration
         Schema::create('savings_goals', function (Blueprint $table) {
             $table->id();
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
-            $table->string('name');                       // "Fondo de emergencia", "Viaje a San Andrés"
-            // DECIMAL(15,2) para todo lo monetario (ADR-0006). Nunca FLOAT.
+            $table->string('name');
             $table->decimal('target_amount', 15, 2);
-            $table->decimal('current_amount', 15, 2)->default(0); // derivado (ADR-0025)
-            $table->date('target_date')->nullable();      // fecha objetivo; sin ella no hay recomendación
-            $table->string('priority')->nullable();       // enum App\Enums\SavingsGoalPriority
-            $table->string('status')->default('active');  // enum App\Enums\SavingsGoalStatus
-            // Aporte mensual que el hogar DESTINA a la meta: lo único que
-            // compromete dinero del presupuesto (seam `savings`, ADR-0014).
+            $table->decimal('current_amount', 15, 2)->default(0);
+            $table->date('target_date')->nullable();
+            $table->string('priority')->nullable();
+            $table->string('status')->default('active');
             $table->decimal('monthly_commitment', 15, 2)->nullable();
-            $table->boolean('is_emergency_fund')->default(false); // para cálculos futuros
+            $table->boolean('is_emergency_fund')->default(false);
             $table->text('notes')->nullable();
             $table->timestamps();
 

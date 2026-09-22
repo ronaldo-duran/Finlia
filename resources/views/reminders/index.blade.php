@@ -18,8 +18,6 @@
         ['label' => 'Más adelante', 'items' => $despues, 'icon' => 'bi-calendar3'],
     ];
 
-    // Frecuencias del modal de edición. El alta vive en su propia página
-    // (reminders.create); aquí basta con las del modal para editar.
     $frequencies = collect([
         App\Enums\Frequency::Monthly,
         App\Enums\Frequency::Quarterly,
@@ -38,9 +36,6 @@
                 <span class="badge bg-finlia-subtle text-finlia border border-finlia rounded-pill px-3 py-2">
                     {{ $summary['overdue'] }} vencidas · {{ $summary['upcoming'] }} próximas
                 </span>
-                {{-- El alta vive en su propia página: la pantalla principal es para
-                     ver qué está por vencer, no para compartir espacio con un
-                     formulario. --}}
                 <a href="{{ route('reminders.create') }}" class="btn btn-finlia w-100 w-sm-auto">
                     <i class="bi bi-plus-lg me-1"></i> Nuevo recordatorio
                 </a>
@@ -52,8 +47,6 @@
         metas con fecha y tus propios avisos (SOAT, tecnomecánica…).
         Se apagan <em>pagando</em>, no cerrando el aviso.
     </p>
-
-    {{-- Interruptor del hogar (Épica 9: activar/desactivar recordatorios) --}}
     @if (! $enabled)
         <div class="alert alert-secondary d-flex gap-2 align-items-center" role="status">
             <i class="bi bi-bell-slash fs-5"></i>
@@ -80,19 +73,13 @@
             </form>
         </div>
     @endif
-
     @if ($enabled)
         <div class="row g-3">
-            {{-- Lista unificada: recurrentes, deudas, metas y avisos sueltos.
-                 El formulario de alta vivía aquí como columna; ahora está en
-                 su propia página (reminders.create) y este listado ocupa toda
-                 la anchura, que es lo que realmente se viene a mirar. --}}
             <div class="col-12">
                 <div class="card border-0" data-tour="reminders-list">
                     <div class="card-header border-0 bg-transparent fw-semibold">
                         <i class="bi bi-list-check me-1"></i> Obligaciones
                     </div>
-
                     @if ($items->isEmpty())
                         <div class="card-body text-center text-muted py-5">
                             <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
@@ -131,8 +118,6 @@
                                                 </div>
                                             </div>
                                             <div class="d-flex gap-1 flex-shrink-0">
-                                                {{-- La acción depende del origen: la vista enlaza,
-                                                     el servicio no conoce rutas (ADR-0010). --}}
                                                 @if ($item['source'] === App\Enums\ReminderSource::RecurringExpense)
                                                     <button type="button" class="btn btn-sm btn-icon text-success"
                                                             aria-label="Marcar pagado" title="Marcar pagado"
@@ -192,8 +177,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- Preferencia personal: digest por correo (ADR-0028) --}}
         <div class="card border-0 mt-3" data-tour="reminders-email">
             <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div class="min-w-0">
@@ -218,8 +201,6 @@
                 </form>
             </div>
         </div>
-
-        {{-- Historial de avisos sueltos atendidos --}}
         @if ($completed->isNotEmpty())
             <details class="card border-0 mt-3">
                 <summary class="card-header border-0 bg-transparent fw-semibold">
@@ -249,8 +230,6 @@
             </details>
         @endif
     @endif
-
-    {{-- Modal de edición del aviso suelto (relleno vía data-*). --}}
     <div class="modal fade" id="editReminderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -263,7 +242,6 @@
                     </div>
                     <div class="modal-body">
                         <x-form-input label="De qué te recuerda" name="title" id="edit-rm-title" required />
-
                         <div class="mb-3">
                             <label for="edit-rm-amount" class="form-label fw-semibold">Cuánto cuesta <span class="text-muted fw-normal">(opcional)</span></label>
                             <input id="edit-rm-amount" type="text" name="amount" inputmode="decimal"
@@ -271,10 +249,8 @@
                         </div>
 
                         <x-form-input label="Fecha límite" name="due_date" type="date" id="edit-rm-due" required />
-
                         <x-form-select label="Se repite" name="frequency" id="edit-rm-frequency"
                             :options="$frequencies" placeholder="No, es de una sola vez" />
-
                         <div class="mb-3">
                             <label for="edit-rm-notes" class="form-label fw-semibold">Nota</label>
                             <textarea id="edit-rm-notes" name="notes" rows="2" class="form-control"></textarea>
@@ -288,21 +264,16 @@
             </div>
         </div>
     </div>
-
     @include('recurring-expenses._mark-paid-modal')
 @endsection
-
 @push('scripts')
     <script>
         (function () {
-            // Rellena el modal de edición desde los data-* del botón (dato, no código).
             var modal = document.getElementById('editReminderModal');
             if (!modal) return;
-
             modal.addEventListener('show.bs.modal', function (event) {
                 var btn = event.relatedTarget;
                 if (!btn) return;
-
                 var amount = btn.getAttribute('data-amount');
                 document.getElementById('edit-rm-title').value = btn.getAttribute('data-title');
                 document.getElementById('edit-rm-amount').value = amount
@@ -310,7 +281,6 @@
                 document.getElementById('edit-rm-due').value = btn.getAttribute('data-next');
                 document.getElementById('edit-rm-notes').value = btn.getAttribute('data-notes') || '';
                 document.getElementById('edit-rm-frequency').value = btn.getAttribute('data-frequency') || '';
-
                 document.getElementById('editReminderForm').action =
                     '{{ route('reminders.update', '__ID__') }}'.replace('__ID__', btn.getAttribute('data-id'));
             });

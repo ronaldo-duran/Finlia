@@ -39,8 +39,6 @@
                             <div class="small text-body mt-1">{{ $version->change_summary }}</div>
                         @endif
 
-                        {{-- La prueba de consentimiento es del usuario: si la
-                             aceptó, tiene derecho a ver cuándo. --}}
                         @if ($aceptadaEl)
                             <div class="small text-finlia mt-1">
                                 <i class="bi bi-check-circle-fill"></i>
@@ -48,13 +46,11 @@
                             </div>
                         @endif
                     </div>
-
                     <i class="bi bi-chevron-right text-muted flex-shrink-0 mt-1"></i>
                 </div>
             </a>
         @endforeach
     </div>
-
     <hr class="my-4">
     <p class="small text-muted text-center mb-0">
         <a href="{{ route('terms.show') }}" class="text-decoration-none">Términos vigentes</a>

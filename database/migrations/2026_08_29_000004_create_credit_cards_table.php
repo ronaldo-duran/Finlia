@@ -11,7 +11,7 @@ return new class extends Migration
      * a su `account` con type=credit_card (ADR-0002). No duplican el saldo:
      * ese vive en la cuenta y en la deuda.
      *
-     * ⚠️ SEGURIDAD (docs/SECURITY.md §4): aquí NO se guarda —ni se guardará—
+     * SEGURIDAD (docs/SECURITY.md §4): aquí NO se guarda —ni se guardará—
      * número completo de tarjeta, CVV ni PIN. No existen esas columnas a
      * propósito: lo que no se almacena no se puede filtrar.
      */
@@ -19,16 +19,14 @@ return new class extends Migration
     {
         Schema::create('credit_cards', function (Blueprint $table) {
             $table->id();
-            // Una tarjeta por cuenta.
             $table->foreignId('account_id')->unique()->constrained('accounts')->cascadeOnDelete();
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
             $table->decimal('credit_limit', 15, 2);
-            // Cupo disponible: se recalcula desde el cupo menos lo usado.
             $table->decimal('available_credit', 15, 2);
-            $table->unsignedTinyInteger('statement_date')->nullable();    // día de corte (1-31)
-            $table->unsignedTinyInteger('payment_due_date')->nullable();  // día límite de pago (1-31)
-            $table->decimal('annual_fee', 15, 2)->nullable();             // cuota de manejo anual
-            $table->decimal('monthly_fee', 15, 2)->nullable();            // cuota de manejo mensual
+            $table->unsignedTinyInteger('statement_date')->nullable();
+            $table->unsignedTinyInteger('payment_due_date')->nullable();
+            $table->decimal('annual_fee', 15, 2)->nullable();
+            $table->decimal('monthly_fee', 15, 2)->nullable();
             $table->timestamps();
 
             $table->index('household_id');

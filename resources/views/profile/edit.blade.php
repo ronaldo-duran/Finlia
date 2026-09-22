@@ -30,7 +30,6 @@
     <div class="row g-3">
         <div class="col-12 col-lg-6 d-flex flex-column gap-3">
 
-            {{-- ===================== Datos personales ===================== --}}
             <div class="card border-0">
                 <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center">
                     <span class="fw-semibold"><i class="bi bi-person me-1"></i> Datos personales</span>
@@ -43,7 +42,6 @@
                     </button>
                 </div>
                 <div class="card-body">
-                    {{-- Vista de solo lectura --}}
                     <div id="viewPersonal" class="{{ $openPersonal ? 'd-none' : '' }}">
                         <dl class="row mb-0 small">
                             <dt class="col-5 fw-normal text-muted">Nombre</dt>
@@ -57,7 +55,6 @@
                         </dl>
                     </div>
 
-                    {{-- Formulario de edición (colapsado por defecto) --}}
                     <div class="collapse {{ $openPersonal ? 'show' : '' }}" id="editPersonal">
                         <form method="POST" action="{{ route('profile.update') }}">
                             @csrf
@@ -101,7 +98,6 @@
                 </div>
             </div>
 
-            {{-- ===================== Contraseña ===================== --}}
             <div class="card border-0">
                 <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center">
                     <span class="fw-semibold"><i class="bi bi-shield-lock me-1"></i> Contraseña</span>
@@ -114,7 +110,6 @@
                     </button>
                 </div>
                 <div class="card-body">
-                    {{-- Vista de solo lectura --}}
                     <div id="viewPassword" class="{{ $openPassword ? 'd-none' : '' }}">
                         <p class="text-muted small mb-0">
                             Al cambiarla cerramos las demás sesiones de tu cuenta; esta queda activa
@@ -122,7 +117,6 @@
                         </p>
                     </div>
 
-                    {{-- Formulario (colapsado) --}}
                     <div class="collapse {{ $openPassword ? 'show' : '' }}" id="editPassword">
                         <form method="POST" action="{{ route('profile.password.update') }}">
                             @csrf
@@ -156,7 +150,6 @@
 
         <div class="col-12 col-lg-6 d-flex flex-column gap-3">
 
-            {{-- ===================== Correo ===================== --}}
             <div class="card border-0">
                 <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center">
                     <span class="fw-semibold"><i class="bi bi-envelope me-1"></i> Correo</span>
@@ -169,7 +162,6 @@
                     </button>
                 </div>
                 <div class="card-body">
-                    {{-- Vista de solo lectura --}}
                     <div id="viewEmail" class="{{ $openEmail ? 'd-none' : '' }}">
                         <div class="d-flex align-items-center gap-2">
                             <span class="fw-semibold">{{ $user->email }}</span>
@@ -191,7 +183,6 @@
                         </div>
                     @endif
 
-                    {{-- Formulario de cambio de correo (colapsado) --}}
                     <div class="collapse {{ $openEmail ? 'show' : '' }} mt-3" id="editEmail">
                         <form method="POST" action="{{ route('profile.email.update') }}">
                             @csrf
@@ -225,7 +216,6 @@
                 </div>
             </div>
 
-            {{-- ===================== Portabilidad — exportar datos ===================== --}}
             <div class="card border-0">
                 <div class="card-header border-0 bg-transparent fw-semibold">
                     <i class="bi bi-download me-1"></i> Mis datos
@@ -261,12 +251,6 @@
                 </div>
             </div>
 
-            {{-- ===================== Guías de la app ===================== --}}
-            {{-- Aquí está el «volver a ver los tutoriales» (ADR-0045). Vive en
-                 el perfil y no en el menú principal a propósito: es un ajuste
-                 que se busca cuando hace falta, no un destino más. El acceso
-                 rápido a la guía de la pantalla en la que estás está en el
-                 menú del avatar. --}}
             <div class="card border-0">
                 <div class="card-header border-0 bg-transparent d-flex flex-wrap justify-content-between align-items-center gap-2 fw-semibold">
                     <span><i class="bi bi-compass me-1"></i> Guías de la app</span>
@@ -285,7 +269,6 @@
                         qué puedes hacer ahí. Nunca más de una por sesión, y siempre se pueden saltar.
                         Cuando haya algo nuevo, verás <strong>solo lo nuevo</strong> — no la guía otra vez.
                     </p>
-
                     @unless ($user->tours_enabled)
                         <div class="alert alert-secondary d-flex align-items-start gap-2 py-2 px-3 small" role="status">
                             <i class="bi bi-eye-slash mt-1 flex-shrink-0"></i>
@@ -295,7 +278,6 @@
                             </span>
                         </div>
                     @endunless
-
                     <ul class="list-group list-group-flush mb-3">
                         @foreach ($tours as $guia)
                             <li class="list-group-item bg-transparent px-0 d-flex align-items-start gap-3">
@@ -315,14 +297,6 @@
                                     </div>
                                     <div class="small text-muted">{{ $guia['summary'] }}</div>
                                 </div>
-                                {{-- ?guia= abre la guía nada más cargar la pantalla, entera.
-                                     Lo entiende el middleware ShareActiveTour.
-
-                                     Las guías de pantallas que necesitan un id (el
-                                     detalle de una deuda, de una meta, de un hogar) no
-                                     se pueden enlazar desde aquí: no hay a cuál. En vez
-                                     de un botón que lleve a ninguna parte, se dice dónde
-                                     están. --}}
                                 @if ($guia['link'])
                                     <a href="{{ route($guia['link'], ['guia' => $guia['key']]) }}"
                                        class="btn btn-sm btn-outline-finlia flex-shrink-0">Ver</a>
@@ -334,7 +308,6 @@
                             </li>
                         @endforeach
                     </ul>
-
                     <form method="POST" action="{{ route('tours.destroy') }}"
                           data-confirm="Las guías volverán a aparecer solas la próxima vez que entres a cada pantalla. ¿Continuar?">
                         @csrf
@@ -348,8 +321,6 @@
                     </div>
                 </div>
             </div>
-
-            {{-- ===================== Zona de peligro — eliminar cuenta ===================== --}}
             <div class="card border-0 border-danger-subtle">
                 <div class="card-header border-0 bg-transparent fw-semibold text-danger-emphasis">
                     <i class="bi bi-exclamation-triangle me-1"></i> Zona de peligro
@@ -360,7 +331,6 @@
                         Durante ese tiempo puedes cambiar de opinión e iniciar sesión para reactivarla.
                         Transcurrido el plazo, todos tus datos se eliminan de forma permanente.
                     </p>
-
                     <button class="btn btn-outline-danger btn-sm"
                         data-bs-toggle="collapse"
                         data-bs-target="#formEliminarCuenta"
@@ -368,14 +338,12 @@
                         aria-controls="formEliminarCuenta">
                         <i class="bi bi-trash me-1"></i> Solicitar eliminación de cuenta
                     </button>
-
                     <div class="collapse {{ $openDeletion ? 'show' : '' }} mt-3" id="formEliminarCuenta">
                         <form method="POST" action="{{ route('profile.deletion.store') }}"
                               data-confirm="¿Seguro/a? Tu cuenta se suspenderá y se eliminará en 30 días si no la reactivás.">
                             @csrf
                             @method('DELETE')
                             <input type="hidden" name="_section" value="deletion">
-
                             <x-form-input label="Confirma tu contraseña" name="current_password"
                                 type="password" required autocomplete="current-password"
                                 help="Necesitamos verificar que eres tú." />
@@ -387,7 +355,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 

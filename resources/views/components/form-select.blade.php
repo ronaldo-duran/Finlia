@@ -13,9 +13,7 @@
 ])
 
 @php
-    // $options puede ser una colección de modelos o un array [valor => etiqueta].
     $isAssoc = is_array($options) && (! empty($options) && array_keys($options) !== range(0, count($options) - 1));
-    // El id puede diferir del name (alta + modal de edición en la misma página).
     $selectId = $id ?? $name;
 @endphp
 

@@ -37,7 +37,6 @@ class ReportController extends Controller
     {
         $household = active_household();
 
-        // Defensivo: un usuario autenticado siempre tiene hogar (ADR-0011).
         if ($household === null) {
             return redirect()->route('households.create');
         }
@@ -45,20 +44,16 @@ class ReportController extends Controller
         $period = $request->period();
         $householdId = $household->id;
 
-        // Las metas vigentes se cargan una sola vez: alimentan el gráfico de
-        // progreso y también el resumen que arma `overview()`.
         $outstandingGoals = $this->savingsGoals->outstandingGoals($householdId);
 
         $overview = $this->reports->overview($householdId, $period, savingsGoals: $outstandingGoals);
         $insights = $this->reports->insights($householdId, $period);
 
-        // Top 5 + "Otras": una torta con muchas porciones no se lee en móvil.
         $byCategory = $this->movements->expensesByCategory($householdId, $overview['from'], $overview['to'], top: 5);
         $series = $this->reports->monthlySeries($householdId, $overview['from'], $overview['to']);
         $debtEvolution = $this->debts->balanceEvolution($householdId, months: 6);
         $goals = $outstandingGoals->take(6);
 
-        // Datos serializables para Chart.js (se inyectan como JSON en la vista).
         $chartData = [
             'reportCategory' => MovementSummaryService::categoryChartData($byCategory),
             'reportTrend' => [
@@ -116,8 +111,6 @@ class ReportController extends Controller
         $filename = 'finlia-movimientos-'
             .$window['from']->format('Ymd').'-'.$window['to']->format('Ymd').'.csv';
 
-        // Seam PDF (Épica 12): ReportFormat::Pdf añade su caso y su rama
-        // aquí, reutilizando las mismas filas del Service.
         return match ($format) {
             ReportFormat::Csv => $this->csvResponse($rows, $filename),
         };
@@ -134,7 +127,6 @@ class ReportController extends Controller
         return response()->streamDownload(function () use ($rows): void {
             $out = fopen('php://output', 'w');
 
-            // BOM UTF-8: sin él, Excel muestra los acentos rotos.
             fwrite($out, "\xEF\xBB\xBF");
 
             fputcsv($out, [
@@ -149,8 +141,6 @@ class ReportController extends Controller
                     $this->csvText($row['account_name'] ?? ''),
                     $this->csvText($row['description'] ?? ''),
                     $this->csvText($row['user_name'] ?? ''),
-                    // Coma decimal: con separador ';' es el formato nativo
-                    // de Excel en español.
                     number_format((float) $row['amount'], 2, ',', ''),
                 ], ';');
             }

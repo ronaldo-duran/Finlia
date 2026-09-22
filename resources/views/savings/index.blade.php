@@ -23,7 +23,6 @@
         <a href="{{ route('budgets.index') }}">cuánto puedes gastar</a>.
     </p>
 
-    {{-- Filtro de estado: chips (atajo) + control real por query string --}}
     <div class="chip-row mb-3">
         @foreach (['vigentes' => 'Vigentes', 'logradas' => 'Logradas', 'archivadas' => 'Archivadas'] as $key => $label)
             <a href="{{ route('savings-goals.index', ['estado' => $key]) }}"
@@ -32,7 +31,6 @@
     </div>
 
     @if ($estado === 'vigentes')
-        {{-- Resumen solo en vigentes: logradas/archivadas son historia --}}
         <div class="row g-3 mb-3" data-tour="savings-summary">
             <div class="col-12 col-sm-6">
                 <div class="card border-0 h-100"><div class="card-body">

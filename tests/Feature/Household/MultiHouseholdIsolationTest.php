@@ -64,8 +64,6 @@ class MultiHouseholdIsolationTest extends TestCase
         return $this;
     }
 
-    // ===== El fallo original: enlazar una cuenta de A a un recurso de B =====
-
     public function test_no_puede_enlazar_cuenta_del_hogar_activo_a_un_recurrente_de_otro_hogar(): void
     {
         $recurrenteB = $this->hogarB->recurringExpenses()->create([
@@ -128,8 +126,6 @@ class MultiHouseholdIsolationTest extends TestCase
 
         $this->assertSame($cuentaB->id, $gastoB->fresh()->account_id);
     }
-
-    // ===== El invariante, recurso por recurso =====
 
     public function test_no_puede_editar_una_cuenta_de_otro_hogar_propio(): void
     {
@@ -198,8 +194,6 @@ class MultiHouseholdIsolationTest extends TestCase
         $this->assertSame('Categoría B', $categoriaB->fresh()->name);
     }
 
-    // ===== Y sigue funcionando al cambiar de hogar activo =====
-
     public function test_al_activar_el_otro_hogar_si_puede_operar_sobre_sus_recursos(): void
     {
         $cuentaB = Account::factory()->create(['household_id' => $this->hogarB->id, 'name' => 'Original']);
@@ -219,8 +213,6 @@ class MultiHouseholdIsolationTest extends TestCase
 
     public function test_el_selector_de_hogar_sigue_permitiendo_gestionar_un_hogar_no_activo(): void
     {
-        // Gestionar hogares (ver, renombrar, activar) NO se acota al hogar
-        // activo: si no, sería imposible cambiar de hogar.
         $this->actingWithHouseholdA()
             ->get(route('households.show', $this->hogarB))
             ->assertOk();

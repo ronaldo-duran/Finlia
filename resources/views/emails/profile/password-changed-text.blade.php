@@ -1,4 +1,3 @@
-{{-- Versión en texto plano (mejor entregabilidad, clientes sin HTML). --}}
 Tu contraseña de {{ $appName }} cambió
 
 Hola {{ $userName }}, la contraseña de tu cuenta en {{ $appName }} se cambió desde tu perfil. Las demás sesiones se cerraron.

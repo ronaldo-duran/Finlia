@@ -1,4 +1,3 @@
-{{-- Versión en texto plano (mejora la entregabilidad y sirve en clientes sin HTML). --}}
 Confirma tu correo en {{ $appName }}
 
 Hola {{ $userName }}, tu cuenta en {{ $appName }} ya está creada. Solo falta confirmar tu correo para activarla:

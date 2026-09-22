@@ -34,7 +34,6 @@ class ReminderController extends Controller
     {
         $household = active_household();
 
-        // Defensivo: un usuario autenticado siempre tiene hogar (ADR-0011).
         if ($household === null) {
             return redirect()->route('households.create');
         }
@@ -44,23 +43,17 @@ class ReminderController extends Controller
         $enabled = (bool) $household->reminders_enabled;
 
         return view('reminders.index', [
-            // list() fresco siempre: esta página es la fuente del estado.
-            // El summary (badge/campanita) puede ir cacheado porque sus
-            // mutaciones invalidan la clave (ReminderSummaryCacheObserver).
             'items' => $enabled ? $this->reminders->list($household->id) : collect(),
             'summary' => $enabled
                 ? $this->reminders->cachedSummary($household->id)
                 : ['overdue' => 0, 'upcoming' => 0, 'attention' => 0, 'total' => 0],
-            // Historial reciente de avisos sueltos atendidos.
             'completed' => $household->reminders()
                 ->where('status', ReminderStatus::Completed->value)
                 ->latest('updated_at')
                 ->take(10)
                 ->get(),
             'enabled' => $enabled,
-            // El interruptor del hogar solo lo mueve el administrador.
             'canManageSettings' => $request->user()->can('update', $household),
-            // Preferencia personal de digest (ADR-0028): opt-in por miembro.
             'emailEnabled' => (bool) $household->members
                 ->firstWhere('id', $request->user()->id)
                 ?->pivot->reminders_email,
@@ -202,14 +195,10 @@ class ReminderController extends Controller
         $user = User::find($request->integer('user'));
         $household = Household::find($request->integer('household'));
 
-        // Firma válida de entidades que ya no existen (cuenta borrada):
-        // no hay suscripción que apagar, pero tampoco hay nada que ocultar.
         if ($user === null || $household === null) {
             abort(404);
         }
 
-        // Idempotente y silencioso: si ya estaba en false, o la membresía
-        // ya no existe (UPDATE de 0 filas), el resultado es el mismo.
         $household->members()->updateExistingPivot($user->id, [
             'reminders_email' => false,
         ]);

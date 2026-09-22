@@ -24,9 +24,6 @@ class SubscriptionServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Estos tests ejercitan los rieles como si el catálogo Premium ya
-        // estuviera vivo. La app corre con `premium_for_all` encendido; aquí
-        // se apaga para observar el comportamiento real de Free/Premium.
         Config::set('finlia.subscription.premium_for_all', false);
     }
 
@@ -63,8 +60,6 @@ class SubscriptionServiceTest extends TestCase
 
         $service->grantPremium($household, now()->subDay(), 'Expirado');
 
-        // El plan almacenado es Premium, pero como `ends_at` está en el pasado,
-        // el plan efectivo cae a Free.
         $this->assertSame(PlanSlug::Free->value, $service->planFor($household->fresh())->slug);
     }
 
@@ -73,8 +68,6 @@ class SubscriptionServiceTest extends TestCase
         $household = $this->makeHousehold();
         $service = app(SubscriptionService::class);
 
-        // Free: 2 miembros por hogar. Un hogar con 5 miembros históricos sigue
-        // funcionando, pero withinLimit devuelve false al pedir uno más.
         $this->assertTrue($service->withinLimit($household, PlanLimit::MembersPerHousehold, 1));
         $this->assertFalse($service->withinLimit($household, PlanLimit::MembersPerHousehold, 2));
         $this->assertFalse($service->withinLimit($household, PlanLimit::MembersPerHousehold, 5));
@@ -85,7 +78,6 @@ class SubscriptionServiceTest extends TestCase
         $household = $this->makeHousehold();
         $service = app(SubscriptionService::class);
 
-        // v0.39: solo `unlimited_surveys` viene encendida en Premium.
         $this->assertFalse($service->hasFeature($household, PlanFeature::UnlimitedSurveys));
 
         $service->grantPremium($household, now()->addMonth(), 'Prueba');
@@ -129,12 +121,10 @@ class SubscriptionServiceTest extends TestCase
     {
         $household = $this->makeHousehold();
 
-        // La migración ya insertó una y `ensureSubscription` es idempotente.
         $this->assertSame(1, Subscription::where('household_id', $household->id)->count());
 
         app(SubscriptionService::class)->grantPremium($household, now()->addMonth(), 'Prueba');
 
-        // grant no crea otra fila: la actualiza.
         $this->assertSame(1, Subscription::where('household_id', $household->id)->count());
     }
 
@@ -145,8 +135,6 @@ class SubscriptionServiceTest extends TestCase
         $household = $this->makeHousehold();
         $service = app(SubscriptionService::class);
 
-        // Hogar recién creado (suscripción Free en DB) pero con el flag encendido
-        // el plan efectivo es Premium: no aplica el tope Free.
         $this->assertSame(PlanSlug::Premium->value, $service->planFor($household)->slug);
         $this->assertTrue($service->canUserCreateHousehold($household->owner));
         $this->assertTrue($service->canInviteMember($household));

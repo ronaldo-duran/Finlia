@@ -30,8 +30,6 @@ class StoreSavingsGoalRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'target_amount' => ['required', 'numeric', 'min:0.01', 'max:9999999999999.99'],
-            // Sin fecha objetivo la meta es abierta (típico del fondo de
-            // emergencia): no hay recomendación de aporte, pero sí progreso.
             'target_date' => ['nullable', 'date', 'after:today'],
             'priority' => ['nullable', Rule::enum(SavingsGoalPriority::class)],
             'monthly_commitment' => ['nullable', 'numeric', 'min:0', 'max:9999999999999.99'],

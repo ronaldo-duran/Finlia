@@ -7,10 +7,9 @@
 @section('content')
     <x-flash-messages />
 
-    {{-- Encabezado de bienvenida --}}
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
         <div>
-            <h1 class="h3 mb-1">Hola, {{ $user->name }} 👋</h1>
+            <h1 class="h3 mb-1">Hola, {{ $user->name }}</h1>
             <p class="text-muted mb-0">
                 <i class="bi bi-calendar3 me-1"></i> {{ ucfirst($fechaActual) }}
             </p>
@@ -22,7 +21,6 @@
         </a>
     </div>
 
-    {{-- Alertas de presupuesto --}}
     @if ($budgetSummary['exceeded']->isNotEmpty())
         <div class="alert alert-danger d-flex gap-2" role="alert">
             <i class="bi bi-x-octagon-fill fs-5"></i>
@@ -44,12 +42,8 @@
         </div>
     @endif
 
-    {{-- Los recordatorios (recurrentes, deudas, metas y sueltos) viven en la
-         campanita del navbar y en /recordatorios: no se duplican aquí. --}}
-
     @include('dashboard._hero-enfoque', ['budgetSummary' => $budgetSummary, 'isNegative' => $isNegative])
 
-    {{-- KPIs del mes (Épica 8: el resumen completo — deuda y ahorro incluidos) --}}
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
         <span class="small fw-semibold text-muted text-uppercase">Resumen del mes</span>
         <div class="d-flex gap-2">
@@ -75,8 +69,6 @@
         @foreach ($kpis as $kpi)
             <div class="col-6 col-xl-4">
                 <div class="card h-100 border-0">
-                    {{-- El icono se oculta bajo sm: a 375 px los 48 px del avatar
-                         dejaban sin sitio al importe, que quedaba truncado. --}}
                     <div class="card-body p-3 d-flex align-items-center gap-2 gap-md-3">
                         <div class="d-none d-sm-flex rounded-3 bg-{{ $kpi['tone'] }}-subtle text-{{ $kpi['tone'] }} align-items-center justify-content-center flex-shrink-0"
                              style="width: 48px; height: 48px;">
@@ -86,8 +78,6 @@
                             <div class="text-muted small text-uppercase">
                                 <i class="bi {{ $kpi['icon'] }} me-1 d-sm-none text-finlia"></i>{{ $kpi['label'] }}
                             </div>
-                            {{-- money-figure en vez de text-truncate: truncar un
-                                 importe ocultaría dígitos. --}}
                             <div class="fw-bold money-figure">@money($kpi['value'])</div>
                         </div>
                     </div>
@@ -95,10 +85,8 @@
             </div>
         @endforeach
     </div>
-
-    {{-- Gráficos --}}
     <div class="row g-3 mb-4">
-        {{-- Tendencia ingresos vs gastos (6 meses) --}}
+
         <div class="col-12 col-lg-7">
             <div class="card border-0 h-100">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -109,8 +97,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- Gastos por categoría (mes actual) --}}
         <div class="col-12 col-lg-5">
             <div class="card border-0 h-100">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -129,8 +115,6 @@
             </div>
         </div>
     </div>
-
-    {{-- Metas de ahorro: progreso visual (Épica 7) --}}
     @if ($savingsGoals->isNotEmpty())
         <div class="card border-0 mb-4">
             <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center fw-semibold">
@@ -159,8 +143,6 @@
             </div>
         </div>
     @endif
-
-    {{-- Últimos movimientos --}}
     <div class="card border-0">
         <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center fw-semibold">
             <span><i class="bi bi-clock-history me-1"></i> Últimos movimientos</span>
@@ -179,12 +161,6 @@
             </div>
         @endif
     </div>
-
-    {{-- Datos para Chart.js (leídos por resources/js/charts.js).
-         JSON_HEX_TAG: sin él, un "</script>" en un nombre de categoría
-         cerraría este bloque; y el {{ }} de Blade escapa a &quot;, que
-         JSON.parse no puede leer dentro de <script> (el navegador no
-         decodifica entidades ahí): los gráficos quedaban en blanco. --}}
     <script type="application/json" id="finlia-chart-data">{!! json_encode($chartData, JSON_HEX_TAG) !!}</script>
     @vite('resources/js/charts.js')
 @endsection

@@ -48,7 +48,6 @@ class AccountController extends Controller
 
         $account = active_household()->accounts()->create($request->validatedData());
 
-        // current_balance = initial_balance (sin movimientos aún). ADR-0012.
         $this->balances->recompute($account);
 
         if ($request->wantsJson()) {
@@ -67,8 +66,6 @@ class AccountController extends Controller
     {
         $this->authorize('view', $account);
 
-        // `with('category')`: la vista lee `->category?->name` en ambos bucles;
-        // sin esto son hasta 20 lookups por PK (N+1).
         $account->load([
             'incomes' => fn ($q) => $q->with('category')->latest('date')->take(10),
             'expenses' => fn ($q) => $q->with('category')->latest('date')->take(10),
@@ -90,7 +87,6 @@ class AccountController extends Controller
 
         $account->update($request->validatedData());
 
-        // Si cambió initial_balance (o por seguridad), se recalcula el saldo.
         $this->balances->recompute($account->fresh());
 
         return redirect()
@@ -102,7 +98,6 @@ class AccountController extends Controller
     {
         $this->authorize('delete', $account);
 
-        // No se borra una cuenta con movimientos (los saldos dejarían de cuadrar).
         if ($account->incomes()->exists() || $account->expenses()->exists()) {
             return redirect()
                 ->route('accounts.index')

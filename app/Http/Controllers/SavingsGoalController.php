@@ -31,15 +31,12 @@ class SavingsGoalController extends Controller
     {
         $household = active_household();
 
-        // Defensivo: un usuario autenticado siempre tiene hogar (ADR-0011).
         if ($household === null) {
             return redirect()->route('households.create');
         }
 
         $this->authorize('viewAny', SavingsGoal::class);
 
-        // `?estado[]=x` haría que query() devuelva un array: se comprueba el
-        // tipo antes de mirar el valor (mismo fallo ya corregido en deudas).
         $requested = $request->query('estado');
         $estado = is_string($requested) ? $requested : '';
         $estado = in_array($estado, ['vigentes', 'logradas', 'archivadas'], true) ? $estado : 'vigentes';
@@ -121,9 +118,6 @@ class SavingsGoalController extends Controller
     {
         $this->authorize('delete', $savingsGoal);
 
-        // Borrado físico: el historial de aportes es de la meta, y la meta
-        // borrada se va con él (cascade). No hay "historia financiera" que
-        // preservar: el dinero sigue en las cuentas (ADR-0025).
         $savingsGoal->delete();
 
         return redirect()
@@ -151,8 +145,6 @@ class SavingsGoalController extends Controller
     {
         $this->authorize('contribute', $savingsGoal);
 
-        // La meta del movimiento debe ser la de la URL: si no, la petición
-        // no corresponde a esta meta y no se toca.
         if ($contribution->savings_goal_id !== $savingsGoal->id) {
             abort(404);
         }

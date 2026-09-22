@@ -33,8 +33,6 @@ class ExpenseController extends Controller
 
         $this->authorize('create', Expense::class);
 
-        // "Te quedarían $X hasta el DD/MM" (hint en vivo del formulario): lo
-        // disponible hasta el próximo cobro ANTES de este gasto (ADR-0040).
         $liquidity = $this->budgets->liquidity(active_household_id());
 
         return view('expenses.create', array_merge($this->formOptions(), [
@@ -55,10 +53,6 @@ class ExpenseController extends Controller
             $user,
         );
 
-        // Épica 12: árbol de decisión de compras. El modal se ofrece cuando
-        // el gasto queda fuera del presupuesto planeado y con tope de uno por
-        // día por usuario, para que dos compras seguidas no lo conviertan en
-        // ruido. `session()->flash` sólo lleva el id — la vista pide el gasto.
         if ($this->surveys->shouldOffer($household, $expense, $user)) {
             session()->flash('compulsive_survey_expense_id', $expense->id);
             $this->surveys->markShownToday($user);

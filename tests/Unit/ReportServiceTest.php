@@ -78,8 +78,6 @@ class ReportServiceTest extends TestCase
         ]);
     }
 
-    // ===== Ventanas comparables (ReportPeriod) =====
-
     public function test_mes_actual_se_compara_con_el_mes_anterior(): void
     {
         $window = ReportPeriod::Month->resolve(Carbon::parse('2026-08-15'));
@@ -104,7 +102,6 @@ class ReportServiceTest extends TestCase
 
         $this->assertTrue($window['from']->isSameDay(Carbon::parse('2026-06-01')));
         $this->assertTrue($window['to']->isSameDay(Carbon::parse('2026-08-15')));
-        // El equivalente anterior: marzo–mayo.
         $this->assertTrue($window['previous_from']->isSameDay(Carbon::parse('2026-03-01')));
         $this->assertTrue($window['previous_to']->isSameDay(Carbon::parse('2026-05-31')));
     }
@@ -115,11 +112,8 @@ class ReportServiceTest extends TestCase
 
         $this->assertTrue($window['from']->isSameDay(Carbon::parse('2026-01-01')));
         $this->assertTrue($window['previous_from']->isSameDay(Carbon::parse('2025-01-01')));
-        // A la fecha, no el año completo: no se compara contra meses aún no ocurridos.
         $this->assertTrue($window['previous_to']->isSameDay(Carbon::parse('2025-08-15')));
     }
-
-    // ===== Overview =====
 
     public function test_overview_suma_el_periodo_y_compara_con_el_anterior(): void
     {
@@ -172,8 +166,6 @@ class ReportServiceTest extends TestCase
         $this->assertSame(-100000.0, $series[1]['balance']);
     }
 
-    // ===== Insights =====
-
     public function test_sin_datos_no_hay_insights(): void
     {
         [, $household] = $this->setupHousehold();
@@ -199,7 +191,6 @@ class ReportServiceTest extends TestCase
         [$owner, $household, $account, $category] = $this->setupHousehold();
         $today = Carbon::now(config('app.timezone'));
 
-        // +4 %: por debajo del umbral del 5 %.
         $this->expense($household->id, $owner->id, $account->id, $category->id, 104000, $today);
         $this->expense($household->id, $owner->id, $account->id, $category->id, 100000, $today->copy()->subMonth());
 
@@ -216,7 +207,6 @@ class ReportServiceTest extends TestCase
         ]);
         $today = Carbon::now(config('app.timezone'));
 
-        // Alimentación +50 %, Transporte igual.
         $this->expense($household->id, $owner->id, $account->id, $category->id, 150000, $today);
         $this->expense($household->id, $owner->id, $account->id, $category->id, 100000, $today->copy()->subMonth());
         $this->expense($household->id, $owner->id, $account->id, $otra->id, 50000, $today);
@@ -246,8 +236,6 @@ class ReportServiceTest extends TestCase
             fn ($i) => str_contains($i['text'], 'Alimentación» representa el 90 %')
         ));
     }
-
-    // ===== Exportación =====
 
     public function test_export_rows_solo_trae_los_movimientos_del_rango(): void
     {

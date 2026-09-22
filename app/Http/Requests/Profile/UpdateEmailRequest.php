@@ -22,7 +22,7 @@ class UpdateEmailRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // /perfil solo opera sobre el usuario autenticado (UserPolicy en el controlador)
+        return true;
     }
 
     /**
@@ -37,13 +37,9 @@ class UpdateEmailRequest extends FormRequest
                 'string',
                 'email:rfc',
                 'max:150',
-                // Solo un correo VERIFICADO cuenta como tomado (anti-
-                // squatting, Plan 01). Los fantasmas sin verificar se
-                // reclaman al confirmar, igual que en el registro.
                 Rule::unique('users', 'email')
                     ->whereNotNull('email_verified_at')
                     ->ignore($this->user()->id),
-                // Pendiente de confirmación por OTRO usuario.
                 Rule::unique('users', 'pending_email')->ignore($this->user()->id),
                 function (string $attribute, mixed $value, Closure $fail): void {
                     if (strtolower(trim((string) $value)) === strtolower((string) $this->user()->email)) {

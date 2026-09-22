@@ -24,7 +24,7 @@ class Household extends Model
     protected function casts(): array
     {
         return [
-            'reminders_enabled' => 'boolean', // Épica 9: interruptor de recordatorios
+            'reminders_enabled' => 'boolean',
         ];
     }
 
@@ -53,8 +53,6 @@ class Household extends Model
         return $this->hasMany(HouseholdInvitation::class);
     }
 
-    // ---- Épica 3: finanzas del hogar ----
-
     public function accounts(): HasMany
     {
         return $this->hasMany(Account::class);
@@ -75,8 +73,6 @@ class Household extends Model
         return $this->hasMany(Expense::class);
     }
 
-    // ---- Épica 4: presupuestos y dinero disponible ----
-
     public function budgets(): HasMany
     {
         return $this->hasMany(Budget::class);
@@ -87,14 +83,10 @@ class Household extends Model
         return $this->hasMany(ExpectedIncome::class);
     }
 
-    // ---- Épica 5: gastos recurrentes y obligaciones futuras ----
-
     public function recurringExpenses(): HasMany
     {
         return $this->hasMany(RecurringExpense::class);
     }
-
-    // ---- Épica 6: deudas y tarjetas de crédito ----
 
     public function debts(): HasMany
     {
@@ -111,8 +103,6 @@ class Household extends Model
         return $this->hasMany(CreditCard::class);
     }
 
-    // ---- Épica 7: metas de ahorro ----
-
     public function savingsGoals(): HasMany
     {
         return $this->hasMany(SavingsGoal::class);
@@ -123,21 +113,15 @@ class Household extends Model
         return $this->hasMany(SavingsGoalContribution::class);
     }
 
-    // ---- Épica 9: recordatorios y notificaciones ----
-
     public function reminders(): HasMany
     {
         return $this->hasMany(Reminder::class);
     }
 
-    // ---- Épica 10: transferencias entre cuentas (ADR-0035) ----
-
     public function transfers(): HasMany
     {
         return $this->hasMany(Transfer::class);
     }
-
-    // ---- Épica 12: suscripción del hogar a un plan ----
 
     public function subscription(): HasOne
     {

@@ -30,8 +30,6 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        // Plan 01: no entra al dashboard; va al aviso "revisa tu correo"
-        // y queda sin verificar hasta confirmar.
         $response->assertRedirect(route('verification.notice'));
 
         $this->assertDatabaseHas('users', [
@@ -41,16 +39,12 @@ class RegistrationTest extends TestCase
             'email_verified_at' => null,
         ]);
 
-        // Todo usuario arranca con su hogar personal activo (Épica 2) —
-        // la aserción vive aquí desde el plan 01: el e2e ya no llega al
-        // dashboard para ver el selector de hogares.
         $user = User::firstWhere('email', 'maria@ejemplo.com');
         $this->assertTrue($user->households()->where('name', 'Mi hogar')->exists());
     }
 
     public function test_no_se_puede_registrar_un_correo_duplicado(): void
     {
-        // Solo un correo VERIFICADO cuenta como tomado (anti-squatting).
         User::factory()->create(['email' => 'repetido@ejemplo.com']);
 
         $response = $this->post(route('register'), [
@@ -67,8 +61,6 @@ class RegistrationTest extends TestCase
 
     public function test_registro_reclama_un_correo_registrado_sin_verificar(): void
     {
-        // Anti-squatting (Plan 01, regla 6): un fantasma sin verificar no
-        // puede bloquear al dueño real del correo.
         $ghost = User::factory()->unverified()->create(['email' => 'fantasma@ejemplo.com']);
         $ghostHousehold = app(HouseholdService::class)
             ->createHousehold($ghost->id, 'Mi hogar');
@@ -81,7 +73,6 @@ class RegistrationTest extends TestCase
             'birth_date' => '1990-05-12',
         ]);
 
-        // El dueño real no ve ningún error: flujo normal de registro.
         $response->assertRedirect(route('verification.notice'));
         $this->assertAuthenticated();
 
@@ -89,8 +80,6 @@ class RegistrationTest extends TestCase
         $this->assertNotSame($ghost->id, $newUser->id);
         $this->assertNull($newUser->email_verified_at);
 
-        // El fantasma y su hogar vacío desaparecen; el nuevo usuario tiene
-        // su propio hogar.
         $this->assertDatabaseMissing('users', ['id' => $ghost->id]);
         $this->assertDatabaseMissing('households', ['id' => $ghostHousehold->id]);
         $this->assertTrue($newUser->households()->exists());
@@ -121,8 +110,6 @@ class RegistrationTest extends TestCase
         $response->assertSessionHasErrors('password');
     }
 
-    // ---- Fecha de nacimiento (Plan 04: obligatoria y 18+) ----
-
     public function test_la_fecha_de_nacimiento_es_obligatoria(): void
     {
         $this->post(route('register'), [
@@ -138,8 +125,6 @@ class RegistrationTest extends TestCase
 
     public function test_un_menor_de_edad_no_puede_registrarse(): void
     {
-        // 17 años cumplidos: la recomendación del plan 04 es 18+ (ADR-0032).
-        // El mensaje debe decir POR QUÉ, no un "valor inválido" genérico.
         $this->post(route('register'), [
             'name' => 'Menor de Edad',
             'email' => 'menor@ejemplo.com',
@@ -153,7 +138,6 @@ class RegistrationTest extends TestCase
 
     public function test_quien_cumple_18_hoy_puede_registrarse(): void
     {
-        // Corte inclusivo: la mayoría de edad se alcanza el día del cumpleaños.
         $this->post(route('register'), [
             'name' => 'Justo Mayor',
             'email' => 'justo18@ejemplo.com',
@@ -191,7 +175,6 @@ class RegistrationTest extends TestCase
 
     public function test_el_registro_no_pide_region_ni_genero(): void
     {
-        // Menos fricción de entrada (Plan 04): esos campos viven en /perfil.
         $this->get(route('register'))
             ->assertOk()
             ->assertSee('Fecha de nacimiento')

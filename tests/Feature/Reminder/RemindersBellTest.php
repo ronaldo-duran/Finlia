@@ -37,7 +37,6 @@ class RemindersBellTest extends TestCase
     {
         [$owner, $household] = $this->setupHousehold();
 
-        // Simula una caché con esquema anterior al fix (sin `preview`).
         Cache::put(
             ReminderService::summaryCacheKey($household->id),
             ['overdue' => 1, 'upcoming' => 1, 'attention' => 2, 'total' => 5],

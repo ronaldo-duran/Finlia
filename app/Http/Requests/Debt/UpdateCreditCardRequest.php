@@ -9,7 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * Valida los atributos de una tarjeta de crédito (ADR-0002).
  *
- * ⚠️ No acepta —ni debe aceptar nunca— número de tarjeta, CVV ni PIN
+ * No acepta —ni debe aceptar nunca— número de tarjeta, CVV ni PIN
  * (docs/SECURITY.md §4). Cualquier campo de ese tipo que llegue en la
  * petición se descarta por no estar en las reglas.
  */

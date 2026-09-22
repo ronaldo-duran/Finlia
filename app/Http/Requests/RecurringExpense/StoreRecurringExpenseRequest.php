@@ -33,12 +33,10 @@ class StoreRecurringExpenseRequest extends FormRequest
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'amount' => ['required', 'numeric', 'min:0.01', 'max:9999999999999.99'],
             'frequency' => ['required', Rule::enum(Frequency::class)],
-            // Obligatorio solo para frecuencia personalizada: cada N días (1-10 años).
             'frequency_interval' => [
                 Rule::requiredIf($this->input('frequency') === Frequency::Custom->value),
                 'nullable', 'integer', 'between:1,3650',
             ],
-            // Puede ser pasada: así se representa una obligación ya vencida.
             'next_date' => ['required', 'date', 'before:2100-01-01'],
             'category_id' => [
                 'nullable',
@@ -51,7 +49,6 @@ class StoreRecurringExpenseRequest extends FormRequest
                 Rule::exists('accounts', 'id')->where(fn ($q) => $q->where('household_id', $householdId)),
             ],
             'is_active' => ['boolean'],
-            // Épica 9 (ADR-0018): opt-in por obligación al pago automático.
             'auto_generate' => ['boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];

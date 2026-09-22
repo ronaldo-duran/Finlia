@@ -14,14 +14,12 @@
                 @endif
             </p>
         </div>
-        {{-- Ancho completo en móvil, ajustado al contenido desde sm --}}
         <a href="{{ route('budgets.create', ['periodo' => $scope->value]) }}"
            class="btn btn-finlia w-100 w-sm-auto">
             <i class="bi bi-plus-circle me-1"></i> Nuevo presupuesto
         </a>
     </div>
 
-    {{-- Selector de período: esta semana / este mes / próximo mes. --}}
     <div class="chip-row mb-4" role="group" aria-label="Período consultado" data-tour="budgets-period">
         @foreach (\App\Enums\BudgetScope::cases() as $option)
             <a href="{{ route('budgets.index', ['periodo' => $option->value]) }}"
@@ -32,7 +30,6 @@
         @endforeach
     </div>
 
-    {{-- Alertas de categorías al 80 % / 100 % --}}
     @if ($summary['exceeded']->isNotEmpty())
         <div class="alert alert-danger d-flex gap-2" role="alert">
             <i class="bi bi-x-octagon-fill fs-5"></i>
@@ -53,7 +50,6 @@
         </div>
     @endif
 
-    {{-- Tarjeta principal + desglose --}}
     <div class="row g-3 mb-4">
         <div class="col-12 col-lg-5">
             <x-available-money-card :summary="$summary" />
@@ -62,8 +58,6 @@
         <div class="col-12 col-lg-7">
             @php
                 $liquidity = $summary['liquidity'];
-                // Semana/mes: la foto de hoy (saldo real hasta el cobro).
-                // Próximo mes: el plan, que es proyección (ADR-0040).
                 $kpis = $liquidity !== null
                     ? [
                         ['label' => 'Saldo en cuentas', 'value' => $liquidity['current_balance'], 'icon' => 'bi-wallet2', 'tone' => 'success'],
@@ -84,8 +78,6 @@
                                 <div class="text-muted small text-uppercase">
                                     <i class="bi {{ $kpi['icon'] }} me-1 text-{{ $kpi['tone'] }}"></i>{{ $kpi['label'] }}
                                 </div>
-                                {{-- money-figure en vez de text-truncate: truncar
-                                     un importe ocultaría dígitos. --}}
                                 <div class="fw-bold mt-2 money-figure">@money($kpi['value'])</div>
                             </div>
                         </div>
@@ -96,8 +88,6 @@
                         <div class="card-body p-3">
                             @if ($liquidity !== null)
                                 <div class="text-muted small text-uppercase">
-                                    {{-- La etiqueta va pegada al icono, como en las demás
-                                         tarjetas: así el texto del elemento es solo la etiqueta. --}}
                                     <i class="bi bi-hourglass-split me-1 text-primary"></i>{{ $liquidity['payday_known'] ? 'Días para tu pago' : 'Días del mes' }}
                                 </div>
                                 <div class="fw-bold mt-2 money-figure">{{ $liquidity['days'] }}</div>
@@ -115,8 +105,6 @@
                     </div>
                 </div>
             </div>
-
-            {{-- Explicación opcional: la fórmula no se impone, se ofrece --}}
             <div class="card border-0 mt-3">
                 <div class="card-body py-2">
                     <a class="small text-decoration-none d-block" data-bs-toggle="collapse" href="#comoSeCalcula"
@@ -161,8 +149,6 @@
                                     <span class="fw-bold text-body text-nowrap">@money($liquidity['cash_available'])</span>
                                 </li>
                                 @if ($liquidity['limited_by'] === 'plan')
-                                    {{-- El plan solo aparece cuando pone el límite: como
-                                         dato suelto ("te sobrarían 3 millones") confunde. --}}
                                     <li class="d-flex justify-content-between gap-2">
                                         <span>Tope de tu plan del mes</span>
                                         <span class="fw-semibold text-nowrap">@money($liquidity['plan_limit'])</span>
@@ -211,8 +197,6 @@
             </div>
         </div>
     </div>
-
-    {{-- Consumo global del presupuesto + tendencia --}}
     @if ($summary['has_budget'])
         @php
             $level = $summary['level'];
@@ -234,7 +218,6 @@
                     <span>@money($summary['spent']) gastado</span>
                     <span>@money($summary['budget_defined']) presupuestado</span>
                 </div>
-
                 @if ($summary['trend'])
                     <p class="small mb-0 mt-3">
                         <i class="bi bi-graph-up me-1"></i>
@@ -256,8 +239,6 @@
             </div>
         </div>
     @endif
-
-    {{-- Detalle por categoría --}}
     <div class="card border-0 mb-4" data-tour="budgets-list">
         <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center fw-semibold">
             <span><i class="bi bi-list-check me-1"></i> Por categoría · {{ $monthLabel }}</span>
@@ -265,7 +246,6 @@
                 <span class="badge rounded-pill text-bg-light text-muted">Prorrateado a la semana</span>
             @endif
         </div>
-
         @if ($summary['categories']->isEmpty())
             <div class="card-body text-center text-muted py-5">
                 <i class="bi bi-clipboard-x fs-1 d-block mb-2 opacity-50"></i>
@@ -278,9 +258,6 @@
             <div class="list-group list-group-flush">
                 @foreach ($summary['categories'] as $row)
                     <div class="list-group-item">
-                        {{-- Móvil: nombre arriba, importes debajo. Desde md, en la
-                             misma línea. Así el par "gastado / presupuestado" nunca
-                             se comprime ni se corta. --}}
                         <div class="d-md-flex justify-content-between align-items-center gap-2 mb-2">
                             <div class="d-flex align-items-center flex-wrap gap-2 min-w-0">
                                 <span class="color-dot" style="background-color: {{ $row['color'] ?: '#0b3f44' }}"></span>
@@ -295,14 +272,12 @@
                                 @money($row['spent']) / @money($row['budget'])
                             </span>
                         </div>
-
                         <div class="progress" role="progressbar" aria-label="Consumo de {{ $row['name'] }}"
                              aria-valuenow="{{ min(100, $row['percent']) }}" aria-valuemin="0" aria-valuemax="100"
                              style="height: 8px;">
                             <div class="progress-bar bg-{{ $row['level']->color() }}"
                                  style="width: {{ min(100, $row['percent']) }}%"></div>
                         </div>
-
                         <div class="small text-muted mt-1">
                             @percent($row['percent'])
                             @if ($row['overspent'] > 0)
@@ -316,8 +291,6 @@
             </div>
         @endif
     </div>
-
-    {{-- Presupuestos definidos para el mes (editar / eliminar) --}}
     @if ($budgets->isNotEmpty())
         <div class="card border-0">
             <div class="card-header border-0 bg-transparent fw-semibold">

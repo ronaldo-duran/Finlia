@@ -15,10 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
             $table->string('email')->index();
-            // Token HASHEADO (sha256) del token público que viaja en el enlace.
             $table->string('token', 64)->unique();
-            $table->string('role')->default('member'); // rol que tendrá al aceptar
-            $table->string('status')->default('pending'); // pending | accepted | expired | revoked
+            $table->string('role')->default('member');
+            $table->string('status')->default('pending');
             $table->timestamp('expires_at');
             $table->timestamp('accepted_at')->nullable();
             $table->foreignId('accepted_by_user_id')->nullable()->constrained('users')->nullOnDelete();

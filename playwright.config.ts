@@ -12,8 +12,6 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
 
-  // `php artisan serve` atiende con un único worker en Windows: sin paralelismo
-  // para que las peticiones nunca compitan por el servidor integrado.
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,
@@ -29,8 +27,6 @@ export default defineConfig({
   },
 
   projects: [
-    // Login único (guarda la sesión en storageState) para no agotar el
-    // rate-limit de /login (throttle:5,1) con un login por test.
     {
       name: 'setup',
       testMatch: /.*\.setup\.ts/,
@@ -46,7 +42,6 @@ export default defineConfig({
   ],
 
   webServer: {
-    // BD fresca con seed en cada corrida + servidor integrado de Laravel.
     command:
       'php artisan migrate:fresh --seed --force && php artisan serve --host=127.0.0.1 --port=8890',
     url: 'http://127.0.0.1:8890/login',
@@ -54,7 +49,6 @@ export default defineConfig({
     timeout: 240_000,
     env: {
       APP_ENV: 'playwright',
-      // Key exclusiva de pruebas (no es un secreto de producción).
       APP_KEY: 'base64:jMSqqw8tIIbJovE7naPPagl7Gr3hxtYHzosTkGsJL/s=',
       APP_URL: 'http://127.0.0.1:8890',
       APP_DEBUG: 'true',
@@ -69,7 +63,6 @@ export default defineConfig({
       CACHE_STORE: 'database',
       QUEUE_CONNECTION: 'sync',
       MAIL_MAILER: 'log',
-      // Hashing barato para acelerar el login en la suite.
       BCRYPT_ROUNDS: '4',
     },
   },

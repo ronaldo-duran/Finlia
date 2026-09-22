@@ -86,7 +86,6 @@ class PurchaseFollowUpTest extends TestCase
     {
         [$user, $household, $expense] = $this->seedFixtures();
 
-        // Respuesta con follow-up ya vencido (hace 5 días).
         $due = CompulsiveSurveyResponse::firstOrNew(['expense_id' => $expense->id]);
         $due->household_id = $household->id;
         $due->user_id = $user->id;

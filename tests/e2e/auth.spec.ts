@@ -1,14 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { DEMO_USER, loginAsDemo } from './helpers';
 
-// Este spec necesita partir SIN sesión (el resto de la suite arranca logueado
-// vía storageState del proyecto setup). Estado vacío explícito para
-// sobreescribir el storageState del proyecto.
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('Autenticación', () => {
-  // La raíz dejó de redirigir al login: ahora es la landing pública. En local
-  // no hay dominios configurados, así que sitio y aplicación comparten host.
   test('la raíz muestra la landing y ofrece entrar', async ({ page }) => {
     await page.goto('/');
 
@@ -34,7 +29,6 @@ test.describe('Autenticación', () => {
     await loginAsDemo(page);
     await expect(page.getByRole('heading', { name: `Hola, ${DEMO_USER.name}` })).toBeVisible();
 
-    // Cerrar sesión desde el menú de usuario (avatar).
     await page.locator('.avatar-btn').click();
     await page.getByRole('button', { name: 'Cerrar sesión' }).click();
     await expect(page).toHaveURL(/\/login$/);
@@ -51,19 +45,14 @@ test.describe('Autenticación', () => {
     await page.fill('input[name="password_confirmation"]', 'ClavePlaywright1');
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
 
-    // Plan 01: no entra al dashboard; queda en el aviso "Revisa tu correo"
-    // (la creación del hogar "Mi hogar" se verifica en PHPUnit: aquí no hay
-    // bandeja real donde recibir el enlace).
     await expect(page).toHaveURL(/\/verificar-correo$/);
     await expect(page.getByRole('heading', { name: 'Revisa tu correo' })).toBeVisible();
     await expect(page.getByText(email)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Reenviar enlace' })).toBeVisible();
 
-    // Sin verificar no se navega: cualquier página privada rebota al aviso.
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/verificar-correo$/);
 
-    // Cerrar sesión sigue disponible (única salida honesta sin confirmar).
     await page.getByRole('button', { name: 'Cerrar sesión' }).click();
     await expect(page).toHaveURL(/\/login$/);
   });

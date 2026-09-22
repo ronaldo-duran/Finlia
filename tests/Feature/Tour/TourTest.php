@@ -35,8 +35,6 @@ class TourTest extends TestCase
         return str_contains($html, 'id="finlia-tour-data"');
     }
 
-    // ------------------------------------------------------------ arranque
-
     public function test_la_guia_del_panel_llega_en_la_primera_visita(): void
     {
         $respuesta = $this->actingAs($this->usuario())->get(route('dashboard'));
@@ -51,13 +49,9 @@ class TourTest extends TestCase
     {
         $user = $this->usuario();
 
-        // La primera quema el cupo de la sesión...
         $this->actingAs($user)->get(route('dashboard'))
             ->assertSee('"start":"auto"', false);
 
-        // ...y la siguiente pantalla ya no salta sola, aunque nunca se haya
-        // visto. Sigue disponible desde el menú del avatar: por eso el bloque
-        // se inyecta igualmente, pero sin arrancar.
         $segunda = $this->actingAs($user)->get(route('movements.index'));
         $segunda->assertOk();
         $this->assertTrue($this->traeGuia($segunda->getContent()));
@@ -75,8 +69,6 @@ class TourTest extends TestCase
 
     public function test_una_pantalla_sin_guia_no_inyecta_nada(): void
     {
-        // /perfil no tiene guía a propósito: es donde vive el catálogo, y una
-        // guía que explique la pantalla de las guías sobra.
         $respuesta = $this->actingAs($this->usuario())->get(route('profile.edit'));
 
         $respuesta->assertOk();
@@ -87,8 +79,6 @@ class TourTest extends TestCase
     {
         $user = $this->usuario();
 
-        // Una escritura cualquiera antes de pisar el Panel: si el cupo se
-        // gastara aquí, la persona se quedaría sin la guía de bienvenida.
         $this->actingAs($user)->post(route('categories.store'), [
             'name' => 'Mercado',
             'type' => 'expense',
@@ -99,16 +89,11 @@ class TourTest extends TestCase
             ->assertSee('"start":"auto"', false);
     }
 
-    // ----------------------------------------------------------- novedades
-
     public function test_quien_ya_vio_la_guia_recibe_la_version_que_vio(): void
     {
         $user = $this->usuario();
         app(TourService::class)->markSeen($user, 'panel', TourStatus::Completed);
 
-        // El navegador filtra los pasos con `seen`: los nacidos después de esa
-        // versión son las novedades. Si el servidor mintiera aquí, o repetiría
-        // la guía entera o se comería lo nuevo.
         $version = (int) config('tours.panel.version');
 
         $this->actingAs($user)->get(route('dashboard'))
@@ -120,8 +105,6 @@ class TourTest extends TestCase
         $this->actingAs($this->usuario())->get(route('dashboard'))
             ->assertSee('"seen":0', false);
     }
-
-    // ------------------------------------------------- volver a verla a mano
 
     public function test_el_parametro_guia_abre_la_guia_aunque_ya_este_vista(): void
     {
@@ -138,8 +121,6 @@ class TourTest extends TestCase
         $user->tours_enabled = false;
         $user->save();
 
-        // Pedir una guía a mano es lo contrario de que te la impongan: el
-        // interruptor apaga lo automático, no el catálogo del perfil.
         $this->actingAs($user)->get(route('debts.index', ['guia' => 'deudas']))
             ->assertSee('"start":"open"', false);
     }
@@ -149,12 +130,9 @@ class TourTest extends TestCase
         $respuesta = $this->actingAs($this->usuario())
             ->get(route('dashboard', ['guia' => 'inventada']));
 
-        // Cae a la guía de la propia pantalla, como si no hubieran pedido nada.
         $respuesta->assertOk();
         $respuesta->assertSee('"key":"panel"', false);
     }
-
-    // ---------------------------------------------------------- interruptor
 
     public function test_con_las_guias_apagadas_ninguna_arranca_sola(): void
     {
@@ -185,13 +163,9 @@ class TourTest extends TestCase
         $this->actingAs($user)->put(route('tours.preference'), ['enabled' => '0']);
         $this->actingAs($user)->put(route('tours.preference'), ['enabled' => '1']);
 
-        // Volver a encenderlas retoma donde iba: quien las apagó y se arrepiente
-        // no se merece las diez guías otra vez de golpe.
         $this->assertDatabaseCount('user_tours', 1);
         $this->actingAs($user)->get(route('dashboard'))->assertSee('"start":null', false);
     }
-
-    // ------------------------------------------------------------- progreso
 
     public function test_marcar_una_guia_como_vista_guarda_la_version_del_registro(): void
     {
@@ -213,8 +187,6 @@ class TourTest extends TestCase
     {
         $user = $this->usuario();
 
-        // Si colara, bastaría con declararse en la versión 999 para no volver
-        // a recibir una sola novedad.
         $this->actingAs($user)->postJson(route('tours.store', 'panel'), [
             'status' => 'completed',
             'version' => 999,
@@ -237,10 +209,6 @@ class TourTest extends TestCase
 
     public function test_un_estado_inventado_se_rechaza(): void
     {
-        // Sin 422: esta app solo responde JSON bajo /api (bootstrap/app.php),
-        // así que una validación fallida vuelve por donde vino con los errores.
-        // Da igual para el navegador —el motor no mira la respuesta— y lo que
-        // importa se cumple: no entra basura en la tabla.
         $this->actingAs($this->usuario())
             ->post(route('tours.store', 'panel'), ['status' => 'aprendida'])
             ->assertSessionHasErrors('status');
@@ -266,8 +234,6 @@ class TourTest extends TestCase
 
         $this->actingAs($uno)->postJson(route('tours.store', 'panel'), ['status' => 'completed']);
 
-        // Ninguna ruta lleva id de usuario: no hay forma de marcarle la guía a
-        // otro, y la del otro sigue esperándolo.
         $this->assertDatabaseMissing('user_tours', ['user_id' => $otro->id]);
         $this->actingAs($otro)->get(route('dashboard'))->assertSee('"start":"auto"', false);
     }
@@ -298,8 +264,6 @@ class TourTest extends TestCase
         $this->assertDatabaseHas('user_tours', ['user_id' => $otro->id]);
     }
 
-    // ---------------------------------------------------------------- acceso
-
     public function test_un_invitado_no_puede_tocar_las_guias(): void
     {
         $this->post(route('tours.store', 'panel'), ['status' => 'completed'])
@@ -312,8 +276,6 @@ class TourTest extends TestCase
         $this->assertDatabaseCount('user_tours', 0);
     }
 
-    // ------------------------------------------------------------- catálogo
-
     public function test_el_perfil_muestra_el_catalogo_de_guias(): void
     {
         $respuesta = $this->actingAs($this->usuario())->get(route('profile.edit'));
@@ -322,9 +284,6 @@ class TourTest extends TestCase
         $respuesta->assertSee('Guías de la app');
         $respuesta->assertSee('Volver a verlas desde el principio');
 
-        // Todas las guías del registro. Las que se pueden enlazar traen su
-        // «Ver»; las de pantallas con id en la URL (el detalle de una deuda)
-        // traen la pista de dónde encontrarlas, que es lo único honesto.
         foreach (config('tours') as $key => $guide) {
             $respuesta->assertSee($guide['title']);
 
@@ -343,8 +302,6 @@ class TourTest extends TestCase
         $this->actingAs($user)->get(route('dashboard'))
             ->assertSee('Guía de esta pantalla');
 
-        // /perfil no tiene guía: ofrecer un botón que no abre nada sería peor
-        // que no ofrecer ninguno.
         $this->actingAs($user)->get(route('profile.edit'))
             ->assertDontSee('Guía de esta pantalla');
     }

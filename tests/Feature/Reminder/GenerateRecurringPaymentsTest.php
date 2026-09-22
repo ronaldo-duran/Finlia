@@ -47,8 +47,6 @@ class GenerateRecurringPaymentsTest extends TestCase
 
     public function test_registra_el_gasto_con_la_fecha_real_de_la_ocurrencia(): void
     {
-        // withInitialBalance: el saldo se recomputa desde los movimientos
-        // (ADR-0012), así que el inicial debe ser el de partida real.
         $account = Account::factory()
             ->withInitialBalance(5000000)
             ->create(['household_id' => $this->household->id]);
@@ -57,14 +55,11 @@ class GenerateRecurringPaymentsTest extends TestCase
 
         $this->artisan('finlia:generate-recurring-payments')->assertSuccessful();
 
-        // El gasto existe, con la fecha de la ocurrencia vencida (no hoy).
-        // La fecha se compara vía cast: SQLite guarda "… 00:00:00" crudo.
         $expense = $this->household->expenses()->first();
         $this->assertNotNull($expense);
         $this->assertSame($originalDate->toDateString(), $expense->date->toDateString());
         $this->assertSame(1200000.0, (float) $expense->amount);
 
-        // La fecha avanzó una frecuencia y el saldo de la cuenta bajó.
         $this->assertSame(
             $originalDate->copy()->addMonthNoOverflow()->toDateString(),
             $recurring->fresh()->next_date->toDateString(),
@@ -108,8 +103,6 @@ class GenerateRecurringPaymentsTest extends TestCase
 
     public function test_una_corrida_regulariza_una_sola_ocurrencia_por_recurrente(): void
     {
-        // Vencido hace 3 meses: genera la MÁS vencida y queda vencido aún,
-        // para recuperarse en corridas siguientes (sin ráfaga con fecha hoy).
         $account = Account::factory()
             ->withInitialBalance(5000000)
             ->create(['household_id' => $this->household->id]);
@@ -138,7 +131,6 @@ class GenerateRecurringPaymentsTest extends TestCase
         $this->artisan('finlia:generate-recurring-payments')->assertSuccessful();
         $this->artisan('finlia:generate-recurring-payments')->assertSuccessful();
 
-        // La segunda corrida ya no encuentra nada vencido.
         $this->assertSame(1, $this->household->expenses()->count());
         $this->assertSame(3800000.0, (float) $account->fresh()->current_balance);
     }

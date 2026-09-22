@@ -1,9 +1,4 @@
-{{--
-    Alta y edición de una meta de ahorro (Épica 7).
-    El dinero usa data-money-input (docs/UI_DESIGN.md §4), nunca type="number".
---}}
 @php($goal = $goal ?? null)
-
 <div class="row g-2 mb-4">
     <div class="col-12">
         <label for="{{ $prefix }}name" class="form-label small fw-semibold">Nombre</label>
@@ -13,7 +8,6 @@
                value="{{ old('name', $goal?->name) }}">
         @error('name')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
-
     <div class="col-6">
         <label for="{{ $prefix }}target_amount" class="form-label small fw-semibold">Cuánto quieres ahorrar</label>
         <div class="input-group">
@@ -25,7 +19,6 @@
         </div>
         @error('target_amount')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
-
     <div class="col-6">
         <label for="{{ $prefix }}target_date" class="form-label small fw-semibold">Fecha objetivo <span class="text-muted fw-normal">(opcional)</span></label>
         <input type="date" name="target_date" id="{{ $prefix }}target_date"
@@ -34,7 +27,6 @@
         <div class="form-text">Sin fecha la meta es abierta (típico del fondo de emergencia).</div>
         @error('target_date')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
-
     <div class="col-6">
         <label for="{{ $prefix }}priority" class="form-label small fw-semibold">Prioridad</label>
         <select name="priority" id="{{ $prefix }}priority" class="form-select">
@@ -45,7 +37,6 @@
         </select>
     </div>
 </div>
-
 <h2 class="h6 text-muted text-uppercase mb-2">2. Tu plan de ahorro</h2>
 <div class="row g-2">
     <div class="col-12">
@@ -66,7 +57,6 @@
         </div>
         @error('monthly_commitment')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
-
     <div class="col-12">
         <div class="form-check">
             <input class="form-check-input" type="checkbox" value="1"
@@ -77,7 +67,6 @@
             </label>
         </div>
     </div>
-
     <div class="col-12">
         <label for="{{ $prefix }}notes" class="form-label small fw-semibold">
             Notas <span class="text-muted fw-normal">(opcional)</span>

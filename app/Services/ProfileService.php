@@ -44,8 +44,6 @@ class ProfileService
     {
         $user->update(['password' => $newPassword]);
 
-        // Aviso antifraude al correo vigente: si no fue el dueño, la
-        // recuperación de contraseña es su vía de reacción.
         $this->send(
             $user->email,
             new PasswordChangedMail($user->name, route('password.request')),
@@ -111,9 +109,6 @@ class ProfileService
         $newEmail = (string) $user->pending_email;
         $oldEmail = $user->email;
 
-        // Conflicto duro: otra cuenta VERIFICADA ganó ese correo mientras el
-        // enlace viajaba. Una cuenta verificada probó su bandeja (Plan 01):
-        // fuera del reclaim, sin excepciones.
         $takenByVerified = User::query()
             ->where('email', $newEmail)
             ->whereNotNull('email_verified_at')
@@ -129,9 +124,6 @@ class ProfileService
         }
 
         DB::transaction(function () use ($user, $newEmail): void {
-            // Fantasma sin verificar con ese correo: mismo reclaim del
-            // registro (Plan 01) — es inerte por construcción (sin verificar
-            // no puede haber creado ningún dato).
             User::query()
                 ->where('email', $newEmail)
                 ->whereNull('email_verified_at')
@@ -139,8 +131,6 @@ class ProfileService
 
             $user->forceFill([
                 'email' => $newEmail,
-                // Confirmar el enlace ES la verificación: quien lo pulsó
-                // controla la bandeja nueva.
                 'email_verified_at' => now(),
                 'pending_email' => null,
                 'pending_email_token' => null,
@@ -148,9 +138,6 @@ class ProfileService
             ])->save();
         });
 
-        // Aviso al correo ANTIGUO: la pierna antifraude del flujo. Si alguien
-        // robó la sesión y movió la cuenta, el dueño real se entera en su
-        // bandeja de siempre y tiene la vía de recuperación.
         $this->send($oldEmail, new EmailChangedNoticeMail(
             $user->name,
             $oldEmail,

@@ -56,8 +56,6 @@ class ReminderUnsubscribeTest extends TestCase
 
     public function test_la_baja_es_por_hogar_y_no_toca_la_de_otros(): void
     {
-        // La firma lleva el hogar: darse de baja del digest de A no apaga
-        // el que el mismo usuario tenga activo en B.
         $hogarB = app(HouseholdService::class)->createHousehold($this->owner->id, 'Hogar B');
         $hogarB->members()->updateExistingPivot($this->owner->id, [
             'reminders_email' => true,
@@ -78,7 +76,6 @@ class ReminderUnsubscribeTest extends TestCase
 
         $this->get($url)->assertForbidden();
 
-        // La preferencia queda intacta.
         $this->assertDatabaseHas('household_user', [
             'household_id' => $this->household->id,
             'user_id' => $this->owner->id,
@@ -102,7 +99,6 @@ class ReminderUnsubscribeTest extends TestCase
         $url = $this->bajaUrl();
 
         $this->get($url)->assertOk();
-        // La firma no se consume con el uso: clic dos veces, mismo resultado.
         $this->get($url)->assertOk();
     }
 }

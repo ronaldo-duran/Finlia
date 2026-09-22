@@ -33,8 +33,6 @@ export async function loginAsDemo(page: Page): Promise<void> {
 export async function cerrarGuia(page: Page): Promise<void> {
   const globo = page.locator('.tour-globo');
 
-  // Se abre desde JS al cargar, así que puede tardar un instante; y en una
-  // pantalla ya vista no llega nunca. Sondeo corto y seguimos.
   try {
     await globo.waitFor({ state: 'visible', timeout: 3000 });
   } catch {

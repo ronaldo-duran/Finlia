@@ -31,7 +31,6 @@ class BudgetController extends Controller
     {
         $household = active_household();
 
-        // Defensivo: un usuario autenticado siempre tiene hogar (ADR-0011).
         if ($household === null) {
             return redirect()->route('households.create');
         }
@@ -41,7 +40,6 @@ class BudgetController extends Controller
         $scope = BudgetScope::tryFrom((string) $request->query('periodo')) ?? BudgetScope::Month;
         $summary = $this->calculator->summary($household->id, $scope);
 
-        // Presupuestos del mes de referencia, para el listado editable.
         $budgets = $household->budgets()
             ->forMonth($summary['year'], $summary['month'])
             ->with('category')

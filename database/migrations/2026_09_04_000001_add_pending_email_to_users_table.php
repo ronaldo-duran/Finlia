@@ -21,8 +21,6 @@ return new class extends Migration
             $table->string('pending_email_token', 64)->nullable()->after('pending_email');
             $table->timestamp('pending_email_requested_at')->nullable()->after('pending_email_token');
 
-            // La confirmación busca por token hasheado; es la única query
-            // por estas columnas.
             $table->index('pending_email_token');
         });
     }

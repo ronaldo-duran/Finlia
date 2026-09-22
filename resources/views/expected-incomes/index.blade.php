@@ -17,7 +17,6 @@
     </p>
 
     <div class="row g-3">
-        {{-- Columna: alta --}}
         <div class="col-12 col-lg-4">
             <div class="card border-0">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -58,7 +57,6 @@
             </div>
         </div>
 
-        {{-- Columna: listado --}}
         <div class="col-12 col-lg-8">
             <div class="card border-0">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -115,7 +113,6 @@
         </div>
     </div>
 
-    {{-- Modal de edición (se rellena vía JS con data-*, sin interpolar input en código JS) --}}
     <div class="modal fade" id="editExpectedIncomeModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -159,7 +156,6 @@
 
 @push('scripts')
 <script>
-    // Rellena el modal de edición desde los data-* del botón (dato, no código).
     (function () {
         var modal = document.getElementById('editExpectedIncomeModal');
         if (!modal) return;

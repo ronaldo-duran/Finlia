@@ -21,8 +21,6 @@
                     @money($summary['monthly_commitment'])/mes comprometidos
                 </span>
             @endif
-            {{-- Registrar una deuda es puntual: un botón, no un formulario
-                 ocupando la pantalla todo el rato (ADR-0023). --}}
             <a href="{{ route('debts.create') }}" class="btn btn-finlia w-100 w-sm-auto">
                 <i class="bi bi-plus-lg me-1"></i> Registrar deuda
             </a>
@@ -32,15 +30,12 @@
         Tarjetas, préstamos y cuotas. Las cuotas pendientes se descuentan de
         <a href="{{ route('budgets.index') }}">cuánto puedes gastar</a>.
     </p>
-
     @if ($summary['count'] > 0)
         <x-debt-disclaimer />
     @endif
-
     <div class="row g-3">
         <div class="col-12">
 
-            {{-- Resumen --}}
             <div class="row g-3 mb-3">
                 <div class="col-12 col-sm-6">
                     <div class="card border-0 h-100"><div class="card-body">
@@ -70,7 +65,6 @@
                 </div>
             </div>
 
-            {{-- Estrategia de pago --}}
             @if ($debts->count() > 1)
                 <div class="card border-0 mb-3" data-tour="debts-strategy"><div class="card-body">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -90,7 +84,6 @@
                 </div></div>
             @endif
 
-            {{-- Listado --}}
             @forelse ($debts as $debt)
                 @php $projection = $projections[$debt->id] ?? null; @endphp
                 <div class="card border-0 mb-2" data-tour="debts-list"><div class="card-body">
@@ -116,13 +109,11 @@
                             <div class="small text-muted">de @money($debt->original_amount)</div>
                         </div>
                     </div>
-
                     <div class="progress mt-2" style="height:.4rem" role="progressbar"
                          aria-label="Progreso de {{ $debt->name }}" aria-valuenow="{{ $debt->progressPercent() }}"
                          aria-valuemin="0" aria-valuemax="100">
                         <div class="progress-bar bg-success" style="width: {{ $debt->progressPercent() }}%"></div>
                     </div>
-
                     @if ($projection !== null)
                         <div class="small text-muted mt-2">
                             @if ($projection['never_ends'])
@@ -154,7 +145,6 @@
                 </div></div>
             @endforelse
 
-            {{-- Historial de deudas saldadas --}}
             @if ($settled->isNotEmpty())
                 <h2 class="h6 text-muted text-uppercase mt-4 mb-2">Ya no pesan</h2>
                 @foreach ($settled as $debt)
@@ -169,7 +159,5 @@
                 @endforeach
             @endif
         </div>
-
     </div>
-
 @endsection

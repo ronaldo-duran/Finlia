@@ -17,5 +17,19 @@
       "Edit(auth.json)",
       "Write(auth.json)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php scripts/check-comments.php >&2 || { echo 'Quita esos comentarios y emojis antes de seguir. El unico comentario admitido en el codigo es PHPDoc: el porque va al PHPDoc de la clase, a un ADR de docs/DECISIONS.md o a un test con nombre descriptivo. Regla: docs/CONVENTIONS.md 1.1 y AGENTS.md 1.1.' >&2; exit 2; }",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
   }
 }

@@ -33,9 +33,6 @@ class StoreContactMessageRequest extends FormRequest
             'email' => ['required', 'string', 'email:rfc', 'max:255'],
             'body' => ['required', 'string', 'min:20', 'max:3000'],
 
-            // Campo trampa: está oculto por CSS, así que una persona nunca lo
-            // rellena y un bot que completa todo el formulario, sí. Es la
-            // alternativa barata a ponerle un puzzle a quien sí es humano.
             'sitio_web' => ['nullable', 'max:0'],
         ];
     }

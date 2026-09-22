@@ -71,8 +71,6 @@ class BudgetCalculatorService
         $obligations = $this->obligations($householdId);
         $summary = $this->plan($householdId, $scope, $today, $obligations);
 
-        // La liquidez siempre es de hoy. En "próximo mes" no aplica: nadie
-        // gasta hoy la plata de un mes que aún no empieza.
         $summary['liquidity'] = match ($scope) {
             BudgetScope::NextMonth => null,
             BudgetScope::Month => $this->computeLiquidity($householdId, $today, $summary, $obligations),
@@ -120,12 +118,9 @@ class BudgetCalculatorService
     private function computeLiquidity(int $householdId, Carbon $today, array $monthPlan, array $obligations): array
     {
         $payday = $this->payday($householdId, $today);
-        $until = $payday['date']->copy()->subDay();   // último día que cubre el saldo de hoy
+        $until = $payday['date']->copy()->subDay();
         $days = (int) $today->diffInDays($payday['date']);
 
-        // --- Saldo real ---
-        // Una tarjeta de crédito solo resta: su saldo positivo es cupo, es
-        // decir, plata prestada, no plata tuya.
         $accounts = Account::where('household_id', $householdId)
             ->where('is_active', true)
             ->get(['type', 'current_balance']);
@@ -133,29 +128,25 @@ class BudgetCalculatorService
             ? min(0.0, (float) $a->current_balance)
             : (float) $a->current_balance);
 
-        // --- Lo que ya tiene dueño antes del cobro ---
         $setAside = $this->savingsGoals->setAside($householdId, $obligations['goals']);
         $recurring = $this->recurringExpenses->dueUntil($householdId, $today, $until, $obligations['recurring']);
         $debt = $this->debts->dueUntil($householdId, $today, $until, $obligations['debts']);
 
-        // El ahorro programado no tiene fecha: se reparte a lo largo del ciclo
-        // de cobro y aquí se aparta la parte de los días que faltan.
         $cycleDays = max(1, (int) $payday['cycle_start']->diffInDays($payday['date']));
         $savings = $this->savingsGoals->pendingCommitmentSince($householdId, $payday['cycle_start'], $obligations['goals'])
             * min(1.0, $days / $cycleDays);
 
         $reserved = [
-            'fixed_expenses' => $this->money($recurring['fixed']),   // arriendo, servicios…
-            'recurring' => $this->money($recurring['recurring']),    // SOAT, matrícula…
-            'debt' => $this->money($debt),                            // cuotas pendientes
-            'savings' => $this->money($savings),                      // ahorro programado
+            'fixed_expenses' => $this->money($recurring['fixed']),
+            'recurring' => $this->money($recurring['recurring']),
+            'debt' => $this->money($debt),
+            'savings' => $this->money($savings),
         ];
         $reservedTotal = array_sum($reserved);
         $reserved['total'] = $this->money($reservedTotal);
 
         $cash = $balance - $setAside - $reservedTotal;
 
-        // --- Tope del plan del mes ---
         $planLimit = null;
         if ($monthPlan['has_expected_income'] && $monthPlan['days_remaining'] > 0) {
             $planLimit = $monthPlan['plan_available'] / $monthPlan['days_remaining'] * $days;
@@ -163,8 +154,6 @@ class BudgetCalculatorService
         $limitedByPlan = $planLimit !== null && $planLimit < $cash;
         $available = $limitedByPlan ? $planLimit : $cash;
 
-        // Si no alcanza, lo urgente es el saldo: faltar plata antes del cobro
-        // pesa más que haberse pasado del plan del mes.
         [$status, $shortfall] = match (true) {
             $cash < 0 => ['short', -$cash],
             $planLimit !== null && $planLimit < 0 => ['over_plan', -$monthPlan['plan_available']],
@@ -189,7 +178,7 @@ class BudgetCalculatorService
             'reserved' => $reserved,
             'cash_available' => $this->money($cash),
             'plan_limit' => $planLimit !== null ? $this->money($planLimit) : null,
-            'plan_available' => $monthPlan['plan_available'],   // plan del mes en curso
+            'plan_available' => $monthPlan['plan_available'],
             'limited_by' => $limitedByPlan ? 'plan' : 'cash',
             'available' => $this->money($available),
             'daily_allowance' => $days > 0 ? $this->money(max(0.0, $available) / $days) : 0.0,
@@ -208,35 +197,28 @@ class BudgetCalculatorService
         $window = $this->resolveWindow($scope, $today);
         ['from' => $from, 'to' => $to, 'factor' => $factor] = $window;
 
-        // --- Días del período (para "días restantes" y el ritmo de gasto) ---
         $daysTotal = $window['days_total'];
         $daysElapsed = match (true) {
-            $today->lt($from) => 0,                                              // período futuro
-            $today->gt($to) => $daysTotal,                                       // período pasado
+            $today->lt($from) => 0,
+            $today->gt($to) => $daysTotal,
             default => (int) $from->copy()->diffInDays($today) + 1,
         };
-        // Incluye hoy: en el último día del mes queda 1 día para gastar.
         $daysRemaining = match (true) {
             $today->gt($to) => 0,
             $today->lt($from) => $daysTotal,
             default => $daysTotal - $daysElapsed + 1,
         };
 
-        // --- Ingresos esperados ---
         $expectedMonthly = $this->monthlyExpectedIncome($householdId);
         $registeredIncome = (float) Income::where('household_id', $householdId)
             ->whereBetween('date', [$from, $to])
             ->sum('amount');
-        // Se toma el mayor para no contar dos veces el mismo salario cuando ya
-        // se registró, y para no quedarse corto si entró más de lo previsto.
         $expectedIncome = max($expectedMonthly * $factor, $registeredIncome);
 
-        // --- Gasto real del período ---
         $spent = (float) Expense::where('household_id', $householdId)
             ->whereBetween('date', [$from, $to])
             ->sum('amount');
 
-        // --- Presupuestos del mes de referencia ---
         $budgets = Budget::where('household_id', $householdId)
             ->where('period', BudgetPeriod::Monthly->value)
             ->forMonth($window['year'], $window['month'])
@@ -252,34 +234,26 @@ class BudgetCalculatorService
         $categoryBudgetSum = (float) $categories->sum('budget');
         $budgetDefined = max($totalBudget, $categoryBudgetSum);
 
-        // Presupuesto aún sin gastar: el mayor entre el total y la suma de
-        // categorías, para no contar dos veces cuando existen ambos. Es
-        // informativo: el presupuesto reparte lo que puedes gastar, no lo
-        // reduce (ADR-0040), así que no entra en el comprometido.
         $budgetRemaining = max(
             max(0.0, $totalBudget - $spent),
             (float) $categories->sum('remaining'),
         );
 
-        // Obligaciones del período (épicas 5-7, ADR-0014): recurrentes con
-        // ocurrencia en la ventana, cuotas de deuda aún sin pagar (las pagadas
-        // ya figuran como gasto, ADR-0021) y aporte mensual de metas activas.
         $recurringCommitted = $this->recurringExpenses->committedInRange($householdId, $from, $to, $obligations['recurring']);
         $debtCommitted = $this->debts->committedInRange($householdId, $from, $to, $obligations['debts']);
         $savingsCommitted = $this->savingsGoals->committedMonthly($householdId, $obligations['goals']);
 
         $committed = [
-            'fixed_expenses' => $this->money($recurringCommitted['fixed']),  // arriendo, servicios…
-            'recurring' => $this->money($recurringCommitted['recurring']),   // SOAT, matrícula…
-            'debt' => $this->money($debtCommitted),                          // cuotas pendientes
-            'savings' => $this->money($savingsCommitted),                    // ahorro programado
+            'fixed_expenses' => $this->money($recurringCommitted['fixed']),
+            'recurring' => $this->money($recurringCommitted['recurring']),
+            'debt' => $this->money($debtCommitted),
+            'savings' => $this->money($savingsCommitted),
         ];
         $committedTotal = array_sum($committed);
         $committed['total'] = $this->money($committedTotal);
 
         $planAvailable = $expectedIncome - $spent - $committedTotal;
 
-        // --- Indicadores ---
         $consumedPercent = $budgetDefined > 0 ? round($spent / $budgetDefined * 100, 1) : null;
         $projectedSpend = $daysElapsed > 0 ? $spent / $daysElapsed * $daysTotal : 0.0;
 
@@ -361,7 +335,6 @@ class BudgetCalculatorService
             ->where('amount', '>', 0)
             ->get();
 
-        // Ingresos recientes, para saber si un pago ya llegó (a tiempo o antes).
         $registered = Income::where('household_id', $householdId)
             ->whereBetween('date', [$today->copy()->subDays(45)->toDateString(), $today->toDateString()])
             ->get(['amount', 'date']);
@@ -380,9 +353,6 @@ class BudgetCalculatorService
             return $sum >= $amount * self::RECEIVED_SHARE;
         };
 
-        // Pagos que ya debían haber llegado y no aparecen. Solo desde que el
-        // ingreso está configurado: el cobro de antes de empezar a usar
-        // Finlia ya es parte del saldo inicial.
         $pending = [];
         foreach ($incomes->whereNotNull('day_of_month') as $income) {
             $last = $this->occurrenceOnOrBefore((int) $income->day_of_month, $today);
@@ -394,8 +364,6 @@ class BudgetCalculatorService
                     'amount' => $this->money((float) $income->amount),
                     'date' => $last,
                     'is_today' => $last->eq($today),
-                    // Para prellenar el formulario de registro: monto,
-                    // descripción y categoría vienen del ingreso previsto.
                     'category_id' => $income->category_id,
                 ];
             }
@@ -420,8 +388,6 @@ class BudgetCalculatorService
             $day = (int) $income->day_of_month;
             $next = $this->occurrenceAfter($day, $today);
 
-            // Pago adelantado: esa plata ya está en el saldo, así que tiene
-            // que alcanzar hasta el cobro siguiente.
             if ($received($next, (float) $income->amount)) {
                 $next = $this->occurrenceAfter($day, $next);
             }
@@ -491,7 +457,6 @@ class BudgetCalculatorService
             return collect();
         }
 
-        // Una sola consulta agregada para todas las categorías (evita N+1).
         $spentByCategory = Expense::where('household_id', $householdId)
             ->whereBetween('date', [$from, $to])
             ->whereNotNull('category_id')

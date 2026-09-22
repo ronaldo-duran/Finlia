@@ -23,7 +23,7 @@ class DebtFactory extends Factory
      */
     public function definition(): array
     {
-        $original = fake()->numberBetween(8000, 300000) * 100; // montos COP realistas
+        $original = fake()->numberBetween(8000, 300000) * 100;
 
         return [
             'household_id' => Household::factory(),

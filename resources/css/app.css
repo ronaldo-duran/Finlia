@@ -1,46 +1,19 @@
-/*
-|----------------------------------------------------------------------
-| Finlia — Hoja de estilos principal
-|----------------------------------------------------------------------
-| Bootstrap 5 (CSS precompilado vía npm) + Bootstrap Icons + una capa
-| de tema con modos claro/oscuro (color modes nativos de BS 5.3) y
-| glassmorphism ligero ("liquid glass"). Sin Tailwind (ADR-0004).
-|
-| El theming avanzado se ADELANTA desde la Épica 1 por decisión del
-| producto (originalmente aplazado a la Épica 10). Es puramente visual:
-| no añade lógica de negocio ni procesos persistentes (compatible con
-| hosting compartido).
-*/
-
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
-
-/* =============================================================
-   Tokens de tema
-   ============================================================= */
 :root {
-    /* Marca Finlia (identidad aprobada — docs/BRAND.md): petróleo como
-       color principal y cobre como acento de "dinero disponible". Sustituye
-       el verde provisional del rediseño mobile-first (ADR-0017). */
     --finlia-primary: #0b3f44;
     --finlia-primary-rgb: 11, 63, 68;
     --finlia-primary-hover: #082c30;
-
-    /* Cobre: en la marca y en la interfaz representa SIEMPRE lo disponible
-       (docs/BRAND.md §Reglas) — nunca un acento decorativo genérico. */
     --finlia-accent: #c08a3e;
     --finlia-accent-rgb: 192, 138, 62;
     --finlia-accent-hover: #a47531;
 
-    /* Estados (éxito/peligro/aviso) también desaturados: los tonos por
-       defecto de Bootstrap competían visualmente con la marca. */
     --finlia-success: #2f7d5f;
     --finlia-success-rgb: 47, 125, 95;
     --finlia-danger: #b4544e;
     --finlia-danger-rgb: 180, 84, 78;
     --finlia-warning: #b8863a;
     --finlia-warning-rgb: 184, 134, 58;
-
     --finlia-bg: #eef3f8;
     --finlia-bg-2: #e6ecf2;
     --finlia-surface: rgba(255, 255, 255, 0.65);
@@ -58,7 +31,6 @@
     --finlia-radius-sm: 12px;
     --finlia-safe-bottom: env(safe-area-inset-bottom, 0px);
 
-    /* Puente hacia las variables de Bootstrap (color mode primary, etc.). */
     --bs-primary: var(--finlia-primary);
     --bs-primary-rgb: var(--finlia-primary-rgb);
     --bs-link-color: var(--finlia-primary);
@@ -74,23 +46,19 @@
     --bs-emphasis-color: var(--finlia-text);
     --bs-heading-color: var(--finlia-text);
 }
-
 [data-bs-theme="dark"] {
     --finlia-primary: #3f8f8a;
     --finlia-primary-rgb: 63, 143, 138;
     --finlia-primary-hover: #5aa9a4;
-
     --finlia-accent: #d9a45e;
     --finlia-accent-rgb: 217, 164, 94;
     --finlia-accent-hover: #e6b87a;
-
     --finlia-success: #6fbf95;
     --finlia-success-rgb: 111, 191, 149;
     --finlia-danger: #d98b86;
     --finlia-danger-rgb: 217, 139, 134;
     --finlia-warning: #e0b064;
     --finlia-warning-rgb: 224, 176, 100;
-
     --finlia-bg: #0e1419;
     --finlia-bg-2: #121a22;
     --finlia-surface: rgba(255, 255, 255, 0.06);
@@ -103,54 +71,33 @@
     --finlia-shadow: 0 10px 30px -14px rgba(0, 0, 0, 0.6);
     --finlia-shadow-sm: 0 4px 14px -8px rgba(0, 0, 0, 0.55);
 }
-
-/* =============================================================
-   Base
-   ============================================================= */
 body {
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: var(--finlia-text);
-    /* Aura sutil de marca sobre el fondo sólido. */
+
     background-color: var(--finlia-bg);
     background-image:
         radial-gradient(1200px 600px at 100% -10%, rgba(var(--finlia-primary-rgb), 0.10), transparent 60%),
         radial-gradient(900px 500px at -10% 110%, rgba(var(--finlia-primary-rgb), 0.08), transparent 55%);
     background-attachment: fixed;
 }
-
 a { color: var(--finlia-primary); }
-
-/* =============================================================
-   Marca: utilidades de color
-   ============================================================= */
 .text-finlia { color: var(--finlia-primary) !important; }
-
 .bg-finlia { background-color: var(--finlia-primary) !important; }
-
-/* Tinte suave del color de marca (fondos de iconos/badges). */
 .bg-finlia-subtle {
     background-color: rgba(var(--finlia-primary-rgb), 0.12) !important;
 }
-
 .border-finlia {
     border-color: rgba(var(--finlia-primary-rgb), 0.28) !important;
 }
-
-/* Cobre: "lo disponible" (docs/BRAND.md). Úsalo solo para eso —la cifra
-   y el rótulo de dinero disponible—, nunca como acento decorativo genérico. */
 .text-finlia-accent { color: var(--finlia-accent) !important; }
-
 .bg-finlia-accent-subtle {
     background-color: rgba(var(--finlia-accent-rgb), 0.14) !important;
 }
-
 .border-finlia-accent {
     border-color: rgba(var(--finlia-accent-rgb), 0.3) !important;
 }
 
-/* Estados desaturados: pisan las utilidades de Bootstrap (que son
-   !important) porque los colores de éxito/peligro/aviso del tema base
-   están compilados como valores fijos, no como var(--bs-success). */
 .text-success, .text-success-emphasis { color: var(--finlia-success) !important; }
 .text-danger, .text-danger-emphasis { color: var(--finlia-danger) !important; }
 .text-warning-emphasis { color: var(--finlia-warning) !important; }
@@ -173,11 +120,6 @@ a { color: var(--finlia-primary); }
     --bs-alert-bg: rgba(var(--finlia-warning-rgb), 0.12);
     --bs-alert-border-color: rgba(var(--finlia-warning-rgb), 0.28);
 }
-
-/* =============================================================
-   Botones
-   ============================================================= */
-/* Botón primario de marca con acabado "liquid" (brillo superior + glow). */
 .btn-finlia {
     --bs-btn-color: #fff;
     --bs-btn-bg: var(--finlia-primary);
@@ -197,8 +139,6 @@ a { color: var(--finlia-primary); }
     background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%);
     box-shadow: 0 8px 20px -10px rgba(var(--finlia-primary-rgb), 0.65);
 }
-
-/* Botón-icono circular (hamburguesa, toggle de tema). Estilo "chip" moderno. */
 .btn-icon {
     width: 40px;
     height: 40px;
@@ -225,12 +165,8 @@ a { color: var(--finlia-primary); }
 .btn-icon:active {
     transform: scale(0.94);
 }
-
-/* Giro sutil del icono del toggle de tema al pasar el cursor. */
 [data-theme-toggle] .bi { transition: transform .25s ease; }
 [data-theme-toggle]:hover .bi { transform: rotate(-15deg) scale(1.06); }
-
-/* Avatar de iniciales para el menú de usuario (gradiente de marca). */
 .avatar-btn {
     width: 40px;
     height: 40px;
@@ -261,10 +197,6 @@ a { color: var(--finlia-primary); }
 .avatar-btn:active {
     transform: scale(0.96);
 }
-
-/* =============================================================
-   Glassmorphism ("liquid glass")
-   ============================================================= */
 .glass,
 .glass-card,
 .glass-nav {
@@ -274,12 +206,9 @@ a { color: var(--finlia-primary); }
     border: 1px solid var(--finlia-glass-border);
     box-shadow: var(--finlia-shadow);
 }
-
 .glass-card {
     border-radius: var(--finlia-radius);
 }
-
-/* Brillo superior tipo "edge" del vidrio. */
 .glass-card::before,
 .glass-nav::before {
     content: "";
@@ -293,8 +222,6 @@ a { color: var(--finlia-primary); }
     mask-composite: exclude;
     pointer-events: none;
 }
-
-/* Las tarjetas son vidrio por defecto (app-like). */
 .card {
     position: relative;
     background-color: var(--finlia-surface);
@@ -305,14 +232,11 @@ a { color: var(--finlia-primary); }
     box-shadow: var(--finlia-shadow);
     color: var(--finlia-text);
 }
-
 .card-header {
     background-color: transparent;
     border-bottom: 1px solid var(--finlia-border);
     color: var(--finlia-text);
 }
-
-/* Fallback si el navegador no soporta backdrop-filter: fondo sólido legible. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .glass,
     .glass-card,
@@ -323,32 +247,21 @@ a { color: var(--finlia-primary); }
     }
 }
 
-/* =============================================================
-   Layout autenticado: navbar, sidebar, footer
-   ============================================================= */
 .glass-nav {
     background-color: var(--finlia-nav-bg);
     border-bottom: 1px solid var(--finlia-glass-border);
 }
-
 .glass-nav .navbar-brand,
 .glass-nav .navbar-nav .nav-link {
     color: var(--finlia-text);
 }
-
 .glass-nav .navbar-brand {
     font-weight: 600;
 }
-
-/* Sidebar: vidrio adaptable al tema (en offcanvas para móvil, columna en escritorio). */
 .finlia-sidebar {
     --bs-offcanvas-bg: transparent;
     --bs-offcanvas-color: var(--finlia-text);
     width: var(--finlia-sidebar-width);
-    /* Sin esto la barra es un flex item encogible: el contenido de <main>
-       la comprimía por debajo de su ancho (132 px en el panel de deudas) y
-       los rótulos se partían en dos líneas. En móvil es offcanvas fijo, así
-       que la propiedad es inerte allí. */
     flex-shrink: 0;
     min-height: calc(100vh - 56px);
     background-color: var(--finlia-surface);
@@ -357,11 +270,9 @@ a { color: var(--finlia-primary); }
     border-right: 1px solid var(--finlia-glass-border);
     color: var(--finlia-text);
 }
-
 .finlia-sidebar.offcanvas {
     background-color: var(--finlia-nav-bg);
 }
-
 .finlia-sidebar .nav-link {
     color: var(--finlia-text-muted);
     border-radius: var(--finlia-radius-sm);
@@ -370,27 +281,22 @@ a { color: var(--finlia-primary); }
     font-weight: 500;
     transition: background-color 0.15s ease, color 0.15s ease;
 }
-
 .finlia-sidebar .nav-link:hover {
     color: var(--finlia-text);
     background-color: rgba(var(--finlia-primary-rgb), 0.10);
 }
-
 .finlia-sidebar .nav-link.active {
     color: var(--finlia-primary);
     background-color: rgba(var(--finlia-primary-rgb), 0.14);
     font-weight: 600;
 }
-
 .finlia-sidebar .nav-link.disabled {
     opacity: 0.5;
 }
-
 .finlia-sidebar .nav-link i {
     width: 1.25rem;
     text-align: center;
 }
-
 .finlia-sidebar .btn-close {
     filter: var(--finlia-btn-close-filter, none);
 }
@@ -401,36 +307,23 @@ a { color: var(--finlia-primary); }
         min-height: auto;
     }
 }
-
-/* Footer translúcido. */
 .app-footer {
     background-color: transparent;
     border-top: 1px solid var(--finlia-border);
     color: var(--finlia-text-muted);
 }
 
-/* =============================================================
-   Toggle de tema (claro/oscuro)
-   El icono se muestra por CSS según data-bs-theme -> sin parpadeo.
-   ============================================================= */
 [data-bs-theme="light"] .show-in-dark { display: none !important; }
 [data-bs-theme="dark"]  .show-in-light { display: none !important; }
-
-/* Toggle flotante para pantallas sin navbar (auth). */
 .theme-toggle-floating {
     position: fixed;
     top: 1rem;
     right: 1rem;
     z-index: 1030;
 }
-
-/* =============================================================
-   Ajustes finos
-   ============================================================= */
 .display-6, .h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
     color: var(--finlia-text);
 }
-
 .text-muted {
     color: var(--finlia-text-muted) !important;
 }
@@ -445,11 +338,6 @@ a { color: var(--finlia-primary); }
     border-radius: var(--finlia-radius-sm);
 }
 
-/* =============================================================
-   Épica 2 — Hogares: utilidades adicionales
-   ============================================================= */
-
-/* Variante outline del color de marca. */
 .btn-outline-finlia {
     --bs-btn-color: var(--finlia-primary);
     --bs-btn-border-color: var(--finlia-primary);
@@ -461,8 +349,6 @@ a { color: var(--finlia-primary); }
     --bs-btn-active-border-color: var(--finlia-primary-hover);
     --bs-btn-focus-shadow-rgb: var(--finlia-primary-rgb);
 }
-
-/* Botón del selector de hogar activo (chip translúcido con hover). */
 .household-selector-btn {
     border: 1px solid var(--finlia-border);
     border-radius: 999px;
@@ -478,8 +364,6 @@ a { color: var(--finlia-primary); }
     border-color: rgba(var(--finlia-primary-rgb), 0.35);
     color: var(--finlia-text);
 }
-
-/* Avatar estático (listas de miembros): apariencia de avatar-btn sin interacción. */
 .static-avatar {
     width: 36px;
     height: 36px;
@@ -494,15 +378,7 @@ a { color: var(--finlia-primary); }
     font-weight: 700;
     font-size: 0.8rem;
 }
-
-/* =============================================================
-   Épica 3 — Cuentas, ingresos y gastos
-   ============================================================= */
-
-/* Permite el truncamiento (text-truncate) dentro de un flex. */
 .min-w-0 { min-width: 0 !important; }
-
-/* Punto de color para categorías. */
 .color-dot {
     width: 14px;
     height: 14px;
@@ -511,84 +387,41 @@ a { color: var(--finlia-primary); }
     display: inline-block;
     border: 1px solid var(--finlia-glass-border);
 }
-
-/* =============================================================
-   Épica 4 — Presupuestos y dinero disponible
-   ============================================================= */
-
-/*
-   Importes de dinero: mobile-first. Un valor en COP ("$ 3.970.596,00") no cabe
-   en media columna a 375 px con un tamaño fijo, y truncarlo ocultaría dígitos
-   —inaceptable en una app de finanzas—. La tipografía fluida escala con el
-   ancho disponible y deja de crecer en escritorio.
-*/
 .money-figure {
     font-size: clamp(0.95rem, 4.2vw, 1.25rem);
     font-variant-numeric: tabular-nums;
     line-height: 1.2;
-    /* Último recurso: garantiza que nunca haya scroll horizontal. Las columnas
-       están dimensionadas para que no llegue a activarse. */
     overflow-wrap: anywhere;
 }
-
-/* A partir de lg el ancho ya no depende del viewport: tamaño fijo legible. */
 @media (min-width: 992px) {
     .money-figure { font-size: 1.25rem; }
 }
-
-/* Cifra protagonista de la tarjeta "puedes gastar". */
 .money-hero {
     font-size: clamp(1.75rem, 9vw, 2.5rem);
     font-variant-numeric: tabular-nums;
     line-height: 1.1;
     overflow-wrap: anywhere;
 }
-
 .money-hero.money-hero-compact {
     font-size: clamp(1.5rem, 7.5vw, 2rem);
 }
-
-/* Par "gastado / presupuestado" de cada categoría. */
 .budget-figures {
     font-variant-numeric: tabular-nums;
 }
 
-/*
-   Bootstrap 5 no trae utilidades de ancho responsive. Patrón mobile-first:
-   el elemento ocupa todo el ancho en móvil (w-100) y vuelve a su tamaño
-   natural a partir de sm.
-*/
 @media (min-width: 576px) {
     .w-sm-auto { width: auto !important; }
 }
-
-/* =============================================================
-   Épica 10 (adelantado) — Rediseño mobile-first
-   Barra inferior + FAB, chips, segmentado, tarjeta hero y anillo de
-   presupuesto. Puramente visual/UX, sin lógica de negocio nueva.
-   ============================================================= */
-
-/* Reserva bajo el contenido para que nada quede atrapado debajo de la barra
-   ni del FAB. Sin esto, en una página corta (sin scroll) los botones de acción
-   del final quedan tapados por el FAB y son literalmente inalcanzables. */
-/* `!important` es obligatorio: main lleva las utilidades `p-3 p-md-4` de
-   Bootstrap, que ya son `!important` y si no ganarían siempre. */
 @media (max-width: 991.98px) {
-    /* barra (76) + hueco (12) + FAB (58) + respiro (14) */
     body.has-bottom-nav main {
         padding-bottom: calc(160px + var(--finlia-safe-bottom)) !important;
     }
 }
-
 @media (min-width: 992px) {
-    /* Sin barra inferior: solo hay que despejar el FAB. */
     body.has-bottom-nav main {
         padding-bottom: 104px !important;
     }
 }
-
-/* Barra de navegación inferior (solo móvil). Cuatro destinos = cuatro
-   columnas: el FAB ya no ocupa la celda central. */
 .bottom-nav {
     position: fixed;
     left: 0;
@@ -604,7 +437,6 @@ a { color: var(--finlia-primary); }
     display: grid;
     grid-template-columns: repeat(4, 1fr);
 }
-
 .bottom-nav-item {
     display: flex;
     flex-direction: column;
@@ -619,22 +451,16 @@ a { color: var(--finlia-primary); }
     font-weight: 500;
     text-decoration: none;
 }
-
 .bottom-nav-item i { font-size: 1.2rem; }
-
 .bottom-nav-item.active {
     color: var(--finlia-primary);
     font-weight: 600;
 }
-
-
-/* Chips (selección rápida de categoría, filtros de movimientos). */
 .chip-row {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
 }
-
 .chip {
     display: inline-flex;
     align-items: center;
@@ -651,17 +477,13 @@ a { color: var(--finlia-primary); }
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-
 .chip:hover { border-color: rgba(var(--finlia-primary-rgb), 0.35); }
-
 .chip.active {
     background-color: var(--finlia-primary);
     border-color: transparent;
     color: #fff;
     font-weight: 600;
 }
-
-/* Segmentado (Gasto / Ingreso, Enfoque / Control). */
 .segmented {
     display: inline-flex;
     padding: 3px;
@@ -669,7 +491,6 @@ a { color: var(--finlia-primary); }
     background-color: rgba(var(--finlia-primary-rgb), 0.08);
     gap: 2px;
 }
-
 .segmented-item {
     display: inline-flex;
     align-items: center;
@@ -685,21 +506,16 @@ a { color: var(--finlia-primary); }
     text-decoration: none;
     white-space: nowrap;
 }
-
 .segmented-item.active {
     background-color: var(--finlia-surface-solid);
     color: var(--finlia-text);
     box-shadow: 0 2px 6px -3px rgba(15, 23, 42, 0.35);
 }
-
-/* Tarjeta hero: cifra protagonista de "puedes gastar hoy" y del monto
-   a registrar (gasto/ingreso). */
 .hero-card {
     position: relative;
     border-radius: 24px;
     padding: 22px 20px;
 }
-
 .hero-figure {
     font-weight: 700;
     font-size: clamp(2rem, 9vw, 2.75rem);
@@ -708,8 +524,6 @@ a { color: var(--finlia-primary); }
     font-variant-numeric: tabular-nums;
     overflow-wrap: anywhere;
 }
-
-/* Encabezado de grupo por día (Movimientos). */
 .day-group-label {
     font-size: 0.75rem;
     font-weight: 600;
@@ -718,23 +532,10 @@ a { color: var(--finlia-primary); }
     color: var(--finlia-text-muted);
 }
 
-/* Cuando se usa como separador de secciones dentro de un list-group (recurrentes,
-   recordatorios), el `list-group-item` vecino ya trae 1rem de padding-inline y
-   el card-header también: sin más indent, el icono del grupo caía justo debajo
-   del icono del título y se leía como otro encabezado, no como una viñeta.
-   Con 2rem de padding-left el icono actúa de bullet indentado bajo el título. */
 .list-group-flush > .day-group-label {
     padding: 0.9rem 1rem 0.35rem 2rem;
 }
 
-/* =============================================================
-   FAB flotante — botón de acción principal fijo bottom-right
-   (estilo Twitter/X). Abre un speed-dial con 5 acciones rápidas.
-   Visible en todos los tamaños; en escritorio no hay barra inferior
-   bajo la que apoyarse, así que baja hasta la esquina.
-   ============================================================= */
-
-/* Contenedor: fijo bottom-right, apoyado sobre la bottom-nav en móvil. */
 .fab-container {
     position: fixed;
     right: 20px;
@@ -744,64 +545,37 @@ a { color: var(--finlia-primary); }
     flex-direction: column;
     align-items: flex-end;
     gap: 10px;
-
-    /* El contenedor es una columna que incluye el menú: aunque el menú esté
-       cerrado sigue ocupando su sitio en el layout, así que la caja del
-       contenedor se estira hacia arriba y tapa lo que haya debajo. Con
-       `pointer-events: none` deja de ser un objetivo de clic y solo reciben
-       clics sus hijos interactivos — el botón siempre, el menú al abrirse.
-       Sin esto, los botones "Gasto"/"Ingreso" del panel quedaban muertos:
-       el clic se lo comía un contenedor invisible. */
     pointer-events: none;
 }
-
 .fab-btn,
 .fab-container.is-open .fab-menu {
     pointer-events: auto;
 }
-
 @media (min-width: 992px) {
     .fab-container {
         right: 24px;
         bottom: 24px;
     }
 }
-
-/* Al bajar, el FAB se aparta; al subir vuelve. Es lo que evita que se quede
-   tapando un botón de la página: basta un gesto mínimo para descubrirlo.
-   La reserva de `padding-bottom` cubre el otro caso (contenido al final). */
 .fab-container {
     transition: transform 0.2s ease, opacity 0.2s ease;
 }
-
 .fab-container.is-hidden {
     opacity: 0;
     pointer-events: none;
     transform: translateY(120px);
 }
 
-/* Mientras una guía está abierta, el «+» NO se esconde al desplazar.
-   La guía mueve la página sola para señalar cada cosa, así que el paso que
-   habla del «+» llegaba justo después de que ese desplazamiento lo ocultara:
-   el halo señalaba un hueco. `pointer-events` se deja como está —durante la
-   guía manda el fondo, que captura los clics— para no pelearse con ADR-0037. */
 body.tour-abierto .fab-container.is-hidden {
     opacity: 1;
     transform: none;
-    /* Sin animar, y no por estética: el motor mide la opacidad computada justo
-       después de poner `tour-abierto` para decidir qué pasos valen, y con una
-       transición de por medio todavía lee 0 — descartaba el paso del «+»
-       exactamente cuando acababa de devolverlo a la vista. */
     transition: none;
 }
-
 @media (prefers-reduced-motion: reduce) {
     .fab-container {
         transition: none;
     }
 }
-
-/* Botón principal "+". */
 .fab-btn {
     width: 58px;
     height: 58px;
@@ -818,16 +592,12 @@ body.tour-abierto .fab-container.is-hidden {
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     flex-shrink: 0;
 }
-
 .fab-btn:hover,
 .fab-btn:focus-visible { color: #fff; box-shadow: 0 8px 24px -6px rgba(var(--finlia-primary-rgb), 0.9); }
 .fab-btn:active { transform: scale(0.93); }
-
 .fab-container.is-open .fab-btn {
     background-image: linear-gradient(160deg, var(--finlia-primary-hover), var(--finlia-primary));
 }
-
-/* Menú de acciones: se despliega hacia arriba-izquierda. */
 .fab-menu {
     display: flex;
     flex-direction: column;
@@ -838,14 +608,11 @@ body.tour-abierto .fab-container.is-hidden {
     transform: translateY(12px) scale(0.94);
     transition: opacity 0.18s ease, transform 0.18s ease;
 }
-
 .fab-container.is-open .fab-menu {
     pointer-events: auto;
     opacity: 1;
     transform: translateY(0) scale(1);
 }
-
-/* Cada acción: etiqueta + icono circular. */
 .fab-action {
     display: flex;
     align-items: center;
@@ -853,7 +620,6 @@ body.tour-abierto .fab-container.is-hidden {
     text-decoration: none;
     color: var(--finlia-text);
 }
-
 .fab-action-label {
     background-color: var(--finlia-surface-solid);
     color: var(--finlia-text);
@@ -865,7 +631,6 @@ body.tour-abierto .fab-container.is-hidden {
     box-shadow: var(--finlia-shadow-sm);
     white-space: nowrap;
 }
-
 .fab-action-icon {
     width: 46px;
     height: 46px;
@@ -878,8 +643,6 @@ body.tour-abierto .fab-container.is-hidden {
     box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.4);
     flex-shrink: 0;
 }
-
-/* Fondo semitransparente al abrir el FAB. */
 .fab-backdrop {
     position: fixed;
     inset: 0;
@@ -893,59 +656,29 @@ body.tour-abierto .fab-container.is-hidden {
     background-color: rgba(0, 0, 0, 0.45);
     pointer-events: auto;
 }
-
-/* =============================================================
-   PWA (Épica 10) — meta de tema dinámica.
-   El service worker y el manifest van en /public; aquí solo los
-   estilos de soporte (instalación, standalone).
-   ============================================================= */
-
-/* En modo standalone (instalada como app) ocultar el footer de
-   "Términos · COP · v…" que satura la pantalla sin barra de navegación. */
 @media (display-mode: standalone) {
     .app-footer {
         display: none !important;
     }
-    /* En standalone el notch ya está cubierto por el safe-area-inset
-       del body; la barra inferior no necesita ajuste adicional. */
 }
-
-/* -------------------------------------------------------------
-   Aviso de instalación en iOS.
-
-   Safari no tiene aviso nativo de instalación, así que este banner
-   es la única forma de que un usuario de iPhone descubra que la app
-   se puede instalar. Va en el flujo normal del documento: empuja a la
-   navbar hacia abajo y se marcha con el scroll, sin z-index ni
-   paddings que recalcular.
-   ------------------------------------------------------------- */
 .ios-install-banner {
     background-color: var(--finlia-surface-solid);
     border-bottom: 1px solid var(--finlia-border);
-    /* Respeta el notch cuando el banner es lo primero de la pantalla. */
     padding-top: env(safe-area-inset-top, 0px);
 }
-
 .ios-install-banner-inner {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
 }
-
 .ios-install-banner-text {
     display: flex;
     flex-direction: column;
     line-height: 1.25;
-    /* `flex: 1` absorbe el espacio sobrante y empuja el botón y la equis al
-       borde derecho. Sin esto los elementos se apelmazan a la izquierda y
-       queda un hueco muerto a la derecha que parece un banner recortado —
-       tanto más cuanto más corto sea el texto.
-       `min-width: 0` permite que el texto se recorte en vez de desbordar. */
     flex: 1;
     min-width: 0;
 }
-
 .ios-install-banner-text strong {
     font-size: 0.875rem;
     color: var(--finlia-text);
@@ -959,7 +692,6 @@ body.tour-abierto .fab-container.is-hidden {
     white-space: nowrap;
 }
 
-/* Pasos numerados del modal. */
 .ios-install-steps {
     list-style: none;
     margin: 0;
@@ -968,7 +700,6 @@ body.tour-abierto .fab-container.is-hidden {
     flex-direction: column;
     gap: 14px;
 }
-
 .ios-install-steps li {
     display: flex;
     align-items: flex-start;
@@ -976,7 +707,6 @@ body.tour-abierto .fab-container.is-hidden {
     font-size: 0.9375rem;
     color: var(--finlia-text);
 }
-
 .ios-install-step-n {
     flex-shrink: 0;
     width: 24px;
@@ -990,10 +720,6 @@ body.tour-abierto .fab-container.is-hidden {
     align-items: center;
     justify-content: center;
 }
-
-/* Icono de Compartir mostrado en grande dentro de los pasos de iOS.
-   El botón de Safari no lleva etiqueta: quien no lo conoce lo busca por la
-   forma, no por el nombre. */
 .ios-install-icon-demo {
     display: inline-flex;
     align-items: center;
@@ -1008,19 +734,6 @@ body.tour-abierto .fab-container.is-hidden {
     color: var(--finlia-primary);
     font-size: 1.15rem;
 }
-
-/* ============================================================
-   Indicadores de carga
-   ============================================================
-   La app navega con recargas completas: entre el clic y la nueva página no
-   pasa nada visible, y si el servidor tarda el usuario cree que se pegó y
-   vuelve a pulsar. Dos señales, ambas deliberadamente discretas:
-   una barra fina arriba para cualquier navegación, y un spinner dentro del
-   botón que se pulsó. */
-
-/* Barra superior. Va por encima de la navbar (1030–1041) y también del
-   modal (1055), porque la confirmación de borrado navega justo mientras el
-   modal se está cerrando y la barra tiene que verse durante esa transición. */
 .finlia-progress {
     position: fixed;
     top: 0;
@@ -1028,8 +741,6 @@ body.tour-abierto .fab-container.is-hidden {
     height: 4px;
     width: 0;
     z-index: 1060;
-    /* Arranca en cobre: el petróleo oscuro del principio se confundía con la
-       navbar y hacía que la barra pareciera parte del marco. */
     background: linear-gradient(90deg,
         var(--finlia-accent) 0%,
         var(--finlia-accent-hover) 55%,
@@ -1039,15 +750,10 @@ body.tour-abierto .fab-container.is-hidden {
     pointer-events: none;
     transition: opacity 180ms ease;
 }
-
-/* El avance es asintótico a propósito: rápido al principio y cada vez más
-   lento, porque no sabemos cuánto tarda el servidor. Nunca llega al 100 %;
-   ese salto lo da la página nueva al pintarse. */
 .finlia-progress.is-activa {
     opacity: 1;
     animation: finlia-progress-avance 14s cubic-bezier(0.12, 0.72, 0.24, 1) forwards;
 }
-
 @keyframes finlia-progress-avance {
     0%   { width: 0; }
     12%  { width: 28%; }
@@ -1055,15 +761,10 @@ body.tour-abierto .fab-container.is-hidden {
     65%  { width: 76%; }
     100% { width: 94%; }
 }
-
-/* Botón ocupado: el contenido original se oculta con `visibility` (conserva
-   el ancho, así que el botón no cambia de tamaño ni desplaza lo de al lado)
-   y encima se centra un spinner que hereda el color del botón. */
 .is-cargando {
     position: relative;
     pointer-events: none;
 }
-
 .finlia-btn-spinner {
     display: inline-block;
     width: 1em;
@@ -1074,30 +775,19 @@ body.tour-abierto .fab-container.is-hidden {
     vertical-align: -0.125em;
     animation: finlia-spin 620ms linear infinite;
 }
-
-/* En línea: ocupa el sitio del icono del botón, con su mismo margen. Es la
-   variante preferida — el botón conserva su etiqueta, así que sigue diciendo
-   qué está haciendo en vez de quedarse mudo con una ruedita. */
 .finlia-btn-spinner-inline {
     margin-right: 0.25rem;
 }
 
-/* Centrada: solo para botones sin icono, donde no hay nada que sustituir y
-   se oculta el contenido entero. */
 .finlia-btn-spinner-centrado {
     position: absolute;
     top: 50%;
     left: 50%;
     margin: -0.5em 0 0 -0.5em;
 }
-
 @keyframes finlia-spin {
     to { transform: rotate(360deg); }
 }
-
-/* Con movimiento reducido el spinner sigue girando —es información, no
-   decoración— pero más despacio, y la barra aparece sin animar el avance:
-   se queda quieta en un tramo que ya comunica "esto va en marcha". */
 @media (prefers-reduced-motion: reduce) {
     .finlia-progress.is-activa {
         animation: none;
@@ -1108,15 +798,6 @@ body.tour-abierto .fab-container.is-hidden {
         animation-duration: 1.4s;
     }
 }
-
-/*
-|------------------------------------------------------------------------------
-| Campo trampa de los formularios de contacto
-|------------------------------------------------------------------------------
-| Oculto para personas, visible para un bot que rellena todos los campos del
-| DOM. No se usa `display:none` a secas porque algunos bots lo detectan: se
-| saca del flujo y del alcance del teclado.
-*/
 .campo-trampa {
     position: absolute;
     left: -9999px;
@@ -1125,38 +806,14 @@ body.tour-abierto .fab-container.is-hidden {
     overflow: hidden;
 }
 
-/*
-|------------------------------------------------------------------------------
-| Páginas de error y modo mantenimiento
-|------------------------------------------------------------------------------
-| El código (404, 503…) es contexto, no el mensaje: grande para orientar de un
-| vistazo, en gris para que el titular siga mandando. `tabular-nums` evita que
-| los dígitos bailen entre una página y otra.
-*/
 .error-code {
     font-size: clamp(3rem, 14vw, 4.5rem);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.03em;
 }
-
-/*
-|------------------------------------------------------------------------------
-| Guías de pantalla (ADR-0045)
-|------------------------------------------------------------------------------
-| Un halo sobre el elemento que se explica y un globo al lado. El halo NO es
-| un recorte: es una caja transparente con una sombra enorme, que oscurece
-| todo lo demás de una vez. Por eso lleva pointer-events:none — su sombra
-| cubre la pantalla entera y, sin eso, se comería todos los clics; quien los
-| recoge es `.tour-fondo`, que está debajo.
-|
-| Motor: resources/js/tour.js. Contenido: config/tours.php.
-*/
 .tour-layer {
     position: fixed;
     inset: 0;
-    /* Por encima de todo lo de la app: navbar pegajosa, barra inferior, FAB
-       y los modales de Bootstrap (1055). Una guía y un modal no coinciden
-       nunca, pero si algún día pasara, el que manda tiene que ser la guía. */
     z-index: 1090;
     opacity: 0;
     visibility: hidden;
@@ -1167,18 +824,13 @@ body.tour-abierto .fab-container.is-hidden {
     opacity: 1;
     visibility: visible;
 }
-
-/* El motor esconde piezas con el atributo `hidden` (viñetas vacías, «Atrás»
-   en el primer paso). Sin esto, cualquier `display` propio le ganaría. */
 .tour-layer [hidden] {
     display: none !important;
 }
-
 .tour-fondo {
     position: absolute;
     inset: 0;
 }
-
 .tour-foco {
     position: fixed;
     border-radius: var(--finlia-radius-sm);
@@ -1186,22 +838,10 @@ body.tour-abierto .fab-container.is-hidden {
     outline: 2px solid var(--finlia-accent);
     outline-offset: 0;
     pointer-events: none;
-    /* Sin transición de geometría a propósito. El halo se recoloca en cada
-       fotograma de scroll; con una transición de 0.22s nunca alcanza el
-       destino —cada fotograma la reinicia— y acaba cientos de píxeles por
-       detrás del elemento que debería estar señalando. Pegado al elemento es
-       además lo que hace que se lea como parte de la página y no como un
-       adorno flotando encima. */
 }
-
-/* Sin elemento que iluminar (intro y cierre), el fondo se oscurece entero.
-   La clase la pone el motor: con `:has()` sería una línea menos, pero de este
-   selector depende que los pasos centrados se vean, y no vale arriesgarlo a
-   que el navegador lo soporte. */
 .tour-layer.tour-sin-foco .tour-fondo {
     background: rgba(8, 20, 25, .62);
 }
-
 .tour-globo {
     position: fixed;
     width: min(360px, calc(100vw - 24px));
@@ -1211,15 +851,11 @@ body.tour-abierto .fab-container.is-hidden {
     border-radius: var(--finlia-radius);
     box-shadow: 0 24px 48px -20px rgba(8, 20, 25, .55);
     padding: 1rem 1.1rem 0.9rem;
-    /* Misma razón que el halo: sigue al scroll, no se anima. */
 }
-
 .tour-globo:focus {
     outline: none;
 }
 
-/* Móvil: hoja pegada a un borde. Sube arriba cuando lo iluminado está en la
-   mitad inferior — si no, el globo taparía justo lo que se está señalando. */
 .tour-globo.tour-hoja {
     top: auto;
     bottom: 0;
@@ -1228,7 +864,6 @@ body.tour-abierto .fab-container.is-hidden {
     border-radius: var(--finlia-radius) var(--finlia-radius) 0 0;
     padding-bottom: calc(0.9rem + var(--finlia-safe-bottom));
 }
-
 .tour-globo.tour-hoja.tour-hoja-arriba {
     top: 0;
     bottom: auto;
@@ -1236,14 +871,12 @@ body.tour-abierto .fab-container.is-hidden {
     padding-bottom: 0.9rem;
     padding-top: calc(0.9rem + env(safe-area-inset-top, 0px));
 }
-
 .tour-cabecera {
     display: flex;
     align-items: center;
     gap: .5rem;
     margin-bottom: .5rem;
 }
-
 .tour-etiqueta {
     font-size: .68rem;
     font-weight: 600;
@@ -1255,13 +888,10 @@ body.tour-abierto .fab-container.is-hidden {
     padding: .18rem .55rem;
 }
 
-/* Cobre solo cuando de verdad hay algo nuevo que contar: es el acento que la
-   marca reserva para lo que merece la mirada (docs/BRAND.md). */
 .tour-etiqueta.es-novedad {
     color: var(--finlia-accent);
     background: rgba(var(--finlia-accent-rgb), .14);
 }
-
 .tour-progreso {
     font-size: .75rem;
     color: var(--finlia-text-muted);
@@ -1277,25 +907,21 @@ body.tour-abierto .fab-container.is-hidden {
     padding: .25rem;
     border-radius: 999px;
 }
-
 .tour-cerrar:hover {
     color: var(--finlia-text);
     background: rgba(var(--finlia-primary-rgb), .08);
 }
-
 .tour-titulo {
     font-size: 1.05rem;
     font-weight: 600;
     margin: 0 0 .35rem;
 }
-
 .tour-cuerpo {
     font-size: .9rem;
     line-height: 1.5;
     color: var(--finlia-text-muted);
     margin: 0;
 }
-
 .tour-lista {
     list-style: none;
     margin: .6rem 0 0;
@@ -1305,12 +931,10 @@ body.tour-abierto .fab-container.is-hidden {
     font-size: .85rem;
     color: var(--finlia-text-muted);
 }
-
 .tour-lista li {
     padding-left: 1rem;
     position: relative;
 }
-
 .tour-lista li::before {
     content: "";
     position: absolute;
@@ -1321,7 +945,6 @@ body.tour-abierto .fab-container.is-hidden {
     border-radius: 999px;
     background: var(--finlia-primary);
 }
-
 .tour-pie {
     display: flex;
     align-items: center;
@@ -1330,13 +953,11 @@ body.tour-abierto .fab-container.is-hidden {
     flex-wrap: wrap;
     margin-top: .9rem;
 }
-
 .tour-acciones {
     display: flex;
     gap: .4rem;
     margin-left: auto;
 }
-
 .tour-silenciar {
     background: none;
     border: 0;
@@ -1346,18 +967,12 @@ body.tour-abierto .fab-container.is-hidden {
     text-decoration: underline;
     text-underline-offset: 2px;
 }
-
 .tour-silenciar:hover {
     color: var(--finlia-text);
 }
-
-/* Lo único que se anima es la aparición de la capa; quien pidió menos
-   movimiento no ve ni eso (el motor también deja de desplazar con scroll
-   suave — ver `sinAnimacion` en resources/js/tour.js). */
 .tour-layer.tour-sin-animacion {
     transition: none;
 }
-
 @media (prefers-reduced-motion: reduce) {
     .tour-layer {
         transition: none;

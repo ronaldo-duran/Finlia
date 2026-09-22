@@ -19,7 +19,7 @@ class StoreSessionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // ruta pública bajo middleware 'guest'
+        return true;
     }
 
     /**

@@ -34,8 +34,6 @@ class SavingsGoalTest extends TestCase
         return SavingsGoal::factory()->for($household, 'household')->create($attributes);
     }
 
-    // ===== Acceso y CRUD =====
-
     public function test_invitado_es_redirigido_al_login(): void
     {
         $this->get(route('savings-goals.index'))->assertRedirect(route('login'));
@@ -99,8 +97,6 @@ class SavingsGoalTest extends TestCase
         $this->assertDatabaseMissing('savings_goals', ['id' => $goal->id]);
     }
 
-    // ===== Aislamiento entre hogares =====
-
     public function test_otro_hogar_no_puede_ver_ni_editar_las_metas_ajenas(): void
     {
         [$ownerA, $householdA] = $this->setupHousehold('Hogar A');
@@ -120,8 +116,6 @@ class SavingsGoalTest extends TestCase
             'type' => 'deposit',
         ])->assertForbidden();
 
-        // Retiro sobre meta ajena: las reglas que dependen de la meta (saldo,
-        // estado) no llegan a validar, así que no filtran datos en mensajes.
         $this->actingAs($ownerB)->post(route('savings-goals.contributions.store', $goal), [
             'amount' => '999999',
             'date' => now()->toDateString(),
@@ -139,15 +133,12 @@ class SavingsGoalTest extends TestCase
         $this->actingAs($ownerA)->post(route('savings-goals.store'), [
             'name' => 'Meta suplantada',
             'target_amount' => '1000',
-            // household_id no es fillable: debe ignorarse y usar el hogar activo.
             'household_id' => $householdB->id,
         ]);
 
         $goal = SavingsGoal::query()->where('name', 'Meta suplantada')->firstOrFail();
         $this->assertSame($householdA->id, $goal->household_id);
     }
-
-    // ===== Aportes y retiros (ADR-0025) =====
 
     public function test_un_aporte_y_un_retiro_actualizan_lo_ahorrado(): void
     {
@@ -194,7 +185,6 @@ class SavingsGoalTest extends TestCase
         ]);
         $this->assertSame(SavingsGoalStatus::Completed, $goal->fresh()->status);
 
-        // Borrar el movimiento deshace el auto-completado.
         $contribution = $goal->contributions()->firstOrFail();
         $this->actingAs($owner)->delete(route('savings-goals.contributions.destroy', [$goal, $contribution]))
             ->assertRedirect();
@@ -220,8 +210,6 @@ class SavingsGoalTest extends TestCase
             $this->assertSame(0, $goal->contributions()->count());
         }
     }
-
-    // ===== Panel y dashboard =====
 
     public function test_el_panel_muestra_las_metas_del_hogar(): void
     {

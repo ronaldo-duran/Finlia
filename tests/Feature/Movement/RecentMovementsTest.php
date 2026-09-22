@@ -38,7 +38,6 @@ class RecentMovementsTest extends TestCase
     {
         [$owner, $household, $account] = $this->setup1();
 
-        // 6 gastos y 6 ingresos el mismo día.
         Expense::factory()->count(6)->create([
             'household_id' => $household->id, 'user_id' => $owner->id,
             'account_id' => $account->id, 'date' => now()->toDateString(),
@@ -50,7 +49,6 @@ class RecentMovementsTest extends TestCase
 
         $recent = app(MovementSummaryService::class)->recentMovements($household->id, 6);
 
-        // Se toman N de cada tabla y se mezclan: sin recorte final salen 12.
         $this->assertCount(6, $recent);
     }
 
@@ -59,10 +57,6 @@ class RecentMovementsTest extends TestCase
         [$owner, $household, $account] = $this->setup1();
         $hoy = now()->toDateString();
 
-        // Se inserta primero el de las 18:00 y después el de las 10:00, para
-        // que el orden correcto NO coincida con el de inserción: así el test
-        // no depende de que el motor devuelva los empates en orden de rowid
-        // (SQLite lo hace, MySQL no garantiza nada).
         $tarde = Expense::factory()->create([
             'household_id' => $household->id, 'user_id' => $owner->id,
             'account_id' => $account->id, 'date' => $hoy, 'description' => 'De las 18:00',
@@ -77,7 +71,6 @@ class RecentMovementsTest extends TestCase
 
         $recent = app(MovementSummaryService::class)->recentMovements($household->id, 10);
 
-        // `date` no tiene hora: el desempate tiene que salir de created_at.
         $this->assertSame('De las 18:00', $recent->first()['description']);
         $this->assertSame($tarde->id, $recent->first()['id']);
     }
@@ -101,7 +94,6 @@ class RecentMovementsTest extends TestCase
 
         $recent = app(MovementSummaryService::class)->recentMovements($household->id, 10);
 
-        // Al mezclar las dos tablas el orden por hora tiene que mantenerse.
         $this->assertSame('Ingreso 20:00', $recent->first()['description']);
         $this->assertSame('Gasto 09:00', $recent->last()['description']);
     }
@@ -111,7 +103,6 @@ class RecentMovementsTest extends TestCase
         [$owner, $household, $account] = $this->setup1();
         $hoy = now()->toDateString();
 
-        // Día cargado: ya hay 8 gastos con la misma fecha.
         Expense::factory()->count(8)->create([
             'household_id' => $household->id, 'user_id' => $owner->id,
             'account_id' => $account->id, 'date' => $hoy,
@@ -129,7 +120,6 @@ class RecentMovementsTest extends TestCase
 
         $recent = app(MovementSummaryService::class)->recentMovements($household->id, 6);
 
-        // El pago recién registrado tiene que verse, no perderse entre los del día.
         $this->assertNotNull(
             $recent->firstWhere('description', 'Arriendo (pago recurrente)'),
             'El pago del recurrente no aparece en los últimos movimientos.',

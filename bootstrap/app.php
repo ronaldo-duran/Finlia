@@ -16,21 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // En Laravel 11+ Auth::logoutOtherDevices() solo re-hashea la
-        // contraseña: son las sesiones las que se comparan contra ese hash
-        // en cada request (Plan 02, ADR-0030). Sin este middleware, rotar la
-        // contraseña no revocaría las sesiones de otros dispositivos.
         $middleware->web(append: [
             AuthenticateSession::class,
         ]);
 
-        // Re-aceptación obligatoria de términos (Plan 03, ADR-0031). Se
-        // aplica al grupo de rutas privadas con sesión + correo verificado.
-        // Bloqueo de cuentas en suspensión (Plan 05, ADR-0033). Se aplica al
-        // mismo grupo para que los rutas de suspensión/reactivación queden fuera.
-        // Guía de la pantalla actual (ADR-0045). Va en el grupo de rutas
-        // privadas y no en 'web': solo ahí hay pantallas con guía, y así no
-        // paga el peaje ni la landing ni el login.
         $middleware->alias([
             'terms.current' => EnsureTermsAccepted::class,
             'account.active' => EnsureAccountActive::class,

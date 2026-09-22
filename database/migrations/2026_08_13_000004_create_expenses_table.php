@@ -13,20 +13,15 @@ return new class extends Migration
     {
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
-            // household_id denormalizado para aislamiento (ADR-0005).
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
-            // Usuario que registró el gasto.
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            // Cuenta/medio de pago afectada (decrementa saldo).
             $table->foreignId('account_id')->constrained('accounts')->cascadeOnDelete();
-            // Categoría (tipo expense).
             $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
-            // Monto siempre positivo. DECIMAL(15,2) (ADR-0006).
             $table->decimal('amount', 15, 2);
             $table->date('date');
             $table->string('description')->nullable();
             $table->text('notes')->nullable();
-            $table->string('payment_method')->nullable(); // efectivo, tarjeta, transferencia...
+            $table->string('payment_method')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

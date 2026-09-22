@@ -23,10 +23,5 @@ return new class extends Migration
             ->update(['email_verified_at' => now()]);
     }
 
-    public function down(): void
-    {
-        // Irreversible: no sabemos quiénes habían "verificado de verdad"
-        // (nadie) y quiénes fueron marcados por esta migración. Volver
-        // atrás dejaría a todos los usuarios fuera de la app.
-    }
+    public function down(): void {}
 };

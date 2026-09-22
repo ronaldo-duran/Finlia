@@ -20,11 +20,9 @@ return new class extends Migration
         Schema::create('savings_goal_contributions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('savings_goal_id')->constrained('savings_goals')->cascadeOnDelete();
-            // Denormalizado a propósito: permite acotar por hogar sin join
-            // (aislamiento multi-hogar, amenaza #1).
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
-            $table->decimal('amount', 15, 2);             // siempre positivo; la dirección la da `type`
-            $table->string('type');                       // enum App\Enums\SavingsGoalContributionType
+            $table->decimal('amount', 15, 2);
+            $table->string('type');
             $table->date('date');
             $table->text('notes')->nullable();
             $table->timestamps();

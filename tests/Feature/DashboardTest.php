@@ -48,9 +48,6 @@ class DashboardTest extends TestCase
         $response = $this->actingAs($user)->get(route('dashboard'));
 
         $response->assertOk();
-        // El panel ya no lleva botones propios de "Gasto"/"Ingreso": duplicaban
-        // dos de las cinco acciones del "+" flotante, que ahora es la única
-        // entrada para registrar.
         $response->assertSee('Registrar movimiento');
         $response->assertSee('Ingresos del mes');
         $response->assertSee('Gastos del mes');

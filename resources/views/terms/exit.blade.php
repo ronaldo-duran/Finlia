@@ -29,8 +29,6 @@
 @endsection
 
 @section('actions')
-    {{-- Los enlaces de exportar datos (plan 06) y eliminar cuenta (plan 05)
-         se añaden aquí cuando existan: esta pantalla es su puerta natural. --}}
     <p class="text-center text-muted small mt-3 mb-0">
         ¿Quieres llevarte tus datos o eliminar tu cuenta?
         Esas opciones llegarán pronto a esta pantalla.

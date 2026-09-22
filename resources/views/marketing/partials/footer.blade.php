@@ -26,8 +26,6 @@
                 <ul class="list-unstyled d-grid gap-2 mb-0">
                     <li><a href="{{ route('terms.show') }}" class="enlace-footer">Términos y condiciones</a></li>
                     <li><a href="{{ route('data.policy') }}" class="enlace-footer">Tus datos y Finlia</a></li>
-                    {{-- AGPL §13: quien usa Finlia como servicio tiene derecho al
-                         código correspondiente. Este enlace es la forma de cumplirlo. --}}
                     <li>
                         <a href="https://github.com/ronaldo-duran/Finlia" class="enlace-footer" rel="noopener">
                             Código fuente <i class="bi bi-box-arrow-up-right small"></i>
@@ -36,7 +34,6 @@
                 </ul>
             </div>
         </div>
-
         <div class="pie-legal d-flex flex-wrap justify-content-between gap-2">
             <span>© {{ now()->year }} Finlia · v{{ config('finlia.version') }}</span>
             <span>

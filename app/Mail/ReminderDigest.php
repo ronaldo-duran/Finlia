@@ -54,9 +54,6 @@ class ReminderDigest extends Mailable
                 'household' => $this->householdName,
                 'app' => config('app.name'),
             ]),
-            // Baja de un click (RFC 8058): con estas cabeceras Gmail/Yahoo
-            // ofrecen su botón nativo "Cancelar suscripción". La válvula de
-            // escape barata: una baja en vez de un "reportar spam".
             using: [
                 function (Email $message) {
                     $message->getHeaders()

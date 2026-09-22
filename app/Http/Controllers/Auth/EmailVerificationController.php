@@ -55,9 +55,6 @@ class EmailVerificationController extends Controller
 
             event(new Verified($user));
 
-            // Quien se registró desde una invitación entra aquí a su hogar: con
-            // el correo ya probado y sin depender de la sesión, porque el enlace
-            // se abre a menudo en otro dispositivo (ADR-0039).
             $household = $this->households->provisionHouseholdAfterVerification($user);
         }
 
@@ -65,7 +62,6 @@ class EmailVerificationController extends Controller
             ? $household->name
             : null;
 
-        // Regenera la sesión al autenticar la identidad (fijación de sesión).
         if ($request->user()?->is($user)) {
             $request->session()->regenerate();
 
@@ -81,7 +77,6 @@ class EmailVerificationController extends Controller
                     : __('¡Correo confirmado! Bienvenido a Finlia.'));
         }
 
-        // Click desde otro dispositivo/navegador: entra a iniciar sesión.
         return redirect()
             ->route('login')
             ->with('status', $joinedName !== null

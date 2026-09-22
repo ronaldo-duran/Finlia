@@ -29,8 +29,6 @@ class BudgetTest extends TestCase
         return [$owner, $household];
     }
 
-    // ===== Acceso =====
-
     public function test_guest_es_redirigido_al_login(): void
     {
         $this->get(route('budgets.index'))->assertRedirect(route('login'));
@@ -102,8 +100,6 @@ class BudgetTest extends TestCase
             ->assertSee('1234500.00');
     }
 
-    // ===== CRUD =====
-
     public function test_usuario_puede_crear_un_presupuesto_total(): void
     {
         [$owner, $household] = $this->setupHousehold();
@@ -168,8 +164,8 @@ class BudgetTest extends TestCase
             ->get(route('budgets.index'))
             ->assertOk()
             ->assertSee('Alimentación')
-            ->assertSee('Cerca del límite') // 90 % → alerta del 80 %
-            ->assertSee('90 %');            // formato colombiano (coma decimal)
+            ->assertSee('Cerca del límite')
+            ->assertSee('90 %');
     }
 
     public function test_los_porcentajes_usan_coma_decimal(): void
@@ -188,7 +184,7 @@ class BudgetTest extends TestCase
             'user_id' => $owner->id,
             'account_id' => $cuenta->id,
             'category_id' => $categoria->id,
-            'amount' => 33330, // 33,33 %
+            'amount' => 33330,
             'date' => $now->format('Y-m-d'),
         ]);
 
@@ -222,8 +218,6 @@ class BudgetTest extends TestCase
 
         $this->assertDatabaseMissing('budgets', ['id' => $budget->id]);
     }
-
-    // ===== Validación =====
 
     public function test_el_monto_es_obligatorio_y_positivo(): void
     {
@@ -307,7 +301,7 @@ class BudgetTest extends TestCase
         $now = Carbon::now(config('app.timezone'));
 
         $this->actingAs($owner)->post(route('budgets.store'), [
-            'household_id' => $otro->id, // intento de inyección
+            'household_id' => $otro->id,
             'amount' => 100000,
             'year' => $now->year,
             'month' => $now->month,
@@ -316,8 +310,6 @@ class BudgetTest extends TestCase
         $this->assertDatabaseHas('budgets', ['household_id' => $household->id]);
         $this->assertDatabaseMissing('budgets', ['household_id' => $otro->id]);
     }
-
-    // ===== Aislamiento multi-hogar (amenaza #1 — IDOR) =====
 
     public function test_usuario_ajeno_no_puede_editar_presupuesto_de_otro_hogar(): void
     {
@@ -365,8 +357,6 @@ class BudgetTest extends TestCase
             ->assertOk()
             ->assertDontSee('Secreta');
     }
-
-    // ===== Helpers =====
 
     private function expenseCategory(Household $household, string $name = 'Transporte'): Category
     {

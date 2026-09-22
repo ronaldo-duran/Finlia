@@ -84,8 +84,6 @@ class CategoryTest extends TestCase
         $this->assertDatabaseMissing('categories', ['id' => $category->id]);
     }
 
-    // ===== Aislamiento multi-hogar =====
-
     public function test_usuario_ajeno_no_puede_borrar_categoria_de_otro_hogar(): void
     {
         [, $household] = $this->setupHousehold();

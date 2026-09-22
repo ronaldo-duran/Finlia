@@ -20,7 +20,6 @@
         </p>
     </div>
 
-    {{-- Texto completo de la versión, párrafo a párrafo, siempre escapado. --}}
     <div class="text-body">
         @foreach (explode("\n\n", $version->content) as $parrafo)
             <p class="small mb-3">{{ $parrafo }}</p>

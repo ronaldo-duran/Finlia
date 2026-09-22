@@ -66,15 +66,11 @@
                                 @enderror
                             </div>
 
-                            {{-- Campo trampa para bots: oculto y sin foco posible. Una
-                                 persona nunca lo ve; un bot que rellena todo, sí. --}}
                             <div class="campo-trampa" aria-hidden="true">
                                 <label for="sitio_web">No rellenes este campo</label>
                                 <input type="text" id="sitio_web" name="sitio_web" tabindex="-1" autocomplete="off" value="{{ old('sitio_web') }}">
                             </div>
-
                             <button type="submit" class="btn btn-finlia btn-lg w-100 mt-2">Enviar mensaje</button>
-
                             <p class="small text-secondary mt-3 mb-0">
                                 Al escribirnos, tratamos tus datos según
                                 <a href="{{ route('data.policy') }}" class="enlace-nav">nuestra política</a>.
@@ -88,5 +84,4 @@
             </div>
         </div>
     </section>
-
 @endsection

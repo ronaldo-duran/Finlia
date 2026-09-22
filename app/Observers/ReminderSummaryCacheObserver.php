@@ -52,7 +52,6 @@ class ReminderSummaryCacheObserver
 
     private function invalidate(Model $model): void
     {
-        // Household es la excepción: su PK ES el hogar, no tiene household_id.
         $householdId = $model instanceof Household ? $model->id : $model->household_id;
 
         if ($householdId !== null) {

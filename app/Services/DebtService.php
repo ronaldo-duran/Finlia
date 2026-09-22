@@ -33,10 +33,6 @@ class DebtService
         private readonly DebtCalculator $calculator,
     ) {}
 
-    // ---------------------------------------------------------------
-    // Saldo
-    // ---------------------------------------------------------------
-
     /**
      * Línea base del saldo (ADR-0020): el importe original de la deuda o,
      * si se refinanció, el saldo refinanciado más reciente.
@@ -82,9 +78,6 @@ class DebtService
 
         $attributes = ['current_balance' => $balance];
 
-        // El estado solo se toca entre "activa" y "pagada": una deuda
-        // condonada o refinanciada mantiene su estado, que es información
-        // que el usuario puso a mano.
         if ($balance <= 0.0 && $debt->status === DebtStatus::Active) {
             $attributes['status'] = DebtStatus::Paid;
         } elseif ($balance > 0.0 && $debt->status === DebtStatus::Paid) {
@@ -95,10 +88,6 @@ class DebtService
 
         return $debt;
     }
-
-    // ---------------------------------------------------------------
-    // Altas y pagos
-    // ---------------------------------------------------------------
 
     /**
      * Crea una deuda. El saldo arranca en la línea base, no lo teclea el
@@ -255,8 +244,6 @@ class DebtService
 
             if (! empty($data['term_months'])) {
                 $changes['term_months'] = (int) $data['term_months'];
-                // addMonthsNoOverflow: un 31 de enero + 1 mes es 28/29 de
-                // febrero, no el 2 o 3 de marzo.
                 $changes['end_date'] = Carbon::parse($data['start_date'])
                     ->addMonthsNoOverflow((int) $data['term_months'])
                     ->toDateString();
@@ -264,7 +251,6 @@ class DebtService
 
             $debt->forceFill($changes)->save();
 
-            // La relación cacheada quedaría obsoleta y el saldo saldría mal.
             $debt->unsetRelation('latestRefinancing');
 
             $this->recalculateBalance($debt);
@@ -272,10 +258,6 @@ class DebtService
             return $refinancing;
         });
     }
-
-    // ---------------------------------------------------------------
-    // Panel de deuda
-    // ---------------------------------------------------------------
 
     /**
      * Resumen del hogar: deuda total, compromiso mensual y progreso.
@@ -317,11 +299,9 @@ class DebtService
         $debts = Debt::where('household_id', $householdId)->outstanding()->get();
 
         return match ($strategy) {
-            // Mayor tasa primero; sin tasa conocida va al final.
             DebtStrategy::Avalanche => $debts
                 ->sortByDesc(fn (Debt $d) => (float) ($d->interest_rate ?? -1))
                 ->values(),
-            // Menor saldo primero.
             DebtStrategy::Snowball => $debts
                 ->sortBy(fn (Debt $d) => (float) $d->current_balance)
                 ->values(),
@@ -340,9 +320,6 @@ class DebtService
      */
     public function projectPayoff(Debt $debt, ?CarbonInterface $reference = null): array
     {
-        // Misma matemática que el simulador del formulario (ADR-0023): si
-        // cada uno usara la suya, la cuota calculada y la fecha proyectada se
-        // contradirían en pantalla.
         $result = $this->calculator->payOff(
             (float) $debt->current_balance,
             $debt->interest_rate !== null ? (float) $debt->interest_rate : null,
@@ -360,10 +337,6 @@ class DebtService
             'never_ends' => $result['never_ends'],
         ];
     }
-
-    // ---------------------------------------------------------------
-    // Seam del dinero disponible (ADR-0014)
-    // ---------------------------------------------------------------
 
     /**
      * Deudas vigentes con sus pagos: la entrada de `committedInRange` y
@@ -414,7 +387,6 @@ class DebtService
                         continue;
                     }
 
-                    // La última cuota nunca es mayor que lo que queda.
                     $committed += min($installment, (float) $debt->current_balance);
                 }
             });
@@ -465,10 +437,6 @@ class DebtService
         return round($committed, 2);
     }
 
-    // ---------------------------------------------------------------
-    // Reportes (Épica 8)
-    // ---------------------------------------------------------------
-
     /**
      * Saldo total de deuda a fin de cada uno de los últimos N meses.
      *
@@ -480,8 +448,6 @@ class DebtService
      */
     public function balanceEvolution(int $householdId, int $months = 6): array
     {
-        // Cargar payments y refinancings en memoria: a escala de hogar son
-        // pocas filas y evita una query por deuda y mes.
         $debts = Debt::where('household_id', $householdId)
             ->with(['payments', 'refinancings'])
             ->get();
@@ -524,8 +490,6 @@ class DebtService
         $base = (float) $debt->original_amount;
         $since = $start;
 
-        // Refinanciaciones en orden ascendente: la última con fecha ≤ corte
-        // es la línea base vigente en ese momento.
         foreach ($debt->refinancings->sortBy('start_date') as $refinancing) {
             $refStart = Carbon::parse($refinancing->start_date)->startOfDay();
 
@@ -561,7 +525,6 @@ class DebtService
 
         while ($cursor->lte($to) && $guard++ < 120) {
             $day = $debt->due_day !== null
-                // Un día 31 en un mes de 30 cae el último día del mes.
                 ? min((int) $debt->due_day, $cursor->daysInMonth)
                 : $cursor->daysInMonth;
 

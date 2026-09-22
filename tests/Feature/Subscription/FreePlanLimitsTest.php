@@ -71,7 +71,6 @@ class FreePlanLimitsTest extends TestCase
         $service = app(HouseholdService::class);
         $household = $service->createHousehold($user->id, 'Hogar');
 
-        // Owner (1) + un miembro = 2 personas. Free tope 2 → no cabe otro.
         $existing = User::factory()->create();
         $household->members()->attach($existing->id, [
             'role' => HouseholdRole::Member->value,
@@ -95,8 +94,6 @@ class FreePlanLimitsTest extends TestCase
         $service = app(HouseholdService::class);
         $household = $service->createHousehold($user->id, 'Hogar Grande');
 
-        // Simula grandfather: el hogar ya tiene 4 miembros extra (5 total)
-        // desde antes de la Épica 12.
         for ($i = 0; $i < 4; $i++) {
             $member = User::factory()->create();
             $household->members()->attach($member->id, [
@@ -105,10 +102,8 @@ class FreePlanLimitsTest extends TestCase
             ]);
         }
 
-        // La suscripción sigue siendo Free, pero los datos no se rompen.
         $this->assertSame(5, $household->members()->count());
 
-        // Solo se bloquea el SIGUIENTE invitado (chequeo hacia adelante).
         $this->actingAs($user)->post(route('households.invitations.store', $household), [
             'email' => 'sexto@finlia.test',
             'role' => 'member',

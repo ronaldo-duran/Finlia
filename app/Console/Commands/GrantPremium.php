@@ -62,7 +62,7 @@ class GrantPremium extends Command
             $subscription = $subscriptions->grantPremium($household, $until, $reason);
 
             $this->info(sprintf(
-                '✓ Hogar #%d (%s) → Premium hasta %s (razón: %s)',
+                'Hogar #%d (%s) → Premium hasta %s (razón: %s)',
                 $household->id,
                 $household->name,
                 $subscription->ends_at?->toDateString() ?? 'sin fecha',

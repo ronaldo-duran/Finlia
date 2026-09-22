@@ -8,58 +8,31 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-/*
-|--------------------------------------------------------------------------
-| Tareas programadas — Finlia
-|--------------------------------------------------------------------------
-|
-| Compatible con hosting compartido (ADR de despliegue): el cron de
-| Hostinger llama a `php artisan schedule:run` cada minuto y Laravel
-| decide qué corre. Nada de workers persistentes (ver docs/DEPLOYMENT.md §6).
-|
-*/
-
-// Épica 9 (ADR-0018): pagos automáticos de recurrentes vencidos. Temprano,
-// antes de que el hogar empiece el día (America/Bogota). withoutOverlapping:
-// si una corrida se alarga, el cron del minuto siguiente no lanza otra encima.
 Schedule::command('finlia:generate-recurring-payments')
     ->name('recurrentes-auto-generacion')
     ->withoutOverlapping()
     ->dailyAt('06:00');
 
-// Épica 9 (ADR-0028): digest de recordatorios urgentes por correo. Después
-// de la generación de recurrentes, para que refleje los pagos de la mañana.
-// Síncrono a propósito (Fase 1); la corrida puede durar minutos con volumen,
-// así que tampoco puede solaparse con la del minuto siguiente.
 Schedule::command('finlia:send-reminder-digests')
     ->name('recordatorios-digest')
     ->withoutOverlapping()
     ->dailyAt('06:30');
 
-// Plan 05 (ADR-0033): purga cuentas suspendidas con ventana expirada (> 30 días)
-// y cuentas fantasma sin verificar (> 14 días). Antes que los recurrentes para
-// que un usuario purgado no genere pagos de la mañana.
 Schedule::command('finlia:purge-pending-deletions')
     ->name('purga-cuentas')
     ->withoutOverlapping()
     ->dailyAt('05:30');
 
-// Plan 06 (ADR-0034): exportaciones de datos en hora valle para no saturar el
-// servidor durante el tráfico del día. Genera el ZIP y lo adjunta al correo.
 Schedule::command('finlia:process-export-requests')
     ->name('exportaciones-datos')
     ->withoutOverlapping()
     ->dailyAt('02:00');
 
-// Plan de lanzamiento T2 (ADR-0044): aviso por correo de los errores nuevos del
-// log. Con pocos usuarios, cada hora basta; sin errores no envía nada.
 Schedule::command('finlia:report-errors')
     ->name('aviso-errores')
     ->withoutOverlapping()
     ->hourly();
 
-// Plan de lanzamiento T5: métricas del embudo los lunes, con la salida al buzón
-// de contacto. Sin buzón o sin correo real no hay a quién mandarlas.
 if (config('finlia.contact.inbox') && mail_is_deliverable()) {
     Schedule::command('finlia:metrics')
         ->name('metricas-embudo')

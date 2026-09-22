@@ -20,15 +20,11 @@ return new class extends Migration
         Schema::create('debt_payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('debt_id')->constrained('debts')->cascadeOnDelete();
-            // Denormalizado a propósito: permite acotar por hogar sin join
-            // (aislamiento multi-hogar, amenaza #1).
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
-            // Gasto generado, si el pago salió de una cuenta del hogar.
-            // nullOnDelete: borrar el movimiento no borra el historial de deuda.
             $table->foreignId('expense_id')->nullable()->constrained('expenses')->nullOnDelete();
             $table->decimal('amount', 15, 2);
             $table->date('date');
-            $table->string('type')->default('scheduled'); // enum App\Enums\DebtPaymentType
+            $table->string('type')->default('scheduled');
             $table->text('notes')->nullable();
             $table->timestamps();
 

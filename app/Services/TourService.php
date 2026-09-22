@@ -231,10 +231,6 @@ class TourService
                 'title' => $guide['title'],
                 'icon' => $guide['icon'],
                 'summary' => $guide['summary'],
-                // Nombre de ruta, no URL: montarla es de la vista, y así el
-                // Service sigue sin saber nada de HTTP (ADR-0010). Es null en
-                // las guías de pantallas que necesitan un id (el detalle de una
-                // deuda): esas no se pueden enlazar, y por eso traen la pista.
                 'link' => $guide['link'],
                 'link_hint' => $guide['link_hint'] ?? null,
                 'seen' => $version > 0,

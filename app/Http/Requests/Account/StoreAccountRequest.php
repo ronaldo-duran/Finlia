@@ -16,7 +16,7 @@ class StoreAccountRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // el controlador autoriza vía Policy
+        return true;
     }
 
     /**

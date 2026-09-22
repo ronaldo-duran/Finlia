@@ -56,7 +56,6 @@ class TransferTest extends TestCase
             'amount' => '50000.00',
         ]);
 
-        // El origen pierde y el destino gana.
         $this->assertSame('150000.00', (string) $from->fresh()->current_balance);
         $this->assertSame('50000.00', (string) $to->fresh()->current_balance);
     }
@@ -109,11 +108,9 @@ class TransferTest extends TestCase
             user: $owner,
         );
 
-        // Saldos tras la transferencia inicial: from=170000, to=30000.
         $this->assertSame('170000.00', (string) $from->fresh()->current_balance);
         $this->assertSame('30000.00', (string) $to->fresh()->current_balance);
 
-        // Editar: subir a 80000.
         $this->actingAs($owner)->put(route('transfers.update', $transfer), [
             'from_account_id' => $from->id,
             'to_account_id' => $to->id,
@@ -143,8 +140,6 @@ class TransferTest extends TestCase
         $this->assertSame('200000.00', (string) $from->fresh()->current_balance);
         $this->assertSame('0.00', (string) $to->fresh()->current_balance);
     }
-
-    // ===== Aislamiento multi-hogar (amenaza #1 — IDOR) =====
 
     public function test_usuario_ajeno_no_puede_ver_transferencia_de_otro_hogar(): void
     {
@@ -200,8 +195,6 @@ class TransferTest extends TestCase
 
     public function test_no_hay_columnas_sensibles_de_tarjeta_en_la_tabla_transfers(): void
     {
-        // La tabla transfers NUNCA debe tener columnas de datos sensibles de
-        // tarjeta (número completo, CVV, PIN) — ADR-0002 y SECURITY.md.
         $columns = Schema::getColumnListing('transfers');
 
         $forbidden = ['card_number', 'cvv', 'pin', 'full_pan'];

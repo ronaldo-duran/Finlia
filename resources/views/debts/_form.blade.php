@@ -1,19 +1,6 @@
-{{--
-    Alta y edición de una deuda, en forma de simulador (ADR-0023).
-
-    El usuario declara lo que pacta con la entidad —monto, tasa y número de
-    cuotas— y la aplicación calcula la cuota mensual y la fecha de fin, igual
-    que un simulador de crédito. Así no puede registrar una deuda imposible,
-    como 10.000.000 en 120 cuotas pagando 20.000 al mes.
-
-    El dinero usa `data-money-input` (docs/UI_DESIGN.md), nunca type="number".
---}}
 @php($debt = $debt ?? null)
 
-{{-- Topes de cuotas por tipo. Van como JSON inerte (no se ejecuta) para que
-     el límite lo siga mandando PHP y el JS no duplique la regla. --}}
 <script type="application/json" data-debt-term-limits>@json(\App\Enums\DebtType::termLimits())</script>
-
 <h2 class="h6 text-muted text-uppercase mb-2">1. Qué debes</h2>
 <div class="row g-2 mb-4">
     <div class="col-12 col-sm-7">
@@ -24,7 +11,6 @@
                value="{{ old('name', $debt?->name) }}">
         @error('name')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
-
     <div class="col-12 col-sm-5">
         <label for="{{ $prefix }}type" class="form-label small fw-semibold">Tipo</label>
         <select name="type" id="{{ $prefix }}type" required data-debt-type
@@ -37,7 +23,6 @@
         </select>
         @error('type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
-
     <div class="col-12">
         <label for="{{ $prefix }}institution" class="form-label small fw-semibold">
             Entidad <span class="text-muted fw-normal">(opcional)</span>
@@ -49,7 +34,6 @@
         @error('institution')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
 </div>
-
 <h2 class="h6 text-muted text-uppercase mb-2">2. Lo que pactaste</h2>
 <div class="row g-2">
     <div class="col-12">
@@ -63,7 +47,6 @@
         </div>
         @error('original_amount')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
-
     <div class="col-6">
         <label for="{{ $prefix }}interest_rate" class="form-label small fw-semibold">Tasa anual (E.A.)</label>
         <div class="input-group">
@@ -76,7 +59,6 @@
         <div class="form-text">Déjala en 0 si no te cobran intereses.</div>
         @error('interest_rate')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
-
     <div class="col-6">
         <label for="{{ $prefix }}term_months" class="form-label small fw-semibold">N.º de cuotas</label>
         <input type="number" name="term_months" id="{{ $prefix }}term_months" min="1"
@@ -87,7 +69,6 @@
         <div class="form-text" data-term-help></div>
         @error('term_months')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
-
     <div class="col-6">
         <label for="{{ $prefix }}start_date" class="form-label small fw-semibold">Fecha de inicio</label>
         <input type="date" name="start_date" id="{{ $prefix }}start_date"
@@ -95,7 +76,6 @@
                value="{{ old('start_date', $debt?->start_date?->format('Y-m-d')) }}">
         @error('start_date')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
-
     <div class="col-6">
         <label for="{{ $prefix }}due_day" class="form-label small fw-semibold">Día de pago</label>
         <input type="number" name="due_day" id="{{ $prefix }}due_day" min="1" max="31"
@@ -105,7 +85,6 @@
     </div>
 </div>
 
-{{-- Resultado del simulador: lo que sale de lo pactado. --}}
 <div class="card bg-finlia-subtle border-0 mt-3 mb-4">
     <div class="card-body">
         <div class="row g-3 align-items-end">
@@ -122,13 +101,11 @@
                 </div>
                 @error('minimum_payment')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
-
             <div class="col-12 col-sm-6">
                 <div class="small text-muted">Terminarías de pagar</div>
                 <div class="fw-bold" data-sim-end>—</div>
                 <div class="small text-muted mt-1" data-sim-interest></div>
             </div>
-
             <div class="col-12">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" value="1"
@@ -142,7 +119,6 @@
         </div>
     </div>
 </div>
-
 <h2 class="h6 text-muted text-uppercase mb-2">3. Tu plan de pago <span class="fw-normal text-lowercase">(opcional)</span></h2>
 <div class="row g-2 mb-4">
     <div class="col-12">
@@ -160,7 +136,6 @@
         @error('planned_payment')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
 </div>
-
 <h2 class="h6 text-muted text-uppercase mb-2">4. Detalles</h2>
 <div class="row g-2">
     <div class="col-12">
@@ -177,7 +152,6 @@
         </select>
         <div class="form-text">Si la eliges, al registrar un pago se descuenta de esa cuenta.</div>
     </div>
-
     <div class="col-12 col-sm-6">
         <label for="{{ $prefix }}interest_rate_type" class="form-label small fw-semibold">Tipo de tasa</label>
         <select name="interest_rate_type" id="{{ $prefix }}interest_rate_type" class="form-select">
@@ -189,7 +163,6 @@
             @endforeach
         </select>
     </div>
-
     @if ($debt !== null)
         <div class="col-12 col-sm-6">
             <label for="{{ $prefix }}status" class="form-label small fw-semibold">Estado</label>
@@ -202,7 +175,6 @@
             </select>
         </div>
     @endif
-
     <div class="col-12">
         <label for="{{ $prefix }}notes" class="form-label small fw-semibold">
             Notas <span class="text-muted fw-normal">(opcional)</span>
