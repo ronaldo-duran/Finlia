@@ -62,7 +62,6 @@ class ReportTest extends TestCase
         $response->assertSee('Resumen');
         $response->assertSee('Observaciones');
         $response->assertSee('Exportar CSV');
-        // Los cinco períodos comparables de la épica.
         $response->assertSee('Mes anterior');
         $response->assertSee('Últimos 3 meses');
         $response->assertSee('Últimos 6 meses');
@@ -82,12 +81,10 @@ class ReportTest extends TestCase
             'date' => now()->startOfMonth()->toDateString(),
         ]);
 
-        // Mes actual: el gasto cuenta.
         $this->actingAs($owner)->get(route('reports.index', ['period' => 'month']))
             ->assertOk()
             ->assertSee('$ 100.000,00');
 
-        // Mes anterior: la ventana se mueve y el gasto de este mes no cuenta.
         $this->actingAs($owner)->get(route('reports.index', ['period' => 'last_month']))
             ->assertOk()
             ->assertDontSee('$ 100.000,00');
@@ -149,7 +146,6 @@ class ReportTest extends TestCase
 
         $csv = $response->streamedContent();
 
-        // BOM UTF-8 (Excel) + cabeceras + fila del movimiento.
         $this->assertStringStartsWith("\xEF\xBB\xBF", $csv);
         $this->assertStringContainsString('Fecha;Tipo;Categoría', $csv);
         $this->assertStringContainsString('Gasto', $csv);
@@ -159,9 +155,6 @@ class ReportTest extends TestCase
 
     public function test_el_csv_neutraliza_celdas_que_parecen_formulas(): void
     {
-        // Inyección CSV (OWASP): un texto que empieza por =, +, - o @ se
-        // evaluaría como fórmula al abrir el archivo en Excel. Se prefija
-        // con ' para neutralizarlo.
         [$owner, $household, $account, $category] = $this->setupHousehold();
 
         Expense::factory()->create([
@@ -184,9 +177,6 @@ class ReportTest extends TestCase
 
     public function test_el_export_no_trunca_periodos_con_mas_de_200_movimientos(): void
     {
-        // Regresión: `filtered()` tiene un tope de 200 pensado para la
-        // pantalla de navegación; el CSV de un período completo no puede
-        // salir recortado en silencio.
         [$owner, $household, $account, $category] = $this->setupHousehold();
 
         Expense::factory()
@@ -204,14 +194,11 @@ class ReportTest extends TestCase
             ->get(route('reports.export', ['period' => 'month']))
             ->streamedContent();
 
-        // Cabecera + 205 filas: cada fputcsv termina en "\n".
         $this->assertSame(206, substr_count($csv, "\n"));
     }
 
     public function test_el_export_de_un_hogar_no_incluye_movimientos_de_otros_hogares(): void
     {
-        // Aislamiento multi-hogar (amenaza #1): el CSV sale siempre del
-        // hogar activo del usuario autenticado.
         [$ownerA, $hogarA, $cuentaA] = $this->setupHousehold('Hogar A');
 
         Expense::factory()->create([

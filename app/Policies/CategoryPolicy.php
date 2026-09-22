@@ -21,7 +21,6 @@ class CategoryPolicy
 
     public function view(User $user, Category $category): bool
     {
-        // Globales: visibles para cualquier usuario autenticado.
         if ($category->household_id === null) {
             return true;
         }
@@ -45,7 +44,6 @@ class CategoryPolicy
 
     public function delete(User $user, Category $category): bool
     {
-        // Las marcadas por defecto no se borran por UI.
         if ($category->is_default) {
             return false;
         }

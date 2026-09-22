@@ -71,10 +71,10 @@ class ProcessDataExportRequests extends Command
                 $user->data_export_requested_at = null;
                 $user->save();
 
-                $this->info("  ✓ Exportación enviada a {$user->email}");
+                $this->info("  Exportación enviada a {$user->email}");
 
             } catch (Throwable $e) {
-                $this->error("  ✗ Error para usuario #{$user->id}: {$e->getMessage()}");
+                $this->error("  Error para usuario #{$user->id}: {$e->getMessage()}");
             }
         }
 

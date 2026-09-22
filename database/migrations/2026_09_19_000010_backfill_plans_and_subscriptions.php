@@ -77,7 +77,6 @@ return new class extends Migration
             'updated_at' => $now,
         ]);
 
-        // Grandfather: todo hogar existente arranca en Free ACTIVO.
         $householdIds = DB::table('households')->pluck('id');
         $rows = $householdIds->map(fn ($id) => [
             'household_id' => $id,

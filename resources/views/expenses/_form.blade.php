@@ -5,10 +5,6 @@
     $methods = collect(\App\Enums\PaymentMethod::cases())->mapWithKeys(fn ($m) => [$m->value => $m->label()]);
 @endphp
 
-{{-- 1. Valor: input real (validación nativa intacta) con tipografía grande.
-     type="text" + data-money-input: type="number" no admite el punto de
-     miles ("1.234.567"); resources/js/app.js formatea en vivo y reescribe
-     a un numérico plano justo antes de enviar (ver FinliaMoney). --}}
 <div class="mb-3 text-center">
     <label for="amount" class="form-label fw-semibold text-uppercase small text-muted">Valor</label>
     <input
@@ -35,8 +31,6 @@
         </div>
     @endif
 </div>
-
-{{-- 2. Categoría: chips de acceso rápido + selector completo. --}}
 <div class="mb-3">
     <label class="form-label fw-semibold">Categoría</label>
     <div class="chip-row mb-2" data-category-chips>
@@ -55,7 +49,6 @@
         @endforeach
     </select>
     @error('category_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-
     @if ($debtsCategoryId)
         <div class="alert alert-info small mt-2 d-none" data-debts-hint role="note">
             <i class="bi bi-info-circle me-1"></i>
@@ -67,9 +60,7 @@
         </div>
     @endif
 </div>
-
 <div class="row g-3">
-    {{-- 3. Cuenta / medio de pago --}}
     <div class="col-md-6">
         <div class="d-flex align-items-baseline justify-content-between mb-1">
             <label for="account_id" class="form-label fw-semibold mb-0">Cuenta / medio de pago</label>
@@ -87,16 +78,12 @@
         </select>
         @error('account_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
-    {{-- 4. Fecha --}}
     <div class="col-md-6">
         <x-form-input label="Fecha" name="date" type="date" :value="old('date', $expense?->date?->format('Y-m-d') ?? date('Y-m-d'))" required />
     </div>
 </div>
-
-{{-- 5. Descripción --}}
 <x-form-input label="Descripción" name="description" :value="$expense?->description" placeholder="Ej: Mercado del mes" />
 
-{{-- Medio de pago y notas: detrás de "Más detalles" para no saturar la pantalla. --}}
 <details class="mb-3" data-tour="expense-extra" @if(old('payment_method') || $expense?->payment_method || old('notes') || $expense?->notes) open @endif>
     <summary class="small fw-semibold text-finlia" style="cursor: pointer;">Más detalles</summary>
     <div class="mt-3">
@@ -110,12 +97,6 @@
         </div>
     </div>
 </details>
-
-{{-- Modal "Nueva cuenta": se empuja al @stack('modals') del layout para
-     no anidarse dentro del <form> del gasto. El <form> envuelve todo el
-     modal-content (header, body y footer) para que el botón submit del pie
-     dispare submit sin depender del atributo HTML `form=`, que en algunos
-     navegadores móviles se comía el click cuando el botón vivía fuera. --}}
 @push('modals')
     <div class="modal fade" id="quickAccountModal" tabindex="-1" aria-labelledby="quickAccountModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -179,25 +160,18 @@
         </div>
     </div>
 @endpush
-
 @once
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                // Chips de categoría: atajo visual que fija el <select> real.
-                // Sincronizado en ambos sentidos: elegir un chip fija el select
-                // (y solo ese chip queda iluminado); cambiar el select a mano
-                // reilumina el chip que coincida, o ninguno si no es de los rápidos.
                 document.querySelectorAll('[data-category-chips]').forEach(function (row) {
                     var select = row.closest('form')?.querySelector('#category_id');
                     if (!select) return;
-
                     function syncChips(value) {
                         row.querySelectorAll('.chip').forEach(function (c) {
                             c.classList.toggle('active', c.getAttribute('data-category-value') === value);
                         });
                     }
-
                     row.querySelectorAll('[data-category-value]').forEach(function (chip) {
                         chip.addEventListener('click', function () {
                             select.value = chip.getAttribute('data-category-value');
@@ -207,8 +181,6 @@
                     });
                     select.addEventListener('change', function () { syncChips(select.value); });
                 });
-
-                // "Te quedarían $X hasta el DD/MM" tras restar el valor ingresado.
                 document.querySelectorAll('[data-remaining-hint]').forEach(function (hint) {
                     var amount = hint.closest('form')?.querySelector('#amount');
                     if (!amount) return;
@@ -220,7 +192,6 @@
                         strong.textContent = '$ ' + formatter.format(available - value);
                     });
                 });
-
                 var categorySelect = document.getElementById('category_id');
                 var debtsHint = document.querySelector('[data-debts-hint]');
                 if (categorySelect && debtsHint) {
@@ -231,7 +202,6 @@
                     categorySelect.addEventListener('change', refresh);
                     refresh();
                 }
-
                 var form = document.getElementById('quickAccountForm');
                 var modalEl = document.getElementById('quickAccountModal');
                 var accountSelect = document.getElementById('account_id');
@@ -240,7 +210,6 @@
                     var submitLabel = form.querySelector('[data-submit-label]');
                     var submitSpinner = form.querySelector('[data-submit-spinner]');
                     var formError = form.querySelector('[data-form-error]');
-
                     function resetErrors() {
                         formError.classList.add('d-none');
                         formError.textContent = '';
@@ -255,7 +224,6 @@
                             if (slot) slot.textContent = (errors[field] || [])[0] || '';
                         });
                     }
-
                     form.addEventListener('submit', function (e) {
                         e.preventDefault();
                         resetErrors();

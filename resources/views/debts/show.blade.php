@@ -32,7 +32,6 @@
         </a>
     </div>
 
-    {{-- Cifras --}}
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
             <div class="card border-0 h-100"><div class="card-body">
@@ -68,7 +67,6 @@
 
     <x-debt-disclaimer />
 
-    {{-- Progreso y proyección --}}
     <div class="card border-0 mb-4" data-tour="debt-projection"><div class="card-body">
         <div class="d-flex justify-content-between small mb-1">
             <span class="text-muted">Progreso</span>
@@ -109,7 +107,6 @@
     </div></div>
 
     <div class="row g-3">
-        {{-- Historial de pagos --}}
         <div class="col-12 col-lg-7">
             <div class="card border-0" data-tour="debt-history">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -150,7 +147,6 @@
                 </div>
             </div>
 
-            {{-- Refinanciaciones --}}
             @if ($refinancings->isNotEmpty())
                 <div class="card border-0 mt-3">
                     <div class="card-header border-0 bg-transparent fw-semibold">
@@ -177,9 +173,7 @@
             @endif
         </div>
 
-        {{-- Acciones --}}
         <div class="col-12 col-lg-5">
-            {{-- Registrar pago --}}
             <div class="card border-0 mb-3" data-tour="debt-payment">
                 <div class="card-header border-0 bg-transparent fw-semibold">
                     <i class="bi bi-cash-coin me-1"></i> Registrar pago
@@ -250,7 +244,6 @@
                 </div>
             </div>
 
-            {{-- Refinanciar --}}
             <div class="card border-0 mb-3">
                 <div class="card-header border-0 bg-transparent fw-semibold">
                     <i class="bi bi-arrow-repeat me-1"></i> Registrar refinanciación
@@ -304,10 +297,6 @@
                 </div>
             </div>
 
-            {{-- Eliminar. El nombre viaja en `data-confirm` (atributo, dato) y
-                 lo lee el listener de app.js, nunca dentro de un manejador en
-                 línea: ahí el navegador decodifica las entidades antes de
-                 compilar el JS y la comilla escaparía del literal. --}}
             <form method="POST" action="{{ route('debts.destroy', $debt) }}"
                   data-confirm="¿Eliminar la deuda «{{ $debt->name }}»?">
                 @csrf
@@ -318,5 +307,4 @@
             </form>
         </div>
     </div>
-
 @endsection

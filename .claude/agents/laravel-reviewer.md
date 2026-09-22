@@ -49,6 +49,22 @@ Referencias: [docs/CONVENTIONS.md](../../docs/CONVENTIONS.md), [docs/ARCHITECTUR
 - Cumple [docs/CONVENTIONS.md](../../docs/CONVENTIONS.md).
 - `declare(strict_types=1)` en Services/Enums.
 
+### 9. Comentarios y emojis (regla dura)
+Solo se admite **PHPDoc** (`/** */`, o JSDoc en JS). Reporta como **Importante** cualquier aparición de:
+- Comentarios `//` o `#` (sobre una línea, al final de ella o como separador).
+- Bloques `/* */` que no sean PHPDoc, incluidas las cabeceras banner de `routes/`.
+- Comentarios Blade `{{-- --}}` y comentarios en JS/CSS.
+- Código comentado, `TODO`/`FIXME`/`HACK`.
+- Emojis en código o en copia de UI/consola (los de `docs/*.md` son válidos).
+
+Barrido rápido:
+
+```bash
+grep -rnE '(^|[^:])//|\{\{--' --include='*.php' --include='*.blade.php' --include='*.js' --include='*.css' app routes database config tests resources ee | grep -v 'https\?://'
+```
+
+Cuando un comentario documente un "por qué" real, no propongas borrarlo sin más: propón moverlo al PHPDoc de la clase, a un ADR de [docs/DECISIONS.md](../../docs/DECISIONS.md) o a un test con nombre descriptivo.
+
 ## Salida
 
 Informe con hallazgos **verificados** (archivo:línea), clasificados:

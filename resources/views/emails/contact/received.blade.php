@@ -1,7 +1,3 @@
-{{--
-    Aviso interno de un mensaje de contacto. HTML autocontenido, sin datos
-    financieros: solo lo que la persona escribió y su contexto técnico.
---}}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -20,7 +16,6 @@
                                 {{ $reasonLabel }}
                             </p>
                             <h1 style="margin:0 0 20px; font-size:20px; line-height:1.3;">{{ $senderName }}</h1>
-
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px; color:#5b6776; margin-bottom:20px;">
                                 <tr>
                                     <td style="padding:2px 0;">Correo</td>
@@ -37,9 +32,7 @@
                                     </td>
                                 </tr>
                             </table>
-
                             <div style="background-color:#f4f7fa; border-radius:12px; padding:16px; font-size:15px; line-height:1.6; white-space:pre-wrap;">{{ $body }}</div>
-
                             @if ($context !== [])
                                 <p style="margin:24px 0 8px; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#5b6776;">
                                     Contexto técnico
@@ -53,7 +46,6 @@
                                     @endforeach
                                 </table>
                             @endif
-
                             <p style="margin:24px 0 0; font-size:13px; color:#5b6776;">
                                 Responde a este correo para contestarle directamente.
                             </p>

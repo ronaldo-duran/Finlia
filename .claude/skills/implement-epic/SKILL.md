@@ -77,6 +77,7 @@ Entrega al usuario:
 
 ## Reglas inquebrantables (recuerda)
 
+- **Solo PHPDoc como comentario.** Nada de `//`, `#`, `/* */` no-PHPDoc, `{{-- --}}`, comentarios en JS/CSS, código comentado ni `TODO`. Sin emojis en código ni en copia de UI/consola. El "por qué" va al PHPDoc de la clase, a un ADR o a un test con nombre descriptivo ([AGENTS.md §1.1](../../../AGENTS.md)).
 - Aislamiento por `household` siempre (Policy + consultas acotadas; nunca `::find()` suelto).
 - `DECIMAL` para dinero, nunca FLOAT.
 - `$fillable` siempre; nunca `$guarded = []`.

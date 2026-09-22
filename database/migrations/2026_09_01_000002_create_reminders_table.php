@@ -28,12 +28,11 @@ return new class extends Migration
         Schema::create('reminders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
-            $table->string('title');                        // "Tecnomecánica", "Renovar pasaporte"
-            // DECIMAL(15,2) para todo lo monetario (ADR-0006). Nunca FLOAT.
-            $table->decimal('amount', 15, 2)->nullable();   // informativo: cuánto cuesta, si se sabe
-            $table->date('due_date');                       // puede ser pasada (= vencido)
-            $table->string('frequency')->nullable();        // enum App\Enums\Frequency (mensual→anual); NULL = una sola vez
-            $table->string('status')->default('pending');   // enum App\Enums\ReminderStatus (solo pending|completed se persisten)
+            $table->string('title');
+            $table->decimal('amount', 15, 2)->nullable();
+            $table->date('due_date');
+            $table->string('frequency')->nullable();
+            $table->string('status')->default('pending');
             $table->text('notes')->nullable();
             $table->timestamps();
 

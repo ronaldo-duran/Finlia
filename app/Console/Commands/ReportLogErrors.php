@@ -27,22 +27,14 @@ class ReportLogErrors extends Command
 
     protected $description = 'Avisa por correo de los errores nuevos del log de la aplicación';
 
-    // Límite conocido: en una avalancha solo se leen los últimos 5 MB nuevos, que
-    // bastan para saber qué está roto sin agotar la memoria.
     private const MAX_BYTES = 5 * 1024 * 1024;
 
-    // Bytes del principio del archivo que lo identifican. Si cambian, el log se
-    // reemplazó (rotación o borrado) aunque el nuevo ya sea más largo que la marca.
     private const HUELLA_BYTES = 256;
 
     public function handle(): int
     {
-        // Límite conocido: solo el canal `single`, el de producción (DEPLOYMENT §4).
-        // Con `daily` el archivo cambia de nombre cada día.
         $log = (string) config('logging.channels.single.path');
 
-        // Junto al log y no en caché: un despliegue que limpie la caché perdería
-        // justo los errores de la hora del despliegue.
         $marca = $log.'.offset';
 
         if (! is_file($log)) {
@@ -53,7 +45,6 @@ class ReportLogErrors extends Command
 
         $tamano = (int) filesize($log);
 
-        // Primera corrida: se vigila desde ahora, no se reporta el historial.
         if (! is_file($marca)) {
             $this->guardarMarca($marca, $log, $tamano);
             $this->info('Primera corrida: se vigila el log desde ahora.');
@@ -64,7 +55,6 @@ class ReportLogErrors extends Command
         [$desde, $largo, $huella] = array_pad(explode(':', (string) file_get_contents($marca), 3), 3, '');
         $desde = (int) $desde;
 
-        // Otro archivo (reemplazado) o uno más corto (vaciado): desde el principio.
         if ($desde > $tamano || $this->huella($log, (int) $largo) !== $huella) {
             $desde = 0;
         }
@@ -72,8 +62,6 @@ class ReportLogErrors extends Command
         $inicio = max($desde, $tamano - self::MAX_BYTES);
         $nuevo = (string) file_get_contents($log, false, null, $inicio);
 
-        // Solo líneas completas: la última puede estar escribiéndose ahora mismo.
-        // La marca avanza exactamente lo leído, no el tamaño medido antes de leer.
         $fin = strrpos($nuevo, "\n");
         $nuevo = $fin === false ? '' : substr($nuevo, 0, $fin + 1);
         $leido = $inicio + strlen($nuevo);
@@ -108,8 +96,6 @@ class ReportLogErrors extends Command
                 try {
                     Mail::raw($cuerpo, fn ($m) => $m->to($buzon)->subject('Finlia: '.count($errores).' error(es) nuevo(s) en el log'));
                 } catch (Throwable $e) {
-                    // WARNING y no ERROR: este comando no recoge warnings, así que el
-                    // fallo no vuelve a reportarse a sí mismo. La marca no avanza.
                     Log::warning('Aviso de errores: no se pudo enviar el correo.', ['error' => $e->getMessage()]);
                     $this->error('No se pudo enviar el aviso: se reintentará en la corrida siguiente.');
 
@@ -132,7 +118,7 @@ class ReportLogErrors extends Command
     private function describir(string $resto): string
     {
         if (preg_match('/\[object\] \(([\w\\\\]+)\(code: [^)]*\): .* at (.+?):(\d+)\)/', $resto, $m)) {
-            $clase = stripslashes($m[1]); // el JSON del log escapa las barras
+            $clase = stripslashes($m[1]);
             $archivo = Str::after(stripslashes($m[2]), base_path().DIRECTORY_SEPARATOR);
 
             return "{$clase} en {$archivo}:{$m[3]}";

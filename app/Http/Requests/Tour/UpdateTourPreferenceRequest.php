@@ -24,9 +24,6 @@ class UpdateTourPreferenceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // El interruptor de /perfil es una casilla: cuando está apagada no
-            // manda nada, así que `boolean` sin `required` y se lee con
-            // `$this->boolean()`.
             'enabled' => ['nullable', 'boolean'],
         ];
     }

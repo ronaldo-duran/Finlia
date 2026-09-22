@@ -60,9 +60,6 @@ test.describe('Indicadores de carga', () => {
   });
 
   test('el botón pulsado muestra un spinner y queda inerte', async ({ page }) => {
-    // Alta de hogar: es el formulario válido que menos depende de lo
-    // sembrado. El de gastos exige cuenta y categoría, y el hogar activo
-    // cambia según qué specs hayan corrido antes.
     await page.goto('/hogares/crear');
     await sinNavegar(page, 'submit');
 
@@ -77,14 +74,9 @@ test.describe('Indicadores de carga', () => {
     await expect(boton).toHaveAttribute('aria-busy', 'true');
     await expect(barraDe(page)).toHaveClass(/is-activa/);
 
-    // Este botón tiene icono, así que el spinner ocupa su sitio y la etiqueta
-    // se queda: "⟳ Crear hogar" dice qué está pasando, mientras que un botón
-    // vacío con una ruedita se lee como si algo hubiera fallado.
     await expect(boton.locator('.finlia-btn-spinner-inline')).toBeVisible();
     await expect(boton).toContainText('Crear hogar');
 
-    // El icono se sustituye, no se suma: si se sumara, el botón crecería y
-    // desplazaría al "Cancelar" de al lado justo al pulsarlo.
     expect((await boton.boundingBox())!.width).toBeCloseTo(anchoAntes, 0);
   });
 
@@ -158,13 +150,8 @@ test.describe('Indicadores de carga', () => {
    */
   test('el borrado confirmado en el modal también avisa', async ({ page }) => {
     await page.goto('/dashboard');
-    // 204: el navegador se queda en esta página en vez de navegar. Abortar
-    // no sirve — llevaría a la página de error de Chrome, y con ella se iría
-    // la barra que queremos comprobar.
     await page.route('**/ruta-de-prueba-borrado', (route) => route.fulfill({ status: 204 }));
 
-    // Formulario propio: las categorías del seeder son globales y no se
-    // pueden borrar, y no queremos que el test dependa de qué hay sembrado.
     await page.evaluate(() => {
       const form = document.createElement('form');
       form.method = 'POST';
@@ -196,7 +183,6 @@ test.describe('Indicadores de carga', () => {
       const boton = document.querySelector<HTMLButtonElement>('form[action$="/hogares"] button[type="submit"]')!;
       const form = boton.closest('form')!;
 
-      // Se deja la página en el estado exacto en el que se abandona al enviar.
       (window as any).Finlia.cargando.ocuparFormulario(form, boton);
       barra.classList.add('is-activa');
 
@@ -206,8 +192,6 @@ test.describe('Indicadores de carga', () => {
         barraActiva: barra.classList.contains('is-activa'),
         botonesOcupados: document.querySelectorAll('.is-cargando').length,
         formularioBloqueado: form.dataset.finliaEnviando === '1',
-        // El contenido tiene que volver a su sitio: si el envoltorio oculto
-        // se quedara puesto, el botón seguiría invisible aunque ya no gire.
         restosDelSpinner: boton.querySelectorAll('.finlia-btn-spinner, span.invisible').length,
       };
     });
@@ -240,7 +224,6 @@ test.describe('Indicadores de carga', () => {
         a.click();
       };
 
-      // Se espera más que el retardo de 140 ms antes de mirar.
       const seEncendio = async () => {
         await new Promise((r) => setTimeout(r, 400));
         const activa = barra.classList.contains('is-activa');
@@ -264,9 +247,6 @@ test.describe('Indicadores de carga', () => {
       return { interno, otraPestana, ancla, descarga };
     });
 
-    // El caso positivo va en el mismo test: si el módulo dejara de
-    // encenderse nunca, los tres negativos pasarían igual y no nos
-    // enteraríamos.
     expect(resultado.interno).toBe(true);
     expect(resultado.otraPestana).toBe(false);
     expect(resultado.ancla).toBe(false);

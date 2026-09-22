@@ -33,11 +33,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // uncompromised() (política de contraseñas) consulta HaveIBeenPwned con
-        // un timeout de 30 s por defecto. En hosting compartido, un HIBP lento
-        // o inaccesible bloquearía cada registro/cambio/reset hasta 30 s (y
-        // podría superar max_execution_time → 504) antes de fallar en abierto.
-        // Se acota a 3 s: la comprobación sigue, pero nunca cuelga el embudo.
         $this->app->bind(
             UncompromisedVerifier::class,
             fn ($app) => new NotPwnedVerifier(
@@ -46,9 +41,6 @@ class AppServiceProvider extends ServiceProvider
             ),
         );
 
-        // Punto único de contacto del núcleo con `ee/` (ADR-0042, Épica 12).
-        // Registro condicional para que borrar el directorio deje la app
-        // funcionando: sin la clase, no hay provider Premium que cargar.
         if (class_exists(EeServiceProvider::class)) {
             $this->app->register(EeServiceProvider::class);
         }
@@ -59,33 +51,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(ReminderService $reminders): void
     {
-        // Reenvío del correo de verificación (Plan 01): ~3/minuto POR
-        // USUARIO, no por IP (mismo usuario, otro navegador). El enlace
-        // firmado público usa el throttle numérico estándar en la ruta.
         RateLimiter::for('verification', function (Request $request): Limit {
             return Limit::perMinute(3)->by($request->user()?->id ?: $request->ip());
         });
 
-        // Política de contraseñas única para registro, cambio y reset:
-        // mínimo 8, máximo 72 (límite de bcrypt). En PRODUCCIÓN se añade
-        // uncompromised(): rechaza contraseñas presentes en filtraciones
-        // conocidas (k-anonymity contra HaveIBeenPwned, falla en abierto si
-        // la API no responde). Se omite en local/tests para no depender de
-        // red externa ni volver no deterministas las pruebas.
         PasswordRule::defaults(function (): PasswordRule {
             $rule = PasswordRule::min(8)->max(72);
 
             return app()->isProduction() ? $rule->uncompromised() : $rule;
         });
 
-        // Directiva @money($monto): formato COP centralizado (ADR-0006).
         Blade::directive('money', function (string $expression): string {
             return "<?php echo money($expression); ?>";
         });
 
-        // Invalidación del resumen cacheado de recordatorios: cualquier
-        // mutación de una fuente (recurrente, deuda/pago, meta/aporte,
-        // aviso suelto o el propio hogar) borra la clave de ese hogar.
         foreach ([
             Debt::class,
             DebtPayment::class,
@@ -100,18 +79,10 @@ class AppServiceProvider extends ServiceProvider
             $model::observe(ReminderSummaryCacheObserver::class);
         }
 
-        // Directiva @percent($valor[, $decimales]): "80 %", "332,4 %" (coma
-        // decimal, Épica 4). Con decimales explícitos sirve también para tasas
-        // de interés — "12,75 %" — recortando los ceros finales.
         Blade::directive('percent', function (string $expression): string {
             return "<?php echo percent($expression); ?>";
         });
 
-        // Campanita de recordatorios (Épica 9): vive en el navbar de TODAS
-        // las páginas autenticadas, así que se alimenta por view composer
-        // con el resumen CACHEADO (cachedSummary) — así la campanita no
-        // cuesta una query por página. Si el hogar los desactivó, el conteo
-        // llega en cero (la campana ni se enciende).
         View::composer('layouts.partials.reminders-bell', function (ViewContract $view) use ($reminders): void {
             $household = auth()->check() ? active_household() : null;
 

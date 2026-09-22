@@ -66,17 +66,12 @@ class TourServiceTest extends TestCase
 
         $this->tours->markSeen($user, 'demo', TourStatus::Completed);
 
-        // El paso 'since' => 2 todavía no cuenta: la guía sigue en la v1, así
-        // que ese paso aún no se ha publicado.
         $this->assertSame(0, $this->tours->pendingStepCount($user, 'demo'));
         $this->assertFalse($this->tours->shouldAutoStart($user, 'demo'));
     }
 
     public function test_un_paso_sin_publicar_no_se_escapa(): void
     {
-        // La guía va por la v1 y el tercer paso está escrito para la v2: ni
-        // cuenta como pendiente ni viaja al navegador, donde el motor lo
-        // pintaría sin más.
         $this->registroDePrueba(version: 1);
         $user = User::factory()->create();
 
@@ -90,15 +85,11 @@ class TourServiceTest extends TestCase
         $user = User::factory()->create();
         $this->tours->markSeen($user, 'demo', TourStatus::Completed);
 
-        // Se reescribe la guía: sube a la v2 y aparece el paso nacido en la v2.
         $this->registroDePrueba(version: 2);
 
         $this->assertSame(1, $this->tours->pendingStepCount($user, 'demo'));
         $this->assertTrue($this->tours->shouldAutoStart($user, 'demo'));
 
-        // El payload sigue llevando los tres pasos —el navegador los necesita
-        // todos para cuando la pidan entera desde el menú— más la versión ya
-        // vista, que es con lo que filtra.
         $payload = $this->tours->payloadFor($user, 'demo');
         $this->assertCount(3, $payload['steps']);
         $this->assertSame(1, $payload['seen']);
@@ -119,8 +110,6 @@ class TourServiceTest extends TestCase
         $user = User::factory()->create();
         $this->tours->markSeen($user, 'demo', TourStatus::Completed);
 
-        // Descuido típico: se corrige una errata y se sube la versión por
-        // inercia. No hay nada nuevo que enseñar, así que no debe reaparecer.
         config(['tours.demo.version' => 2]);
         config(['tours.demo.steps' => [
             ['since' => 1, 'anchor' => null, 'title' => 'Uno', 'body' => 'Primero (corregido)'],
@@ -152,8 +141,6 @@ class TourServiceTest extends TestCase
         $this->assertSame(3, $this->tours->pendingStepCount($user, 'demo'));
     }
 
-    // -------------------------------------------------------------- registro
-
     public function test_la_ruta_se_resuelve_con_comodin(): void
     {
         config(['tours' => [
@@ -164,7 +151,6 @@ class TourServiceTest extends TestCase
             ],
         ]]);
 
-        // El detalle de una deuda es la misma pantalla que el listado.
         $this->assertSame('deudas', $this->tours->keyForRoute('debts.index'));
         $this->assertSame('deudas', $this->tours->keyForRoute('debts.show'));
         $this->assertNull($this->tours->keyForRoute('dashboard'));
@@ -181,17 +167,12 @@ class TourServiceTest extends TestCase
         $this->assertSame(0, $this->tours->pendingStepCount($user, 'inventada'));
         $this->assertFalse($this->tours->shouldAutoStart($user, 'inventada'));
 
-        // Y marcarla no deja rastro: sin fila, sin tabla que llenar.
         $this->tours->markSeen($user, 'inventada', TourStatus::Completed);
         $this->assertDatabaseCount('user_tours', 0);
     }
 
-    // ---------------------------------------------------------- guías reales
-
     public function test_el_registro_real_esta_bien_formado(): void
     {
-        // Una guía mal escrita en config/tours.php no la ve nadie hasta que un
-        // usuario llega a esa pantalla. Esto la caza al ejecutar las pruebas.
         $rutas = collect(app('router')->getRoutes())->map->getName()->filter()->all();
 
         foreach (require config_path('tours.php') as $key => $guia) {
@@ -199,15 +180,11 @@ class TourServiceTest extends TestCase
                 $this->assertArrayHasKey($campo, $guia, "La guía «{$key}» no declara «{$campo}».");
             }
 
-            // La ruta de la pantalla tiene que existir, y ser EXACTA: un
-            // comodín casaría con pantallas donde no están sus anclajes.
             foreach ((array) $guia['route'] as $ruta) {
                 $this->assertStringNotContainsString('*', $ruta, "La guía «{$key}» usa un comodín en «route».");
                 $this->assertContains($ruta, $rutas, "La guía «{$key}» apunta a una ruta inexistente.");
             }
 
-            // Sin enlace (pantallas con id en la URL) hace falta decir dónde
-            // está, o el catálogo del perfil la lista sin salida.
             if ($guia['link'] === null) {
                 $this->assertNotEmpty($guia['link_hint'] ?? null, "La guía «{$key}» no se puede enlazar y no dice dónde está.");
             } else {
@@ -226,8 +203,6 @@ class TourServiceTest extends TestCase
 
     public function test_ninguna_pantalla_tiene_dos_guias(): void
     {
-        // keyForRoute() devuelve la primera que case, así que dos guías sobre la
-        // misma ruta dejarían una muerta sin que nadie se entere.
         $rutas = [];
 
         foreach (require config_path('tours.php') as $key => $guia) {

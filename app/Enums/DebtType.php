@@ -59,13 +59,9 @@ enum DebtType: string
     public function maxTermMonths(): int
     {
         return match ($this) {
-            // Diferido de compras: en Colombia rara vez pasa de 36-48 meses.
             self::CreditCard => 100,
-            // Vehículo: lo habitual son 60-84 meses.
             self::Vehicle => 96,
-            // Hipotecario: lo normal son 180-240 (15-20 años). Se deja hasta 40.
             self::Mortgage => 480,
-            // Libre inversión y demás: 72-84 meses habitual.
             self::Loan, self::Family, self::Other => 120,
         };
     }

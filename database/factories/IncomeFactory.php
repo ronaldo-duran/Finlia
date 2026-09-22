@@ -28,7 +28,7 @@ class IncomeFactory extends Factory
             'user_id' => User::factory(),
             'account_id' => Account::factory(),
             'category_id' => null,
-            'amount' => fake()->numberBetween(500000, 5000000) / 100 * 100, // COP redondeado
+            'amount' => fake()->numberBetween(500000, 5000000) / 100 * 100,
             'date' => fake()->dateTimeBetween('-1 month', 'now')->format('Y-m-d'),
             'description' => fake()->optional()->sentence(3),
             'notes' => null,

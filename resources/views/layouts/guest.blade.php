@@ -7,15 +7,12 @@
 
     <title>{{ $title ?? 'Acceso' }} · Finlia</title>
 
-    {{-- Identidad de marca (docs/BRAND.md): símbolo de puntos, sin cambios entre temas. --}}
     @include('layouts.partials.favicon')
 
-    {{-- PWA (Épica 10): manifest para que la pantalla de login sea instalable. --}}
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#eef3f8" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0e1419" media="(prefers-color-scheme: dark)">
 
-    {{-- Anti-FOUC: fija el tema antes del primer paint --}}
     @include('layouts.partials.theme-head')
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -23,18 +20,14 @@
 <body class="d-flex flex-column min-vh-100">
     @include('layouts.partials.progress-bar')
 
-    {{-- Toggle de tema flotante (pantallas sin navbar) --}}
     <button type="button" class="btn-icon glass theme-toggle-floating" data-theme-toggle aria-label="Cambiar tema">
         <i class="bi bi-sun-fill show-in-dark"></i>
         <i class="bi bi-moon-stars-fill show-in-light"></i>
     </button>
 
     <main class="d-flex flex-grow-1 align-items-center justify-content-center py-5 px-3">
-        {{-- Ancho por defecto de formulario; las vistas de lectura (términos)
-             pasan uno más holgado para texto largo. --}}
         <div class="w-100" style="max-width: {{ $width ?? 460 }}px;">
 
-            {{-- Marca --}}
             <div class="text-center mb-4">
                 <a href="{{ route('home') }}" class="text-decoration-none d-inline-flex align-items-center gap-2">
                     <x-brandmark :size="40" />
@@ -43,24 +36,20 @@
                 <p class="text-muted small mb-0">{{ $subtitle ?? '' }}</p>
             </div>
 
-            {{-- Tarjeta del formulario (glass) --}}
             <div class="card glass-card border-0">
                 <div class="card-body p-4">
                     @yield('content')
                 </div>
             </div>
-
             @yield('actions')
         </div>
     </main>
-
     <footer class="app-footer py-3 text-center small">
         Finlia · Finanzas familiares &middot;
         <span class="text-finlia fw-semibold">COP</span> &middot;
         <a href="{{ route('terms.show') }}" class="text-decoration-none">Términos y condiciones</a> &middot;
         <a href="{{ route('data.policy') }}" class="text-decoration-none">Tus datos</a>
     </footer>
-
     @stack('scripts')
 </body>
 </html>

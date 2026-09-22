@@ -24,13 +24,12 @@
     }
 @endphp
 
-{{-- Cobre = lo disponible (docs/BRAND.md). --}}
 <div class="card border-0 h-100 {{ $isNegative ? 'bg-danger-subtle' : 'bg-finlia-accent-subtle' }}"
      data-testid="available-money">
     <div class="card-body">
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-1 gap-sm-2 mb-1">
             <span class="text-uppercase small fw-semibold {{ $isNegative ? 'text-danger-emphasis' : 'text-finlia-accent' }}">
-                💰
+                <i class="bi bi-cash-coin"></i>
                 @if ($liquidity === null)
                     {{ $isNegative ? 'Tu plan no cuadra' : 'Te quedaría según tu plan' }}
                 @elseif ($liquidity['status'] === 'short')
@@ -42,7 +41,6 @@
                 @endif
             </span>
             @unless ($compact)
-                {{-- Redundante en móvil: el selector de período va justo encima. --}}
                 <span class="badge rounded-pill text-bg-light text-muted text-nowrap d-none d-sm-inline-block">
                     {{ $scope->label() }}
                 </span>
@@ -56,7 +54,6 @@
 
         @if ($liquidity === null)
             <p class="{{ $isNegative ? 'text-danger-emphasis' : 'text-muted' }} small mb-0">
-                {{-- Sin liquidez solo llega "próximo mes" (ver summary()). --}}
                 @if ($isNegative)
                     Tus compromisos superan lo que esperas recibir el próximo mes.
                 @else

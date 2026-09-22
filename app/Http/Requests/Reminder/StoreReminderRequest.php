@@ -32,7 +32,6 @@ class StoreReminderRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'min:2', 'max:120'],
             'amount' => ['nullable', 'numeric', 'min:0', 'max:9999999999999.99'],
-            // Puede ser pasada: así se representa una obligación ya vencida.
             'due_date' => ['required', 'date', 'before:2100-01-01'],
             'frequency' => ['nullable', Rule::in($this->repeatableFrequencies())],
             'notes' => ['nullable', 'string', 'max:2000'],

@@ -44,10 +44,8 @@ class PwaTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
-        // Asegurar que el usuario tenga hogar activo.
         app(HouseholdService::class)->createHousehold($user->id, 'Hogar Test');
 
-        // Aceptar términos si existen.
         if (TermsVersion::exists()) {
             $terms = TermsVersion::latest()->first();
             $user->termsAcceptances()->create([
@@ -64,9 +62,6 @@ class PwaTest extends TestCase
 
     public function test_sw_js_existe_en_public(): void
     {
-        // El service worker es servido directamente por el servidor web (no
-        // por PHP), así que su accesibilidad no se puede probar desde el
-        // test client. Solo verificamos que el archivo existe en public/.
         $this->assertFileExists(public_path('sw.js'));
     }
 }

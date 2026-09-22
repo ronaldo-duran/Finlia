@@ -28,7 +28,7 @@ class BudgetFactory extends Factory
         return [
             'household_id' => Household::factory(),
             'category_id' => null,
-            'amount' => fake()->numberBetween(2000, 30000) * 100, // montos COP realistas
+            'amount' => fake()->numberBetween(2000, 30000) * 100,
             'period' => BudgetPeriod::Monthly->value,
             'year' => $now->year,
             'month' => $now->month,

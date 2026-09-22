@@ -46,7 +46,6 @@ class DebtPaymentController extends Controller
     {
         $this->authorize('delete', $payment);
 
-        // Defensivo: el pago tiene que ser de esta deuda, no de otra del hogar.
         abort_if($payment->debt_id !== $debt->id, 404);
 
         $this->debts->deletePayment($payment);

@@ -34,24 +34,14 @@ class ShareActiveTour
 
     public function handle(Request $request, Closure $next): Response
     {
-        // Se limpia SIEMPRE antes de decidir. `View::share` vive en el
-        // contenedor, no en la petición: sin esto, la guía de la pantalla
-        // anterior se arrastraría a la siguiente y aparecería «Guía de esta
-        // pantalla» en pantallas que no tienen ninguna. No se nota con
-        // php-fpm (proceso nuevo por petición), sí en los tests y en
-        // cualquier runtime persistente.
         View::share('finliaTour', null);
 
         $user = $request->user();
 
-        // Sin sesión no hay progreso que consultar, y una guía en medio de un
-        // POST no tendría dónde pintarse.
         if ($user === null || ! $request->isMethod('GET')) {
             return $next($request);
         }
 
-        // Guía pedida a mano desde el catálogo del perfil. Se comprueba contra
-        // el registro: una clave inventada en la URL simplemente no abre nada.
         $requested = $request->query('guia');
         $requested = is_string($requested) && $this->tours->find($requested) !== null
             ? $requested
@@ -69,17 +59,11 @@ class ShareActiveTour
 
         View::share('finliaTour', [
             'payload' => $this->tours->payloadFor($user, $key),
-            // 'auto'  → arranca sola con los pasos pendientes.
-            // 'open'  → la pidió la persona: arranca completa.
-            // null    → no arranca; queda disponible en el menú del avatar.
             'start' => $requested !== null ? 'open' : ($auto ? 'auto' : null),
         ]);
 
         $response = $next($request);
 
-        // El cupo se quema DESPUÉS y solo si de verdad salió una página: si el
-        // controlador acabó redirigiendo o dando un 404, la guía no llegó a
-        // verse y sería injusto gastarle la sesión al usuario.
         if ($auto && $response->getStatusCode() === 200) {
             $request->session()->put(self::SESSION_KEY, true);
         }

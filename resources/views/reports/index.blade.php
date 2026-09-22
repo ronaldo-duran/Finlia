@@ -1,8 +1,6 @@
 @extends('layouts.app', ['title' => 'Reportes'])
 
 @php
-    // El aumento es bueno para ingresos/balance y malo para gastos: el tono
-    // del delta depende de la métrica, no del signo.
     $metrics = [
         ['label' => 'Ingresos', 'current' => $overview['incomes'], 'previous' => $overview['previous']['incomes'], 'delta' => $overview['deltas']['incomes'], 'goodWhenUp' => true],
         ['label' => 'Gastos', 'current' => $overview['expenses'], 'previous' => $overview['previous']['expenses'], 'delta' => $overview['deltas']['expenses'], 'goodWhenUp' => false],
@@ -13,7 +11,6 @@
 @section('content')
     <x-flash-messages />
 
-    {{-- Encabezado --}}
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
         <div>
             <h1 class="h3 mb-1">Reportes</h1>
@@ -21,14 +18,12 @@
                 <i class="bi bi-people-fill me-1"></i> {{ $household->name }}
             </p>
         </div>
-        {{-- PDF queda preparado (ReportFormat), hoy exporta CSV --}}
         <a href="{{ route('reports.export', ['period' => $period->value]) }}"
            class="btn btn-outline-finlia text-decoration-none" data-tour="reports-export">
             <i class="bi bi-download me-1"></i> Exportar CSV
         </a>
     </div>
 
-    {{-- Comparación de períodos (Épica 8): el chip fija el ?period= real --}}
     <div class="chip-row mb-3" role="navigation" aria-label="Período del reporte" data-tour="reports-period">
         @foreach (App\Enums\ReportPeriod::cases() as $option)
             <a href="{{ route('reports.index', ['period' => $option->value]) }}"
@@ -39,7 +34,6 @@
         @endforeach
     </div>
 
-    {{-- Resumen comparativo --}}
     <div class="card border-0 mb-3">
         <div class="card-header border-0 bg-transparent fw-semibold">
             <i class="bi bi-bar-chart-steps me-1"></i> Resumen · {{ $overview['label'] }}
@@ -71,7 +65,6 @@
                 </div>
             @endforeach
 
-            {{-- Deuda y ahorro: punto en el tiempo, no del período --}}
             <div class="row g-2 g-md-3 mt-2">
                 <div class="col-6">
                     <div class="h-100 p-3 rounded-3 bg-finlia-subtle">
@@ -95,7 +88,6 @@
         </div>
     </div>
 
-    {{-- Insights (Épica 8): hechos descriptivos, nunca consejos financieros --}}
     <div class="card border-0 mb-3" data-tour="reports-insights">
         <div class="card-header border-0 bg-transparent fw-semibold">
             <i class="bi bi-lightbulb me-1"></i> Observaciones
@@ -123,9 +115,7 @@
         </div>
     </div>
 
-    {{-- Gráficos: apilados en móvil (un gráfico por fila, Épica 8 mobile) --}}
     <div class="row g-3 mb-4">
-        {{-- 1. Gastos por categoría --}}
         <div class="col-12 col-lg-5">
             <div class="card border-0 h-100">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -144,7 +134,6 @@
             </div>
         </div>
 
-        {{-- 2. Ingresos vs gastos por mes --}}
         <div class="col-12 col-lg-7">
             <div class="card border-0 h-100">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -163,7 +152,6 @@
             </div>
         </div>
 
-        {{-- 3. Evolución mensual del balance --}}
         <div class="col-12 col-lg-6">
             <div class="card border-0 h-100">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -182,7 +170,6 @@
             </div>
         </div>
 
-        {{-- 4. Evolución de deuda: serie de cierre de mes, últimos 6 meses --}}
         <div class="col-12 col-lg-6">
             <div class="card border-0 h-100">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -201,7 +188,6 @@
             </div>
         </div>
 
-        {{-- 5. Progreso de metas --}}
         <div class="col-12">
             <div class="card border-0">
                 <div class="card-header border-0 bg-transparent d-flex justify-content-between align-items-center fw-semibold">
@@ -222,11 +208,6 @@
         </div>
     </div>
 
-    {{-- Datos para Chart.js (leídos por resources/js/charts.js).
-         JSON_HEX_TAG: sin él, un "</script>" en un nombre de categoría
-         cerraría este bloque; y el {{ }} de Blade escapa a &quot;, que
-         JSON.parse no puede leer dentro de <script> (el navegador no
-         decodifica entidades ahí). --}}
     <script type="application/json" id="finlia-chart-data">{!! json_encode($chartData, JSON_HEX_TAG) !!}</script>
     @vite('resources/js/charts.js')
 @endsection

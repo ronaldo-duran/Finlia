@@ -26,7 +26,6 @@ class MovementsController extends Controller
     {
         $household = active_household();
 
-        // Defensivo: un usuario autenticado siempre tiene hogar (ADR-0011).
         if ($household === null) {
             return redirect()->route('households.create');
         }
@@ -44,15 +43,12 @@ class MovementsController extends Controller
             'nextOffset' => $offset + $movements->count(),
         ];
 
-        // "Cargar más": misma ruta con offset, devuelve solo los grupos
-        // nuevos para anexarlos a la lista que ya está en pantalla.
         if ($request->ajax()) {
             return view('movements._groups', $list);
         }
 
         return view('movements.index', $list + [
             'filters' => $filters,
-            // El balance es de TODO el filtro, no de la página visible.
             'filterTotals' => $this->summary->filteredTotals($householdId, $filters),
             'categories' => Category::forHousehold($householdId)->orderBy('name')->get(),
             'accounts' => Account::where('household_id', $householdId)->orderBy('name')->get(),

@@ -6,7 +6,6 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
-                // Sitio público: entrada aparte para que la app no cargue estilos de landing.
                 'resources/css/marketing.css',
                 'resources/js/app.js',
                 'resources/js/charts.js',

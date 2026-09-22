@@ -44,8 +44,6 @@ class SendReminderDigests extends Command
 
     public function handle(ReminderService $reminders): int
     {
-        // Misma regla que las invitaciones (ADR-0015): con transports de
-        // desarrollo o el correo apagado, no hay digest que prometer.
         if (! mail_is_deliverable()) {
             $this->info('Correo desactivado o sin transporte real: no se envía el digest.');
 
@@ -54,16 +52,12 @@ class SendReminderDigests extends Command
 
         $today = Carbon::now(config('app.timezone'))->startOfDay();
 
-        // Hogares con recordatorios activos + miembros opt-in que aún no
-        // recibieron su digest de hoy (idempotencia por pivote). Nunca a
-        // correos sin verificar: cinturón y suspenderes del Plan 01 — una
-        // dirección no confirmada puede ser de otra persona.
         $households = Household::query()
             ->where('reminders_enabled', true)
             ->with(['members' => function ($query) use ($today) {
                 $query->wherePivot('reminders_email', true)
                     ->whereNotNull('users.email_verified_at')
-                    ->whereNull('users.deletion_requested_at') // excluir cuentas suspendidas (Plan 05)
+                    ->whereNull('users.deletion_requested_at')
                     ->where(function ($query) use ($today) {
                         $query->whereNull('household_user.last_reminder_digest_at')
                             ->orWhereDate('household_user.last_reminder_digest_at', '<', $today->toDateString());
@@ -84,10 +78,8 @@ class SendReminderDigests extends Command
                 continue;
             }
 
-            // Summary fresco, no cacheado: la corrida es diaria y en frío.
             $summary = $reminders->summary($household->id);
 
-            // Sin urgentes no hay correo: el silencio también es información.
             if ($summary['attention'] === 0) {
                 continue;
             }
@@ -110,8 +102,6 @@ class SendReminderDigests extends Command
                         ),
                     ));
                 } catch (Throwable $e) {
-                    // Un buzón que rebota no puede frenar el resto de la
-                    // corrida. Sin pivot actualizado, mañana reintenta.
                     Log::warning('Digest de recordatorios falló', [
                         'household_id' => $household->id,
                         'user_id' => $member->id,

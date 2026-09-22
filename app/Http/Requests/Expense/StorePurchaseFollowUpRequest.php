@@ -35,8 +35,6 @@ class StorePurchaseFollowUpRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Los checkboxes/selectores llegan como '1'/'0'/'' — se normaliza a
-        // true/false/null para que la validación `boolean` lo acepte.
         if ($this->has('regret')) {
             $value = $this->input('regret');
             if ($value === '' || $value === null) {

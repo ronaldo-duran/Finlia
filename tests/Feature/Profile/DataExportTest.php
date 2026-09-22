@@ -45,10 +45,6 @@ class DataExportTest extends TestCase
         return [$user, $household];
     }
 
-    // -----------------------------------------------------------------------
-    // Ruta HTTP (POST)
-    // -----------------------------------------------------------------------
-
     public function test_invitado_es_redirigido_al_login(): void
     {
         $this->post(route('profile.export'))->assertRedirect(route('login'));
@@ -71,26 +67,19 @@ class DataExportTest extends TestCase
 
         $this->actingAs($user)->post(route('profile.export'));
 
-        // Segunda solicitud mientras ya hay una en cola.
         $response = $this->actingAs($user)->post(route('profile.export'));
 
         $response->assertRedirect();
-        // El flag sigue presente (no se duplica ni se resetea).
         $user->refresh();
         $this->assertNotNull($user->data_export_requested_at);
     }
 
     public function test_sin_hogar_activo_devuelve_404(): void
     {
-        // Usuario sin ningún hogar asociado.
         $user = User::factory()->create();
 
         $this->actingAs($user)->post(route('profile.export'))->assertNotFound();
     }
-
-    // -----------------------------------------------------------------------
-    // Comando cron
-    // -----------------------------------------------------------------------
 
     public function test_comando_envia_correo_y_limpia_el_flag(): void
     {
@@ -112,31 +101,22 @@ class DataExportTest extends TestCase
     {
         Mail::fake();
         $user = User::factory()->create(['data_export_requested_at' => now()]);
-        // Sin hogar — el comando no debe fallar ni enviar correo.
 
         $this->artisan(ProcessDataExportRequests::class)->assertSuccessful();
 
         Mail::assertNothingSent();
-        // El flag se limpia de todas formas para no bloquear al usuario.
         $user->refresh();
-        // Aceptamos que el comando no toque el flag si no hay hogar.
-        // El comportamiento exacto queda a criterio del comando; solo verificamos que no hay excepción.
     }
 
     public function test_comando_no_procesa_usuarios_sin_flag(): void
     {
         Mail::fake();
         [$user] = $this->setup_household();
-        // Sin flag de exportación pendiente.
 
         $this->artisan(ProcessDataExportRequests::class)->assertSuccessful();
 
         Mail::assertNothingSent();
     }
-
-    // -----------------------------------------------------------------------
-    // Contenido del servicio (sin disco real)
-    // -----------------------------------------------------------------------
 
     public function test_collect_incluye_el_perfil_del_usuario(): void
     {
@@ -265,10 +245,6 @@ class DataExportTest extends TestCase
         $this->assertStringContainsString(';', $lines[0]);
     }
 
-    // -----------------------------------------------------------------------
-    // Aislamiento entre hogares
-    // -----------------------------------------------------------------------
-
     public function test_usuario_b_no_ve_datos_del_hogar_de_usuario_a(): void
     {
         [$userA, $householdA] = $this->setup_household('Hogar A');
@@ -282,7 +258,6 @@ class DataExportTest extends TestCase
             'description' => 'Gasto secreto de A',
         ]);
 
-        // userB exporta su propio hogar.
         $data = app(DataExportService::class)->collect(
             app(HouseholdService::class)->createHousehold($userB->id, 'Hogar B extra') ?? Household::where('owner_id', $userB->id)->first(),
             $userB
@@ -308,18 +283,12 @@ class DataExportTest extends TestCase
             'description' => 'Gasto del miembro',
         ]);
 
-        // El owner exporta: el gasto aparece (es del hogar), pero el nombre
-        // ni el correo de Vanessa no debe estar en los CSV.
         $data = app(DataExportService::class)->collect($household, $owner);
 
         $allCsv = implode("\n", $data['csv']);
         $this->assertStringNotContainsString('Vanessa Otro', $allCsv);
         $this->assertStringNotContainsString($member->email, $allCsv);
     }
-
-    // -----------------------------------------------------------------------
-    // Página pública /datos
-    // -----------------------------------------------------------------------
 
     public function test_la_pagina_de_datos_es_accesible_sin_cuenta(): void
     {
@@ -331,8 +300,6 @@ class DataExportTest extends TestCase
         $this->get(route('data.policy'))
             ->assertSee('Portabilidad')
             ->assertSee('Eliminación')
-            // Antes se llamaba "Retiro del software": jerga cambiada por lo que
-            // el usuario de verdad se pregunta.
             ->assertSee('Si Finlia dejara de operar');
     }
 }

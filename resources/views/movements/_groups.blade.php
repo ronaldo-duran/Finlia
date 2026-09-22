@@ -1,11 +1,6 @@
-{{-- Grupos por día de una página de movimientos + botón "Cargar más".
-     Lo usa la pantalla completa y la respuesta parcial del botón: lo que
-     este parcial devuelve es exactamente lo que se anexa a la lista. --}}
-
 @php
     $groups = $movements->groupBy(fn ($m) => $m['date']->format('Y-m-d'));
 @endphp
-
 <div class="d-flex flex-column gap-3">
     @foreach ($groups as $day => $items)
         @php
@@ -28,10 +23,8 @@
         </div>
     @endforeach
 </div>
-
 @if ($hasMore)
-    {{-- A la derecha y con aire: centrado quedaba por detrás del botón
-         flotante "+" de la barra inferior en móvil (que es fijo y centrado). --}}
+
     <div class="d-flex justify-content-end mt-3 mb-2 pe-1" id="cargarMasWrapper">
         <button type="button" class="btn btn-outline-finlia" id="cargarMasBtn"
                 data-next-offset="{{ $nextOffset }}">

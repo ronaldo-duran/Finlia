@@ -73,8 +73,6 @@ class CompulsiveSurveyController extends Controller
         StorePurchaseFollowUpRequest $request,
         CompulsiveSurveyResponse $response,
     ): RedirectResponse {
-        // Aislamiento: solo el autor original de la respuesta la puede cerrar,
-        // y ambos deben estar en el hogar activo.
         abort_unless(
             $response->household_id === active_household_id()
                 && $response->user_id === $request->user()->id,

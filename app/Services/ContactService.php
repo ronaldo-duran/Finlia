@@ -38,10 +38,7 @@ class ContactService
             'body' => $body,
         ]);
 
-        // Fuera de fillable a propósito: los pone el servidor.
         $mensaje->user_id = $userId;
-        // La IP solo tiene sentido guardarla cuando no hay usuario: es el
-        // único rastro para frenar abuso. Con sesión, sobra.
         $mensaje->ip_address = $userId === null ? $ipAddress : null;
         $mensaje->context = $context;
 
@@ -68,8 +65,6 @@ class ContactService
         try {
             Mail::to($buzon)->send(new ContactMessageReceivedMail($mensaje));
         } catch (\Throwable $e) {
-            // Sin el cuerpo del mensaje ni el correo de quien escribe: un log
-            // no es sitio para datos personales.
             Log::warning('No se pudo avisar de un mensaje de contacto', [
                 'contact_message_id' => $mensaje->id,
                 'reason' => $mensaje->reason->value,

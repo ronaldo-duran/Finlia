@@ -92,8 +92,6 @@ class ReportService
         $cursor = Carbon::parse($from)->startOfMonth();
         $end = Carbon::parse($to);
 
-        // Mes completo aunque `$to` caiga a mitad, para conservar el
-        // comportamiento del bucle anterior (que pedía totales por mes natural).
         $totals = $this->movements->monthlyTotals(
             $householdId,
             $cursor->copy(),
@@ -137,8 +135,6 @@ class ReportService
 
         $insights = collect();
 
-        // 1. Gasto total contra el período anterior (ejemplo de la épica:
-        //    "Este mes gastaste $150.000 menos").
         if ($previous['expenses'] > 0) {
             $change = ($current['expenses'] - $previous['expenses']) / $previous['expenses'];
 
@@ -154,8 +150,6 @@ class ReportService
             }
         }
 
-        // 2 y 3. Mayor subida y mayor bajada por categoría ("Alimentación
-        //    aumentó 18 % respecto al mes anterior").
         $currentByCategory = $this->movements->expensesByCategory($householdId, $window['from'], $window['to']);
         $previousByCategory = $this->movements->expensesByCategory($householdId, $window['previous_from'], $window['previous_to']);
         [$risen, $fallen] = $this->categoryChanges($currentByCategory, $previousByCategory);
@@ -176,7 +170,6 @@ class ReportService
             ]);
         }
 
-        // 4. Categoría dominante ("Transporte representa 12 % de tus gastos").
         if ($current['expenses'] > 0 && ($top = $currentByCategory->first()) !== null) {
             $share = round($top['total'] / $current['expenses'] * 100, 1);
 
@@ -189,7 +182,6 @@ class ReportService
             }
         }
 
-        // 5. Balance en rojo: un hecho, no un consejo.
         if ($current['incomes'] > 0 && $current['balance'] < 0) {
             $insights->push([
                 'icon' => 'bi-exclamation-triangle',
@@ -209,11 +201,6 @@ class ReportService
      */
     public function exportRows(int $householdId, CarbonInterface $from, CarbonInterface $to): Collection
     {
-        // La exportación no puede truncarse en silencio: los topes de
-        // `filtered()` (20 por defecto, ventana de página+50) protegen la
-        // pantalla de navegación, no un archivo que el usuario va a
-        // conciliar. 10.000 filas cubre con holgura un año a escala
-        // personal y sigue siendo un límite de memoria prudente.
         return $this->movements->filtered($householdId, [
             'from' => Carbon::parse($from)->toDateString(),
             'to' => Carbon::parse($to)->toDateString(),

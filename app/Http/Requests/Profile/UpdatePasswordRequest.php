@@ -16,7 +16,7 @@ class UpdatePasswordRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // /perfil solo opera sobre el usuario autenticado (UserPolicy en el controlador)
+        return true;
     }
 
     /**
@@ -26,8 +26,6 @@ class UpdatePasswordRequest extends FormRequest
     {
         return [
             'current_password' => ['required', 'string', 'current_password:web'],
-            // Política central de contraseñas (AppServiceProvider): misma para
-            // registro, cambio y reset.
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
         ];
     }

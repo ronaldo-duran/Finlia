@@ -126,7 +126,8 @@ Detalle en [docs/CONVENTIONS.md](docs/CONVENTIONS.md).
 
 - **Identificadores**: en inglés (`accounts`, `expenses`, `BudgetCalculatorService`).
 - **UI, docs y mensajes al usuario**: en **español**.
-- **Comentarios**: en español, breves y solo donde aportan.
+- **Comentarios**: **solo PHPDoc** (`/** ... */`), en español, de una o dos líneas más las anotaciones. **Prohibidos** los comentarios `//` y `#`, los bloques `/* */` que no sean PHPDoc (incluidas las cabeceras banner de `routes/`), los `{{-- --}}` de Blade, los comentarios en JS/CSS, el código comentado y los `TODO`/`FIXME`. El "por qué" va al PHPDoc de la clase, a un ADR de [docs/DECISIONS.md](docs/DECISIONS.md) o a un test con nombre descriptivo — nunca al cuerpo de un método. Regla completa y razones en [docs/CONVENTIONS.md §1.1](docs/CONVENTIONS.md).
+- **Emojis**: prohibidos en código y en la copia de la UI (PHP, Blade, JS, CSS, salida de consola, mensajes de commit). Para iconos, **Bootstrap Icons**. Los emojis de `docs/*.md` sí se conservan: ahí son navegación.
 - **Tablas**: snake_case plural (`households`, `savings_goals`). FKs: `<modelo>_id`. Pivot: orden alfabético.
 - **Fechas**: almacenar en DB como `date`/`datetime`; mostrar al usuario como **DD/MM/AAAA**.
 - **Moneda**: COP, formato `$ 1.000.000` (punto miles, coma decimales). Centralizar formato en un helper/Blade `@money`.
@@ -159,7 +160,8 @@ composer test      # = php artisan test (usa SQLite :memory:)
 php artisan test --filter=HouseholdTest
 
 # Calidad
-vendor/bin/pint            # formateo (Laravel Pint)
+vendor/bin/pint               # formateo (Laravel Pint)
+php scripts/check-comments.php # solo PHPDoc: sin // ni emojis (también en CI)
 php artisan route:list
 php artisan migrate:status
 composer audit             # revisa vulnerabilidades de dependencias

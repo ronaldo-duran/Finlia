@@ -6,7 +6,6 @@
     <form method="POST" action="{{ route('password.update') }}">
         @csrf
 
-        {{-- Token de restablecimiento (oculto) --}}
         <input type="hidden" name="token" value="{{ $token }}">
 
         <x-form-input

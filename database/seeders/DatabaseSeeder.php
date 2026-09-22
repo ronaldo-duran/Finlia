@@ -41,28 +41,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Siembras GLOBALES (idempotentes): producción también las necesita.
-        //  - CategorySeeder: catálogo de categorías globales (household_id NULL);
-        //    sin él, los selects de gasto/ingreso salen vacíos.
-        //  - TermsVersionSeeder: versión vigente de los términos; sin una fila,
-        //    hasAcceptedCurrentTerms() devuelve true (fail-open) y la puerta de
-        //    consentimiento (ADR-0031) queda inerte.
-        // Por eso corren ANTES de la guarda de entorno, para que
-        // `migrate --seed` (README) siga sirviendo en una instalación nueva o
-        // una restauración.
         $this->call(CategorySeeder::class);
         $this->call(TermsVersionSeeder::class);
 
-        // Guarda de entorno: SOLO los datos demo (cuentas con contraseña
-        // conocida, en un repo público) se saltan en producción. Un `db:seed`
-        // accidental no debe crear usuarios de acceso público.
         if (app()->isProduction()) {
             $this->command?->warn('Datos demo omitidos: solo se sembraron catálogo y términos en producción.');
 
             return;
         }
 
-        // Usuario de demostración para desarrollo local.
         $demo = User::factory()->create([
             'name' => 'Camila Restrepo',
             'email' => 'demo@finlia.test',
@@ -71,22 +58,17 @@ class DatabaseSeeder extends Seeder
             'region' => ColombianRegion::BogotaDc->value,
         ]);
 
-        // Hogar principal del usuario demo.
         $household = app(HouseholdService::class)->createHousehold(
             ownerId: $demo->id,
             name: 'Hogar Demo',
         );
 
-        // El hogar demo va en Premium para que los E2E ejerciten la app sin
-        // tropezarse con los topes Free (1 hogar por usuario, 2 personas por
-        // hogar). También refleja el caso "cliente Premium" en desarrollo.
         app(SubscriptionService::class)->grantPremium(
             $household,
             now()->addYear(),
             'Demo seed (Épica 12): usuario y hogar Premium para desarrollo y E2E.',
         );
 
-        // Segundo usuario invitado como miembro.
         $miembro = User::factory()->create([
             'name' => 'Andrés Restrepo',
             'email' => 'miembro@finlia.test',
@@ -99,16 +81,12 @@ class DatabaseSeeder extends Seeder
             'joined_at' => now()->subDays(3),
         ]);
 
-        // Los usuarios demo ya "aceptaron" la versión inicial de los
-        // términos: consentimientos de demostración, para que el login
-        // local (y los e2e) no caiga en la pantalla de aceptación.
         $terminos = TermsVersion::current();
         if ($terminos !== null) {
             $demo->acceptTerms($terminos, '127.0.0.1');
             $miembro->acceptTerms($terminos, '127.0.0.1');
         }
 
-        // Una invitación pendiente de ejemplo (token hasheado).
         HouseholdInvitation::factory()->create([
             'household_id' => $household->id,
             'email' => 'invitado@finlia.test',
@@ -140,8 +118,6 @@ class DatabaseSeeder extends Seeder
         $expenseCategories = Category::whereNull('household_id')->where('type', 'expense')->pluck('id');
         $users = [$demo->id, $miembro->id];
 
-        // Ingresos: ~uno por mes en los últimos 6 meses (Épica 8: la
-        // comparación de períodos y la evolución mensual necesitan historial).
         foreach (range(1, 7) as $i) {
             Income::factory()->create([
                 'household_id' => $household->id,
@@ -152,7 +128,6 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // Gastos repartidos en los últimos 6 meses.
         foreach (range(1, 30) as $i) {
             Expense::factory()->create([
                 'household_id' => $household->id,
@@ -163,14 +138,8 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // Los movimientos de arriba son historial: alimentan las series de seis
-        // meses de los reportes, y por eso van al azar. El MES EN CURSO no se
-        // deja al azar — con 30 gastos repartidos en seis meses, al mes actual
-        // le tocan uno o ninguno, y el Panel abre en ceros justo para quien
-        // arranca la demo por primera vez.
         $this->seedCurrentMonth($household, $accounts, $users);
 
-        // Saldos coherentes con los movimientos generados.
         $balanceService = app(AccountBalanceService::class);
         $accounts->each(fn (Account $account) => $balanceService->recompute($account));
 
@@ -201,9 +170,6 @@ class DatabaseSeeder extends Seeder
         $efectivo = $accounts->firstWhere('name', 'Efectivo');
         $nequi = $accounts->firstWhere('name', 'Nequi');
 
-        // Los dos salarios del hogar, ya recibidos. Coinciden con los
-        // ingresos esperados de seedBudgets(): el "puedes gastar" compara
-        // ambos, y descuadrarlos haría que la demo se contradiga a sí misma.
         foreach ([[4200000, $users[0]], [3100000, $users[1]]] as [$amount, $userId]) {
             Income::factory()->create([
                 'household_id' => $household->id,
@@ -216,9 +182,6 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // Canasta del mes. El día se recorta a hoy: sembrar un gasto con
-        // fecha futura lo dejaría fuera de "gastos del mes" y descuadraría
-        // el presupuesto consumido.
         collect([
             ['Mercado quincenal', 'Alimentación', 385000, 2, $banco],
             ['Ropa de los niños', 'Compras', 210000, 3, $banco],
@@ -252,12 +215,6 @@ class DatabaseSeeder extends Seeder
     {
         $now = Carbon::now(config('app.timezone'));
 
-        // household_id no es fillable en estos modelos: se asigna por relación.
-        // Ingresos mensuales esperados: base del "puedes gastar".
-        // Dos salarios: el hogar demo tiene dos miembros, y los importes
-        // coinciden con los ingresos que seedCurrentMonth() ya registró como
-        // recibidos. Entre los dos cubren los compromisos con holgura — un
-        // hogar insolvente no demuestra nada del "puedes gastar".
         collect([
             ['name' => 'Salario titular', 'amount' => 4200000, 'day_of_month' => 1],
             ['name' => 'Salario del miembro', 'amount' => 3100000, 'day_of_month' => 1],
@@ -266,7 +223,6 @@ class DatabaseSeeder extends Seeder
             ...$data,
         ]));
 
-        // Presupuesto total del mes + tres categorías.
         $household->budgets()->create([
             'category_id' => null,
             'amount' => 3000000,
@@ -297,7 +253,6 @@ class DatabaseSeeder extends Seeder
             ->where('type', 'expense')
             ->pluck('id', 'name');
 
-        // Fecha del próximo día 5 (arriendo) y próximo día 20 (suscripción).
         $day5 = $now->copy()->setDay(5);
         if ($day5->isPast()) {
             $day5->addMonthNoOverflow();
@@ -308,10 +263,8 @@ class DatabaseSeeder extends Seeder
         }
 
         collect([
-            // Fijos de alta frecuencia (seam fixed_expenses).
             ['name' => 'Arriendo', 'amount' => 1200000, 'frequency' => Frequency::Monthly, 'next_date' => $day5, 'category' => 'Vivienda'],
             ['name' => 'Internet hogares', 'amount' => 95000, 'frequency' => Frequency::Monthly, 'next_date' => $day20, 'category' => 'Servicios', 'auto_generate' => true],
-            // Obligaciones menos frecuentes (seam recurring).
             ['name' => 'SOAT carro', 'amount' => 600000, 'frequency' => Frequency::Yearly, 'next_date' => $now->copy()->addDays(45), 'category' => 'Transporte'],
             ['name' => 'Mantenimiento moto', 'amount' => 280000, 'frequency' => Frequency::Semester, 'next_date' => $now->copy()->addDays(12), 'category' => 'Transporte'],
         ])->each(function (array $data) use ($household, $categoryByName, $bank): void {
@@ -347,15 +300,12 @@ class DatabaseSeeder extends Seeder
             'original_amount' => 4800000,
             'interest_rate' => 28.5,
             'interest_rate_type' => 'fixed',
-            // minimum_payment se omite a propósito: lo calcula el Service a
-            // partir de monto, tasa y plazo (ADR-0023), igual que el formulario.
             'planned_payment' => 800000,
             'term_months' => 12,
             'due_day' => 15,
             'start_date' => $now->copy()->subMonths(8)->toDateString(),
         ]);
 
-        // Un par de cuotas ya pagadas: el saldo baja solo (ADR-0020).
         foreach ([2, 1] as $monthsAgo) {
             $tarjeta->payments()->forceCreate([
                 'household_id' => $household->id,
@@ -425,7 +375,6 @@ class DatabaseSeeder extends Seeder
         $goals = app(SavingsGoalService::class);
         $now = Carbon::now(config('app.timezone'));
 
-        // Fondo de emergencia: 4 aportes de 250.000 en los últimos meses.
         $fondo = $goals->createGoal($household, [
             'name' => 'Fondo de emergencia',
             'target_amount' => 6000000,
@@ -442,7 +391,6 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // Meta de viaje: un solo aporte inicial y un retiro de prueba.
         $viaje = $goals->createGoal($household, [
             'name' => 'Viaje a San Andrés',
             'target_amount' => 3500000,

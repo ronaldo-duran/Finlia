@@ -58,7 +58,7 @@ enum Frequency: string
 
         return match ($this) {
             self::Weekly => $next->addDays(7),
-            self::Biweekly => $next->addDays(15), // quincena = 15 días
+            self::Biweekly => $next->addDays(15),
             self::Monthly => $next->addMonthNoOverflow(),
             self::Quarterly => $next->addMonthsNoOverflow(3),
             self::Semester => $next->addMonthsNoOverflow(6),
@@ -75,7 +75,7 @@ enum Frequency: string
     {
         return match ($this) {
             self::Weekly => 52.0,
-            self::Biweekly => 24.0, // ≈ dos quincenas por mes
+            self::Biweekly => 24.0,
             self::Monthly => 12.0,
             self::Quarterly => 4.0,
             self::Semester => 2.0,

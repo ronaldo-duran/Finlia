@@ -65,7 +65,6 @@ class ExpenseTest extends TestCase
 
         $expense = Expense::first();
         $this->assertSame('30000.00', (string) $expense->amount);
-        // Saldo = inicial − gasto (ADR-0012).
         $this->assertSame('70000.00', (string) $account->fresh()->current_balance);
     }
 
@@ -111,7 +110,6 @@ class ExpenseTest extends TestCase
         );
         $this->assertSame('70000.00', (string) $account->fresh()->current_balance);
 
-        // Subir el gasto a 60000 → saldo baja a 40000.
         $this->actingAs($owner)->put(route('expenses.update', $expense), [
             'amount' => 60000,
             'account_id' => $account->id,
@@ -138,12 +136,9 @@ class ExpenseTest extends TestCase
             ->delete(route('expenses.destroy', $expense))
             ->assertRedirect(route('movements.index'));
 
-        // Al borrarse (soft-delete), deja de restar del saldo.
         $this->assertSame('100000.00', (string) $account->fresh()->current_balance);
         $this->assertSoftDeleted('expenses', ['id' => $expense->id]);
     }
-
-    // ===== Aislamiento multi-hogar (amenaza #1 — IDOR) =====
 
     public function test_usuario_ajeno_no_puede_editar_gasto_de_otro_hogar(): void
     {

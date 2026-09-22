@@ -30,10 +30,6 @@ class DomainRoutingTest extends TestCase
 
         $this->refreshApplication();
 
-        // refreshApplication() rehace el contenedor y se lleva por delante el
-        // withoutVite() de Tests\TestCase::setUp(). Sin volver a ponerlo, la
-        // vista falla con ViteManifestNotFoundException en cualquier entorno
-        // sin `npm run build` — que es justo el job de PHP del CI.
         $this->withoutVite();
     }
 

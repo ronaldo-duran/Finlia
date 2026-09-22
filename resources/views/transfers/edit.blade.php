@@ -31,7 +31,6 @@
                 </div>
             </div>
 
-            {{-- Eliminación --}}
             <div class="card border-0 mt-3">
                 <div class="card-body">
                     <p class="small text-muted mb-2">Esta acción revierte el movimiento de los saldos.</p>

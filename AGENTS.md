@@ -15,6 +15,36 @@ Finlia maneja **dinero real de familias** y será un **repositorio público** qu
 5. **No sobre-ingenieres.** Sin microservicios, sin abstracciones innecesarias, sin patrones "para lucirse".
 6. **Mantén el alcance.** Implementa **solo** lo que pide la épica actual. Si la épica dice "todavía no", no lo hagas.
 7. **Documenta decisiones** que afecten la arquitectura en [docs/DECISIONS.md](docs/DECISIONS.md) y **detente** a explicarlas si son significativas.
+8. **No narres el código con comentarios.** Ver §1.1.
+
+### 1.1 Comentarios y emojis — prohibición explícita
+
+Este es el error más frecuente de un agente en este repositorio: explicar en un comentario lo que el código ya dice. El repositorio es **público** y se monetiza; un archivo salpicado de `// Ahora recorremos las cuentas` lo hace parecer un ejercicio, no un producto. La regla completa y sus razones están en [docs/CONVENTIONS.md §1.1](docs/CONVENTIONS.md); lo operativo:
+
+**El único comentario admitido es PHPDoc** (`/** ... */`, y su equivalente JSDoc en JS), de una o dos líneas más las anotaciones (`@param`, `@return`, `@var`, `@throws`).
+
+**No escribas nunca:**
+
+| Prohibido | En su lugar |
+|---|---|
+| `// Calcula el total` sobre una línea | Un nombre de método o variable que lo diga |
+| `$x = 7; // días de gracia` | `public const EARLY_PAYMENT_DAYS = 7;` |
+| `// ---- Rutas públicas ----` | Agrupar con `Route::group()`, que ya lo expresa |
+| `/*|-----|*/` (banner de Laravel en `routes/`) | Nada; bórralo si lo genera el framework |
+| `{{-- Encabezado --}}` en Blade | Partir la vista en componentes |
+| `// TODO: revisar esto` | Una entrada en [docs/ROADMAP.md](docs/ROADMAP.md) o un issue |
+| Código antiguo comentado | Borrarlo; está en git |
+| `// ⚠️ Ojo: ...`, `✓`, `👋` en UI o en consola | Texto plano; para iconos, Bootstrap Icons |
+
+**Dónde va el "por qué"** cuando de verdad hace falta: en el **PHPDoc de la clase o del método** (una o dos líneas, con referencia al ADR: `(ADR-0040)`), en un **ADR** de [docs/DECISIONS.md](docs/DECISIONS.md), o en un **test con nombre descriptivo** — que además impide que ese "por qué" se rompa sin que nadie se entere. Nunca en medio de un método.
+
+**Emojis**: cero en código y en la copia de la interfaz (PHP, Blade, JS, CSS, salida de comandos `artisan`, mensajes de commit y descripciones de PR). Los emojis de `docs/*.md` son navegación de la documentación y se conservan.
+
+Antes de dar por terminado un cambio, comprueba que no introdujiste ninguno:
+
+```bash
+git diff -U0 | grep -nE '^\+\s*(//|#[^!\[])|^\+.*\S\s+// |^\+.*\{\{--' && echo "Hay comentarios prohibidos en el diff"
+```
 
 ---
 
@@ -102,6 +132,7 @@ Una épica **no está terminada** hasta que se cumple **todo** lo siguiente:
 - [ ] **Pruebas**: feature tests del recurso **+ test de aislamiento entre hogares (403)**.
 - [ ] `composer test` en verde.
 - [ ] No se rompió funcionalidad anterior.
+- [ ] **Sin comentarios narrativos ni emojis** en el diff (§1.1): solo PHPDoc. Verificado con el `grep` de esa sección.
 - [ ] **Guía de la pantalla al día** ([ADR-0045](docs/DECISIONS.md#adr-0045)): si la entrega añade o cambia algo que no se adivina mirando la pantalla, se refleja en `config/tours.php`. Guía nueva → se escribe; guía existente → se **sube su `version`** y los pasos añadidos llevan ese `since`, para que quien ya la vio reciba solo lo nuevo. Una guía que describe una pantalla que ya cambió miente, y eso es peor que no tenerla.
 - [ ] Docs actualizadas (DATA_MODEL, ROADMAP, DECISIONS si aplica).
 - [ ] Commits pequeños y descriptivos; sin secretos.

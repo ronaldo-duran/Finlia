@@ -30,7 +30,7 @@ class ReminderFactory extends Factory
             ]),
             'amount' => fake()->randomElement([null, fake()->numberBetween(5, 900) * 1000]),
             'due_date' => fake()->dateTimeBetween('-10 days', '+2 months')->format('Y-m-d'),
-            'frequency' => null, // suelto por defecto; usar recurring() para el anual
+            'frequency' => null,
             'status' => ReminderStatus::Pending->value,
             'notes' => null,
         ];

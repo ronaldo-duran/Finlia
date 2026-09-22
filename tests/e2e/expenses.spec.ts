@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 
-// La sesión del usuario demo llega por storageState (proyecto setup).
 test.describe('Gastos (Épica 3)', () => {
 
   test('registra un gasto y aparece en movimientos', async ({ page }) => {
@@ -24,8 +23,6 @@ test.describe('Gastos (Épica 3)', () => {
     await page.goto('/gastos/crear');
     await page.getByRole('button', { name: 'Guardar gasto' }).click();
 
-    // La validación nativa del navegador (required) bloquea el envío:
-    // los campos quedan marcados como inválidos y no hay navegación.
     await expect(page.locator('input[name="amount"]:invalid')).toBeVisible();
     await expect(page.locator('select[name="account_id"]:invalid')).toBeVisible();
     await expect(page).toHaveURL(/\/gastos\/crear$/);

@@ -27,8 +27,6 @@ class RecurringExpenseTest extends TestCase
         return [$owner, $household];
     }
 
-    // ===== Acceso y CRUD =====
-
     public function test_guest_es_redirigido_al_login(): void
     {
         $this->get(route('recurring-expenses.index'))->assertRedirect(route('login'));
@@ -47,7 +45,7 @@ class RecurringExpenseTest extends TestCase
             ->get(route('recurring-expenses.index'))
             ->assertOk()
             ->assertSee('SOAT')
-            ->assertSee('50.000,00'); // ahorro mensual recomendado en COP
+            ->assertSee('50.000,00');
     }
 
     public function test_usuario_puede_crear_un_gasto_recurrente(): void
@@ -90,7 +88,6 @@ class RecurringExpenseTest extends TestCase
         $fresh = $item->fresh();
         $this->assertSame('SOAT carro', $fresh->name);
         $this->assertSame('650000.00', (string) $fresh->amount);
-        // El checkbox sin marcar debe desactivarlo, no ignorarse.
         $this->assertFalse($fresh->is_active);
     }
 
@@ -108,8 +105,6 @@ class RecurringExpenseTest extends TestCase
 
         $this->assertDatabaseMissing('recurring_expenses', ['id' => $item->id]);
     }
-
-    // ===== Validación =====
 
     public function test_campos_obligatorios_y_frecuencia_valida(): void
     {
@@ -142,7 +137,7 @@ class RecurringExpenseTest extends TestCase
             'name' => 'Arriendo',
             'amount' => 100000,
             'frequency' => 'monthly',
-            'frequency_interval' => 45, // debe ignorarse (no es custom)
+            'frequency_interval' => 45,
             'next_date' => '2026-09-01',
         ]);
 
@@ -193,7 +188,7 @@ class RecurringExpenseTest extends TestCase
         [, $otro] = $this->setupHousehold('Hogar B');
 
         $this->actingAs($owner)->post(route('recurring-expenses.store'), [
-            'household_id' => $otro->id, // intento de inyección
+            'household_id' => $otro->id,
             'name' => 'Arriendo',
             'amount' => 100000,
             'frequency' => 'monthly',
@@ -203,8 +198,6 @@ class RecurringExpenseTest extends TestCase
         $this->assertDatabaseHas('recurring_expenses', ['household_id' => $household->id]);
         $this->assertDatabaseMissing('recurring_expenses', ['household_id' => $otro->id]);
     }
-
-    // ===== Marcar pagado =====
 
     public function test_marcar_pagado_registra_el_gasto_y_avanza_la_fecha(): void
     {
@@ -217,7 +210,7 @@ class RecurringExpenseTest extends TestCase
         $item = $household->recurringExpenses()->create([
             'name' => 'Arriendo', 'amount' => 1200000,
             'frequency' => Frequency::Monthly->value,
-            'next_date' => now()->startOfMonth()->addDays(4)->toDateString(), // día 5 de este mes
+            'next_date' => now()->startOfMonth()->addDays(4)->toDateString(),
             'account_id' => $account->id,
         ]);
 
@@ -232,12 +225,10 @@ class RecurringExpenseTest extends TestCase
             'amount' => '1200000.00',
             'description' => 'Arriendo (pago recurrente)',
         ]);
-        // Mensual: avanza un mes sin desbordar.
         $this->assertSame(
             $item->next_date->copy()->addMonthNoOverflow()->toDateString(),
             $item->fresh()->next_date->toDateString(),
         );
-        // Saldo de la cuenta recomputado.
         $this->assertSame('800000.00', (string) $account->fresh()->current_balance);
     }
 
@@ -259,8 +250,6 @@ class RecurringExpenseTest extends TestCase
 
     public function test_marcar_pagado_con_register_0_solo_avanza_fecha_aunque_tenga_cuenta(): void
     {
-        // Caso "ya lo pagué por fuera de Finlia": tiene cuenta asociada pero
-        // el usuario NO quiere que se registre el movimiento.
         [$owner, $household] = $this->setupHousehold();
         $account = Account::factory()->create([
             'household_id' => $household->id,
@@ -285,8 +274,6 @@ class RecurringExpenseTest extends TestCase
             $item->fresh()->next_date->toDateString(),
         );
     }
-
-    // ===== Aislamiento multi-hogar (amenaza #1 — IDOR) =====
 
     public function test_usuario_ajeno_no_puede_editar_recurrente_de_otro_hogar(): void
     {
@@ -354,9 +341,4 @@ class RecurringExpenseTest extends TestCase
             ->assertOk()
             ->assertDontSee('SecretoSOAT');
     }
-
-    // Los avisos de obligaciones recurrentes ya no viven en el panel: la
-    // campanita del navbar y /recordatorios los cubren en un solo lugar
-    // (Épica 9). La lógica de "activa vs pausada" se prueba en
-    // RecurringExpenseServiceTest y ReminderServiceTest.
 }

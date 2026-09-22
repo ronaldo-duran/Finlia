@@ -64,7 +64,6 @@ class HouseholdController extends Controller
             timezone: $data['timezone'],
         );
 
-        // El hogar recién creado pasa a ser el activo.
         session(['household_id' => $household->id]);
         app()->forgetInstance('finlia.active_household');
 
@@ -117,7 +116,6 @@ class HouseholdController extends Controller
 
         $household->delete();
 
-        // Si era el hogar activo, se resetea para re-resolver.
         if (active_household_id() === $household->id) {
             session()->forget('household_id');
             app()->forgetInstance('finlia.active_household');

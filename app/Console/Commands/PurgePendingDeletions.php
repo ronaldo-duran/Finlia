@@ -69,7 +69,6 @@ class PurgePendingDeletions extends Command
 
     private function purgeUnverified(AccountDeletionService $service): void
     {
-        // Cuentas fantasma: registradas pero nunca verificadas en 14 días.
         $cutoff = now()->subDays(14);
 
         $users = User::query()

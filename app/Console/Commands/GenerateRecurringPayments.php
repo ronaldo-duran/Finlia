@@ -46,8 +46,6 @@ class GenerateRecurringPayments extends Command
         }
 
         foreach ($due as $expense) {
-            // El gasto queda a nombre de quien administra el hogar: un pago
-            // automático no tiene usuario detrás.
             $owner = $expense->household->owner;
 
             $created = $recurring->markAsPaid($expense, $owner, $expense->next_date);

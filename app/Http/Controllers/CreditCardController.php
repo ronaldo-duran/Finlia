@@ -13,7 +13,7 @@ use Illuminate\Http\RedirectResponse;
  * Atributos de tarjeta de crédito sobre una cuenta con type=credit_card
  * (Épica 6, ADR-0002). Se gestionan desde el detalle de la cuenta.
  *
- * ⚠️ Nunca se guarda número completo, CVV ni PIN (docs/SECURITY.md §4).
+ * Nunca se guarda número completo, CVV ni PIN (docs/SECURITY.md §4).
  */
 class CreditCardController extends Controller
 {
@@ -22,10 +22,8 @@ class CreditCardController extends Controller
      */
     public function update(UpdateCreditCardRequest $request, Account $account): RedirectResponse
     {
-        // La autorización cuelga de la cuenta: es su dueño quien la configura.
         $this->authorize('update', $account);
 
-        // Solo una cuenta de tipo tarjeta puede tener cupo y fecha de corte.
         abort_unless($account->type === AccountType::CreditCard, 404);
 
         $data = $request->validatedData();
@@ -35,7 +33,6 @@ class CreditCardController extends Controller
         if ($card === null) {
             $card = $account->creditCard()->make($data);
             $card->household_id = $account->household_id;
-            // Cupo disponible inicial = cupo total; a partir de ahí lo mueve el uso.
             $card->available_credit = $data['credit_limit'];
             $card->save();
 
@@ -45,7 +42,6 @@ class CreditCardController extends Controller
         }
 
         $card->fill($data);
-        // Al cambiar el cupo, el disponible se ajusta conservando lo ya usado.
         $used = (float) $card->getOriginal('credit_limit') - (float) $card->getOriginal('available_credit');
         $card->available_credit = round(max(0.0, (float) $data['credit_limit'] - $used), 2);
         $card->save();

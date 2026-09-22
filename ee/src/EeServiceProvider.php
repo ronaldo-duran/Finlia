@@ -20,13 +20,7 @@ use Illuminate\Support\ServiceProvider;
  */
 final class EeServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
-        // Sin features Premium activadas por ahora.
-    }
+    public function register(): void {}
 
-    public function boot(): void
-    {
-        // Sin bindings ni observers Premium por ahora.
-    }
+    public function boot(): void {}
 }

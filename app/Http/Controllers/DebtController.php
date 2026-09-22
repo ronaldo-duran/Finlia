@@ -31,16 +31,12 @@ class DebtController extends Controller
     {
         $household = active_household();
 
-        // Defensivo: un usuario autenticado siempre tiene hogar (ADR-0011).
         if ($household === null) {
             return redirect()->route('households.create');
         }
 
         $this->authorize('viewAny', Debt::class);
 
-        // `?estrategia[]=x` haría que query() devuelva un array: castearlo a
-        // string emite un warning que Laravel convierte en 500. Se comprueba
-        // el tipo antes de mirar el valor.
         $requested = $request->query('estrategia');
         $strategy = (is_string($requested) ? DebtStrategy::tryFrom($requested) : null)
             ?? DebtStrategy::Avalanche;
@@ -50,7 +46,6 @@ class DebtController extends Controller
         return view('debts.index', [
             'summary' => $this->debts->summary($household->id),
             'debts' => $ordered->load('account'),
-            // Proyección por deuda, indexada por id: la vista no calcula nada.
             'projections' => $ordered->mapWithKeys(
                 fn (Debt $debt) => [$debt->id => $this->debts->projectPayoff($debt)]
             ),
@@ -148,8 +143,6 @@ class DebtController extends Controller
     {
         $this->authorize('update', $debt);
 
-        // El Service recalcula lo derivado: fin previsto (ADR-0022) y saldo,
-        // porque cambiar el monto original mueve su línea base (ADR-0020).
         $this->debts->updateDebt($debt, $request->validatedData());
 
         return redirect()
@@ -161,7 +154,6 @@ class DebtController extends Controller
     {
         $this->authorize('delete', $debt);
 
-        // Borrado lógico: el historial financiero no se pierde.
         $debt->delete();
 
         return redirect()

@@ -6,8 +6,36 @@
 
 - **Identificadores** (clases, métodos, variables, tablas, columnas): **inglés**.
 - **UI, mensajes al usuario y documentación**: **español**.
-- **Comentarios**: **español**, breves, solo donde aportan claridad (el "qué" lo dice el código; el "por qué", el comentario).
+- **Comentarios**: **español**, y sujetos a la regla de la sección 1.1.
 - Errores de validación visibles al usuario: en español, claros.
+
+## 1.1 Comentarios — el único formato admitido es PHPDoc
+
+El código de Finlia **no lleva comentarios narrativos**. La regla es dura a propósito: un comentario que explica lo que ya dice el código envejece mal, se desincroniza en la primera refactorización y hace que el repositorio —que es público— parezca un tutorial en vez de un producto.
+
+**Permitido:**
+
+- **PHPDoc** (`/** ... */`) sobre clases, métodos, propiedades y constantes. Una descripción de **una o dos líneas** más las anotaciones (`@param`, `@return`, `@var`, `@throws`, `@deprecated`). Aquí es donde se documenta una decisión de negocio o un ADR, no en medio del método.
+- **Docblocks obligatorios de Laravel**: `@var` para propiedades tipadas por array, `@return` con genéricos de colecciones.
+
+**Prohibido:**
+
+- Comentarios de línea `//` y `#` de cualquier tipo: ni sobre una línea, ni al final de ella, ni como separador.
+- Bloques `/* ... */` que no sean PHPDoc, incluidas las cabeceras tipo banner (`/*|-----|*/`) que Laravel trae por defecto en `routes/`.
+- Comentarios Blade `{{-- ... --}}` para rotular secciones de una vista. Si una vista necesita rótulos para entenderse, hay que partirla en componentes.
+- Comentarios en JS/CSS (`//`, `/* */`). Se admite **JSDoc** (`/** ... */`) sobre una función exportada.
+- Código comentado "por si acaso". Para eso está git.
+- `TODO`, `FIXME`, `XXX`, `HACK`. Lo pendiente va a una épica de [docs/ROADMAP.md](ROADMAP.md) o a un issue, no al código.
+
+**Emojis**: prohibidos en todo el código y en la copia de la interfaz (PHP, Blade, JS, CSS, salida de comandos de consola, mensajes de commit). Para un icono se usa **Bootstrap Icons** (`<i class="bi bi-..."></i>`), que ya está en el bundle. Los emojis de `docs/*.md` son navegación de la documentación y sí se conservan.
+
+**Si el "por qué" es imprescindible**, tiene tres sitios y ninguno es el cuerpo del método:
+
+1. El **PHPDoc** de la clase o del método, en una o dos líneas.
+2. Un **ADR** en [docs/DECISIONS.md](DECISIONS.md), referenciado desde el PHPDoc (`(ADR-0040)`).
+3. Un **test** con nombre descriptivo, que además impide que el "por qué" se rompa en silencio.
+
+**Antes de que el código sea mejor con un comentario, suele serlo con un nombre mejor**: extraer la condición a un método con nombre, o el número mágico a una constante, elimina la necesidad del comentario y la mantiene verificada por el compilador.
 
 ## 2. Nombres
 

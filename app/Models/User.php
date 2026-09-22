@@ -202,7 +202,6 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function age(): ?int
     {
-        // Propiedad ->age (getter de Carbon 3: el método ->age() ya no existe).
         return $this->birth_date?->age;
     }
 
@@ -225,8 +224,6 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Household::class, 'owner_id');
     }
-
-    // ---- Épica 3: movimientos registrados por el usuario ----
 
     public function incomes(): HasMany
     {

@@ -32,7 +32,6 @@ class InvitationOnboardingTest extends TestCase
     {
         parent::setUp();
 
-        // phpunit usa MAIL_MAILER=array, que se salta el envío (ADR-0015).
         config(['mail.default' => 'smtp']);
         Mail::fake();
     }
@@ -72,8 +71,6 @@ class InvitationOnboardingTest extends TestCase
             'hash' => sha1($user->email),
         ]);
     }
-
-    // ---- Ver la invitación sin sesión ----
 
     public function test_la_invitacion_se_ve_sin_sesion(): void
     {
@@ -115,9 +112,6 @@ class InvitationOnboardingTest extends TestCase
 
     public function test_la_pagina_no_revela_si_el_correo_ya_tiene_cuenta(): void
     {
-        // Un dueño de hogar podría invitar a cualquier dirección y abrir el
-        // enlace para saber si esa persona usa Finlia: la página debe ser la
-        // misma exista o no la cuenta (docs/SECURITY.md, enumeración).
         [, $sinCuenta] = $this->invite('nadie@finlia.test');
         [, $conCuenta] = $this->invite('alguien@finlia.test');
         User::factory()->create(['email' => 'alguien@finlia.test']);
@@ -161,8 +155,6 @@ class InvitationOnboardingTest extends TestCase
             ->assertSessionMissing('invitation_token');
     }
 
-    // ---- Iniciar sesión desde la invitación ----
-
     public function test_quien_ya_tiene_cuenta_vuelve_a_la_invitacion_tras_entrar(): void
     {
         [, $token] = $this->invite();
@@ -173,8 +165,6 @@ class InvitationOnboardingTest extends TestCase
         $this->post(route('login'), ['email' => self::INVITED, 'password' => 'password'])
             ->assertRedirect(route('invitations.show', $token));
     }
-
-    // ---- Registrarse desde la invitación ----
 
     public function test_el_registro_desde_la_invitacion_muestra_el_correo_fijo(): void
     {
@@ -246,7 +236,6 @@ class InvitationOnboardingTest extends TestCase
 
         $user = User::firstWhere('email', self::INVITED);
 
-        // El enlace se abre en otro navegador: ninguna sesión compartida.
         $this->post(route('logout'));
         $this->flushSession();
 
@@ -279,12 +268,9 @@ class InvitationOnboardingTest extends TestCase
         $user = User::firstWhere('email', 'maria@finlia.test');
         $this->assertTrue($user->households()->where('name', 'Mi hogar')->exists());
 
-        // Confirmar no le añade nada: ya tenía hogar.
         $this->get($this->verificationUrl($user));
         $this->assertSame(1, $user->fresh()->households()->count());
     }
-
-    // ---- Aceptar sigue exigiendo correo verificado ----
 
     public function test_una_cuenta_sin_verificar_no_puede_aceptar_la_invitacion(): void
     {

@@ -31,10 +31,6 @@ class InvitationController extends Controller
         $user = $request->user();
         $acceptable = $invitation->isPending() && ! $invitation->isExpired();
 
-        // Sin sesión, la invitación se recuerda para el paso siguiente: el
-        // login vuelve aquí (url.intended) y el registro fija el correo y no
-        // crea hogar propio. En sesión y no en la URL, para no multiplicar el
-        // token por historiales y cabeceras Referer.
         if ($user === null && $acceptable) {
             $request->session()->put('invitation_token', $token);
             $request->session()->put('url.intended', route('invitations.show', $token));

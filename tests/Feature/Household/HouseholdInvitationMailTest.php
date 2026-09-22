@@ -51,7 +51,6 @@ class HouseholdInvitationMailTest extends TestCase
         ])->assertRedirect(route('households.show', $household));
 
         Mail::assertSent(HouseholdInvitationMail::class, function (HouseholdInvitationMail $mail): bool {
-            // El correo se normaliza a minúsculas antes de guardar y enviar.
             return $mail->hasTo('amigo@finlia.test')
                 && $mail->invitedByName === 'Ronaldo'
                 && $mail->invitation->household->name === 'Hogar Correo';
@@ -106,14 +105,12 @@ class HouseholdInvitationMailTest extends TestCase
 
         Mail::assertNothingSent();
         $this->assertFalse($emailSent);
-        // La invitación se crea igual: el enlace manual sigue siendo válido.
         $this->assertSame('pending', $invitation->status->value);
     }
 
     public function test_no_se_envia_con_un_transport_que_no_entrega(): void
     {
         Mail::fake();
-        // `array` y `log` son los transports de desarrollo: no hay bandeja real.
         config(['mail.default' => 'array']);
 
         [, $household] = $this->setupHousehold();

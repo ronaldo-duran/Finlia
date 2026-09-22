@@ -26,7 +26,7 @@ class RecurringExpenseFactory extends Factory
             'category_id' => null,
             'account_id' => null,
             'name' => fake()->randomElement(['Arriendo', 'Internet', 'SOAT', 'Suscripción', 'Mantenimiento moto', 'Seguro']),
-            'amount' => fake()->numberBetween(1500, 90000) * 100, // montos COP realistas
+            'amount' => fake()->numberBetween(1500, 90000) * 100,
             'frequency' => fake()->randomElement(Frequency::cases())->value,
             'frequency_interval' => null,
             'next_date' => fake()->dateTimeBetween('now', '+45 days')->format('Y-m-d'),

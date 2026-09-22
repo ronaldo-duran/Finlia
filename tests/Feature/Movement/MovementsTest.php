@@ -72,8 +72,6 @@ class MovementsTest extends TestCase
             ->assertDontSee('Mercado único prueba');
     }
 
-    // ===== Aislamiento multi-hogar =====
-
     public function test_usuario_ajeno_no_ve_movimientos_de_otro_hogar(): void
     {
         [$owner] = $this->setupWithMovements();
@@ -86,8 +84,6 @@ class MovementsTest extends TestCase
             ->assertDontSee('Salario único prueba')
             ->assertDontSee('Mercado único prueba');
     }
-
-    // ===== Paginación "Cargar más" =====
 
     /**
      * @return array{0: User, 1: Household, 2: Account, 3: Category}
@@ -120,7 +116,6 @@ class MovementsTest extends TestCase
 
     public function test_usuario_sin_hogar_es_redirigido_a_crear_hogar(): void
     {
-        // Guard defensivo (ADR-0011): sin hogar no hay lista que mostrar.
         $user = User::factory()->create();
 
         $this->actingAs($user)->get(route('movements.index'))
@@ -131,26 +126,23 @@ class MovementsTest extends TestCase
     {
         [$owner, $household, $account, $category] = $this->setupForPagination();
 
-        // 25 gastos en 25 días distintos: "Gasto pag 0" es hoy (el más nuevo).
         foreach (range(0, 24) as $i) {
             $this->expenseOn($owner, $household, $account, $category, now()->subDays($i)->toDateString(), "Gasto pag {$i}");
         }
 
-        // Página 1: los 20 más recientes y el botón para seguir.
         $this->actingAs($owner)->get(route('movements.index'))
             ->assertOk()
             ->assertSee('Cargar más')
             ->assertSee('Gasto pag 19')
             ->assertDontSee('Gasto pag 20');
 
-        // El botón pide la misma ruta con offset y cabecera AJAX.
         $this->actingAs($owner)
             ->get(route('movements.index', ['offset' => 20]), ['X-Requested-With' => 'XMLHttpRequest'])
             ->assertOk()
             ->assertSee('Gasto pag 20')
             ->assertSee('Gasto pag 24')
             ->assertDontSee('Gasto pag 19')
-            ->assertDontSee('Cargar más'); // no queda nada más allá
+            ->assertDontSee('Cargar más');
     }
 
     public function test_la_paginacion_nunca_parte_un_dia_por_la_mitad(): void
@@ -168,9 +160,6 @@ class MovementsTest extends TestCase
             $this->expenseOn($owner, $household, $account, $category, $anteayer, "DiaC-{$n}");
         }
 
-        // El corte de los 20 caería dentro del día B: la página se extiende
-        // para cerrarlo (1 de A + 20 de B = 21) y no mezclar el día en dos
-        // pantallas.
         $this->actingAs($owner)->get(route('movements.index'))
             ->assertOk()
             ->assertSee('DiaB-20')
@@ -187,7 +176,6 @@ class MovementsTest extends TestCase
     {
         [$owner, $household, $account, $category] = $this->setupForPagination();
 
-        // 22 gastos de $10.000 (22 días) + 1 ingreso de $50.000.
         foreach (range(1, 22) as $i) {
             $this->expenseOn($owner, $household, $account, $category, now()->subDays($i)->toDateString(), "Gasto balance {$i}");
         }
@@ -201,8 +189,6 @@ class MovementsTest extends TestCase
             'description' => 'Ingreso balance',
         ]);
 
-        // El balance es del filtro completo (50.000 − 220.000), no de los
-        // 20 visibles (que dirían 150.000).
         $this->actingAs($owner)->get(route('movements.index'))
             ->assertOk()
             ->assertSee('$ 170.000,00')

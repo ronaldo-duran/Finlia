@@ -27,21 +27,15 @@ class FunnelMetrics extends Command
 
     public function handle(): int
     {
-        // Las cuentas purgadas quedan anonimizadas (AccountDeletionService) y no
-        // son registros reales del embudo.
         $reales = fn () => User::query()->where('email', 'not like', 'deleted+%');
 
         $registrados = $reales()->count();
         $verificados = $reales()->whereNotNull('email_verified_at')->count();
 
-        // Los hogares sí cuentan aunque un miembro se haya ido: si la purga deja un
-        // hogar sin dueño lo borra entero, así que los que quedan tienen gente viva.
         $hogaresConMovimientos = Household::query()
             ->where(fn ($q) => $q->has('expenses')->orHas('incomes'))
             ->count();
 
-        // Los usuarios, en cambio, solo los reales: la purga conserva los movimientos
-        // con su user_id, y sin este filtro la cifra podría superar a los registros.
         $fecha = DB::connection()->getQueryGrammar()->wrap('date');
         $usoRepetido = DB::query()->fromSub(
             DB::table('expenses')
@@ -53,8 +47,6 @@ class FunnelMetrics extends Command
             'uso',
         )->count();
 
-        // Límite conocido: la comparación se hace en PHP para no escribir aritmética
-        // de fechas distinta por motor (ADR-0036). Con miles de usuarios, pasarla a SQL.
         $ultimoGasto = DB::table('expenses')
             ->whereNull('deleted_at')
             ->selectRaw('user_id, MAX(created_at) AS ultimo')

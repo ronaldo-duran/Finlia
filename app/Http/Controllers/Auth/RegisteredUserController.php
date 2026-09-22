@@ -43,12 +43,6 @@ class RegisteredUserController extends Controller
         $invitation = $request->invitation();
 
         [$user, $household] = DB::transaction(function () use ($request, $email, $invitation): array {
-            // Anti-squatting (Plan 01, regla 6): si ese correo quedó
-            // registrado pero nunca verificado, el fantasma no puede
-            // bloquear a su dueño real. Es inerte por construcción (sin
-            // verificar no se crea ningún dato: el middleware 'verified'
-            // lo impide), así que se borra con su hogar vacío y el correo
-            // queda libre. Las FK en cascada limpian hogar y pivote.
             User::query()
                 ->where('email', $email)
                 ->whereNull('email_verified_at')
@@ -57,16 +51,10 @@ class RegisteredUserController extends Controller
             $user = User::create([
                 'name' => $request->string('name')->trim()->toString(),
                 'email' => $email,
-                // El cast 'hashed' del modelo cifra el valor.
                 'password' => $request->string('password')->toString(),
-                // Fecha de nacimiento validada como 18+ (Plan 04, ADR-0032).
                 'birth_date' => $request->date('birth_date')->toDateString(),
             ]);
 
-            // Todo usuario arranca con un hogar personal propio (Épica 2),
-            // así la app siempre tiene un hogar activo operativo. Salvo quien
-            // viene de una invitación: su hogar es el invitado, y entra a él
-            // al confirmar el correo (ADR-0039).
             $household = $invitation === null
                 ? $this->householdService->createHousehold(ownerId: $user->id, name: 'Mi hogar')
                 : null;
@@ -74,8 +62,6 @@ class RegisteredUserController extends Controller
             return [$user, $household];
         });
 
-        // El correo sale DESPUÉS del commit: un SMTP lento no debe sostener
-        // la transacción abierta (y si falla, el registro ya quedó bien).
         $user->sendEmailVerificationNotification();
 
         Auth::login($user);
@@ -87,8 +73,6 @@ class RegisteredUserController extends Controller
         }
 
         if ($invitation !== null) {
-            // La invitación ya cumplió su papel en el registro; tras confirmar
-            // el correo se entra al panel, no de vuelta a la invitación.
             $request->session()->forget(['invitation_token', 'url.intended']);
 
             return redirect()

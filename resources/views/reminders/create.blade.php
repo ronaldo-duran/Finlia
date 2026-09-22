@@ -1,8 +1,6 @@
 @extends('layouts.app', ['title' => 'Nuevo recordatorio'])
 
 @php
-    // Frecuencias con sentido para un aviso suelto (sin semanal/custom:
-    // eso es un gasto recurrente de la Épica 5). Igual que en el índice.
     $frequencies = collect([
         App\Enums\Frequency::Monthly,
         App\Enums\Frequency::Quarterly,
@@ -30,7 +28,6 @@
                         <x-form-input label="De qué te recuerda" name="title" required
                             placeholder="Ej: Tecnomecánica, Renovar pasaporte" />
 
-                        {{-- Input de dinero real con formato en vivo (UI_DESIGN §4). --}}
                         <div class="mb-3">
                             <label for="amount" class="form-label fw-semibold">
                                 Cuánto cuesta <span class="text-muted fw-normal">(opcional)</span>

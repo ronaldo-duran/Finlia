@@ -61,7 +61,6 @@ class BugReportTest extends TestCase
 
         $this->assertSame(ContactReason::Bug, $mensaje->reason);
         $this->assertSame($usuario->id, $mensaje->user_id);
-        // El nombre y el correo salen de la cuenta, no del formulario.
         $this->assertSame($usuario->email, $mensaje->email);
         $this->assertSame($usuario->name, $mensaje->name);
 

@@ -53,8 +53,6 @@ class Debt extends Model
             'status' => DebtStatus::class,
             'interest_rate_type' => InterestRateType::class,
             'due_day' => 'integer',
-            // date:Y-m-d — sin él el grammar serializa con hora y SQLite
-            // guarda "2026-09-05 00:00:00" en una columna DATE.
             'start_date' => 'date:Y-m-d',
             'end_date' => 'date:Y-m-d',
         ];

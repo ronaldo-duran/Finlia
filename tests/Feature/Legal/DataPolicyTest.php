@@ -46,9 +46,6 @@ class DataPolicyTest extends TestCase
      */
     public function test_informa_lo_que_la_ley_exige(): void
     {
-        // Texto plano y espacios normalizados: en el HTML la frase se parte en
-        // dos líneas con un <strong> en medio, y comprobar la cadena literal
-        // haría que el test dependiera del ancho del renglón, no del contenido.
         $texto = preg_replace('/\s+/u', ' ', strip_tags(
             $this->get(route('data.policy'))->assertOk()->getContent()
         ));

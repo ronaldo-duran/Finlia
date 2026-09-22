@@ -21,9 +21,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table): void {
             $table->date('birth_date')->nullable()->after('password');
-            // Valor = slug del enum ColombianRegion (p. ej. 'cundinamarca').
             $table->string('region', 40)->nullable()->after('birth_date');
-            // Valor del enum Gender o NULL = "prefiero no decirlo".
             $table->string('gender', 20)->nullable()->after('region');
         });
     }

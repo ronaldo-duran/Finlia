@@ -57,8 +57,6 @@
         </div></div>
     @endif
 
-    {{-- Datos de tarjeta de crédito (Épica 6, ADR-0002).
-         Nunca se pide ni se guarda número completo, CVV ni PIN. --}}
     @if ($account->type === \App\Enums\AccountType::CreditCard)
         @php $card = $account->creditCard; @endphp
         <div class="card border-0 mb-4">
@@ -95,7 +93,6 @@
                         @if ($uso > 30) Por encima del 30 % suele penalizar tu historial crediticio. @endif
                     </div>
                 @endif
-
                 <form method="POST" action="{{ route('accounts.credit-card.update', $account) }}" class="mt-3">
                     @csrf
                     @method('PUT')
@@ -137,7 +134,6 @@
             </div>
         </div>
     @endif
-
     <div class="card border-0">
         <div class="card-header border-0 bg-transparent fw-semibold"><i class="bi bi-clock-history me-1"></i> Movimientos recientes</div>
         @php

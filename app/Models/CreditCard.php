@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Atributos propios de una tarjeta de crédito (Épica 6), complementarios a
  * su cuenta con type=credit_card (ADR-0002).
  *
- * ⚠️ Este modelo NO conoce el número de tarjeta, el CVV ni el PIN: esas
+ * Este modelo NO conoce el número de tarjeta, el CVV ni el PIN: esas
  * columnas no existen y no deben añadirse (docs/SECURITY.md §4).
  */
 #[Fillable(['credit_limit', 'statement_date', 'payment_due_date', 'annual_fee', 'monthly_fee'])]

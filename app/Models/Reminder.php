@@ -40,8 +40,6 @@ class Reminder extends Model
             'amount' => 'decimal:2',
             'frequency' => Frequency::class,
             'status' => ReminderStatus::class,
-            // date:Y-m-d — sin él, el grammar serializa con hora y SQLite
-            // guarda "2026-09-05 00:00:00" en una columna DATE.
             'due_date' => 'date:Y-m-d',
         ];
     }

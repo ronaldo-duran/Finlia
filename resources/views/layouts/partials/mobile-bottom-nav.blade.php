@@ -1,8 +1,3 @@
-{{--
-    Barra inferior móvil: Panel, Movimientos, Presupuesto, Más.
-    Cuatro destinos, cuatro columnas (el FAB vive fuera de la barra, en
-    partials/fab.blade.php). Solo visible por debajo de lg.
---}}
 <nav class="bottom-nav d-lg-none" aria-label="Navegación principal">
     <a href="{{ route('dashboard') }}"
        class="bottom-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">

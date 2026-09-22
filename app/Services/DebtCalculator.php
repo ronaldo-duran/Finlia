@@ -56,10 +56,6 @@ class DebtCalculator
             ? $principal / $months
             : $principal * $i / (1 - (1 + $i) ** (-$months));
 
-        // Se redondea al céntimo HACIA ARRIBA, no al más cercano: con el
-        // redondeo normal la cuota se queda unos céntimos corta y haría falta
-        // un mes extra para saldar el resto, así que el simulador diría "36
-        // cuotas" y la proyección "37 meses". Los bancos hacen lo mismo.
         return ceil($cuota * 100) / 100;
     }
 
@@ -99,7 +95,6 @@ class DebtCalculator
 
         $i = $this->monthlyRate($annualRatePercent);
 
-        // Si la cuota no cubre el interés del primer mes, el saldo crece.
         if ($payment <= $balance * $i) {
             return [...$vacio, 'never_ends' => true];
         }
@@ -107,8 +102,6 @@ class DebtCalculator
         $interes = 0.0;
         $meses = 0;
 
-        // Epsilon de medio céntimo: un residuo menor que eso es ruido de
-        // redondeo, no una cuota más.
         while ($balance > 0.005 && $meses < self::MAX_MONTHS) {
             $delMes = round($balance * $i, 2);
             $interes += $delMes;

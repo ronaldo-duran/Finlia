@@ -27,7 +27,7 @@ class AdultBirthDate implements ValidationRule
         try {
             $fecha = Carbon::parse($value)->startOfDay();
         } catch (Throwable) {
-            return; // formato inválido: que lo reporte la regla 'date'
+            return;
         }
 
         $hoy = today()->startOfDay();
@@ -44,7 +44,6 @@ class AdultBirthDate implements ValidationRule
             return;
         }
 
-        // Inclusiva: quien cumple 18 años HOY entra.
         if ($fecha->greaterThan($hoy->copy()->subYears(18))) {
             $fail('Debes ser mayor de edad (18 años) para usar Finlia.');
         }

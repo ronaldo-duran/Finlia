@@ -24,8 +24,6 @@ return new class extends Migration
         });
 
         Schema::table('debts', function (Blueprint $table) {
-            // Número de cuotas pactadas. El tope depende del tipo de deuda
-            // (ver App\Enums\DebtType::maxTermMonths()).
             $table->unsignedSmallInteger('term_months')->nullable()->after('planned_payment');
         });
     }

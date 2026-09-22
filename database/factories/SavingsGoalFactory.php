@@ -22,7 +22,7 @@ class SavingsGoalFactory extends Factory
      */
     public function definition(): array
     {
-        $target = fake()->numberBetween(5000, 400000) * 100; // montos COP realistas
+        $target = fake()->numberBetween(5000, 400000) * 100;
 
         return [
             'household_id' => Household::factory(),
@@ -31,7 +31,7 @@ class SavingsGoalFactory extends Factory
                 'Computador nuevo', 'SOAT y papeles del carro', 'Vacaciones de diciembre',
             ]),
             'target_amount' => $target,
-            'current_amount' => 0, // derivado: lo fija SavingsGoalService al aportar (ADR-0025)
+            'current_amount' => 0,
             'target_date' => fake()->dateTimeBetween('+1 month', '+2 years')->format('Y-m-d'),
             'priority' => fake()->randomElement(SavingsGoalPriority::cases())->value,
             'status' => SavingsGoalStatus::Active->value,

@@ -119,8 +119,6 @@ class MarketingController extends Controller
     {
         $dominioApp = config('finlia.domains.app');
 
-        // Sin dominios configurados (local) todo es marketing: es el único
-        // host que hay, y bloquearlo impediría probar el rastreo.
         if ($dominioApp === null) {
             return true;
         }

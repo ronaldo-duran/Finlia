@@ -29,28 +29,20 @@ return new class extends Migration
             $table->string('email', 255);
             $table->text('body');
 
-            // Nulo cuando escribe alguien sin cuenta desde el sitio público.
             $table->foreignId('user_id')
                 ->nullable()
                 ->comment('Autor, si tenía sesión iniciada')
                 ->constrained()
                 ->nullOnDelete();
 
-            // Solo se guarda en envíos ANÓNIMOS, donde es el único rastro para
-            // frenar abuso. Con sesión iniciada basta user_id, y guardarla
-            // además sería recolectar de más (Ley 1581, minimización).
             $table->string('ip_address', 45)
                 ->nullable()
                 ->comment('Solo en envíos sin sesión');
 
-            // Contexto técnico de un reporte de error: versión, ruta desde la
-            // que se reportó, navegador y viewport. Se captura solo, para que
-            // "no me funciona" llegue siendo accionable.
             $table->json('context')->nullable();
 
             $table->timestamps();
 
-            // Listado por motivo y fecha, que es como se leen.
             $table->index(['reason', 'created_at']);
         });
     }

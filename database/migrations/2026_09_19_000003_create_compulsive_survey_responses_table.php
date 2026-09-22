@@ -33,16 +33,14 @@ return new class extends Migration
                 ->constrained('expenses')
                 ->cascadeOnDelete();
 
-            $table->string('planned', 10);   // App\Enums\CompulsivePlanned
-            $table->string('kind', 15);      // App\Enums\CompulsiveKind
-            $table->unsignedTinyInteger('mood');   // 1..5 (App\Enums\CompulsiveMood)
-            $table->string('trigger', 20);   // App\Enums\CompulsiveTrigger
+            $table->string('planned', 10);
+            $table->string('kind', 15);
+            $table->unsignedTinyInteger('mood');
+            $table->string('trigger', 20);
 
             $table->timestamps();
 
-            // Conteo mensual por hogar (freemium: 5/mes).
             $table->index(['household_id', 'created_at']);
-            // Una encuesta por gasto: nadie se contesta dos veces la misma.
             $table->unique('expense_id');
         });
     }

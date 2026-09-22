@@ -26,10 +26,6 @@ use Illuminate\Support\Facades\DB;
  */
 class SavingsGoalService
 {
-    // ---------------------------------------------------------------
-    // Altas y edición
-    // ---------------------------------------------------------------
-
     /**
      * Crea una meta. El ahorrado arranca en cero, no lo teclea el usuario
      * (ADR-0025): lo que ya se tenía se registra como aporte inicial.
@@ -58,10 +54,6 @@ class SavingsGoalService
 
         return $goal;
     }
-
-    // ---------------------------------------------------------------
-    // Aportes y retiros
-    // ---------------------------------------------------------------
 
     /**
      * Registra un aporte o retiro y recalcula lo ahorrado, todo en una
@@ -115,16 +107,12 @@ class SavingsGoalService
      */
     public function recalculateAmount(SavingsGoal $goal): SavingsGoal
     {
-        // La suma se hace en SQL: antes se materializaba una fila por aporte
-        // solo para sumarlas en PHP.
         $saved = (float) $goal->contributions()
             ->selectRaw("COALESCE(SUM(CASE type WHEN 'deposit' THEN amount ELSE -amount END), 0) as signed_total")
             ->value('signed_total');
 
         $goal->current_amount = round(max(0.0, $saved), 2);
 
-        // El estado solo se mueve entre "activa" y "lograda": pausada y
-        // archivada mantienen su estado, que es información del usuario.
         if ((float) $goal->current_amount >= (float) $goal->target_amount
             && $goal->status === SavingsGoalStatus::Active) {
             $goal->status = SavingsGoalStatus::Completed;
@@ -137,10 +125,6 @@ class SavingsGoalService
 
         return $goal;
     }
-
-    // ---------------------------------------------------------------
-    // Estados
-    // ---------------------------------------------------------------
 
     /**
      * Pausa una meta activa: deja de comprometer su aporte mensual en el
@@ -187,10 +171,6 @@ class SavingsGoalService
         return $goal;
     }
 
-    // ---------------------------------------------------------------
-    // Cálculos
-    // ---------------------------------------------------------------
-
     /**
      * Aporte mensual recomendado (estimación, la UI lo dice): lo que falta
      * repartido en los meses que quedan hasta la fecha objetivo.
@@ -218,7 +198,6 @@ class SavingsGoalService
             return ['amount' => null, 'months' => null, 'possible' => false];
         }
 
-        // Ceil: medio mes cuenta como uno (falta 15 días → 1 mes).
         $months = max(1, (int) ceil($today->diffInMonths($targetDate)));
 
         return [
@@ -227,10 +206,6 @@ class SavingsGoalService
             'possible' => true,
         ];
     }
-
-    // ---------------------------------------------------------------
-    // Panel y seam del dinero disponible (ADR-0014)
-    // ---------------------------------------------------------------
 
     /**
      * Resumen del hogar para el panel: total ahorrado, objetivo total,
@@ -345,7 +320,6 @@ class SavingsGoalService
             return 0.0;
         }
 
-        // Aporte neto por meta desde el inicio del ciclo, en una sola consulta.
         $contributed = SavingsGoalContribution::where('household_id', $householdId)
             ->whereIn('savings_goal_id', $goals->modelKeys())
             ->where('date', '>=', Carbon::parse($since)->toDateString())
@@ -391,8 +365,6 @@ class SavingsGoalService
                     return $pa <=> $pb;
                 }
 
-                // A igual prioridad, la fecha más próxima primero; sin fecha
-                // al final.
                 $da = $a->target_date?->getTimestamp() ?? PHP_INT_MAX;
                 $db = $b->target_date?->getTimestamp() ?? PHP_INT_MAX;
 

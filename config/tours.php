@@ -2,79 +2,7 @@
 
 declare(strict_types=1);
 
-/*
-|--------------------------------------------------------------------------
-| Guías de pantalla — contenido (ADR-0045)
-|--------------------------------------------------------------------------
-| Este archivo es CONTENIDO, no lógica: es el guion de lo que la app le
-| cuenta a quien entra por primera vez a cada pantalla. Se reescribe cada
-| vez que haya una funcionalidad nueva que presentar. El motor que lo pinta
-| vive en resources/js/tour.js y no hay que tocarlo para cambiar una guía.
-|
-| ── Cómo añadir una novedad a una guía que ya existe ──────────────────────
-|
-|  1. Sube el `version` de la guía (de 3 a 4, por ejemplo).
-|  2. Añade los pasos nuevos con `'since' => 4`.
-|  3. Listo. Quien nunca la vio recibe la guía completa; quien la vio en la
-|     v3 recibe SOLO los pasos nuevos, presentados como «Novedades».
-|
-| Corolario: si solo corriges una errata o reescribes un texto, NO subas la
-| versión — no hay nada nuevo que enseñarle a quien ya la vio.
-|
-| ── Campos de una guía ───────────────────────────────────────────────────
-|
-|  title    Nombre visible (menú del avatar y catálogo del perfil).
-|  icon     Icono de Bootstrap Icons para el catálogo.
-|  summary  Una línea: qué enseña. Solo se ve en /perfil.
-|  route    Nombre de ruta EXACTO de la pantalla ('debts.index'). Admite
-|           una lista si varias rutas pintan la misma pantalla.
-|           NO uses comodines: 'debts.*' casaría también con el detalle de
-|           una deuda, donde no existe ninguno de los anclajes del listado
-|           — la guía se quedaría en un paso huérfano describiendo otra
-|           pantalla, y encima la daría por vista. Cada pantalla, su guía.
-|  link     Ruta del catálogo del perfil para ir a verla. `null` cuando la
-|           pantalla necesita un id (el detalle de una deuda, de una meta o
-|           de un hogar): entonces es obligatorio `link_hint`, que dice
-|           dónde encontrarla.
-| link_hint Solo con `link => null`: una línea corta que diga cómo llegar.
-|  version  Entero. Súbelo SOLO cuando añadas pasos.
-|  auto     true = arranca sola la primera vez que se entra a la pantalla.
-|           false = solo desde el menú del avatar o el catálogo del perfil.
-|  steps    Los pasos, en orden.
-|
-| ── Campos de un paso ────────────────────────────────────────────────────
-|
-|  since    Versión de la guía en que nació el paso. Los pasos originales
-|           llevan 1 y no se tocan nunca más. Un paso con `since` MAYOR
-|           que el `version` de la guía está escrito pero sin publicar:
-|           no lo ve nadie. Así puedes dejar redactada la guía de la
-|           próxima entrega y publicarla luego subiendo la versión.
-|  anchor   Selector CSS del elemento que ilumina, o null para un paso
-|           centrado (intro y cierre). ¡Ojo! Si el elemento NO está en
-|           pantalla —porque el usuario aún no tiene datos, o porque es la
-|           barra de escritorio y está en el móvil—, el paso SE SALTA SOLO.
-|           Eso es deliberado: así una guía nunca señala un vacío. Los pasos
-|           que deben verse siempre van sin `anchor`.
-|  title    Titular corto. Va como encabezado del globo.
-|  body     Texto. Admite **negrita** y nada más — llega escapado al
-|           navegador, así que no hay forma de colar HTML aquí.
-|  list     Opcional: viñetas cortas. Mismo trato que `body`.
-|
-| Al añadir un `anchor` nuevo, marca el elemento en su Blade con
-| data-tour="..." en vez de apoyarte en clases de Bootstrap: las clases
-| cambian con cualquier retoque de maquetación y el paso se saltaría en
-| silencio.
-*/
-
 return [
-
-    /*
-    |----------------------------------------------------------------------
-    | Panel — la guía de bienvenida
-    |----------------------------------------------------------------------
-    | Es la única que se encuentra alguien recién registrado, así que carga
-    | con explicar de qué va la app entera. Las demás dan por sabido esto.
-    */
     'panel' => [
         'title' => 'El Panel',
         'icon' => 'bi-speedometer2',
@@ -87,7 +15,7 @@ return [
             [
                 'since' => 1,
                 'anchor' => null,
-                'title' => 'Te presento Finlia 👋',
+                'title' => 'Te presento Finlia',
                 'body' => 'Son **40 segundos**. Te muestro lo que hay en esta pantalla y dónde está cada cosa. Puedes salirte cuando quieras.',
             ],
             [
@@ -134,11 +62,6 @@ return [
         ],
     ],
 
-    /*
-    |----------------------------------------------------------------------
-    | Movimientos
-    |----------------------------------------------------------------------
-    */
     'movimientos' => [
         'title' => 'Movimientos',
         'icon' => 'bi-arrow-left-right',
@@ -174,12 +97,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Presupuestos
-    |----------------------------------------------------------------------
-    */
     'presupuestos' => [
         'title' => 'Presupuestos',
         'icon' => 'bi-cash-stack',
@@ -215,12 +132,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Gastos recurrentes
-    |----------------------------------------------------------------------
-    */
     'recurrentes' => [
         'title' => 'Gastos recurrentes',
         'icon' => 'bi-arrow-repeat',
@@ -250,12 +161,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Deudas
-    |----------------------------------------------------------------------
-    */
     'deudas' => [
         'title' => 'Deudas',
         'icon' => 'bi-credit-card-2-front',
@@ -295,12 +200,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Cuentas por cobrar (Épica 15)
-    |----------------------------------------------------------------------
-    */
     'cuentas-por-cobrar' => [
         'title' => 'Cuentas por cobrar',
         'icon' => 'bi-inbox-fill',
@@ -331,11 +230,6 @@ return [
         ],
     ],
 
-    /*
-    |----------------------------------------------------------------------
-    | Metas de ahorro
-    |----------------------------------------------------------------------
-    */
     'metas' => [
         'title' => 'Metas de ahorro',
         'icon' => 'bi-piggy-bank',
@@ -365,12 +259,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Reportes
-    |----------------------------------------------------------------------
-    */
     'reportes' => [
         'title' => 'Reportes',
         'icon' => 'bi-bar-chart-line',
@@ -406,12 +294,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Recordatorios
-    |----------------------------------------------------------------------
-    */
     'recordatorios' => [
         'title' => 'Recordatorios',
         'icon' => 'bi-bell',
@@ -441,12 +323,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Cuentas
-    |----------------------------------------------------------------------
-    */
     'cuentas' => [
         'title' => 'Cuentas',
         'icon' => 'bi-wallet',
@@ -476,12 +352,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Hogares
-    |----------------------------------------------------------------------
-    */
     'hogares' => [
         'title' => 'Hogares',
         'icon' => 'bi-house-heart',
@@ -511,13 +381,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Ingresos esperados
-    |----------------------------------------------------------------------
-    | La pantalla menos evidente de la app: no registra plata, la proyecta.
-    */
     'ingresos-esperados' => [
         'title' => 'Ingresos esperados',
         'icon' => 'bi-graph-up-arrow',
@@ -547,12 +410,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Categorías
-    |----------------------------------------------------------------------
-    */
     'categorias' => [
         'title' => 'Categorías',
         'icon' => 'bi-tags',
@@ -576,14 +433,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Registrar un gasto
-    |----------------------------------------------------------------------
-    | La pantalla más usada de la app, y la primera que abre casi todo el
-    | mundo desde el «+».
-    */
     'registrar-gasto' => [
         'title' => 'Registrar un gasto',
         'icon' => 'bi-dash-circle',
@@ -613,12 +462,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Transferencias
-    |----------------------------------------------------------------------
-    */
     'transferencia' => [
         'title' => 'Transferencias',
         'icon' => 'bi-arrow-left-right',
@@ -642,14 +485,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Detalle de una deuda
-    |----------------------------------------------------------------------
-    | Pantalla propia: registrar pagos y ver la proyección no se parece en
-    | nada al listado. Sin `link` porque la URL necesita el id de la deuda.
-    */
     'deuda' => [
         'title' => 'Una deuda por dentro',
         'icon' => 'bi-cash-coin',
@@ -680,12 +515,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Detalle de una meta de ahorro
-    |----------------------------------------------------------------------
-    */
     'meta' => [
         'title' => 'Una meta por dentro',
         'icon' => 'bi-flag',
@@ -716,12 +545,6 @@ return [
             ],
         ],
     ],
-
-    /*
-    |----------------------------------------------------------------------
-    | Detalle de un hogar
-    |----------------------------------------------------------------------
-    */
     'hogar' => [
         'title' => 'Un hogar por dentro',
         'icon' => 'bi-person-plus',
@@ -752,5 +575,4 @@ return [
             ],
         ],
     ],
-
 ];

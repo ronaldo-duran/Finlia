@@ -34,8 +34,6 @@ class TourController extends Controller
      */
     public function store(StoreTourViewRequest $request, string $tour): Response
     {
-        // La clave llega en la URL: solo valen las del registro. Una inventada
-        // es un 404, no una fila basura en la tabla (patrón de ADR-0024).
         abort_if($this->tours->find($tour) === null, 404);
 
         $this->tours->markSeen(
@@ -57,14 +55,9 @@ class TourController extends Controller
     {
         $user = $request->user();
 
-        // Asignación directa y no `update()`: `tours_enabled` no es fillable
-        // justamente para que ningún formulario de la app pueda tocarla de
-        // refilón. Aquí es la intención explícita de la petición.
         $user->tours_enabled = $request->boolean('enabled');
         $user->save();
 
-        // Desde el globo llega por fetch (204, la página no se mueve); desde
-        // el interruptor de /perfil, por formulario.
         return $request->expectsJson()
             ? response()->noContent()
             : back()->with('status', $user->tours_enabled

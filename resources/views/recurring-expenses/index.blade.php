@@ -13,7 +13,6 @@
     $despues = $upcoming->where('days_remaining', '>', 7);
     $pausados = $all->where('is_active', false);
 
-    // Grupos de la sección "Próximas obligaciones" (solo los no vacíos).
     $groups = [
         ['label' => 'Vencidas', 'items' => $vencidas, 'icon' => 'bi-exclamation-octagon'],
         ['label' => 'Vencen esta semana', 'items' => $estaSemana, 'icon' => 'bi-bell'],
@@ -36,7 +35,6 @@
         <a href="{{ route('budgets.index') }}">cuánto puedes gastar</a>.
     </p>
 
-    {{-- Avisos (el detalle completo vive en "Próximas obligaciones") --}}
     @if ($vencidas->isNotEmpty())
         <div class="alert alert-danger d-flex gap-2" role="alert">
             <i class="bi bi-exclamation-octagon-fill fs-5"></i>
@@ -56,7 +54,6 @@
     @endif
 
     <div class="row g-3">
-        {{-- Columna: alta --}}
         <div class="col-12 col-lg-4">
             <div class="card border-0">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -67,8 +64,6 @@
                         @csrf
                         <x-form-input label="Nombre" name="name" required placeholder="Ej: SOAT, Arriendo" />
 
-                        {{-- Input de dinero real con formato en vivo (UI_DESIGN §4):
-                             x-form-input no propaga data-*, va como HTML crudo. --}}
                         <div class="mb-3">
                             <label for="amount" class="form-label fw-semibold">
                                 Monto estimado <span class="text-danger" aria-hidden="true">*</span>
@@ -82,18 +77,14 @@
                             @enderror
                             <div class="form-text">Monto en COP por cada pago. Usa la coma para decimales.</div>
                         </div>
-
                         <x-form-select label="Frecuencia" name="frequency" required
                             :options="App\Enums\Frequency::options()" placeholder="Selecciona…" />
-
                         <div id="interval-wrapper" class="d-none">
                             <x-form-input label="Cada cuántos días" name="frequency_interval" type="number"
                                 placeholder="45" help="Solo para frecuencia personalizada (1 a 3650 días)." />
                         </div>
-
                         <x-form-input label="Próxima fecha de pago" name="next_date" type="date" required
                             help="Puede ser una fecha pasada: la obligación queda marcada como vencida." />
-
                         <details class="mb-3">
                             <summary class="small text-muted">Cuenta y notas</summary>
                             <div class="pt-3">
@@ -111,12 +102,10 @@
                                 </div>
                             </div>
                         </details>
-
                         <div class="mb-3">
                             <x-form-select label="Categoría" name="category_id"
                                 :options="$categories" placeholder="Sin categoría" />
                         </div>
-
                         <input type="hidden" name="is_active" value="0">
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" name="is_active" value="1"
@@ -136,7 +125,6 @@
                                 Se debita en la madrugada del día del vencimiento.
                             </div>
                         </div>
-
                         <button type="submit" class="btn btn-finlia">
                             <i class="bi bi-check-lg me-1"></i> Añadir
                         </button>
@@ -145,13 +133,11 @@
             </div>
         </div>
 
-        {{-- Columna: próximas obligaciones --}}
         <div class="col-12 col-lg-8">
             <div class="card border-0" data-tour="recurring-upcoming">
                 <div class="card-header border-0 bg-transparent fw-semibold">
                     <i class="bi bi-calendar-event me-1"></i> Próximas obligaciones
                 </div>
-
                 @if ($upcoming->isEmpty())
                     <div class="card-body text-center text-muted py-5">
                         <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
@@ -239,7 +225,6 @@
         </div>
     </div>
 
-    {{-- Pausados: no cuentan para el cálculo ni generan avisos --}}
     @if ($pausados->isNotEmpty())
         <div class="card border-0 mt-3">
             <div class="card-header border-0 bg-transparent fw-semibold">
@@ -285,7 +270,6 @@
         </div>
     @endif
 
-    {{-- Modal de edición (se rellena vía JS con data-*, sin interpolar input en código JS) --}}
     <div class="modal fade" id="editRecurringModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -299,7 +283,6 @@
                     <div class="modal-body">
                         <x-form-input label="Nombre" name="name" id="edit-re-name" required />
 
-                        {{-- Input de dinero real con formato en vivo (UI_DESIGN §4). --}}
                         <div class="mb-3">
                             <label for="edit-re-amount" class="form-label fw-semibold">
                                 Monto estimado <span class="text-danger" aria-hidden="true">*</span>
@@ -311,28 +294,22 @@
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
-
                         <x-form-select label="Frecuencia" name="frequency" id="edit-re-frequency" required
                             :options="App\Enums\Frequency::options()" placeholder="Selecciona…" />
-
                         <div id="edit-interval-wrapper" class="d-none">
                             <x-form-input label="Cada cuántos días" name="frequency_interval" type="number"
                                 id="edit-re-interval" help="Solo para frecuencia personalizada." />
                         </div>
-
                         <x-form-input label="Próxima fecha de pago" name="next_date" type="date"
                             id="edit-re-next" required />
-
                         <x-form-select label="Categoría" name="category_id" id="edit-re-category"
                             :options="$categories" placeholder="Sin categoría" />
                         <x-form-select label="Cuenta con la que se paga" name="account_id" id="edit-re-account"
                             :options="$accounts" placeholder="Sin cuenta asociada" />
-
                         <div class="mb-3">
                             <label for="edit-re-notes" class="form-label fw-semibold">Notas</label>
                             <textarea id="edit-re-notes" name="notes" rows="2" class="form-control"></textarea>
                         </div>
-
                         <input type="hidden" name="is_active" value="0">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="is_active" value="1" id="edit-re-active">
@@ -356,37 +333,28 @@
             </div>
         </div>
     </div>
-
     @include('recurring-expenses._mark-paid-modal')
 @endsection
-
 @push('scripts')
     <script>
         (function () {
-            // El intervalo "cada N días" solo aplica a la frecuencia personalizada:
-            // se muestra/oculta en el alta y en el modal, en los dos sentidos.
             function syncInterval(selectId, wrapperId) {
                 var select = document.getElementById(selectId);
                 var wrapper = document.getElementById(wrapperId);
                 if (!select || !wrapper) return;
-
                 var update = function () {
                     wrapper.classList.toggle('d-none', select.value !== 'custom');
                 };
                 select.addEventListener('change', update);
                 update();
             }
-
             syncInterval('frequency', 'interval-wrapper');
             syncInterval('edit-re-frequency', 'edit-interval-wrapper');
-
-            // Rellena el modal de edición desde los data-* del botón (dato, no código).
             var modal = document.getElementById('editRecurringModal');
             if (!modal) return;
             modal.addEventListener('show.bs.modal', function (event) {
                 var btn = event.relatedTarget;
                 if (!btn) return;
-
                 document.getElementById('edit-re-name').value = btn.getAttribute('data-name');
                 document.getElementById('edit-re-amount').value =
                     window.FinliaMoney.fromNumeric(btn.getAttribute('data-amount'));
@@ -395,14 +363,11 @@
                 document.getElementById('edit-re-notes').value = btn.getAttribute('data-notes') || '';
                 document.getElementById('edit-re-active').checked = btn.getAttribute('data-active') === '1';
                 document.getElementById('edit-re-auto').checked = btn.getAttribute('data-auto') === '1';
-
                 var frequency = document.getElementById('edit-re-frequency');
                 frequency.value = btn.getAttribute('data-frequency') || '';
                 frequency.dispatchEvent(new Event('change'));
-
                 document.getElementById('edit-re-category').value = btn.getAttribute('data-category') || '';
                 document.getElementById('edit-re-account').value = btn.getAttribute('data-account') || '';
-
                 document.getElementById('editRecurringForm').action =
                     '{{ route('recurring-expenses.update', '__ID__') }}'.replace('__ID__', btn.getAttribute('data-id'));
             });

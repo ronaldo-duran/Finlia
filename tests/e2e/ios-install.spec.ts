@@ -63,8 +63,6 @@ test.describe('Instalación en iOS (PWA)', () => {
 
   test('no se ofrece dentro de la app ya instalada', async ({ browser }) => {
     const { context, page } = await panelCon(browser, UA.iphoneSafari, () => {
-      // `navigator.standalone === true` es como iOS marca que la página corre
-      // desde el icono del inicio y no dentro de Safari.
       Object.defineProperty(window.navigator, 'standalone', { value: true });
     });
 
@@ -104,7 +102,6 @@ test.describe('Instalación en iOS (PWA)', () => {
     await page.locator('#iosInstallOpen').click();
     await expect(page.locator('#iosInstallModal')).toBeVisible();
 
-    // Los pasos de Safari aquí no valen: su "añadir" crea un marcador.
     await expect(page.locator('#iosInstallStepsSafari')).toBeHidden();
     await expect(page.locator('#iosInstallStepsOtro')).toBeVisible();
     await expect(page.getByText('solo', { exact: false }).first()).toBeVisible();
@@ -140,8 +137,6 @@ test.describe('Instalación en iOS (PWA)', () => {
 
       const margenDerecho = banner!.x + banner!.width - (equis!.x + equis!.width);
 
-      // 12px es el padding del banner; se admite algo de holgura por el
-      // redondeo del layout, pero no un hueco estructural.
       expect(margenDerecho).toBeLessThanOrEqual(20);
 
       await context.close();

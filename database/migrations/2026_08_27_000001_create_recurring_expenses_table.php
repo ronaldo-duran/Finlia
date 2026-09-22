@@ -20,18 +20,12 @@ return new class extends Migration
         Schema::create('recurring_expenses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
-            // Categoría de tipo expense (opcional).
             $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
-            // Cuenta con la que se paga normalmente (opcional; si existe,
-            // "Marcar pagado" registra el gasto real sobre ella).
             $table->foreignId('account_id')->nullable()->constrained('accounts')->nullOnDelete();
-            $table->string('name'); // "SOAT", "Arriendo", "Netflix"…
-            // DECIMAL(15,2) (ADR-0006). Monto estimado por ocurrencia.
+            $table->string('name');
             $table->decimal('amount', 15, 2);
-            $table->string('frequency'); // enum App\Enums\Frequency
-            // Cada N días. Solo para frecuencia personalizada.
+            $table->string('frequency');
             $table->unsignedSmallInteger('frequency_interval')->nullable();
-            // Próxima fecha de pago. Puede ser pasada (= obligación vencida).
             $table->date('next_date');
             $table->boolean('is_active')->default(true);
             $table->text('notes')->nullable();

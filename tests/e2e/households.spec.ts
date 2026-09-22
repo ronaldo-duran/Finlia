@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 
-// La sesión del usuario demo llega por storageState (proyecto setup).
 test.describe('Hogares (Épica 2)', () => {
 
   test('lista el hogar demo sembrado', async ({ page }) => {
@@ -21,7 +20,6 @@ test.describe('Hogares (Épica 2)', () => {
 
     await expect(page).toHaveURL(new RegExp('/hogares/\\d+$'));
     await expect(page.getByText('Hogar "Hogar Playwright" creado.')).toBeVisible();
-    // Al crear un hogar pasa a ser el activo del selector.
     await expect(page.locator('.household-selector-btn')).toContainText('Hogar Playwright');
   });
 });
