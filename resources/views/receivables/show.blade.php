@@ -33,7 +33,6 @@
         </a>
     </div>
 
-    {{-- Cifras --}}
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-4">
             <div class="card border-0 h-100"><div class="card-body">
@@ -65,7 +64,6 @@
         </div>
     </div>
 
-    {{-- Progreso --}}
     <div class="card border-0 mb-4"><div class="card-body">
         <div class="d-flex justify-content-between small mb-1">
             <span class="text-muted">Progreso de cobro</span>
@@ -82,7 +80,6 @@
     </div></div>
 
     <div class="row g-3">
-        {{-- Historial de cobros --}}
         <div class="col-12 col-lg-7">
             <div class="card border-0">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -124,7 +121,6 @@
             </div>
         </div>
 
-        {{-- Registrar cobro --}}
         <div class="col-12 col-lg-5">
             <div class="card border-0 mb-3">
                 <div class="card-header border-0 bg-transparent fw-semibold">
@@ -196,10 +192,6 @@
                 </div>
             </div>
 
-            {{-- Eliminar. El nombre viaja en `data-confirm` (atributo, dato) y
-                 lo lee el listener de app.js, nunca dentro de un manejador en
-                 línea: ahí el navegador decodifica las entidades antes de
-                 compilar el JS y la comilla escaparía del literal. --}}
             <form method="POST" action="{{ route('receivables.destroy', $receivable) }}"
                   data-confirm="¿Eliminar la cuenta por cobrar «{{ $receivable->name }}»?">
                 @csrf

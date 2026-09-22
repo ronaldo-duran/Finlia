@@ -1,10 +1,3 @@
-{{--
-    Alta y edición de una cuenta por cobrar. Espejo simplificado de la
-    deuda: aquí no hay tasa, ni cuota, ni plazo. Un importe, un deudor y
-    (opcional) una fecha tentativa de cobro.
-
-    El dinero usa `data-money-input` (docs/UI_DESIGN.md), nunca type="number".
---}}
 @php($receivable = $receivable ?? null)
 
 <h2 class="h6 text-muted text-uppercase mb-2">1. Quién te debe</h2>

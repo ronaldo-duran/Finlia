@@ -447,7 +447,6 @@ Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', '
     Route::post('deudas/{debt}/refinanciacion', [DebtRefinancingController::class, 'store'])
         ->name('debts.refinancings.store');
 
-    // ---- Épica 15: cuentas por cobrar ----
     Route::get('cuentas-por-cobrar', [ReceivableController::class, 'index'])
         ->name('receivables.index');
     Route::get('cuentas-por-cobrar/registrar', [ReceivableController::class, 'create'])

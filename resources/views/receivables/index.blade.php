@@ -27,7 +27,6 @@
     <div class="row g-3">
         <div class="col-12">
 
-            {{-- Resumen --}}
             <div class="row g-3 mb-3">
                 <div class="col-12 col-sm-6">
                     <div class="card border-0 h-100"><div class="card-body">
@@ -57,7 +56,6 @@
                 </div>
             </div>
 
-            {{-- Listado --}}
             @forelse ($receivables as $receivable)
                 @php
                     $due = $receivable->due_date;
@@ -107,7 +105,6 @@
                 </div></div>
             @endforelse
 
-            {{-- Historial de saldadas --}}
             @if ($settled->isNotEmpty())
                 <h2 class="h6 text-muted text-uppercase mt-4 mb-2">Ya cerradas</h2>
                 @foreach ($settled as $receivable)

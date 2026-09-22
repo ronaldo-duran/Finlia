@@ -19,9 +19,6 @@ return new class extends Migration
         Schema::create('receivables', function (Blueprint $table) {
             $table->id();
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
-            // Deudor: puede no estar en el sistema, así que el nombre es
-            // texto libre. `debtor_user_id` solo aplica si es otro miembro
-            // del hogar (p. ej. "mi hija me está pagando el préstamo").
             $table->string('debtor_name');
             $table->foreignId('debtor_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('name');
@@ -30,9 +27,6 @@ return new class extends Migration
             $table->decimal('current_balance', 15, 2);
             $table->string('currency', 3)->default('COP');
             $table->string('status')->default('pending');
-            // Fecha tentativa de cobro. Editarla deja rastro en el updated_at
-            // del registro; el histórico completo llegaría con un
-            // activity_log más adelante.
             $table->date('due_date')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();

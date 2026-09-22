@@ -399,7 +399,6 @@ class DatabaseSeeder extends Seeder
             'due_date' => $now->copy()->addWeeks(2)->toDateString(),
         ]);
 
-        // Un cobro parcial ya recibido (200.000 de 600.000): el saldo se recalcula solo.
         $service->registerPayment($prestamo, [
             'amount' => 200000,
             'date' => $now->copy()->subDays(10)->toDateString(),

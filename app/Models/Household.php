@@ -149,8 +149,6 @@ class Household extends Model
         return $this->hasMany(CompulsiveSurveyResponse::class);
     }
 
-    // ---- Épica 15: cuentas por cobrar ----
-
     public function receivables(): HasMany
     {
         return $this->hasMany(Receivable::class);

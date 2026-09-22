@@ -67,7 +67,6 @@ class FunnelMetrics extends Command
             && CarbonImmutable::parse($ultimoGasto[$user->id])->gte($user->created_at->copy()->addDays(7)),
         )->count();
 
-        // Épica 15: dinero comprometido a favor de los hogares (con saldo > 0).
         $receivablesOpen = Receivable::whereIn('status', ReceivableStatus::outstandingValues())
             ->where('current_balance', '>', 0);
         $totalPorCobrar = (float) (clone $receivablesOpen)->sum('current_balance');

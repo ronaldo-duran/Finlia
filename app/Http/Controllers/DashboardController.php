@@ -74,7 +74,6 @@ class DashboardController extends Controller
             'savingsGoals' => $savingsGoals,
             // Épica 8: deuda total y ahorro acumulado completan el resumen.
             'debtSummary' => $this->debts->summary($householdId),
-            // Épica 15: dinero por cobrar, comprometido a favor del hogar.
             'receivableSummary' => $this->receivables->summary($householdId),
             // Reutiliza las metas ya cargadas: antes eran tres consultas a
             // `savings_goals` (listado + resumen + compromiso mensual).

@@ -25,10 +25,6 @@ class ReceivableService
 {
     public function __construct(private readonly MovementService $movements) {}
 
-    // ---------------------------------------------------------------
-    // Saldo
-    // ---------------------------------------------------------------
-
     /**
      * Crea una cuenta por cobrar. El saldo arranca en el importe original,
      * no lo teclea el usuario (ADR-0020 espejo).
@@ -91,10 +87,6 @@ class ReceivableService
         return $receivable;
     }
 
-    // ---------------------------------------------------------------
-    // Cobros
-    // ---------------------------------------------------------------
-
     /**
      * Registra un cobro contra la cuenta por cobrar y recalcula el saldo.
      *
@@ -132,8 +124,6 @@ class ReceivableService
             ]);
 
             $payment->household_id = $receivable->household_id;
-            // account_id se guarda para mostrar en el historial aunque no
-            // haya ingreso (p. ej. condonaciones no lo generan).
             $payment->account_id = $type->createsIncome() ? $accountId : null;
             $payment->income_id = $income?->id;
             $payment->save();
@@ -163,10 +153,6 @@ class ReceivableService
             $this->recomputeBalance($receivable);
         });
     }
-
-    // ---------------------------------------------------------------
-    // Panel de cuentas por cobrar
-    // ---------------------------------------------------------------
 
     /**
      * Resumen del hogar: total pendiente, importe original y progreso de

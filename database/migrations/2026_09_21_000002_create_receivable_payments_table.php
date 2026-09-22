@@ -22,12 +22,8 @@ return new class extends Migration
         Schema::create('receivable_payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('receivable_id')->constrained('receivables')->cascadeOnDelete();
-            // Denormalizado a propósito: permite acotar por hogar sin join
-            // (aislamiento multi-hogar, amenaza #1).
             $table->foreignId('household_id')->constrained('households')->cascadeOnDelete();
             $table->foreignId('account_id')->nullable()->constrained('accounts')->nullOnDelete();
-            // Ingreso generado, si el cobro entró a una cuenta del hogar.
-            // nullOnDelete: borrar el movimiento no borra el historial.
             $table->foreignId('income_id')->nullable()->constrained('incomes')->nullOnDelete();
             $table->decimal('amount', 15, 2);
             $table->date('date');

@@ -47,8 +47,6 @@ class ReceivablePaymentController extends Controller
     {
         $this->authorize('delete', $payment);
 
-        // Defensivo: el cobro tiene que ser de esta cuenta por cobrar,
-        // no de otra del mismo hogar.
         abort_if($payment->receivable_id !== $receivable->id, 404);
 
         $this->receivables->deletePayment($payment);

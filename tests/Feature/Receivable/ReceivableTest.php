@@ -37,8 +37,6 @@ class ReceivableTest extends TestCase
         return Receivable::factory()->create(['household_id' => $household->id, ...$attributes]);
     }
 
-    // ===== Acceso =====
-
     public function test_guest_es_redirigido_al_login(): void
     {
         $this->get(route('receivables.index'))->assertRedirect(route('login'));
@@ -62,8 +60,6 @@ class ReceivableTest extends TestCase
             ->assertSee('600.000,00');
     }
 
-    // ===== CRUD =====
-
     public function test_usuario_puede_registrar_una_cuenta_por_cobrar(): void
     {
         [$owner, $household] = $this->setupHousehold();
@@ -80,7 +76,6 @@ class ReceivableTest extends TestCase
             'name' => 'Trabajo facturado',
             'debtor_name' => 'Cliente Empresa X',
             'original_amount' => 850000.00,
-            // Saldo arranca en la línea base.
             'current_balance' => 850000.00,
             'status' => ReceivableStatus::Pending->value,
         ]);
@@ -137,13 +132,11 @@ class ReceivableTest extends TestCase
         [$owner] = $this->setupHousehold();
 
         $this->actingAs($owner)->post(route('receivables.store'), [
-            'debtor_name' => 'X',    // muy corto
-            'name' => '',            // requerido
-            'original_amount' => 0,  // > 0
+            'debtor_name' => 'X',
+            'name' => '',
+            'original_amount' => 0,
         ])->assertSessionHasErrors(['debtor_name', 'name', 'original_amount']);
     }
-
-    // ===== Cobros =====
 
     public function test_un_cobro_recibido_con_cuenta_genera_ingreso_y_sube_su_saldo(): void
     {
@@ -189,12 +182,10 @@ class ReceivableTest extends TestCase
             'amount' => 100000,
             'date' => now()->toDateString(),
             'type' => ReceivablePaymentType::Forgiven->value,
-            // Aunque envíe cuenta, la condonación NO genera ingreso.
             'account_id' => $account->id,
         ])->assertRedirect();
 
         $this->assertSame('200000.00', $r->fresh()->current_balance);
-        // El saldo de la cuenta se mantiene: no se creó ingreso.
         $this->assertSame('100000.00', $account->fresh()->current_balance);
         $this->assertDatabaseCount('incomes', 0);
     }
@@ -272,8 +263,6 @@ class ReceivableTest extends TestCase
             ->delete(route('receivables.payments.destroy', [$rA, $payment]))
             ->assertNotFound();
     }
-
-    // ===== Aislamiento entre hogares (amenaza #1) =====
 
     public function test_usuario_no_ve_cuentas_de_otro_hogar(): void
     {
