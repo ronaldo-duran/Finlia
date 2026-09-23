@@ -39,6 +39,7 @@ class StoreBudgetRequest extends FormRequest
                     ->where(fn ($q2) => $q2->whereNull('household_id')->orWhere('household_id', $householdId))),
             ],
             'amount' => ['required', 'numeric', 'min:0.01', 'max:9999999999999.99'],
+            'envelope' => ['nullable', 'boolean'],
             'year' => ['required', 'integer', 'between:2000,2100'],
             'month' => ['required', 'integer', 'between:1,12'],
         ];
@@ -70,6 +71,12 @@ class StoreBudgetRequest extends FormRequest
 
             $categoryId = $this->input('category_id');
 
+            if ($this->boolean('envelope') && ! $categoryId) {
+                $validator->errors()->add('envelope', 'El presupuesto total del mes no puede marcarse como sobre. Los sobres son por categoría.');
+
+                return;
+            }
+
             $exists = Budget::query()
                 ->where('household_id', active_household_id())
                 ->where('period', BudgetPeriod::Monthly->value)
@@ -97,6 +104,7 @@ class StoreBudgetRequest extends FormRequest
     {
         $data = $this->validated();
         $data['category_id'] = $data['category_id'] ?? null;
+        $data['envelope'] = $this->boolean('envelope') && $data['category_id'] !== null;
         $data['period'] = BudgetPeriod::Monthly->value;
 
         return $data;

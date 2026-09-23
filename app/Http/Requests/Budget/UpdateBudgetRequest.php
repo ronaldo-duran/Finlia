@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Budget;
 
+use App\Models\Budget;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -27,6 +29,7 @@ class UpdateBudgetRequest extends FormRequest
     {
         return [
             'amount' => ['required', 'numeric', 'min:0.01', 'max:9999999999999.99'],
+            'envelope' => ['nullable', 'boolean'],
         ];
     }
 
@@ -41,10 +44,29 @@ class UpdateBudgetRequest extends FormRequest
     }
 
     /**
+     * Los sobres solo aplican a presupuestos por categoría. El presupuesto
+     * total del mes (sin categoría) nunca puede marcarse como sobre.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            /** @var Budget|null $budget */
+            $budget = $this->route('budget');
+
+            if ($this->boolean('envelope') && $budget !== null && $budget->isTotal()) {
+                $validator->errors()->add('envelope', 'El presupuesto total del mes no puede marcarse como sobre. Los sobres son por categoría.');
+            }
+        });
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function validatedData(): array
     {
-        return $this->validated();
+        $data = $this->validated();
+        $data['envelope'] = $this->boolean('envelope');
+
+        return $data;
     }
 }

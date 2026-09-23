@@ -1527,6 +1527,51 @@ Al abrirse a forks, se endurece además la configuración del checkout. La acci�
 
 ---
 
+## ADR-0048
+### Presupuestos por categoría como sobres opt-in para gasto lumpy — **ACEPTADA**
+
+**Contexto.** [ADR-0047](#adr-0047) estabilizó el "puedes gastar hoy" para que gastar dentro del cupo no lo hiciera bajar. Pero un caso real vuelve a romper la promesa: 600.000 en cuenta, la app dice "hoy 20.000", el usuario gasta 450.000 en mercado y formalmente se pasa 22× del cupo. El cálculo es correcto —esa plata sí salió— pero el reproche es injusto: mercar es un evento mensual, no un desliz diario. Los presupuestos por categoría existen ([ADR-0014](#adr-0014)) pero **no restan** del cupo (mi respuesta previa a Ronaldo en el hilo del fix). Se comportan como metas blandas: "sirven para alertas 80/100 %". Perfectos para gasto discrecional que uno quiere contener; inútiles para gasto lumpy que uno quiere apartar.
+
+Se estudiaron los patrones de la industria: cupo diario estable (Emma, Cleo, Monzo Summary — patrón 1 de la respuesta), sobres puros (YNAB, Monarch, Copilot — patrón 2) y safe-to-spend sin dividir (Simple original, PocketGuard — patrón 3). El patrón 1 ya está implementado. El patrón 3 renunciaría a la pregunta central. El patrón 2 puro obligaría a rediseñar el modelo mental de la app y a migrar todos los presupuestos existentes.
+
+**Decisión.** Sobres **opt-in por presupuesto**. Cada `Budget` gana una columna `envelope` (boolean, por defecto `false`). Cuando `envelope=true`, el presupuesto aparta su remanente del cupo diario. El resto de presupuestos siguen comportándose como metas blandas.
+
+1. **Migración**: `budgets.envelope` boolean not null default false. Retrocompatible: todos los presupuestos existentes son metas blandas y siguen exactamente igual.
+2. **Regla del sobre**: solo aplica a presupuestos con `category_id` distinto de null. El presupuesto total del mes (`category_id = null`) no puede ser sobre; los form requests lo rechazan.
+3. **Cómo entra en la liquidez** (`BudgetCalculatorService::envelopeSummary()`):
+   - `envelope_remaining = max(0, amount − spent_this_month_in_category)` — lo que queda del sobre este mes.
+   - `envelopes_reserved = Σ envelope_remaining`, se resta del `cash` junto con las demás reservas.
+   - `envelope_absorbed_today = envelope_remaining_al_inicio_del_día − envelope_remaining_ahora` — la parte del gasto de hoy que absorbió el sobre.
+   - `spent_today_discretionary = max(0, spent_today − envelope_absorbed_today)` — lo que salió realmente del cupo diario.
+   - `daily_target` y `daily_allowance` usan `spent_today_discretionary` en vez de `spent_today` (extendiendo la mecánica de [ADR-0047](#adr-0047)).
+4. **Desbordamiento honesto**: si te pasas del sobre, la parte que excede sí muerde el cupo del día. Un sobre de mercado de 200k con un gasto de 300k absorbe 200k y deja 100k como discrecional. La cifra baja, pero solo por lo que realmente desbordó.
+5. **UI mínima consistente con el resto de la Épica 4**:
+   - Casilla "Apartar del cupo diario (tratar como sobre)" en el formulario de crear/editar, con copy que explica cuándo marcarla (mercado, gasolina, servicios).
+   - Badge "Sobre" en la lista de categorías presupuestadas.
+   - Línea "− Sobres apartados (mercado, gasolina…)" en el desglose "¿Cómo se calcula?".
+   - La línea del gasto del día se renombra a "Gastado hoy fuera de sobres" cuando hay absorción.
+6. **El tope del plan del mes se mantiene**, aplicado sobre `cash_start` reconstruido con `spent_today` completo (no discretionary): el objetivo es que el `daily_target` quede idéntico al de antes de gastar hoy, independientemente de si el gasto fue de sobre o discrecional.
+7. **Sin migración de datos**: nadie tiene sobres al arrancar. El usuario decide qué presupuestos convierte en sobre.
+
+**Alternativas descartadas.**
+
+- **Sobres para todos los presupuestos por categoría (opt-out)**: cambiaría el comportamiento de todos los presupuestos existentes de la noche a la mañana. El opt-in respeta las expectativas de quien ya los usa como alertas.
+- **YNAB puro (todo el gasto discrecional debe caber en un sobre)**: rediseño de app, migración forzada, choque con el modelo actual. El opt-in permite adoptar el patrón donde ayuda sin obligar donde no.
+- **Un flag global "modo sobres" por hogar**: simple pero binario. Un mismo hogar puede querer sobre para mercado y meta blanda para ocio; el flag por presupuesto lo permite.
+- **Reservar el monto completo del sobre (no solo el remanente)**: haría que gastar dentro del sobre no cambiara nada, ni siquiera el desglose. Restar el remanente da un feedback más realista sobre cuánta plata queda todavía apartada.
+
+**Consecuencias y mitigaciones.**
+
+- **Coste en consultas**: `envelopeSummary()` reusa el `category_budgets` y el `spent_by_category_month` ya cargados por `plan()`, y añade solo una query nueva para "gasto de hoy en categorías con sobre". El `PerformanceTest` del panel se mantiene por debajo del presupuesto de consultas.
+- **Compatibilidad**: `daily_allowance`, `daily_target`, `cash_available` y `available` conservan la semántica de ADR-0047. `reserved` gana una clave `envelopes`; consumidores que la leen se protegen con `?? 0`.
+- **Nudge en recurrentes**: el formulario de nueva obligación fija ahora sugiere considerar un presupuesto con sobre cuando el monto varía mucho (mercado, gasolina). Es un aviso, no una restricción — quien insiste en registrar gasolina como recurrente puede seguir haciéndolo.
+- **KPI "Cuota de deuda este mes"** en el dashboard: no es parte del sobre en sí, pero cerró en la misma entrega porque la nota de UX de la Épica 4 (2026-09-19) lo pedía. La deuda total sigue visible; se suma un KPI que muestra el compromiso del mes en curso.
+- **Overflow**: cuando un sobre se agota antes de fin de mes, el usuario ve la línea de sobres bajar a 0 y su cupo diario reflejar el exceso. Esto es la señal para redimensionar el sobre el mes siguiente.
+
+**Estado.** ACEPTADA — 2026-09-23. Implementada en `database/migrations/2026_09_23_000001_add_envelope_to_budgets_table.php`, `app/Models/Budget.php`, `app/Http/Requests/Budget/{Store,Update}BudgetRequest.php`, `app/Services/BudgetCalculatorService.php`, `resources/views/budgets/{_form,index}.blade.php`, `resources/views/dashboard.blade.php`, `resources/views/recurring-expenses/index.blade.php`, `database/factories/BudgetFactory.php` y `tests/Unit/BudgetCalculatorServiceTest.php`.
+
+---
+
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.
 3. Incluye: contexto, decisión, alternativas, consecuencias.

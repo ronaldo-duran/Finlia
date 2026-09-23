@@ -12,6 +12,15 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.41.0] - 2026-09-23 — Presupuestos con sobre y cuota de deuda del mes
+
+### Añadido
+- **Presupuestos con sobre** ([ADR-0048](docs/DECISIONS.md#adr-0048)). Cada presupuesto por categoría gana una casilla "Apartar del cupo diario (tratar como sobre)". Cuando la marcas, la plata de ese presupuesto se resta del "puedes gastar hoy" y se descuenta al registrar el gasto en su categoría, en lugar de morder el cupo del día. Resuelve el caso del gasto lumpy: mercado, gasolina, servicios y demás gastos periódicos grandes se separan del gasto discrecional (un café, un cine). Los presupuestos existentes no cambian salvo que marques la casilla: siguen siendo metas blandas que solo alimentan las alertas 80/100 %.
+- **Desbordamiento honesto**: si te pasas del sobre, solo la parte que excede muerde el cupo del día. Un sobre de $200.000 con un gasto de $300.000 absorbe $200.000 y deja $100.000 como discrecional, que sí baja el cupo.
+- **Desglose "¿Cómo se calcula?"** con nueva línea "− Sobres apartados (mercado, gasolina…)" cuando hay sobres activos, y la línea del gasto del día se renombra a "Gastado hoy fuera de sobres" cuando corresponde. La lista de categorías presupuestadas muestra un badge "Sobre" para distinguirlos.
+- **KPI "Cuota de deuda este mes"** en el dashboard, al lado de "Deuda total". Muestra el `monthly_commitment` que `DebtService::summary()` ya calculaba (suma de las cuotas mensuales comprometidas), para separar la carga del mes de la carga total.
+- **Aviso en el formulario de gastos recurrentes**: si el monto cambia mucho de un mes a otro (mercado, gasolina, ocio), el formulario sugiere crear un presupuesto con sobre en su lugar y enlaza a la creación. Los recurrentes se dejan para lo que sí es fijo (arriendo, servicios, SOAT, plan celular).
+
 ## [0.40.1] - 2026-09-23 — El cupo del día no se te escapa delante
 
 ### Corregido

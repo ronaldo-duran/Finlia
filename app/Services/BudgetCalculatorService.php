@@ -82,6 +82,8 @@ class BudgetCalculatorService
             ),
         };
 
+        unset($summary['category_budgets'], $summary['spent_by_category_month']);
+
         return $summary;
     }
 
@@ -137,11 +139,19 @@ class BudgetCalculatorService
         $savings = $this->savingsGoals->pendingCommitmentSince($householdId, $payday['cycle_start'], $obligations['goals'])
             * min(1.0, $days / $cycleDays);
 
+        $envelopeSummary = $this->envelopeSummary(
+            $householdId,
+            $today,
+            $monthPlan['category_budgets'] ?? collect(),
+            $monthPlan['spent_by_category_month'] ?? collect(),
+        );
+
         $reserved = [
             'fixed_expenses' => $this->money($recurring['fixed']),
             'recurring' => $this->money($recurring['recurring']),
             'debt' => $this->money($debt),
             'savings' => $this->money($savings),
+            'envelopes' => $this->money($envelopeSummary['reserved']),
         ];
         $reservedTotal = array_sum($reserved);
         $reserved['total'] = $this->money($reservedTotal);
@@ -152,7 +162,9 @@ class BudgetCalculatorService
             ->whereDate('date', $today->toDateString())
             ->sum('amount');
 
-        $cashStart = $cash + $spentToday;
+        $spentTodayDiscretionary = max(0.0, $spentToday - $envelopeSummary['absorbed_today']);
+
+        $cashStart = $cash + $spentTodayDiscretionary;
 
         $planLimit = null;
         $planLimitStart = null;
@@ -167,7 +179,7 @@ class BudgetCalculatorService
         $availableStart = $limitedByPlanStart ? $planLimitStart : $cashStart;
 
         $dailyTarget = $days > 0 ? max(0.0, $availableStart) / $days : 0.0;
-        $dailyAllowance = max(0.0, $dailyTarget - $spentToday);
+        $dailyAllowance = max(0.0, $dailyTarget - $spentTodayDiscretionary);
 
         [$status, $shortfall] = match (true) {
             $cash < 0 => ['short', -$cash],
@@ -198,8 +210,76 @@ class BudgetCalculatorService
             'limited_by' => $limitedByPlan ? 'plan' : 'cash',
             'available' => $this->money($available),
             'spent_today' => $this->money($spentToday),
+            'spent_today_discretionary' => $this->money($spentTodayDiscretionary),
+            'envelope_absorbed_today' => $this->money($envelopeSummary['absorbed_today']),
+            'envelopes' => $envelopeSummary['items'],
             'daily_target' => $this->money($dailyTarget),
             'daily_allowance' => $this->money($dailyAllowance),
+        ];
+    }
+
+    /**
+     * Sobres del mes en curso (ADR-0048): presupuestos por categoría marcados
+     * como `envelope` que apartan su remanente del cupo diario. Devuelve el
+     * total reservado (para restar del cash), lo absorbido hoy (para no
+     * castigar el cupo del día por gasto que sale del sobre) y el detalle
+     * por sobre para la UI.
+     *
+     * @return array{reserved: float, absorbed_today: float, items: list<array<string, mixed>>}
+     */
+    private function envelopeSummary(
+        int $householdId,
+        Carbon $today,
+        Collection $categoryBudgets,
+        Collection $spentByCategoryMonth,
+    ): array {
+        $envelopes = $categoryBudgets->filter(fn (Budget $b) => (bool) $b->envelope)->values();
+
+        if ($envelopes->isEmpty()) {
+            return ['reserved' => 0.0, 'absorbed_today' => 0.0, 'items' => []];
+        }
+
+        $categoryIds = $envelopes->pluck('category_id')->all();
+
+        $spentTodayByCategory = Expense::where('household_id', $householdId)
+            ->whereDate('date', $today->toDateString())
+            ->whereIn('category_id', $categoryIds)
+            ->groupBy('category_id')
+            ->selectRaw('category_id, SUM(amount) as total')
+            ->pluck('total', 'category_id');
+
+        $reserved = 0.0;
+        $absorbedToday = 0.0;
+        $items = [];
+
+        foreach ($envelopes as $budget) {
+            $amount = (float) $budget->amount;
+            $spent = (float) ($spentByCategoryMonth[$budget->category_id] ?? 0);
+            $spentTodayCat = (float) ($spentTodayByCategory[$budget->category_id] ?? 0);
+
+            $remainingNow = max(0.0, $amount - $spent);
+            $remainingAtStart = max(0.0, $amount - ($spent - $spentTodayCat));
+            $absorbed = $remainingAtStart - $remainingNow;
+
+            $reserved += $remainingNow;
+            $absorbedToday += $absorbed;
+
+            $items[] = [
+                'budget_id' => $budget->id,
+                'category_id' => $budget->category_id,
+                'name' => $budget->category?->name ?? 'Sin categoría',
+                'color' => $budget->category?->color,
+                'amount' => $this->money($amount),
+                'spent' => $this->money($spent),
+                'remaining' => $this->money($remainingNow),
+                'overspent' => $this->money(max(0.0, $spent - $amount)),
+            ];
+        }
+
+        return [
+            'reserved' => $reserved,
+            'absorbed_today' => $absorbedToday,
+            'items' => $items,
         ];
     }
 
@@ -247,7 +327,16 @@ class BudgetCalculatorService
         $totalBudget = $totalBudgetModel !== null ? (float) $totalBudgetModel->amount * $factor : 0.0;
         $categoryBudgets = $budgets->filter(fn (Budget $b) => $b->category_id !== null)->values();
 
-        $categories = $this->categoryBreakdown($householdId, $categoryBudgets, $from, $to, $factor);
+        $spentByCategoryMonth = $categoryBudgets->isEmpty()
+            ? collect()
+            : Expense::where('household_id', $householdId)
+                ->whereBetween('date', [$from, $to])
+                ->whereIn('category_id', $categoryBudgets->pluck('category_id')->all())
+                ->groupBy('category_id')
+                ->selectRaw('category_id, SUM(amount) as total')
+                ->pluck('total', 'category_id');
+
+        $categories = $this->categoryBreakdown($categoryBudgets, $spentByCategoryMonth, $factor);
 
         $categoryBudgetSum = (float) $categories->sum('budget');
         $budgetDefined = max($totalBudget, $categoryBudgetSum);
@@ -306,6 +395,9 @@ class BudgetCalculatorService
             'categories' => $categories,
             'exceeded' => $categories->where('level', BudgetAlertLevel::Exceeded)->values(),
             'warnings' => $categories->where('level', BudgetAlertLevel::Warning)->values(),
+
+            'category_budgets' => $categoryBudgets,
+            'spent_by_category_month' => $spentByCategoryMonth,
         ];
     }
 
@@ -465,22 +557,13 @@ class BudgetCalculatorService
      * @return Collection<int, array<string, mixed>>
      */
     private function categoryBreakdown(
-        int $householdId,
         Collection $categoryBudgets,
-        Carbon $from,
-        Carbon $to,
+        Collection $spentByCategory,
         float $factor,
     ): Collection {
         if ($categoryBudgets->isEmpty()) {
             return collect();
         }
-
-        $spentByCategory = Expense::where('household_id', $householdId)
-            ->whereBetween('date', [$from, $to])
-            ->whereNotNull('category_id')
-            ->groupBy('category_id')
-            ->selectRaw('category_id, SUM(amount) as total')
-            ->pluck('total', 'category_id');
 
         return $categoryBudgets
             ->map(function (Budget $budget) use ($spentByCategory, $factor): array {
@@ -494,6 +577,7 @@ class BudgetCalculatorService
                     'name' => $budget->category?->name ?? 'Sin categoría',
                     'color' => $budget->category?->color,
                     'budget' => $this->money($amount),
+                    'envelope' => (bool) $budget->envelope,
                     'spent' => $this->money($spent),
                     'remaining' => $this->money(max(0.0, $amount - $spent)),
                     'overspent' => $this->money(max(0.0, $spent - $amount)),

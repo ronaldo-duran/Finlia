@@ -10,6 +10,7 @@ use App\Enums\Frequency;
 use App\Enums\SavingsGoalContributionType;
 use App\Enums\SavingsGoalStatus;
 use App\Models\Account;
+use App\Models\Budget;
 use App\Models\Category;
 use App\Models\Debt;
 use App\Models\ExpectedIncome;
@@ -642,6 +643,96 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->assertSame(0.0, $liquidity['daily_allowance']);
     }
 
+    public function test_un_sobre_aparta_su_remanente_del_cupo_diario(): void
+    {
+        $mercado = $this->category('Mercado');
+        $this->setBalance(1000000);
+        $this->expectedIncome(3000000, day: 15);
+        $this->budget(500000, $mercado->id)->update(['envelope' => true]);
+
+        $liquidity = $this->liquidity();
+
+        $this->assertSame(500000.0, $liquidity['reserved']['envelopes']);
+        $this->assertSame(500000.0, $liquidity['cash_available']);
+        $this->assertCount(1, $liquidity['envelopes']);
+        $this->assertSame('Mercado', $liquidity['envelopes'][0]['name']);
+        $this->assertSame(500000.0, $liquidity['envelopes'][0]['remaining']);
+    }
+
+    public function test_gastar_en_una_categoria_con_sobre_no_mueve_el_cupo_diario(): void
+    {
+        $mercado = $this->category('Mercado');
+        $this->setBalance(1000000);
+        $this->expectedIncome(3000000, day: 15);
+        $this->budget(500000, $mercado->id)->update(['envelope' => true]);
+
+        $antes = $this->liquidity();
+
+        $this->expense(200000, self::REFERENCE, $mercado->id);
+        $this->setBalance(800000);
+
+        $despues = $this->liquidity();
+
+        $this->assertSame($antes['daily_target'], $despues['daily_target']);
+        $this->assertSame($antes['daily_allowance'], $despues['daily_allowance']);
+        $this->assertSame(300000.0, $despues['reserved']['envelopes']);
+        $this->assertSame(500000.0, $despues['cash_available']);
+        $this->assertSame(300000.0, $despues['envelopes'][0]['remaining']);
+    }
+
+    public function test_gasto_en_categoria_sin_sobre_si_reduce_el_cupo_del_dia(): void
+    {
+        $mercado = $this->category('Mercado');
+        $cafe = $this->category('Café');
+        $this->setBalance(1000000);
+        $this->expectedIncome(3000000, day: 15);
+        $this->budget(500000, $mercado->id)->update(['envelope' => true]);
+
+        $this->expense(20000, self::REFERENCE, $cafe->id);
+        $this->setBalance(980000);
+
+        $liquidity = $this->liquidity();
+
+        $this->assertSame(100000.0, $liquidity['daily_target']);
+        $this->assertSame(20000.0, $liquidity['spent_today_discretionary']);
+        $this->assertSame(80000.0, $liquidity['daily_allowance']);
+    }
+
+    public function test_gasto_que_desborda_el_sobre_castiga_el_cupo_solo_por_la_parte_sobrante(): void
+    {
+        $mercado = $this->category('Mercado');
+        $this->setBalance(1000000);
+        $this->expectedIncome(3000000, day: 15);
+        $this->budget(200000, $mercado->id)->update(['envelope' => true]);
+
+        $liquidity = $this->liquidity();
+        $dailyTargetAntes = $liquidity['daily_target'];
+
+        $this->expense(300000, self::REFERENCE, $mercado->id);
+        $this->setBalance(700000);
+
+        $despues = $this->liquidity();
+
+        $this->assertSame(0.0, $despues['reserved']['envelopes']);
+        $this->assertSame(200000.0, $despues['envelope_absorbed_today']);
+        $this->assertSame(100000.0, $despues['spent_today_discretionary']);
+        $this->assertSame($dailyTargetAntes, $despues['daily_target']);
+        $this->assertSame(round($dailyTargetAntes - 100000.0, 2), $despues['daily_allowance']);
+    }
+
+    public function test_el_sobre_pertenece_al_mes_del_hoy(): void
+    {
+        $mercado = $this->category('Mercado');
+        $this->setBalance(1000000);
+        $this->expectedIncome(3000000, day: 15);
+        $this->budget(500000, $mercado->id, year: 2026, month: 2)->update(['envelope' => true]);
+
+        $liquidity = $this->liquidity();
+
+        $this->assertSame(0.0, $liquidity['reserved']['envelopes']);
+        $this->assertSame([], $liquidity['envelopes']);
+    }
+
     public function test_gastar_dentro_del_cupo_del_dia_no_recalcula_el_promedio(): void
     {
         $this->setBalance(300000);
@@ -782,15 +873,18 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->account->forceFill(['current_balance' => $balance])->save();
     }
 
-    private function budget(float $amount, ?int $categoryId = null, int $year = 2026, int $month = 3): void
+    private function budget(float $amount, ?int $categoryId = null, int $year = 2026, int $month = 3): Budget
     {
-        $this->household->budgets()->create([
+        /** @var Budget $budget */
+        $budget = $this->household->budgets()->create([
             'category_id' => $categoryId,
             'amount' => $amount,
             'period' => 'monthly',
             'year' => $year,
             'month' => $month,
         ]);
+
+        return $budget;
     }
 
     private function expectedIncome(float $amount, bool $active = true, ?int $day = null, ?string $name = null): ExpectedIncome

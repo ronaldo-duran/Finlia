@@ -60,6 +60,15 @@
                     <i class="bi bi-plus-circle me-1"></i> Nueva obligación
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-info-subtle border-0 small mb-3" role="alert">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        <strong>¿El monto cambia mucho de un mes a otro?</strong>
+                        Mercado, gasolina, ocio o restaurantes se manejan mejor como
+                        <a href="{{ route('budgets.create') }}" class="fw-semibold">presupuesto con sobre</a>:
+                        apartas un tope al mes y se descuenta al gastar, sin fingir una
+                        fecha ni un monto fijo. Deja los recurrentes para lo que sí es
+                        fijo (arriendo, servicios, SOAT, plan celular).
+                    </div>
                     <form method="POST" action="{{ route('recurring-expenses.store') }}">
                         @csrf
                         <x-form-input label="Nombre" name="name" required placeholder="Ej: SOAT, Arriendo" />

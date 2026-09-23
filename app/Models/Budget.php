@@ -15,8 +15,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Presupuesto de un hogar para un mes concreto.
  * `category_id` NULL representa el presupuesto TOTAL del mes.
+ * `envelope=true` marca el presupuesto como sobre (ADR-0048): aparta plata
+ * del cupo diario y solo aplica a presupuestos con categoría.
  */
-#[Fillable(['category_id', 'amount', 'period', 'year', 'month'])]
+#[Fillable(['category_id', 'amount', 'envelope', 'period', 'year', 'month'])]
 class Budget extends Model
 {
     /** @use HasFactory<BudgetFactory> */
@@ -30,6 +32,7 @@ class Budget extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'envelope' => 'boolean',
             'period' => BudgetPeriod::class,
             'year' => 'integer',
             'month' => 'integer',
