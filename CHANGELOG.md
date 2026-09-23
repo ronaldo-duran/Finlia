@@ -12,6 +12,13 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.40.1] - 2026-09-23 — El cupo del día no se te escapa delante
+
+### Corregido
+- **El "puedes gastar hoy" ahora se congela al empezar el día.** Antes recalculaba el promedio en cada visita: con $300.000 a 10 días del cobro decía $30.000, gastabas $30.000 y al volver a mirar veías $27.000. Ahora el cupo del día se fija con el saldo del inicio del día y muestra lo que queda tras el gasto de hoy: gastarlo lo lleva a $0, no baja el promedio. Al día siguiente se recompone solo con el saldo real y los días que faltan ([ADR-0047](docs/DECISIONS.md#adr-0047)).
+- **Desglose "¿Cómo se calcula?" reescrito** para reflejar la nueva aritmética: reconstruye la base al inicio del día, muestra `daily_target ÷ días`, resta `gastado hoy` y cierra con `= Puedes gastar hoy`.
+- **Tarjeta principal y hero del panel**: cuando ya gastaste algo hoy aparece un subtexto con el cupo del día y lo consumido, para que el número grande no salga de la nada.
+
 ## [0.40.0] - 2026-09-21 — Cuentas por cobrar
 
 Cierra la Épica 15 con el módulo simétrico al de deudas: registrar que alguien le debe dinero al hogar y llevarle la cuenta hasta que entra el pago. Sin esto la app respondía bien a "¿cuánto puedo gastar?" pero se quedaba ciega ante el dinero comprometido a favor del hogar.
