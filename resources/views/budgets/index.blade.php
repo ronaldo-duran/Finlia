@@ -123,6 +123,12 @@
                                     <span>Saldo en cuentas hoy</span>
                                     <span class="fw-semibold text-success text-nowrap">@money($liquidity['current_balance'])</span>
                                 </li>
+                                @if ($liquidity['spent_today'] > 0)
+                                    <li class="d-flex justify-content-between gap-2">
+                                        <span>+ Gastado hoy (para ver con qué empezaste)</span>
+                                        <span class="fw-semibold text-nowrap">@money($liquidity['spent_today'])</span>
+                                    </li>
+                                @endif
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>− Apartado en metas de ahorro</span>
                                     <span class="fw-semibold text-nowrap">@money($liquidity['set_aside'])</span>
@@ -145,8 +151,8 @@
                                 </li>
                                 <li><hr class="my-2"></li>
                                 <li class="d-flex justify-content-between gap-2">
-                                    <span class="fw-semibold text-body">= Disponible hasta el cobro</span>
-                                    <span class="fw-bold text-body text-nowrap">@money($liquidity['cash_available'])</span>
+                                    <span class="fw-semibold text-body">= Base al empezar el día</span>
+                                    <span class="fw-bold text-body text-nowrap">@money($liquidity['cash_available_start'])</span>
                                 </li>
                                 @if ($liquidity['limited_by'] === 'plan')
                                     <li class="d-flex justify-content-between gap-2">
@@ -156,7 +162,15 @@
                                 @endif
                                 <li class="d-flex justify-content-between gap-2">
                                     <span>÷ {{ $liquidity['days'] }} {{ $liquidity['days'] === 1 ? 'día' : 'días' }}</span>
-                                    <span class="fw-bold text-body text-nowrap">@money($liquidity['daily_allowance']) al día</span>
+                                    <span class="fw-bold text-body text-nowrap">@money($liquidity['daily_target']) al día</span>
+                                </li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span>− Gastado hoy</span>
+                                    <span class="fw-semibold text-danger text-nowrap">@money($liquidity['spent_today'])</span>
+                                </li>
+                                <li class="d-flex justify-content-between gap-2">
+                                    <span class="fw-semibold text-body">= Puedes gastar hoy</span>
+                                    <span class="fw-bold text-body text-nowrap">@money($liquidity['daily_allowance'])</span>
                                 </li>
                             </ul>
                         @else

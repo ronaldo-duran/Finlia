@@ -23,6 +23,9 @@
                 Este mes ya gastaste más de lo que esperas recibir.
                 @break
             @default
+                @if ($liquidity['spent_today'] > 0)
+                    Cupo del día <strong>@money($liquidity['daily_target'])</strong>, ya gastaste <strong>@money($liquidity['spent_today'])</strong>.
+                @endif
                 <x-payday-horizon :liquidity="$liquidity" />
                 @if ($liquidity['limited_by'] === 'plan')
                     Tienes más en cuentas, pero tu plan del mes no da para más.

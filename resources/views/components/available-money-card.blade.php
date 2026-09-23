@@ -72,6 +72,9 @@
             </p>
         @else
             <p class="text-muted small mb-0">
+                @if ($liquidity['spent_today'] > 0)
+                    Cupo del día <strong>@money($liquidity['daily_target'])</strong>, ya gastaste <strong>@money($liquidity['spent_today'])</strong>.
+                @endif
                 Son <strong>@money($liquidity['available'])</strong> en total.
                 <x-payday-horizon :liquidity="$liquidity" />
                 @if ($liquidity['limited_by'] === 'plan')
