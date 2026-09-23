@@ -37,7 +37,9 @@ test.describe('Presupuestos y dinero disponible (Épica 4)', () => {
     await expect(desglose.getByText('− Apartado en metas de ahorro')).toBeVisible();
     await expect(desglose.getByText(/− Cuotas de deuda/)).toBeVisible();
     await expect(desglose.getByText('− Ahorro programado hasta el cobro')).toBeVisible();
-    await expect(desglose.getByText('= Disponible hasta el cobro')).toBeVisible();
+    await expect(desglose.getByText('= Base al empezar el día')).toBeVisible();
+    await expect(desglose.getByText('− Gastado hoy')).toBeVisible();
+    await expect(desglose.getByText('= Puedes gastar hoy')).toBeVisible();
   });
 
   test('el próximo mes es una proyección con los ingresos esperados', async ({ page }) => {
