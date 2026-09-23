@@ -57,3 +57,32 @@
     placeholder="800000"
     help="Cuánto quieres poder gastar como máximo en el mes."
     required />
+
+@php
+    $envelopeChecked = $isEdit
+        ? old('envelope', $budget->envelope) == '1'
+        : old('envelope') == '1';
+    $envelopeDisabled = $isEdit && $budget->isTotal();
+@endphp
+<input type="hidden" name="envelope" value="0">
+<div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" name="envelope" value="1"
+           id="envelope"
+           @checked($envelopeChecked)
+           @disabled($envelopeDisabled)>
+    <label class="form-check-label" for="envelope">
+        Apartar del cupo diario (tratar como sobre)
+    </label>
+    <div class="form-text">
+        Márcalo si este presupuesto es un gasto grande y periódico
+        (mercado, gasolina, servicios). Su plata se reserva del
+        «puedes gastar hoy» y se descuenta del sobre al registrar el
+        gasto, en lugar de morder tu cupo del día.
+        @if ($envelopeDisabled)
+            <br><strong>El presupuesto total del mes no puede ser sobre</strong>: los sobres son por categoría.
+        @endif
+    </div>
+    @error('envelope')
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
+</div>

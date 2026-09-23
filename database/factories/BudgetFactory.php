@@ -29,6 +29,7 @@ class BudgetFactory extends Factory
             'household_id' => Household::factory(),
             'category_id' => null,
             'amount' => fake()->numberBetween(2000, 30000) * 100,
+            'envelope' => false,
             'period' => BudgetPeriod::Monthly->value,
             'year' => $now->year,
             'month' => $now->month,
@@ -49,5 +50,13 @@ class BudgetFactory extends Factory
     public function forMonth(int $year, int $month): static
     {
         return $this->state(fn () => ['year' => $year, 'month' => $month]);
+    }
+
+    /**
+     * Marca el presupuesto como sobre (ADR-0048).
+     */
+    public function envelope(): static
+    {
+        return $this->state(fn () => ['envelope' => true]);
     }
 }

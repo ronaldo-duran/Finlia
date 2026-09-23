@@ -123,10 +123,11 @@
                                     <span>Saldo en cuentas hoy</span>
                                     <span class="fw-semibold text-success text-nowrap">@money($liquidity['current_balance'])</span>
                                 </li>
-                                @if ($liquidity['spent_today'] > 0)
+                                @php $spentTodayFree = $liquidity['spent_today_discretionary'] ?? $liquidity['spent_today']; @endphp
+                                @if ($spentTodayFree > 0)
                                     <li class="d-flex justify-content-between gap-2">
-                                        <span>+ Gastado hoy (para ver con qué empezaste)</span>
-                                        <span class="fw-semibold text-nowrap">@money($liquidity['spent_today'])</span>
+                                        <span>+ Gastado hoy fuera de sobres (para ver con qué empezaste)</span>
+                                        <span class="fw-semibold text-nowrap">@money($spentTodayFree)</span>
                                     </li>
                                 @endif
                                 <li class="d-flex justify-content-between gap-2">
@@ -149,6 +150,12 @@
                                     <span>− Ahorro programado hasta el cobro</span>
                                     <span class="fw-semibold text-nowrap">@money($liquidity['reserved']['savings'])</span>
                                 </li>
+                                @if (($liquidity['reserved']['envelopes'] ?? 0) > 0)
+                                    <li class="d-flex justify-content-between gap-2">
+                                        <span>− Sobres apartados (mercado, gasolina…)</span>
+                                        <span class="fw-semibold text-nowrap">@money($liquidity['reserved']['envelopes'])</span>
+                                    </li>
+                                @endif
                                 <li><hr class="my-2"></li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span class="fw-semibold text-body">= Base al empezar el día</span>
@@ -165,8 +172,8 @@
                                     <span class="fw-bold text-body text-nowrap">@money($liquidity['daily_target']) al día</span>
                                 </li>
                                 <li class="d-flex justify-content-between gap-2">
-                                    <span>− Gastado hoy</span>
-                                    <span class="fw-semibold text-danger text-nowrap">@money($liquidity['spent_today'])</span>
+                                    <span>− Gastado hoy {{ ($liquidity['envelope_absorbed_today'] ?? 0) > 0 ? 'fuera de sobres' : '' }}</span>
+                                    <span class="fw-semibold text-danger text-nowrap">@money($spentTodayFree)</span>
                                 </li>
                                 <li class="d-flex justify-content-between gap-2">
                                     <span class="fw-semibold text-body">= Puedes gastar hoy</span>
@@ -276,6 +283,11 @@
                             <div class="d-flex align-items-center flex-wrap gap-2 min-w-0">
                                 <span class="color-dot" style="background-color: {{ $row['color'] ?: '#0b3f44' }}"></span>
                                 <span class="fw-semibold text-truncate">{{ $row['name'] }}</span>
+                                @if (! empty($row['envelope']))
+                                    <span class="badge rounded-pill text-bg-info-subtle text-info-emphasis" title="Este presupuesto aparta su plata del cupo diario">
+                                        <i class="bi bi-envelope-paper me-1"></i>Sobre
+                                    </span>
+                                @endif
                                 @if ($row['level'] !== \App\Enums\BudgetAlertLevel::Ok)
                                     <span class="badge rounded-pill text-bg-{{ $row['level']->color() }}">
                                         <i class="bi {{ $row['level']->icon() }} me-1"></i>{{ $row['level']->label() }}
