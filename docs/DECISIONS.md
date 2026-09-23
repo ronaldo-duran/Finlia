@@ -1496,6 +1496,37 @@ Al abrirse a forks, se endurece además la configuración del checkout. La acci�
 
 ---
 
+## ADR-0047
+### El cupo diario de "puedes gastar hoy" se congela al inicio del día — **ACEPTADA**
+
+**Contexto.** [ADR-0040](#adr-0040) fijó la fórmula `hoy = disponible ÷ días hasta el cobro`. El disponible se calcula sobre el saldo real de las cuentas, así que cada gasto del día lo reduce y la cifra se recalcula en cada visita. Con 300.000 disponibles a 10 días del cobro, la app dice "puedes gastar hoy 30.000"; el usuario gasta esos 30.000 y al volver a mirar ve "27.000", porque el numerador bajó a 270.000 mientras el denominador sigue en 10. La cifra se comporta como un **promedio hasta el cobro**, pero se lee como un **cupo del día**. Efecto psicológico: el usuario disciplinado que gasta dentro de su cupo siente que la app lo castiga, y quien mira varias veces al día ve un número inestable que erosiona la confianza. El caso extremo aparece con gasto lumpy (450.000 de mercado a inicio de mes): formalmente se "pasó" del día en 20x, pero era un evento mensual, no un desliz.
+
+**Decisión.** El cupo diario se **congela con el saldo del inicio del día** y muestra explícitamente lo que resta tras lo gastado hoy.
+
+1. **`daily_target = disponible_al_empezar_el_día ÷ días_hasta_el_cobro`.** El numerador se reconstruye sumando `spent_today` al saldo actual (Expense.date = hoy, por hogar). El denominador incluye hoy y no cambia con el gasto. Estable durante todo el día natural.
+2. **`daily_allowance = max(0, daily_target − spent_today)`.** Es el cupo que queda para hoy. Gastar el cupo lo lleva a 0, no a un promedio recalculado. La etiqueta "Puedes gastar hoy" refleja lo que dice: hoy.
+3. **El plan del mes sigue actuando como tope**, aplicado igual sobre `disponible_al_empezar_el_día`. Si el plan limita, `daily_target` sale del tope y no del cash bruto — misma regla, distinto instante.
+4. **Al día siguiente el cupo se recompone con el saldo real** de ese día y `días_hasta_el_cobro − 1`. Si el usuario dejó plata sin gastar ayer, mañana el `daily_target` sube solo; si se pasó, baja. Ese es el ajuste natural entre días, distinto al recálculo dentro del mismo día.
+5. **`cash_available` y `available` no cambian de semántica**: siguen reflejando el estado *actual* de las cuentas y sirven para el desglose "tienes X en total hasta el pago". El nuevo `cash_available_start` y el `daily_target` son los que alimentan la cuenta del cupo del día, y `spent_today` se muestra en la UI para que la resta sea visible.
+
+**Alternativas descartadas.**
+
+- **Renombrar el KPI a "promedio diario hasta el cobro" y dejar el cálculo como estaba.** Honesto pero rebaja la promesa del producto ("puedes gastar hoy" es la pregunta que la app existe para responder). Además no arregla el efecto psicológico de ver caer la cifra al gastar dentro del cupo.
+- **Cupo diario totalmente independiente del gasto del día**, sin restar `spent_today` de `daily_target`. La cifra sería estable, pero deja de responder a la pregunta "cuánto más puedo gastar hoy". El usuario tendría que hacer la resta mental.
+- **Sobres duros por categoría (patrón YNAB completo).** Resuelve además el problema del gasto lumpy (mercado), pero exige rediseñar presupuestos, migrar datos y cambiar el flujo de registro de gasto. Queda como decisión aparte, complementaria; el fix de este ADR es acotado y no la bloquea.
+
+**Consecuencias y mitigaciones.**
+
+- **`daily_allowance` cambia de significado**: antes era el promedio hasta el cobro, ahora es lo que queda del cupo del día. Los tests que asertaban el valor sin gasto del día no cambian (sin gasto, promedio y cupo coinciden); los que tenían gasto ese mismo día se actualizan.
+- **El desglose "¿Cómo se calcula?" de presupuestos** ahora muestra cinco líneas nuevas: `+ Gastado hoy` (para reconstruir la base al inicio del día) cuando aplica, `= Base al empezar el día`, `÷ días = daily_target`, `− Gastado hoy`, `= Puedes gastar hoy`. Explica la aritmética entera sin ocultar el papel del gasto del día.
+- **El gasto lumpy sigue mordiendo días futuros** (450.000 de mercado en día 1 dejan al día siguiente con un cupo pequeño), pero eso ya no es un bug: la plata sí se gastó. La solución completa a lumpy vs discrecional es tratar presupuestos como sobres, y vive en un ADR aparte.
+- **Coste en consultas.** Un `SELECT SUM(amount) FROM expenses WHERE household = ? AND date = ?` extra por cálculo de liquidez. Es una única query indexada por `(household_id, date)` (el índice ya existe para el filtro por rango del plan) y se ejecuta una vez por render — dentro del presupuesto de `PerformanceTest`.
+- **Un usuario que borra un gasto del día ve subir el cupo** hasta el `daily_target`, lo esperado. Un gasto marcado con fecha futura no cuenta en `spent_today` (usa fecha del gasto).
+
+**Estado.** ACEPTADA — 2026-09-23. Implementada en `BudgetCalculatorService::computeLiquidity()`, `resources/views/budgets/index.blade.php`, `resources/views/components/available-money-card.blade.php`, `resources/views/dashboard/_hero-enfoque.blade.php` y `tests/Unit/BudgetCalculatorServiceTest.php`.
+
+---
+
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.
 3. Incluye: contexto, decisión, alternativas, consecuencias.

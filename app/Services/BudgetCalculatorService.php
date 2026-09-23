@@ -86,14 +86,15 @@ class BudgetCalculatorService
     }
 
     /**
-     * "Puedes gastar hoy" (ADR-0040).
+     * "Puedes gastar hoy" (ADR-0040, ADR-0046).
      *
      *   disponible = saldo real − apartado en metas − lo que vence antes del cobro
-     *   hoy        = disponible ÷ días hasta el cobro
+     *   cupo_día   = disponible_al_empezar_el_día ÷ días hasta el cobro
+     *   hoy        = max(0, cupo_día − gastado_hoy)
      *
-     * El plan del mes actúa solo como TOPE: si tienes mucho más en cuentas de
-     * lo que tu mes permite (ahorros que no están en una meta, un salario que
-     * llegó antes), la cifra no se dispara. Nunca la aumenta.
+     * El cupo diario se congela con el saldo del inicio del día para que
+     * gastar dentro del cupo lo lleve a cero, no a un promedio más bajo. El
+     * saldo de mañana se recalcula solo. El plan del mes actúa como TOPE.
      *
      * @return array<string, mixed>
      */
@@ -147,12 +148,26 @@ class BudgetCalculatorService
 
         $cash = $balance - $setAside - $reservedTotal;
 
+        $spentToday = (float) Expense::where('household_id', $householdId)
+            ->whereDate('date', $today->toDateString())
+            ->sum('amount');
+
+        $cashStart = $cash + $spentToday;
+
         $planLimit = null;
+        $planLimitStart = null;
         if ($monthPlan['has_expected_income'] && $monthPlan['days_remaining'] > 0) {
             $planLimit = $monthPlan['plan_available'] / $monthPlan['days_remaining'] * $days;
+            $planLimitStart = ($monthPlan['plan_available'] + $spentToday) / $monthPlan['days_remaining'] * $days;
         }
         $limitedByPlan = $planLimit !== null && $planLimit < $cash;
         $available = $limitedByPlan ? $planLimit : $cash;
+
+        $limitedByPlanStart = $planLimitStart !== null && $planLimitStart < $cashStart;
+        $availableStart = $limitedByPlanStart ? $planLimitStart : $cashStart;
+
+        $dailyTarget = $days > 0 ? max(0.0, $availableStart) / $days : 0.0;
+        $dailyAllowance = max(0.0, $dailyTarget - $spentToday);
 
         [$status, $shortfall] = match (true) {
             $cash < 0 => ['short', -$cash],
@@ -177,11 +192,14 @@ class BudgetCalculatorService
             'set_aside' => $this->money($setAside),
             'reserved' => $reserved,
             'cash_available' => $this->money($cash),
+            'cash_available_start' => $this->money($cashStart),
             'plan_limit' => $planLimit !== null ? $this->money($planLimit) : null,
             'plan_available' => $monthPlan['plan_available'],
             'limited_by' => $limitedByPlan ? 'plan' : 'cash',
             'available' => $this->money($available),
-            'daily_allowance' => $days > 0 ? $this->money(max(0.0, $available) / $days) : 0.0,
+            'spent_today' => $this->money($spentToday),
+            'daily_target' => $this->money($dailyTarget),
+            'daily_allowance' => $this->money($dailyAllowance),
         ];
     }
 

@@ -642,6 +642,93 @@ class BudgetCalculatorServiceTest extends TestCase
         $this->assertSame(0.0, $liquidity['daily_allowance']);
     }
 
+    public function test_gastar_dentro_del_cupo_del_dia_no_recalcula_el_promedio(): void
+    {
+        $this->setBalance(300000);
+        $this->expectedIncome(3000000, day: 15);
+
+        $antes = $this->liquidity();
+
+        $this->assertSame(60000.0, $antes['daily_target']);
+        $this->assertSame(0.0, $antes['spent_today']);
+        $this->assertSame(60000.0, $antes['daily_allowance']);
+
+        $this->expense(60000, self::REFERENCE);
+        $this->setBalance(240000);
+
+        $despues = $this->liquidity();
+
+        $this->assertSame(60000.0, $despues['daily_target']);
+        $this->assertSame(60000.0, $despues['spent_today']);
+        $this->assertSame(0.0, $despues['daily_allowance']);
+        $this->assertSame(240000.0, $despues['cash_available']);
+        $this->assertSame(300000.0, $despues['cash_available_start']);
+    }
+
+    public function test_pasarse_del_cupo_del_dia_deja_el_cupo_en_cero(): void
+    {
+        $this->setBalance(600000);
+        $this->expectedIncome(3000000, day: 15);
+
+        $this->expense(450000, self::REFERENCE);
+        $this->setBalance(150000);
+
+        $liquidity = $this->liquidity();
+
+        $this->assertSame(120000.0, $liquidity['daily_target']);
+        $this->assertSame(450000.0, $liquidity['spent_today']);
+        $this->assertSame(0.0, $liquidity['daily_allowance']);
+        $this->assertSame('ok', $liquidity['status']);
+    }
+
+    public function test_al_dia_siguiente_el_cupo_se_recompone_con_el_saldo_real(): void
+    {
+        $this->expectedIncome(3000000, day: 15);
+        $this->setBalance(300000);
+        $this->expense(60000, self::REFERENCE);
+        $this->setBalance(240000);
+
+        $manana = $this->liquidity('2026-03-11');
+
+        $this->assertSame(0.0, $manana['spent_today']);
+        $this->assertSame(60000.0, $manana['daily_target']);
+        $this->assertSame(60000.0, $manana['daily_allowance']);
+    }
+
+    public function test_gasto_de_ayer_no_cuenta_como_gastado_hoy(): void
+    {
+        $this->setBalance(240000);
+        $this->expectedIncome(3000000, day: 15);
+        $this->expense(60000, '2026-03-09');
+
+        $liquidity = $this->liquidity();
+
+        $this->assertSame(0.0, $liquidity['spent_today']);
+        $this->assertSame(48000.0, $liquidity['daily_target']);
+        $this->assertSame(48000.0, $liquidity['daily_allowance']);
+    }
+
+    public function test_gasto_de_hoy_de_otro_hogar_no_afecta_el_cupo(): void
+    {
+        $intruso = User::factory()->create();
+        $otro = app(HouseholdService::class)->createHousehold($intruso->id, 'Hogar B');
+        $otraCuenta = Account::factory()->create(['household_id' => $otro->id, 'current_balance' => 500000]);
+        Expense::factory()->create([
+            'household_id' => $otro->id,
+            'account_id' => $otraCuenta->id,
+            'amount' => 200000,
+            'date' => self::REFERENCE,
+        ]);
+
+        $this->setBalance(300000);
+        $this->expectedIncome(3000000, day: 15);
+
+        $liquidity = $this->liquidity();
+
+        $this->assertSame(0.0, $liquidity['spent_today']);
+        $this->assertSame(60000.0, $liquidity['daily_allowance']);
+    }
+
     public function test_no_mezcla_datos_de_otro_hogar(): void
     {
         $intruso = User::factory()->create();
