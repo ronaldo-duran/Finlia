@@ -23,9 +23,7 @@ class ChangelogController extends Controller
 {
     private const CACHE_KEY = 'marketing.changelog.html';
 
-    public function __construct(private readonly Cache $cache)
-    {
-    }
+    public function __construct(private readonly Cache $cache) {}
 
     public function show(): View
     {
