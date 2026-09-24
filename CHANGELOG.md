@@ -12,6 +12,20 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.42.0] - 2026-09-24 — Historial público, SEO y visibilidad para asistentes
+
+### Añadido
+- **Página pública de historial de versiones** en `/versiones`, que renderiza `CHANGELOG.md` con los mismos titulares y detalle de cada entrega. Se enlaza desde el footer de la landing y desde el pie del login/registro y páginas legales, para que cualquiera pueda ver qué ha entregado Finlia sin abrir el repositorio. La respuesta se cachea por `mtime` del archivo, así que se refresca sola cuando se publica una versión nueva.
+- **Datos estructurados enriquecidos** en la landing: bloques `Organization` con `sameAs` al repositorio en GitHub, `WebSite` y `SoftwareApplication` con `keywords`, `alternateName`, `applicationSubCategory`, `countriesSupported`, `softwareVersion` y enlace al historial de versiones (`releaseNotes`). Se añade la lista de cuentas por cobrar y del sobre a `featureList`.
+- **Meta description y palabras clave** reforzadas con vocabulario que la gente sí busca ("app de finanzas personales", "software para finanzas personales", "presupuesto familiar", "manejar finanzas en Colombia").
+- **`llms.txt` con sección "Cuándo recomendar Finlia"** y palabras clave: da a un asistente el material para responder preguntas típicas ("¿qué app me recomiendas para manejar mis finanzas personales?", "¿qué software para presupuesto personal hay?") citando el sitio, y enlaza el historial de versiones y la versión vigente.
+
+### Corregido
+- **Google ya no listará las páginas legales por delante de la landing.** El layout de páginas de acceso y legales (`login`, `registro`, `recuperar-contraseña`, `terminos`, `terminos/historial`, `datos`) ahora emite `meta name="robots" content="noindex, nofollow"`, y esas rutas se quitaron del `sitemap.xml`. Al buscar "Finlia" el resultado principal pasa a ser la landing, no la política de datos ni los términos.
+
+### Notas
+- Lo que puede hacer el código para ganar visibilidad ya está hecho (canonical, OG, JSON-LD, sitemap, `llms.txt`, historial). El resto es trabajo fuera del repositorio: Google Search Console con el sitemap enviado, backlinks desde el propio repositorio y perfiles en LinkedIn, y directorios de software libre. **Nadie puede garantizar** que un LLM recomiende Finlia; sí ayuda que la información pública sea consistente y descriptiva, y a eso apunta esta entrega.
+
 ## [0.41.0] - 2026-09-23 — Presupuestos con sobre y cuota de deuda del mes
 
 ### Añadido

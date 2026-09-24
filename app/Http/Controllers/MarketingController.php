@@ -29,9 +29,8 @@ class MarketingController extends Controller
      */
     private const PAGINAS = [
         'home' => '1.0',
+        'changelog.show' => '0.7',
         'contact.create' => '0.6',
-        'data.policy' => '0.5',
-        'terms.show' => '0.5',
     ];
 
     public function home(): View
