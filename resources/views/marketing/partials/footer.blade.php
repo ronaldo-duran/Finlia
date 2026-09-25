@@ -16,6 +16,7 @@
                 <ul class="list-unstyled d-grid gap-2 mb-0">
                     <li><a href="#como-funciona" class="enlace-footer">Cómo funciona</a></li>
                     <li><a href="#funciones" class="enlace-footer">Funciones</a></li>
+                    <li><a href="{{ route('changelog.show') }}" class="enlace-footer">Historial de versiones</a></li>
                     <li><a href="{{ route('register') }}" class="enlace-footer">Crear cuenta</a></li>
                     <li><a href="{{ route('contact.create') }}" class="enlace-footer">Contacto</a></li>
                 </ul>
@@ -35,7 +36,9 @@
             </div>
         </div>
         <div class="pie-legal d-flex flex-wrap justify-content-between gap-2">
-            <span>© {{ now()->year }} Finlia · v{{ config('finlia.version') }}</span>
+            <span>© {{ now()->year }} Finlia ·
+                <a href="{{ route('changelog.show') }}" class="enlace-footer">v{{ config('finlia.version') }}</a>
+            </span>
             <span>
                 Software libre bajo
                 <a href="https://www.gnu.org/licenses/agpl-3.0.html" class="enlace-footer" rel="license noopener">AGPL-3.0</a>

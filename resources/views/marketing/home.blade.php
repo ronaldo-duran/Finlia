@@ -34,29 +34,57 @@
         ],
     ];
 
-    $title = 'Finlia — Finanzas personales y familiares';
-    $description = 'Finlia te dice cuánto dinero puedes gastar hoy sin comprometer el arriendo, las cuotas ni tus metas. Gastos, ingresos, deudas y ahorro de tu hogar, desde el celular. Gratis y en pesos colombianos.';
+    $title = 'Finlia — App de finanzas personales y familiares en Colombia';
+    $description = 'Finlia es una app y software gratis para manejar tus finanzas personales y familiares en Colombia. Presupuesto, gastos, ingresos, deudas, tarjetas de crédito y metas de ahorro en un solo lugar. Te dice cuánto puedes gastar hoy sin comprometer el arriendo, las cuotas ni tus metas.';
+    $keywords = 'finanzas personales, finanzas familiares, app de finanzas personales, software para finanzas personales, presupuesto personal, presupuesto familiar, control de gastos, gastos e ingresos, deudas y tarjetas de crédito, metas de ahorro, dinero disponible, finanzas Colombia, Finlia';
 
     $schema = [
         '@context' => 'https://schema.org',
         '@graph' => [
             [
+                '@type' => 'Organization',
+                '@id' => route('home').'#organizacion',
+                'name' => 'Finlia',
+                'url' => route('home'),
+                'logo' => asset('finlia-logo.svg'),
+                'sameAs' => [
+                    'https://github.com/ronaldo-duran/Finlia',
+                ],
+            ],
+            [
+                '@type' => 'WebSite',
+                '@id' => route('home').'#sitio',
+                'url' => route('home'),
+                'name' => 'Finlia',
+                'inLanguage' => 'es-CO',
+                'publisher' => ['@id' => route('home').'#organizacion'],
+            ],
+            [
                 '@type' => 'SoftwareApplication',
                 'name' => 'Finlia',
+                'alternateName' => ['Finlia App', 'Finlia Colombia'],
                 'applicationCategory' => 'FinanceApplication',
+                'applicationSubCategory' => 'PersonalFinanceApplication',
                 'operatingSystem' => 'Web, Android, iOS',
                 'url' => route('home'),
                 'inLanguage' => 'es-CO',
                 'description' => $description,
+                'keywords' => $keywords,
+                'countriesSupported' => 'CO',
+                'softwareVersion' => config('finlia.version'),
+                'releaseNotes' => route('changelog.show'),
+                'publisher' => ['@id' => route('home').'#organizacion'],
                 'featureList' => [
-                    'Cálculo de dinero disponible',
-                    'Registro de gastos e ingresos',
-                    'Presupuestos por categoría',
+                    'Cálculo del dinero disponible ("cuánto puedo gastar hoy")',
+                    'Registro de gastos e ingresos por categoría y cuenta',
+                    'Presupuestos por categoría con opción de sobre',
                     'Control de deudas y tarjetas de crédito',
-                    'Metas de ahorro',
+                    'Metas de ahorro y fondo de emergencia',
                     'Gastos recurrentes y recordatorios',
+                    'Cuentas por cobrar',
                     'Hogares compartidos entre varios miembros',
-                    'Reportes con gráficos',
+                    'Reportes con gráficos y exportación',
+                    'App instalable (PWA) en Android e iOS',
                 ],
                 'offers' => [
                     '@type' => 'Offer',
@@ -77,7 +105,7 @@
     ];
 @endphp
 
-@extends('marketing.layout', ['title' => $title, 'description' => $description, 'schema' => $schema])
+@extends('marketing.layout', ['title' => $title, 'description' => $description, 'keywords' => $keywords, 'schema' => $schema])
 
 @section('content')
 

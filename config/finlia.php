@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 return [
-    'version' => '0.41.0',
+    'version' => '0.42.0',
     'compulsive_survey' => [
         'enabled' => filter_var(env('FINLIA_COMPULSIVE_SURVEY_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     ],

@@ -91,7 +91,7 @@ class LandingTest extends TestCase
 
         $xml = $respuesta->getContent();
         $this->assertStringContainsString('<loc>'.route('home').'</loc>', $xml);
-        $this->assertStringContainsString('<loc>'.route('terms.show').'</loc>', $xml);
+        $this->assertStringContainsString('<loc>'.route('contact.create').'</loc>', $xml);
     }
 
     public function test_llms_txt_se_sirve_como_texto_plano(): void

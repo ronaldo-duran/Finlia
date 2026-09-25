@@ -399,3 +399,72 @@ body.marketing {
     border: 1px solid var(--finlia-border);
     box-shadow: var(--finlia-shadow);
 }
+
+.changelog-content h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5rem;
+}
+
+.changelog-content h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.005em;
+    color: var(--finlia-text);
+    margin: 2rem 0 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--finlia-border);
+}
+
+.changelog-content h2:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+    margin-top: 1rem;
+}
+
+.changelog-content h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--finlia-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 1.25rem 0 0.5rem;
+}
+
+.changelog-content blockquote {
+    border-left: 3px solid var(--finlia-primary);
+    padding: 0.25rem 0 0.25rem 1rem;
+    color: var(--finlia-text-muted);
+    font-size: 0.95rem;
+    margin: 1rem 0;
+}
+
+.changelog-content ul {
+    padding-left: 1.25rem;
+}
+
+.changelog-content li {
+    margin-bottom: 0.35rem;
+    line-height: 1.55;
+}
+
+.changelog-content p {
+    line-height: 1.6;
+}
+
+.changelog-content code {
+    background: var(--finlia-surface-alt, rgba(0, 0, 0, 0.05));
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.changelog-content a {
+    color: var(--finlia-primary);
+    text-decoration: none;
+}
+
+.changelog-content a:hover {
+    text-decoration: underline;
+}

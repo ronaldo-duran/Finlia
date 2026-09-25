@@ -7,6 +7,8 @@
 
     <title>{{ $title ?? 'Acceso' }} · Finlia</title>
 
+    <meta name="robots" content="noindex, nofollow">
+
     @include('layouts.partials.favicon')
 
     <link rel="manifest" href="/manifest.webmanifest">
@@ -48,7 +50,8 @@
         Finlia · Finanzas familiares &middot;
         <span class="text-finlia fw-semibold">COP</span> &middot;
         <a href="{{ route('terms.show') }}" class="text-decoration-none">Términos y condiciones</a> &middot;
-        <a href="{{ route('data.policy') }}" class="text-decoration-none">Tus datos</a>
+        <a href="{{ route('data.policy') }}" class="text-decoration-none">Tus datos</a> &middot;
+        <a href="{{ route('changelog.show') }}" class="text-decoration-none">v{{ config('finlia.version') }}</a>
     </footer>
     @stack('scripts')
 </body>

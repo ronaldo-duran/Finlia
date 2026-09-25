@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\CompulsiveSurveyController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CreditCardController;
@@ -44,6 +45,7 @@ Route::group(array_filter(['domain' => config('finlia.domains.marketing')]), fun
     Route::get('/', [MarketingController::class, 'home'])->name('home');
     Route::get('sitemap.xml', [MarketingController::class, 'sitemap'])->name('sitemap');
     Route::get('llms.txt', [MarketingController::class, 'llms'])->name('llms');
+    Route::get('versiones', [ChangelogController::class, 'show'])->name('changelog.show');
 
     Route::get('og', [MarketingController::class, 'ogPreview'])->name('og-preview');
     Route::get('contacto', [ContactController::class, 'create'])->name('contact.create');

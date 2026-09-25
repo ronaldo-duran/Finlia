@@ -19,6 +19,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $titulo }}</title>
     <meta name="description" content="{{ $descripcion }}">
+    @isset($keywords)
+        <meta name="keywords" content="{{ $keywords }}">
+    @endisset
     <link rel="canonical" href="{{ $canonica }}">
     @if ($indexable)
         <meta name="robots" content="noindex, nofollow">
