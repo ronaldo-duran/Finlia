@@ -19,6 +19,9 @@
             <a href="{{ route('profile.plan') }}" class="btn btn-sm btn-outline-primary" data-tour="profile-plan">
                 <i class="bi bi-stars me-1"></i> Tu plan
             </a>
+            <a href="{{ route('profile.mcp.index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-key me-1"></i> Tokens MCP
+            </a>
         </div>
     </div>
     <p class="text-muted mb-4">

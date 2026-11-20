@@ -12,6 +12,10 @@ use App\Models\Reminder;
 use App\Models\SavingsGoal;
 use App\Models\SavingsGoalContribution;
 use App\Observers\ReminderSummaryCacheObserver;
+use App\Services\Mcp\McpServer;
+use App\Services\Mcp\Tools\GetAvailableMoneyTool;
+use App\Services\Mcp\Tools\GetBudgetSummaryTool;
+use App\Services\Mcp\Tools\ListRecentMovementsTool;
 use App\Services\ReminderService;
 use Finlia\Ee\EeServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -44,6 +48,12 @@ class AppServiceProvider extends ServiceProvider
         if (class_exists(EeServiceProvider::class)) {
             $this->app->register(EeServiceProvider::class);
         }
+
+        $this->app->singleton(McpServer::class, fn ($app) => new McpServer([
+            $app->make(GetAvailableMoneyTool::class),
+            $app->make(GetBudgetSummaryTool::class),
+            $app->make(ListRecentMovementsTool::class),
+        ]));
     }
 
     /**

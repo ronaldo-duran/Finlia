@@ -192,6 +192,7 @@ composer audit             # revisa vulnerabilidades de dependencias
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Estado de las 13 épicas |
 | [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | Nombres, dinero, fechas, commits |
 | [docs/UI_DESIGN.md](docs/UI_DESIGN.md) | Sistema de diseño: componentes, tokens, cuándo usar cada uno |
+| [docs/MCP.md](docs/MCP.md) | Servidor MCP interno: endpoint, autenticación por tokens y tools expuestas |
 | [docs/BRAND.md](docs/BRAND.md) | Identidad de marca: símbolo, paleta petróleo/cobre, logo, favicon |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Registro de decisiones (ADR) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Cómo contribuir, qué se acepta y el CLA ([ADR-0042](docs/DECISIONS.md#adr-0042)) |

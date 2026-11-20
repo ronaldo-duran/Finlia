@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AuthenticateMcpToken;
 use App\Http\Middleware\EnsureAccountActive;
 use App\Http\Middleware\EnsureTermsAccepted;
 use App\Http\Middleware\ShareActiveTour;
@@ -20,10 +21,15 @@ return Application::configure(basePath: dirname(__DIR__))
             AuthenticateSession::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            'mcp',
+        ]);
+
         $middleware->alias([
             'terms.current' => EnsureTermsAccepted::class,
             'account.active' => EnsureAccountActive::class,
             'tour' => ShareActiveTour::class,
+            'mcp.auth' => AuthenticateMcpToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

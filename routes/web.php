@@ -28,6 +28,8 @@ use App\Http\Controllers\HouseholdMemberController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\MarketingController;
+use App\Http\Controllers\McpController;
+use App\Http\Controllers\McpTokenController;
 use App\Http\Controllers\MovementsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReceivableController;
@@ -67,6 +69,11 @@ Route::get('robots.txt', [MarketingController::class, 'robots'])->name('robots')
 if (($dominioApp = config('finlia.domains.app')) !== null) {
     Route::domain($dominioApp)->get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'));
 }
+Route::post('mcp', McpController::class)
+    ->middleware(['throttle:60,1', 'mcp.auth'])
+    ->name('mcp.rpc')
+    ->domain(config('finlia.domains.app'));
+
 Route::group($enLaApp + ['middleware' => 'guest'], function () {
     Route::get('registro', [RegisteredUserController::class, 'create'])
         ->name('register');
@@ -160,6 +167,12 @@ Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', '
         ->middleware('throttle:3,1');
     Route::post('perfil/exportar', [ProfileController::class, 'requestExport'])
         ->name('profile.export');
+    Route::get('perfil/mcp', [McpTokenController::class, 'index'])->name('profile.mcp.index');
+    Route::post('perfil/mcp', [McpTokenController::class, 'store'])
+        ->name('profile.mcp.store')
+        ->middleware('throttle:10,1');
+    Route::delete('perfil/mcp/{mcpToken}', [McpTokenController::class, 'destroy'])
+        ->name('profile.mcp.destroy');
     Route::get('hogares', [HouseholdController::class, 'index'])->name('households.index');
     Route::get('hogares/crear', [HouseholdController::class, 'create'])->name('households.create');
     Route::post('hogares', [HouseholdController::class, 'store'])->name('households.store');
