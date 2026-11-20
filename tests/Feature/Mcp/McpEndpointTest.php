@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\HouseholdService;
 use App\Services\Mcp\McpTokenService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /**
@@ -44,10 +45,7 @@ class McpEndpointTest extends TestCase
         $this->plain = $result['plain'];
     }
 
-    /**
-     * @return \Illuminate\Testing\TestResponse
-     */
-    private function rpc(array $payload, ?string $token = null)
+    private function rpc(array $payload, ?string $token = null): TestResponse
     {
         return $this->postJson('/mcp', $payload, [
             'Authorization' => 'Bearer '.($token ?? $this->plain),
