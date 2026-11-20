@@ -57,8 +57,11 @@ class McpTokenManagementTest extends TestCase
         $this->assertStringStartsWith(McpToken::PLAIN_PREFIX, $plain);
         $this->assertSame(1, McpToken::count());
 
-        $followUp = $this->get('/perfil/mcp');
-        $followUp->assertDontSee($plain);
+        $firstGet = $this->get('/perfil/mcp');
+        $firstGet->assertSee($plain);
+
+        $secondGet = $this->get('/perfil/mcp');
+        $secondGet->assertDontSee($plain);
     }
 
     public function test_crear_token_con_vencimiento(): void

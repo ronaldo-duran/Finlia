@@ -189,20 +189,36 @@ class McpEndpointTest extends TestCase
         $this->assertSame(-32601, $response->json('error.code'));
     }
 
-    public function test_jsonrpc_malformado_devuelve_parse_error(): void
+    public function test_jsonrpc_sin_method_devuelve_invalid_request(): void
     {
-        $response = $this->postJson('/mcp', [], [
-            'Authorization' => 'Bearer '.$this->plain,
-        ]);
+        $response = $this->rpc(['jsonrpc' => '2.0', 'id' => 99]);
 
-        $this->assertNotSame(200, $response->status(), 'Un body vacío no puede ser respuesta ok');
+        $response->assertOk();
+        $this->assertSame(-32600, $response->json('error.code'));
     }
 
     public function test_usuario_expulsado_del_hogar_pierde_el_token(): void
     {
-        app(HouseholdService::class)->removeMember($this->household, $this->owner);
+        $miembro = User::factory()->create();
+        $miembro->households()->attach($this->household->id, [
+            'role' => 'member',
+            'joined_at' => now(),
+        ]);
 
-        $response = $this->rpc(['jsonrpc' => '2.0', 'id' => 7, 'method' => 'initialize']);
+        $tokenDelMiembro = app(McpTokenService::class)->issue(
+            user: $miembro,
+            household: $this->household,
+            name: 'Del miembro',
+            abilities: [McpToken::ABILITY_READ],
+        );
+
+        app(HouseholdService::class)->removeMember($this->household, $miembro);
+
+        $response = $this->postJson('/mcp', [
+            'jsonrpc' => '2.0', 'id' => 7, 'method' => 'initialize',
+        ], [
+            'Authorization' => 'Bearer '.$tokenDelMiembro['plain'],
+        ]);
 
         $response->assertStatus(401);
     }
