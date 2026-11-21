@@ -15,6 +15,18 @@
         que estaba activo cuando lo emitiste y nunca puede ver datos de otro.
     </p>
 
+    <div class="alert alert-primary small d-flex gap-2 align-items-start">
+        <i class="bi bi-stars fs-5"></i>
+        <div>
+            <strong>Nuevo: conexión por OAuth para Claude.ai web y ChatGPT.</strong>
+            Si usas <strong>Claude.ai en el navegador</strong>, <strong>ChatGPT</strong>, Cursor web
+            u otro cliente MCP con OAuth, no hace falta emitir un token aquí: añade
+            <code>{{ url('/mcp') }}</code> como conector y aprueba el acceso desde Finlia. Los
+            tokens personales de abajo siguen sirviendo para Claude Desktop, Claude Code y clientes
+            MCP sin OAuth.
+        </div>
+    </div>
+
     @if (session('mcp_new_token'))
         <div class="alert alert-success d-flex flex-column gap-2" role="alert">
             <div><strong><i class="bi bi-shield-check me-1"></i> Token creado</strong></div>
@@ -219,6 +231,36 @@
                 <div class="accordion-item">
                     <h2 class="accordion-header">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#mcpConnectClaudeWeb" aria-expanded="false">
+                            <i class="bi bi-globe me-2"></i> Claude.ai (navegador)
+                        </button>
+                    </h2>
+                    <div id="mcpConnectClaudeWeb" class="accordion-collapse collapse"
+                        data-bs-parent="#mcpConnectAccordion">
+                        <div class="accordion-body small">
+                            <ol class="mb-2">
+                                <li>Entra a claude.ai, abre <strong>Ajustes → Conectores</strong>.</li>
+                                <li>Pulsa <strong>Añadir conector personalizado</strong> (o
+                                    "Add custom connector").</li>
+                                <li>Pega la URL del servidor:
+<pre class="p-2 bg-body border rounded d-inline-block mb-0"><code>{{ url('/mcp') }}</code></pre>
+                                </li>
+                                <li>Claude te redirigirá a Finlia para iniciar sesión (si no lo estás ya)
+                                    y mostrará una pantalla de consentimiento. Elige el hogar al que quieres
+                                    dar acceso y pulsa <strong>Autorizar</strong>.</li>
+                            </ol>
+                            <p class="mb-0">
+                                No necesitas emitir un token: el cliente se registra y obtiene su acceso
+                                por OAuth 2.1 + PKCE. Puedes revocarlo en cualquier momento desde
+                                la tabla de abajo.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                             data-bs-target="#mcpConnectChatgpt" aria-expanded="false">
                             <i class="bi bi-robot me-2"></i> ChatGPT
                         </button>
@@ -226,15 +268,17 @@
                     <div id="mcpConnectChatgpt" class="accordion-collapse collapse"
                         data-bs-parent="#mcpConnectAccordion">
                         <div class="accordion-body small">
-                            <p class="mb-2">
-                                ChatGPT soporta conectores MCP, pero exige OAuth 2.1 con PKCE, no tokens
-                                personales. Hoy Finlia no publica OAuth, así que <strong>la integración
-                                nativa con ChatGPT no está disponible todavía</strong>. Está planeada en
-                                un PR posterior.
-                            </p>
+                            <ol class="mb-2">
+                                <li>En ChatGPT, abre <strong>Ajustes → Conectores</strong>
+                                    (disponibles para los planes que lo incluyan).</li>
+                                <li>Añade un conector MCP con la URL
+                                    <code>{{ url('/mcp') }}</code>.</li>
+                                <li>ChatGPT te llevará a Finlia para iniciar sesión y pedir
+                                    consentimiento igual que con Claude.ai web.</li>
+                            </ol>
                             <p class="mb-0">
-                                Mientras tanto puedes usar Claude Desktop o Claude Code con el mismo
-                                token, o cualquier cliente MCP que acepte <code>Authorization: Bearer</code>.
+                                Si tu plan de ChatGPT no ofrece conectores MCP, usa Claude Desktop o
+                                Claude Code con un token personal.
                             </p>
                         </div>
                     </div>

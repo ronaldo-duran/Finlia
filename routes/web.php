@@ -31,6 +31,11 @@ use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\McpController;
 use App\Http\Controllers\McpTokenController;
 use App\Http\Controllers\MovementsController;
+use App\Http\Controllers\OAuth\AuthorizeController as OAuthAuthorizeController;
+use App\Http\Controllers\OAuth\ClientRegistrationController as OAuthClientRegistrationController;
+use App\Http\Controllers\OAuth\DiscoveryController as OAuthDiscoveryController;
+use App\Http\Controllers\OAuth\RevocationController as OAuthRevocationController;
+use App\Http\Controllers\OAuth\TokenController as OAuthTokenController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReceivableController;
 use App\Http\Controllers\ReceivablePaymentController;
@@ -73,6 +78,29 @@ Route::post('mcp', McpController::class)
     ->middleware(['throttle:60,1', 'mcp.auth'])
     ->name('mcp.rpc')
     ->domain(config('finlia.domains.app'));
+
+Route::group($enLaApp, function (): void {
+    Route::get('.well-known/oauth-protected-resource', [OAuthDiscoveryController::class, 'protectedResource'])
+        ->name('oauth.metadata.protected-resource');
+    Route::get('.well-known/oauth-authorization-server', [OAuthDiscoveryController::class, 'authorizationServer'])
+        ->name('oauth.metadata.authorization-server');
+    Route::post('oauth/register', OAuthClientRegistrationController::class)
+        ->middleware('throttle:20,1')
+        ->name('oauth.register');
+    Route::post('oauth/token', OAuthTokenController::class)
+        ->middleware('throttle:60,1')
+        ->name('oauth.token');
+    Route::post('oauth/revoke', OAuthRevocationController::class)
+        ->middleware('throttle:60,1')
+        ->name('oauth.revoke');
+});
+
+Route::group($enLaApp + ['middleware' => ['auth', 'verified', 'terms.current', 'account.active']], function (): void {
+    Route::get('oauth/authorize', [OAuthAuthorizeController::class, 'show'])
+        ->name('oauth.authorize');
+    Route::post('oauth/authorize', [OAuthAuthorizeController::class, 'approve'])
+        ->name('oauth.authorize.approve');
+});
 
 Route::group($enLaApp + ['middleware' => 'guest'], function () {
     Route::get('registro', [RegisteredUserController::class, 'create'])

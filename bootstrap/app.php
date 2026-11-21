@@ -23,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'mcp',
+            'oauth/token',
+            'oauth/register',
+            'oauth/revoke',
         ]);
 
         $middleware->alias([
