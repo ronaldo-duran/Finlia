@@ -1572,6 +1572,44 @@ Se estudiaron los patrones de la industria: cupo diario estable (Emma, Cleo, Mon
 
 ---
 
+## ADR-0049
+### Servidor MCP interno a Laravel, con tokens personales por hogar — **ACEPTADA**
+
+**Contexto.** Finlia responde a una pregunta que la gente también se hace fuera de la app ("¿cuánto puedo gastar hoy?"). Un asistente de IA como Claude puede contestarla si sabe leer el estado del hogar — cupo diario, presupuesto del mes, últimos movimientos — sin que el usuario copie cifras a mano. MCP (Model Context Protocol) es el estándar para exponer herramientas y recursos a un LLM, y Claude Desktop ya habla ese protocolo.
+
+La frontera del problema no es técnica sino de confianza: el servidor expone datos financieros reales. Hay que acotar el blast radius a UN hogar por credencial y mantener la amenaza #1 del proyecto (aislamiento multi-hogar, CLAUDE.md §6) intacta.
+
+**Decisión.** Un servidor MCP **dentro** de la misma app Laravel, con autenticación por tokens personales atados a (usuario, hogar).
+
+1. **Transporte**: endpoint único `POST /mcp` con JSON-RPC 2.0. Una request → una response. Sin SSE y sin stdio: incompatibles con hosting compartido (CLAUDE.md §2). La ruta queda excluida de CSRF porque los clientes MCP no participan del flujo de sesión web.
+2. **Autenticación**: tabla propia `mcp_tokens` (user_id, household_id, name, token_hash SHA-256, abilities JSON, last_used_at, expires_at, revoked_at). El string en claro lleva prefijo `finlia_mcp_` y se muestra UNA sola vez tras emitirlo. Un middleware `mcp.auth` resuelve usuario y hogar desde el token, nunca desde el payload. Si el usuario dejó de pertenecer al hogar, el token deja de servir.
+3. **Hogar fijado en emisión**: cuando el usuario emite el token, Finlia toma el hogar activo de su sesión web y lo congela ahí. Cambiar el hogar activo después no afecta a tokens ya emitidos. Para operar sobre otro hogar hay que emitir otro token. Esto convierte el aislamiento multi-hogar en una propiedad del token, no del payload.
+4. **Tools como adaptadores finos sobre Services**: cada tool es una clase que implementa `McpTool` y llama a un Service de dominio (`BudgetCalculatorService`, etc.) con el `household_id` del token. Sin HTTP dentro de la tool (seam, [ADR-0010](#adr-0010)); la misma cifra que ve la web sale por MCP sin duplicar lógica.
+5. **Alcance v0.43 — solo lectura**: `get_available_money`, `get_budget_summary`, `list_recent_movements`. Las tools de escritura (`register_expense` et al.) quedan para un PR posterior, con un patrón de dos fases (preview + confirm explícito) para acotar el daño de una alucinación.
+6. **Abilities por token**: lista blanca. En v0.43 solo `read`; cuando lleguen tools de escritura, cada token se emite con las habilidades que necesita.
+7. **Rate limit y auditoría**: 60 req/min por token (Laravel throttle), `last_used_at` tocado en cada request autenticada. Los payloads no se loguean en claro; cuando haya escritura se registrará nombre de tool + ids, nunca descripciones libres.
+
+**Alternativas descartadas.**
+
+- **Servidor MCP aparte en Node/Python**: duplica validación/autorización, pide un proceso persistente y rompe la restricción de stack. Hostinger no lo soporta sin VPS.
+- **Sanctum PATs**: CLAUDE.md pide auth por sesiones y no mezclar con Sanctum. Una tabla dedicada permite además el campo `household_id` en el propio token, que Sanctum no modela.
+- **OAuth 2.1 con PKCE**: el estándar MCP lo contempla, pero añade consent screen, cliente registrado y refresh tokens. Overkill mientras el único "cliente" sea Claude Desktop del dueño de la cuenta. Se puede añadir más adelante sin romper los PATs.
+- **Token global en `.env`**: lo más barato de armar y lo peor en blast radius. Un filtrado de `.env` daría acceso irrestricto a todos los hogares.
+- **SSE / `streamable HTTP` completo del estándar MCP**: útil cuando la tool emite progreso. Ninguna tool actual lo necesita y SSE no sobrevive a hosting compartido.
+
+**Consecuencias y mitigaciones.**
+
+- **Un nuevo vector de autenticación** que mantener. Mitigación: superficie mínima (`mcp.auth` + `McpTokenService`), tests de barrido de aislamiento (hogar ajeno, token revocado, token vencido, ability ausente, usuario expulsado del hogar).
+- **Un endpoint sin CSRF**. Mitigación: la ruta es solo accesible con token válido, y el token nunca viaja en una cookie, por lo que CSRF no aplica en origen.
+- **El usuario puede no saber qué está mirando el asistente**. Mitigación: cada token lista nombre y último uso en /perfil/mcp; revocar es un clic. Cuando se añada escritura, el payload irá firmado con "tool" + "args" de longitud acotada y sin descripciones libres del LLM.
+- **Coste cognitivo de un nuevo settings**. Mitigación: /perfil/mcp vive bajo el perfil del usuario (preferencia personal, no del hogar, igual que contraseña o correo).
+- **El hogar fijado en emisión obliga a emitir varios tokens si usas varios hogares**. Es el precio del aislamiento. El mensaje en la UI lo explica.
+- **Deriva del estándar MCP**: el protocolo todavía se mueve. Mitigación: `protocolVersion` se declara explícito en `initialize` y el dispatcher ignora métodos que no conoce con `-32601`. Subir de versión del protocolo cuando un cliente real lo exija, no antes.
+
+**Estado.** ACEPTADA — 2026-11-20. Implementada en `database/migrations/2026_11_20_000001_create_mcp_tokens_table.php`, `app/Models/McpToken.php`, `app/Policies/McpTokenPolicy.php`, `app/Services/Mcp/*`, `app/Http/Middleware/AuthenticateMcpToken.php`, `app/Http/Controllers/McpController.php`, `app/Http/Controllers/McpTokenController.php`, `resources/views/profile/mcp/index.blade.php`, `routes/web.php`, `bootstrap/app.php` y `tests/Feature/Mcp/*`.
+
+---
+
 1. Numera correlativo (`ADR-00NN`).
 2. Marca estado: **Propuesta / PENDIENTE / ACEPTADA / Rechazada / Sustituida por ADR-00NN**.
 3. Incluye: contexto, decisión, alternativas, consecuencias.
