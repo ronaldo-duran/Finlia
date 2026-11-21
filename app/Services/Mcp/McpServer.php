@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Mcp;
 
 use App\Models\Household;
-use App\Models\McpToken;
 use App\Models\User;
 use App\Services\Mcp\Tools\McpTool;
 use Throwable;
@@ -63,7 +62,7 @@ class McpServer
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
-    public function handle(array $payload, User $user, Household $household, McpToken $token): array
+    public function handle(array $payload, User $user, Household $household, McpAuthorization $token): array
     {
         $id = $payload['id'] ?? null;
 
@@ -115,7 +114,7 @@ class McpServer
     }
 
     /** @return array<string, mixed> */
-    private function listTools(McpToken $token): array
+    private function listTools(McpAuthorization $token): array
     {
         $tools = [];
         foreach ($this->tools as $tool) {
@@ -137,7 +136,7 @@ class McpServer
      * @param  array<string, mixed>  $params
      * @return array<string, mixed>
      */
-    private function callTool(array $params, User $user, Household $household, McpToken $token): array
+    private function callTool(array $params, User $user, Household $household, McpAuthorization $token): array
     {
         $name = $params['name'] ?? null;
         if (! is_string($name) || ! isset($this->tools[$name])) {

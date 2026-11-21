@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Household;
-use App\Models\McpToken;
+use App\Services\Mcp\McpAuthorization;
 use App\Services\Mcp\McpServer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,7 +32,7 @@ class McpController extends Controller
         $token = $request->attributes->get('mcp_token');
         $household = $request->attributes->get('mcp_household');
 
-        if (! $token instanceof McpToken || ! $household instanceof Household) {
+        if (! $token instanceof McpAuthorization || ! $household instanceof Household) {
             return response()->json(McpServer::parseError(), 500);
         }
 

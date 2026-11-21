@@ -30,7 +30,13 @@ Métodos JSON-RPC implementados en este primer PR:
 
 ## Autenticación
 
-Tokens personales (`mcp_tokens`), distintos de la sesión web:
+El endpoint acepta dos tipos de credencial en el mismo header `Authorization:
+Bearer <token>`. El middleware las distingue por prefijo.
+
+### Tokens personales (`finlia_mcp_...`)
+
+Para clientes que no implementan OAuth: Claude Desktop, Claude Code, Cursor
+local, scripts con `curl`, etc.
 
 - Se emiten en **/perfil/mcp** y quedan atados al usuario Y al hogar activo
   del momento. Un token nunca ve datos de otro hogar aunque el usuario cambie
@@ -42,6 +48,41 @@ Tokens personales (`mcp_tokens`), distintos de la sesión web:
 - Un token se puede revocar en cualquier momento; la revocación es definitiva
   (no se regenera el string en claro).
 - `abilities`: lista de habilidades. En v0.43 solo existe `read`.
+
+### OAuth 2.1 + PKCE (`finlia_oat_...`)
+
+Para clientes alojados que descubren y autentican automáticamente: Claude.ai
+en navegador, ChatGPT (donde el plan lo permita), Cursor web y cualquier
+cliente MCP que hable OAuth.
+
+Endpoints publicados en el authorization server:
+
+| Endpoint                                   | Función                          |
+|--------------------------------------------|----------------------------------|
+| `/.well-known/oauth-protected-resource`    | RFC 9728 — apunta al AS.         |
+| `/.well-known/oauth-authorization-server`  | RFC 8414 — describe capacidades. |
+| `POST /oauth/register`                     | RFC 7591 — DCR abierta.          |
+| `GET  /oauth/authorize`                    | Pantalla de consentimiento.      |
+| `POST /oauth/authorize`                    | Emite authorization_code.        |
+| `POST /oauth/token`                        | `authorization_code` / `refresh_token`. |
+| `POST /oauth/revoke`                       | RFC 7009.                        |
+
+Reglas del flujo:
+
+- **PKCE S256 obligatorio** (`code_challenge_method=S256`). No se permite
+  `plain`. Ningún cliente se autentica con secret: son públicos.
+- El cliente se **registra dinámicamente** enviando `client_name` y
+  `redirect_uris`. Finlia devuelve un `client_id` y no persiste secret.
+- En `/oauth/authorize` el usuario elige **qué hogar** autoriza. Ese hogar
+  queda fijado en el authorization_code y luego en el access/refresh token.
+  Como con los PAT, cualquier mención de hogar en el payload MCP se ignora.
+- **Rotación de refresh tokens**: al refrescar se emite un par nuevo y el
+  anterior queda revocado (OAuth 2.1 §4.3.1).
+- Scopes: en v0.44 solo `mcp:read`. El scope se mapea a la ability `read`
+  para reusar el mismo seam de autorización de las tools.
+- Un 401 contra `/mcp` incluye el header
+  `WWW-Authenticate: Bearer resource_metadata="https://.../.well-known/oauth-protected-resource"`
+  para que el cliente descubra el AS automáticamente.
 
 Si el usuario deja de pertenecer al hogar o el hogar se borra, el token deja
 de servir sin necesidad de revocarlo.

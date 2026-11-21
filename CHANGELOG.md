@@ -12,6 +12,21 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.44.0] - 2026-11-21 — OAuth 2.1 para conectores MCP (Claude.ai, ChatGPT)
+
+### Añadido
+- **OAuth 2.1 + PKCE S256** publicado como authorization server para que el servidor MCP de Finlia se pueda añadir directamente como conector en **Claude.ai en navegador**, **ChatGPT** y cualquier otro cliente MCP que hable OAuth. No hace falta emitir un token ni pegar JSON: el usuario pega la URL `https://app.finlia.online/mcp` como conector, se redirige a Finlia, inicia sesión, elige a qué hogar da acceso y aprueba. El cliente nunca ve un token en claro ni puede cambiar el hogar después (ADR-0050).
+- **Dynamic Client Registration** (RFC 7591) en `POST /oauth/register`: los conectores se registran solos al añadirse.
+- **Protected Resource Metadata** (RFC 9728) en `/.well-known/oauth-protected-resource` y **Authorization Server Metadata** (RFC 8414) en `/.well-known/oauth-authorization-server`, ambos públicos y con `Cache-Control`.
+- **Pantalla de consentimiento** en `/oauth/authorize` que muestra qué cliente pide acceso y a qué hogar lo va a atar; el usuario elige el hogar.
+- **Rotación de refresh tokens**: cada refresh emite un par nuevo y revoca el anterior; access token de 1 h, refresh token de 30 días, authorization_code de 60 s.
+- **Revocación** (RFC 7009) en `POST /oauth/revoke`.
+- **Instrucciones nuevas** en `/perfil/mcp` para conectar desde Claude.ai web y ChatGPT; los PATs siguen sirviendo para Claude Desktop, Claude Code y clientes MCP sin OAuth.
+
+### Mejorado
+- `/mcp` en 401 ahora adjunta `WWW-Authenticate: Bearer resource_metadata="..."` para que el cliente descubra el authorization server automáticamente.
+- El servidor MCP aísla al dispatcher del tipo de credencial: PATs y access tokens OAuth implementan la misma interfaz `McpAuthorization`.
+
 ## [0.43.0] - 2026-11-20 — Servidor MCP interno para asistentes de IA
 
 ### Añadido

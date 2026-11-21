@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Mcp\McpAuthorization;
 use Database\Factories\McpTokenFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * secreto, que se muestra al usuario una sola vez tras emitirlo.
  */
 #[Fillable(['user_id', 'household_id', 'name', 'token_hash', 'abilities', 'last_used_at', 'expires_at', 'revoked_at'])]
-class McpToken extends Model
+class McpToken extends Model implements McpAuthorization
 {
     /** @use HasFactory<McpTokenFactory> */
     use HasFactory;

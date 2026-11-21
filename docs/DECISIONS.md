@@ -1608,6 +1608,90 @@ La frontera del problema no es técnica sino de confianza: el servidor expone da
 
 **Estado.** ACEPTADA — 2026-11-20. Implementada en `database/migrations/2026_11_20_000001_create_mcp_tokens_table.php`, `app/Models/McpToken.php`, `app/Policies/McpTokenPolicy.php`, `app/Services/Mcp/*`, `app/Http/Middleware/AuthenticateMcpToken.php`, `app/Http/Controllers/McpController.php`, `app/Http/Controllers/McpTokenController.php`, `resources/views/profile/mcp/index.blade.php`, `routes/web.php`, `bootstrap/app.php` y `tests/Feature/Mcp/*`.
 
+## ADR-0050
+
+**Título.** OAuth 2.1 + PKCE para conectores MCP externos.
+
+**Contexto.** [ADR-0049](#adr-0049) resolvió la autenticación MCP con tokens
+personales pegados a mano en un archivo de configuración (`claude_desktop_config.json`).
+Funciona para Claude Desktop o Claude Code, pero los conectores de **claude.ai
+en navegador** y **ChatGPT** exigen descubrimiento automático con OAuth 2.1 +
+PKCE (RFC 7636) + Dynamic Client Registration (RFC 7591) y Protected Resource
+Metadata (RFC 9728). Pegar JSON en un archivo no es viable para un usuario
+no técnico — el feedback real de Ronaldo al probar fue literalmente "si no
+fui capaz de conectarlo yo ahora un usuario normal menos".
+
+**Decisión.** Finlia se publica como **Authorization Server y Resource Server
+combinados** (la misma app), siguiendo la especificación de MCP para HTTP:
+
+1. **Dos tipos de credencial, un mismo endpoint `/mcp`.** El middleware
+   `AuthenticateMcpToken` distingue por prefijo: `finlia_mcp_...` → PAT
+   (ADR-0049), `finlia_oat_...` → access token OAuth. Los dos implementan
+   la interfaz `McpAuthorization` para que `McpServer` no sepa cuál trajo
+   el cliente.
+2. **PKCE S256 obligatorio, clientes públicos sin secret.** El reto PKCE
+   basta como prueba de posesión; evitamos el peso operativo de rotar
+   secrets de clientes alojados.
+3. **DCR abierta sin software statement.** Cualquiera registra un cliente;
+   la autorización real requiere que un humano de Finlia inicie sesión y
+   consienta en `/oauth/authorize`. El `client_id` por sí solo no da acceso
+   a nada.
+4. **Hogar fijado en el consentimiento.** Como con los PAT, es el usuario
+   quien elige en la pantalla de consentimiento a qué hogar da acceso. El
+   `household_id` queda escrito en el authorization_code y en los tokens
+   emitidos; cualquier intento de cambiarlo desde el payload se ignora.
+5. **Rotación de refresh tokens** (OAuth 2.1 §4.3.1): al refrescar emitimos
+   access + refresh nuevos y revocamos los previos. Mitigación de robo de
+   refresh.
+6. **Vida corta**: authorization_code 60 s, access_token 1 h, refresh_token
+   30 días. Rate limiting: 60 req/min en `/oauth/token`, 20/min en
+   `/oauth/register`.
+7. **Metadata descubrible**: `/.well-known/oauth-protected-resource` y
+   `/.well-known/oauth-authorization-server` están disponibles sin auth
+   con `Cache-Control: public, max-age=300`. El 401 de `/mcp` adjunta
+   `WWW-Authenticate: Bearer resource_metadata="..."` para el descubrimiento.
+
+**Alternativas descartadas.**
+
+- **Solo PATs**: ya lo intentamos y no es viable para claude.ai web ni
+  ChatGPT. Se queda como camino secundario para clientes locales.
+- **Laravel Passport**: aporta un trozo del estándar pero no cubre DCR
+  (RFC 7591) ni Protected Resource Metadata (RFC 9728) tal como los piden
+  los conectores MCP de hoy. Hubiera requerido tantos ajustes como escribir
+  el flujo a mano, y una dependencia pesada en una app pequeña.
+- **OAuth 2.0 con client_secret**: incompatible con clientes públicos
+  registrados dinámicamente. OAuth 2.1 explícitamente desaconseja secrets
+  para clientes de este tipo.
+- **Delegar en un IdP externo (Auth0, Clerk)**: cargaría todos los usuarios
+  de Finlia en un servicio externo solo para habilitar el MCP. Rompe el
+  principio de no mover datos personales fuera del hosting compartido
+  (CLAUDE.md §6).
+
+**Consecuencias y mitigaciones.**
+
+- **Nueva superficie HTTP** (6 endpoints OAuth). Mitigación: controladores
+  delgados, lógica centralizada en `OAuthService` (seam ADR-0010), tests de
+  flujo end-to-end + casos de error (verifier malo, código reusado, etc.).
+- **Dynamic Client Registration es abierta** para no romper el "añadir
+  conector" de Claude.ai. Mitigación: el `client_id` no autoriza nada por
+  sí solo — siempre hay que pasar por la pantalla de consentimiento. Rate
+  limit 20/min por IP. Los `redirect_uris` se validan estrictamente contra
+  lo registrado al canjear códigos.
+- **Más tablas que mantener** (`oauth_clients`, `oauth_authorization_codes`,
+  `oauth_access_tokens`, `oauth_refresh_tokens`). Mitigación: todas se
+  limpian en cascada por `household_id` y `user_id`; una poda futura puede
+  borrar tokens expirados hace >N días si crece.
+- **El usuario pega la URL `/mcp` como conector, no un token**. Mitigación:
+  la UI explica paso a paso en `/perfil/mcp` y el 401 del endpoint ya guía
+  al cliente al descubrimiento.
+- **Riesgo residual de phishing de conector**: alguien podría registrar
+  "Finlia" como cliente malicioso con redirect_uri a su dominio. Mitigación:
+  la pantalla de consentimiento muestra `client_name` y `client_id`, y la
+  copia explícita pide al usuario cancelar si no reconoce la solicitud.
+  Futuro: software statements firmados por proveedores conocidos.
+
+**Estado.** ACEPTADA — 2026-11-21. Implementada en `database/migrations/2026_11_21_000001_create_oauth_tables.php`, `app/Models/OAuthClient.php`, `app/Models/OAuthAuthorizationCode.php`, `app/Models/OAuthAccessToken.php`, `app/Models/OAuthRefreshToken.php`, `app/Services/Mcp/OAuthService.php`, `app/Services/Mcp/OAuthException.php`, `app/Services/Mcp/McpAuthorization.php`, `app/Http/Controllers/OAuth/*`, `app/Http/Middleware/AuthenticateMcpToken.php`, `resources/views/oauth/authorize.blade.php`, `routes/web.php`, `bootstrap/app.php` y `tests/Feature/Mcp/OAuthFlowTest.php`.
+
 ---
 
 1. Numera correlativo (`ADR-00NN`).
