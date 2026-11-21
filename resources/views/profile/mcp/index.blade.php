@@ -116,11 +116,166 @@
         </div>
     </div>
 
-    <div class="mt-4 small text-muted">
-        <p class="mb-1"><strong>Endpoint:</strong> <code>POST {{ url('/mcp') }}</code></p>
-        <p class="mb-0">
-            Envía el token como <code>Authorization: Bearer finlia_mcp_...</code>. Consulta
-            <a href="{{ route('changelog.show') }}">las notas de versión</a> para ver qué tools están disponibles.
-        </p>
+    <div class="card border-0 mt-4">
+        <div class="card-header border-0 bg-transparent">
+            <span class="fw-semibold"><i class="bi bi-plug me-1"></i> Cómo conectarlo desde tu asistente</span>
+        </div>
+        <div class="card-body">
+            <p class="small text-muted mb-3">
+                Endpoint: <code>POST {{ url('/mcp') }}</code> con header
+                <code>Authorization: Bearer finlia_mcp_...</code>. En los ejemplos sustituye
+                <code>TU_TOKEN</code> por el token que acabas de emitir arriba.
+            </p>
+
+            <div class="accordion" id="mcpConnectAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#mcpConnectClaudeDesktop" aria-expanded="false">
+                            <i class="bi bi-chat-square-text me-2"></i> Claude Desktop (Mac / Windows)
+                        </button>
+                    </h2>
+                    <div id="mcpConnectClaudeDesktop" class="accordion-collapse collapse"
+                        data-bs-parent="#mcpConnectAccordion">
+                        <div class="accordion-body small">
+                            <ol class="mb-2">
+                                <li>Abre Claude Desktop, ve a <strong>Ajustes → Developer → Edit Config</strong>.</li>
+                                <li>Pega este bloque dentro de <code>mcpServers</code> y guarda:</li>
+                            </ol>
+<pre class="p-3 bg-body border rounded"><code>{
+  "mcpServers": {
+    "finlia": {
+      "url": "{{ url('/mcp') }}",
+      "headers": {
+        "Authorization": "Bearer TU_TOKEN"
+      }
+    }
+  }
+}</code></pre>
+                            <p class="mb-0">
+                                Reinicia Claude Desktop. Si tu versión no acepta <code>url</code> directo,
+                                usa el puente <code>mcp-remote</code>:
+                            </p>
+<pre class="p-3 bg-body border rounded mb-0"><code>{
+  "mcpServers": {
+    "finlia": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "{{ url('/mcp') }}",
+               "--header", "Authorization: Bearer TU_TOKEN"]
+    }
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#mcpConnectClaudeCode" aria-expanded="false">
+                            <i class="bi bi-terminal me-2"></i> Claude Code (CLI)
+                        </button>
+                    </h2>
+                    <div id="mcpConnectClaudeCode" class="accordion-collapse collapse"
+                        data-bs-parent="#mcpConnectAccordion">
+                        <div class="accordion-body small">
+                            <p>Desde una terminal:</p>
+<pre class="p-3 bg-body border rounded mb-2"><code>claude mcp add --transport http finlia {{ url('/mcp') }} \
+  --header "Authorization: Bearer TU_TOKEN"</code></pre>
+                            <p class="mb-0">
+                                Dentro de Claude Code escribe <code>/mcp</code> para verificar que el
+                                servidor <strong>finlia</strong> aparece como activo.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#mcpConnectCursor" aria-expanded="false">
+                            <i class="bi bi-code-slash me-2"></i> Cursor
+                        </button>
+                    </h2>
+                    <div id="mcpConnectCursor" class="accordion-collapse collapse"
+                        data-bs-parent="#mcpConnectAccordion">
+                        <div class="accordion-body small">
+                            <p>Edita <code>~/.cursor/mcp.json</code> (o el del proyecto en
+                                <code>.cursor/mcp.json</code>) y añade:</p>
+<pre class="p-3 bg-body border rounded mb-0"><code>{
+  "mcpServers": {
+    "finlia": {
+      "url": "{{ url('/mcp') }}",
+      "headers": {
+        "Authorization": "Bearer TU_TOKEN"
+      }
+    }
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#mcpConnectChatgpt" aria-expanded="false">
+                            <i class="bi bi-robot me-2"></i> ChatGPT
+                        </button>
+                    </h2>
+                    <div id="mcpConnectChatgpt" class="accordion-collapse collapse"
+                        data-bs-parent="#mcpConnectAccordion">
+                        <div class="accordion-body small">
+                            <p class="mb-2">
+                                ChatGPT soporta conectores MCP, pero exige OAuth 2.1 con PKCE, no tokens
+                                personales. Hoy Finlia no publica OAuth, así que <strong>la integración
+                                nativa con ChatGPT no está disponible todavía</strong>. Está planeada en
+                                un PR posterior.
+                            </p>
+                            <p class="mb-0">
+                                Mientras tanto puedes usar Claude Desktop o Claude Code con el mismo
+                                token, o cualquier cliente MCP que acepte <code>Authorization: Bearer</code>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#mcpConnectOther" aria-expanded="false">
+                            <i class="bi bi-three-dots me-2"></i> Otro cliente MCP
+                        </button>
+                    </h2>
+                    <div id="mcpConnectOther" class="accordion-collapse collapse"
+                        data-bs-parent="#mcpConnectAccordion">
+                        <div class="accordion-body small">
+                            <p class="mb-2">
+                                Zed, Continue, cline, Goose y la mayoría de clientes MCP aceptan un
+                                servidor HTTP con header de autorización. Lo que necesitas pasarles:
+                            </p>
+                            <ul class="mb-2">
+                                <li>URL: <code>{{ url('/mcp') }}</code></li>
+                                <li>Transporte: <code>http</code> (streamable HTTP, una petición por llamada).</li>
+                                <li>Header: <code>Authorization: Bearer TU_TOKEN</code></li>
+                                <li>Formato: JSON-RPC 2.0 (<code>initialize</code>, <code>tools/list</code>, <code>tools/call</code>).</li>
+                            </ul>
+                            <p class="mb-0">
+                                Prueba rápida sin cliente:
+                            </p>
+<pre class="p-3 bg-body border rounded mb-0"><code>curl -X POST {{ url('/mcp') }} \
+  -H "Authorization: Bearer TU_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="small text-muted mt-3 mb-0">
+                Consulta <a href="{{ route('changelog.show') }}">las notas de versión</a> para ver qué
+                tools están disponibles en cada entrega.
+            </p>
+        </div>
     </div>
 @endsection
