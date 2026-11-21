@@ -12,6 +12,16 @@ reciente de este archivo.
 > (`vX.Y.Z`, anotado sobre el merge en `main`); algunas salieron sin tag y no se
 > crean a posteriori. Para actualizar este archivo usa la skill `/update-changelog`.
 
+## [0.43.0] - 2026-11-20 — Servidor MCP interno para asistentes de IA
+
+### Añadido
+- **Servidor MCP** (Model Context Protocol) propio en `POST /mcp`, para que un asistente de IA que ya uses — Claude Desktop, Claude Code, Cursor y otros clientes MCP — pueda contestar preguntas sobre tu hogar sin leer la UI web. Tres tools de **solo lectura** en esta primera entrega: cupo diario de hoy, resumen del presupuesto del mes y últimos movimientos. Reusan los mismos servicios que la web, así que la cifra que ve el asistente es la misma que ves en pantalla (ADR-0049).
+- **Tokens personales en `/perfil/mcp`** para habilitar el servidor: cada token queda atado a tu usuario y al hogar que esté activo cuando lo emitas, y nunca puede leer datos de otro hogar aunque cambies de hogar en la sesión web. El token en claro se muestra una sola vez al emitirlo, se revoca en cualquier momento y puede llevar vencimiento opcional.
+- **Guía de conexión por cliente** dentro de `/perfil/mcp` con el bloque de configuración listo para pegar en Claude Desktop (nativo o vía `mcp-remote`), el comando `claude mcp add` para Claude Code, el bloque para Cursor, un ejemplo con `curl` para otros clientes, y una nota honesta sobre por qué ChatGPT todavía no funciona (exige OAuth 2.1 con PKCE, en el roadmap).
+
+### Notas
+- Las **tools de escritura** (registrar gastos, ingresos, etc.) y la integración con ChatGPT llegarán en una versión posterior con un patrón de dos fases (previsualización + confirmación explícita), para acotar lo que un LLM puede hacer sin que tú lo apruebes.
+
 ## [0.42.0] - 2026-09-24 — Historial público, SEO y visibilidad para asistentes
 
 ### Añadido
